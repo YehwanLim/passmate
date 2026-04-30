@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+// analyzeCoverLetter는 요청 시점에 dynamic import (HMR 무한 재평가 방지)
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -150,7 +151,93 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+/**
+ * Vite plugin to handle API routes in development
+ */
+function vitePluginApi(): Plugin {
+  return {
+    name: "dev-api-server",
+    configureServer(server: ViteDevServer) {
+      // /api/test-gemini — Gemini API 핑 테스트
+      server.middlewares.use("/api/test-gemini", async (_req, res, next) => {
+        if (_req.method !== "GET") return next();
+        try {
+          // Raw fetch mode
+          const dotenv = await import("dotenv");
+          dotenv.config();
+          const apiKey = process.env.GEMINI_API_KEY;
+          if (!apiKey) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ ok: false, error: "GEMINI_API_KEY가 .env에 설정되지 않았습니다." }));
+            return;
+          }
+          const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+          const apiRes = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: "안녕 제미나이? 한 줄로 짧게 대답해." }] }]
+            })
+          });
+
+          if (!apiRes.ok) {
+            const errorText = await apiRes.text();
+            throw new Error(`API Error ${apiRes.status}: ${errorText}`);
+          }
+
+          const data = await apiRes.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "(응답 없음)";
+          console.log("[test-gemini] 응답:", text);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: true, reply: text }));
+        } catch (e: any) {
+          console.error("[test-gemini] 실패:", e.message);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: e.message }));
+        }
+      });
+
+      // /api/analyze — 자소서 분석
+      server.middlewares.use("/api/analyze", (req, res, next) => {
+        if (req.method !== "POST") return next();
+
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk.toString();
+        });
+
+        req.on("end", async () => {
+          try {
+            const payload = JSON.parse(body);
+            
+            // 새 형식(questions[]) 또는 이전 형식(content string) 지원
+            const input = payload.questions 
+              ? payload 
+              : payload.content;
+            
+            if (!input) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "questions 또는 content가 필요합니다." }));
+              return;
+            }
+            
+            const { analyzeCoverLetter: analyze } = await import("./server/api/analyze");
+            const result = await analyze(input);
+            
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(result));
+          } catch (e: any) {
+            console.error("API Error:", e);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+          }
+        });
+      });
+    },
+  };
+}
+
+const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginApi()];
 
 export default defineConfig({
   plugins,
