@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
+
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
