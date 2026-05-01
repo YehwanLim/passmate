@@ -1,7 +1,19 @@
 {
   "version": 2,
   "functions": {
-    "api/**/*.js": {
+    "api/analyze.js": {
+      "memory": 1024,
+      "maxDuration": 60,
+      "runtime": "vercel-node@latest"
+    },
+    "api/gemini.js": {
+      "memory": 1024,
+      "maxDuration": 60,
+      "runtime": "vercel-node@latest"
+    },
+    "api/test-gemini.js": {
+      "memory": 1024,
+      "maxDuration": 60,
       "runtime": "vercel-node@latest"
     }
   },
