@@ -136,7 +136,7 @@ async function analyzeCoverLetter(input) {
 
   if (!GEMINI_API_KEY) {
     console.warn("GEMINI_API_KEY not set - returning dummy data");
-    return buildFallbackData(request);
+    return buildFallbackData(request, "Vercel 환경변수에 GEMINI_API_KEY가 없습니다.");
   }
 
   const userPrompt = buildUserPrompt(request);
@@ -166,14 +166,14 @@ async function analyzeCoverLetter(input) {
 
     if (!rawText) {
       console.error("[analyze] Gemini 응답이 비어 있습니다.");
-      return buildFallbackData(request);
+      return buildFallbackData(request, "Gemini API 응답이 비어 있습니다.");
     }
 
     const parsed = safeParseJson(rawText);
 
     if (!parsed) {
       console.error("[analyze] JSON 파싱 최종 실패 → fallback 반환");
-      return buildFallbackData(request);
+      return buildFallbackData(request, "Gemini 응답 JSON 파싱에 실패했습니다.");
     }
 
     if (parsed.questionTabs) {
@@ -189,7 +189,7 @@ async function analyzeCoverLetter(input) {
     return parsed;
   } catch (error) {
     console.error("[analyze] Gemini API call failed:", error.message);
-    return buildFallbackData(request);
+    return buildFallbackData(request, `Gemini 호출 에러: ${error.message}`);
   }
 }
 
@@ -285,7 +285,9 @@ function buildUserPrompt(request) {
   return prompt;
 }
 
-function buildFallbackData(request) {
+export const maxDuration = 60;
+
+function buildFallbackData(request, errorMsg = "서버 연결에 실패했습니다.") {
   const company = request.company || "지원 기업";
   return {
     companyInsight: {
@@ -296,7 +298,7 @@ function buildFallbackData(request) {
       cultureSignals: ["서비스 연결 실패"]
     },
     firstImpression: {
-      summaryOneLiner: "분석 서비스에 일시적으로 연결할 수 없습니다. 기본 결과를 표시합니다.",
+      summaryOneLiner: `[시스템 디버그] 에러 원인: ${errorMsg}`,
       persona: "성장 가능성이 돋보이는 지원자",
       hashtags: ["#이력서", "#분석중", "#재시도필요"]
     },
@@ -328,7 +330,7 @@ function buildFallbackData(request) {
     actionPlan: [
       { title: "분석 재시도", description: "분석 페이지로 돌아가 다시 시도해주세요.", expectedImpact: "정상적인 AI 분석 결과를 받아볼 수 있습니다." }
     ],
-    pmComment: "분석 서비스 연결에 실패했습니다. 잠시 후 다시 시도해주세요."
+    pmComment: `[오류 안내] 분석 서비스 연결에 실패했습니다. (${errorMsg})`
   };
 }
 
