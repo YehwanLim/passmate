@@ -1,6 +1,6 @@
 import { analyzeCoverLetter } from '../server/api/analyze.js';
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   // CORS 처리 (필요시)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -26,7 +26,7 @@ export default async function handler(req: any, res: any) {
 
     const result = await analyzeCoverLetter(input);
     return res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error('API Error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }

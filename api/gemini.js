@@ -1,9 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+export default async function handler(req, res) {
   // 1. Only allow POST requests
   if (req.method !== "POST") {
     res.setHeader("Allow", ["POST"]);
@@ -71,7 +66,7 @@ export default async function handler(
     // 8. Return clean response to frontend
     return res.status(200).json({ text: generatedText });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("[gemini] Unhandled error:", error.message || error);
     return res.status(500).json({ error: "Internal server error." });
   }
