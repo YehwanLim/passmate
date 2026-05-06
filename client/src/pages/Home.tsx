@@ -272,13 +272,21 @@ export default function Home() {
             ))}
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[13px] text-gray-500 hover:text-white font-medium h-8 px-3"
-          >
-            로그인
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/my")}
+              className="text-[13px] text-gray-500 hover:text-white font-medium h-8 px-3 rounded-md transition-colors duration-200"
+            >
+              My
+            </button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[13px] text-gray-500 hover:text-white font-medium h-8 px-3"
+            >
+              로그인
+            </Button>
+          </div>
         </div>
       </motion.nav>
 

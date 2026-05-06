@@ -1,0 +1,200 @@
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { motion } from "framer-motion";
+import { Sparkles, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { ProjectSummary } from "@/types/my";
+import ProjectCard from "@/components/my/ProjectCard";
+import EmptyState from "@/components/my/EmptyState";
+import SkeletonCard from "@/components/my/SkeletonCard";
+
+// =============================================================================
+// Mock Data — API 응답과 동일한 형태 (연동 후 제거)
+// =============================================================================
+const MOCK_PROJECTS: ProjectSummary[] = [
+  {
+    id: "mock-proj-1",
+    title: "네이버 웹툰 서비스 PM 지원",
+    company_name: "네이버 웹툰",
+    job_role: "서비스 PM",
+    created_at: "2026-05-05T14:30:00Z",
+    analysis_count: 3,
+    total_chars: 2420,
+    summary:
+      "데이터 기반 실행력은 강하지만, 네이버 웹툰 기준 '콘텐츠 임팩트 연결'이 부족합니다",
+    keywords: ["데이터 기반 분석", "실행력", "문제 해결"],
+  },
+  {
+    id: "mock-proj-2",
+    title: "토스 프론트엔드 개발 지원",
+    company_name: "토스(비바리퍼블리카)",
+    job_role: "프론트엔드 개발",
+    created_at: "2026-05-03T09:15:00Z",
+    analysis_count: 2,
+    total_chars: 1860,
+    summary:
+      "UI/UX 감각과 기술 역량은 충분하나, 금융 도메인 이해도를 보강해야 합니다",
+    keywords: ["UI/UX 감각", "컴포넌트 설계", "성능 최적화"],
+  },
+];
+
+// =============================================================================
+// Page Component
+// =============================================================================
+export default function MyProjects() {
+  const [, navigate] = useLocation();
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        // TODO: API 연동 시 아래 URL을 실제 엔드포인트로 교체
+        const response = await fetch("/api/projects");
+        if (!response.ok) throw new Error("Failed to fetch projects");
+        const data: ProjectSummary[] = await response.json();
+        setProjects(data);
+      } catch (e) {
+        console.warn("[MyProjects] API 미연동 — Mock 데이터로 대체:", e);
+        setProjects(MOCK_PROJECTS);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  /** Project 삭제 핸들러 */
+  const handleDelete = async (projectId: string) => {
+    if (
+      !confirm(
+        "이 프로젝트를 삭제하시겠습니까?\n모든 분석 이력이 함께 삭제됩니다."
+      )
+    )
+      return;
+
+    try {
+      // TODO: API 연동 시 아래 URL을 실제 엔드포인트로 교체
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Delete failed");
+    } catch (e) {
+      console.warn("[MyProjects] 삭제 API 미연동 — UI에서만 제거:", e);
+    }
+    setProjects((prev) => prev.filter((p) => p.id !== projectId));
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0A0A0A] pb-28">
+      {/* ════════ GNB ════════ */}
+      <motion.nav
+        className="sticky top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-lg border-b border-white/5"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="container flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-400" />
+            </button>
+            <div
+              className="flex items-center gap-2.5 cursor-pointer"
+              onClick={() => navigate("/")}
+            >
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-lg font-bold text-white">PassMate</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-zinc-400 hover:text-white font-medium"
+              onClick={() => navigate("/my")}
+            >
+              My
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white font-medium"
+            >
+              로그인
+            </Button>
+          </div>
+        </div>
+      </motion.nav>
+
+      {/* ════════ Page Header ════════ */}
+      <div className="container pt-10 pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">
+            지원서 관리
+          </h1>
+          <p className="text-[14px] text-zinc-500 font-light">
+            분석한 자소서를 확인하고, 다시 활용할 수 있습니다.
+          </p>
+        </motion.div>
+      </div>
+
+      {/* ════════ Project List ════════ */}
+      <div className="container">
+        {isLoading ? (
+          <div className="grid gap-4">
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={i} variant="project" />
+            ))}
+          </div>
+        ) : projects.length === 0 ? (
+          <EmptyState
+            title="아직 분석한 지원서가 없어요"
+            description="자소서를 분석하면 여기에서 확인하고 다시 활용할 수 있습니다."
+            ctaLabel="자소서 분석하러 가기"
+          />
+        ) : (
+          <motion.div
+            className="grid gap-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            {projects.map((project, idx) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.05 * idx }}
+              >
+                <ProjectCard
+                  project={project}
+                  onViewQuestions={() => navigate(`/my/${project.id}`)}
+                  onViewReport={() => {
+                    // TODO: 추후 /api/analyses/:id 기반 상세 조회로 전환 예정
+                    navigate("/report-new");
+                  }}
+                  onDelete={() => handleDelete(project.id)}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </div>
+
+      {/* ════════ 향후 확장 영역 (멘토링 BM 등) ════════ */}
+    </div>
+  );
+}

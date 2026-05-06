@@ -18,10 +18,15 @@ import {
   Search,
   Building2,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
+import { sanitizeText } from "@/utils/sanitize";
+import { checkDuplicateQuestions } from "@/utils/textSimilarity";
+import { saveDraft, loadDraft, saveAnalysisToStorage, clearAnalysisResult } from "@/utils/storage";
+import { UI_LABELS } from "@/constants/labels";
 
 /**
  * PassMate - 자소서 분석 페이지 (/analyze)
@@ -34,6 +39,8 @@ import { useLocation } from "wouter";
 
 const MAX_QUESTIONS = 5;
 const MAX_TOTAL_CHARS = 6000;
+const MIN_TOTAL_CHARS = 200;
+const WARN_TOTAL_CHARS = 1000;
 
 /* ── 더미 데이터 ── */
 const COMPANY_PRESETS = [
@@ -332,6 +339,33 @@ export default function Analyze() {
     createEmptyQuestion(),
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // ── 로컬 스토리지 초안 복원 ──
+  useEffect(() => {
+    if (questions.length !== 1 || questions[0].answer) return;
+    const draft = loadDraft();
+    if (draft) {
+      setQuestions(draft.questions as QuestionItem[]);
+      if (draft.company) setCompany(draft.company);
+      if (draft.selectedJob) setSelectedJob(draft.selectedJob);
+      if (draft.customJob) setCustomJob(draft.customJob);
+      setDraftRestored(true);
+      setTimeout(() => setDraftRestored(false), 4000);
+    }
+  }, []);
+
+  // ── Status Step 로딩 타이머 ──
+  useEffect(() => {
+    if (!isLoading) { setLoadingStep(0); return; }
+    setLoadingStep(1);
+    const t1 = setTimeout(() => setLoadingStep(2), 7000);
+    const t2 = setTimeout(() => setLoadingStep(3), 30000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [isLoading]);
 
   // ── 글자 수 계산 ──
   const totalChars = useMemo(
@@ -339,16 +373,27 @@ export default function Analyze() {
     [questions]
   );
   const isOverLimit = totalChars > MAX_TOTAL_CHARS;
+  const isBelowMinimum = totalChars < MIN_TOTAL_CHARS;
   const isAtMaxQuestions = questions.length >= MAX_QUESTIONS;
   const hasContent = questions.some((q) => q.answer.trim().length > 0);
-  const canSubmit = hasContent && !isOverLimit && !isLoading;
+  // Hard Block: 200자 미만 OR 6000자 초과 → 버튼 완전 비활성화
+  const canSubmit = hasContent && !isBelowMinimum && !isOverLimit && !isLoading;
 
-  // ── 문항 CRUD ──
+  // ── 문항 CRUD (6000자 Hard Block 포함) ──
   const handleUpdateQuestion = useCallback(
     (id: string, field: "question" | "answer", value: string) => {
-      setQuestions((prev) =>
-        prev.map((q) => (q.id === id ? { ...q, [field]: value } : q))
-      );
+      setQuestions((prev) => {
+        if (field === "answer") {
+          const otherChars = prev
+            .filter((q) => q.id !== id)
+            .reduce((sum, q) => sum + q.answer.length, 0);
+          if (otherChars + value.length > MAX_TOTAL_CHARS) {
+            const allowed = MAX_TOTAL_CHARS - otherChars;
+            value = value.slice(0, Math.max(0, allowed));
+          }
+        }
+        return prev.map((q) => (q.id === id ? { ...q, [field]: value } : q));
+      });
     },
     []
   );
@@ -366,61 +411,119 @@ export default function Analyze() {
     setQuestions((prev) => [...prev, createEmptyQuestion()]);
   }, [questions.length]);
 
-  // ── 분석 제출 ──
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
+  // ── 분석 제출 (모든 예외 처리 포함) ──
+  const executeSubmit = async () => {
     setIsLoading(true);
 
     const jobLabel =
       selectedJob === "__custom__" ? customJob.trim() : selectedJob ?? "";
 
-    // 원본 questions 배열 구조화
+    // XSS Sanitize + 구조화
     const structuredQuestions = questions.map((q, i) => ({
-      question: q.question.trim() || `문항 ${i + 1}`,
-      answer: q.answer,
+      question: sanitizeText(q.question.trim()) || `문항 ${i + 1}`,
+      answer: sanitizeText(q.answer),
     }));
+
+    // 로컬 스토리지 초안 백업
+    saveDraft({ company, selectedJob, customJob, questions });
+
+    // 타임아웃 설정 (60초)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           questions: structuredQuestions,
-          company: company.trim() || undefined,
-          jobKeyword: jobLabel || undefined,
+          company: sanitizeText(company.trim()) || undefined,
+          jobKeyword: sanitizeText(jobLabel) || undefined,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("분석 중 오류가 발생했습니다.");
+      clearTimeout(timeoutId);
+
+      // Rate Limit (429)
+      if (response.status === 429) {
+        setErrorModal({ title: "요청 제한", message: UI_LABELS.RATE_LIMIT_ERROR });
+        return;
       }
 
-      const data = await response.json();
-      
-      // 🛡️ 유효성 검사: 정상적인 리포트 구조인지 확인
+      // 문맥 이탈 / 서버 에러
+      if (!response.ok) {
+        let errorData;
+        try { errorData = await response.json(); } catch { /* ignore */ }
+        if (errorData?.error === "CONTEXT_IRRELEVANT") {
+          setErrorModal({ title: "내용 확인 필요", message: UI_LABELS.CONTEXT_IRRELEVANT });
+          return;
+        }
+        throw new Error(errorData?.message || "분석 중 오류가 발생했습니다.");
+      }
+
+      // JSON 파싱 에러 방지
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        setErrorModal({ title: "파싱 오류", message: UI_LABELS.JSON_PARSE_ERROR });
+        return;
+      }
+
+      // 유효성 검사: 정상적인 리포트 구조인지 확인
       if (!data || !Array.isArray(data.questionTabs) || data.questionTabs.length === 0) {
         console.error("❌ API 응답이 올바른 리포트 구조가 아닙니다:", data);
-        throw new Error("서버에서 올바른 분석 결과를 받지 못했습니다.");
+        setErrorModal({ title: "분석 오류", message: UI_LABELS.JSON_PARSE_ERROR });
+        return;
       }
 
-      // 분석 결과 저장
-      sessionStorage.setItem("passmate_analysis_result", JSON.stringify(data));
-      // 원본 질문/답변도 저장 (Report에서 prompt, fullAnswer 폴백용)
-      sessionStorage.setItem("passmate_raw_questions", JSON.stringify(structuredQuestions));
-      // 회사명/직무명 저장 (Report 헤더에서 동적 사용)
-      sessionStorage.setItem("passmate_company", company.trim() || "");
-      sessionStorage.setItem("passmate_job", jobLabel || "");
-      
+      // 분석 결과 저장 (localStorage + sessionStorage 통합)
+      saveAnalysisToStorage({
+        result: data,
+        questions: structuredQuestions,
+        company: company.trim(),
+        jobKeyword: jobLabel,
+      });
+
       navigate("/report-new");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      // 실패 시 sessionStorage 정리 → Report는 항상 깨끗한 더미 데이터 표시
-      sessionStorage.removeItem("passmate_analysis_result");
-      sessionStorage.removeItem("passmate_raw_questions");
-      alert("분석에 실패했습니다. 다시 시도해주세요.");
+      clearAnalysisResult();
+
+      if (error.name === "AbortError") {
+        setErrorModal({ title: "연결 불안정", message: UI_LABELS.NETWORK_ERROR });
+      } else {
+        setErrorModal({ title: "분석 실패", message: UI_LABELS.ANALYSIS_FAILED });
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+
+    // 도배 방지: 유사도 체크 (문항 2개 이상일 때만)
+    if (questions.filter((q) => q.answer.trim()).length >= 2) {
+      const duplicate = checkDuplicateQuestions(questions.map((q) => q.answer));
+      if (duplicate) {
+        setErrorModal({ title: "중복 감지", message: UI_LABELS.DUPLICATE_DETECTED });
+        return;
+      }
+    }
+
+    // 200~1000자 구간: confirm 모달
+    if (totalChars >= MIN_TOTAL_CHARS && totalChars < WARN_TOTAL_CHARS) {
+      setConfirmModal({
+        message: UI_LABELS.CHAR_MINIMUM_WARNING,
+        onConfirm: () => { setConfirmModal(null); executeSubmit(); },
+      });
+      return;
+    }
+
+    executeSubmit();
   };
 
   // ── Framer Motion Variants ──
@@ -470,13 +573,23 @@ export default function Analyze() {
             </div>
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white font-medium"
-          >
-            로그인
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white font-medium"
+              onClick={() => navigate("/my")}
+            >
+              My
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white font-medium"
+            >
+              로그인
+            </Button>
+          </div>
         </div>
       </motion.nav>
 
@@ -606,59 +719,70 @@ export default function Analyze() {
 
       {/* ════════ STICKY BOTTOM BAR ════════ */}
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/[0.08] bg-[#0A0A0A]/90 backdrop-blur-xl">
-        <div className="container max-w-3xl mx-auto px-4 h-[72px] flex items-center justify-between gap-4">
-          {/* 총 글자 수 */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <BarChart3
-              className={`w-4 h-4 flex-shrink-0 ${
-                isOverLimit ? "text-red-400" : "text-zinc-500"
-              }`}
-            />
-            <span
-              className={`text-sm font-medium tabular-nums whitespace-nowrap ${
-                isOverLimit ? "text-red-400" : "text-zinc-400"
-              }`}
-            >
-              총 글자 수:{" "}
+        <div className="container max-w-3xl mx-auto px-4 flex flex-col">
+          {/* 글자 수 경고 메시지 */}
+          {isOverLimit && (
+            <div className="flex items-center gap-2 pt-2.5 pb-1">
+              <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+              <span className="text-xs text-red-400">{UI_LABELS.CHAR_OVER_LIMIT}</span>
+            </div>
+          )}
+          {isBelowMinimum && hasContent && !isOverLimit && (
+            <div className="flex items-center gap-2 pt-2.5 pb-1">
+              <Info className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+              <span className="text-xs text-zinc-500">최소 {MIN_TOTAL_CHARS}자 이상 입력해 주세요</span>
+            </div>
+          )}
+
+          <div className="h-[72px] flex items-center justify-between gap-4">
+            {/* 총 글자 수 */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <BarChart3
+                className={`w-4 h-4 flex-shrink-0 ${
+                  isOverLimit ? "text-red-400" : "text-zinc-500"
+                }`}
+              />
               <span
-                className={`font-semibold ${
-                  isOverLimit ? "text-red-400" : "text-white"
+                className={`text-sm font-medium tabular-nums whitespace-nowrap ${
+                  isOverLimit ? "text-red-400" : "text-zinc-400"
                 }`}
               >
-                {totalChars.toLocaleString()}
-              </span>{" "}
-              / {MAX_TOTAL_CHARS.toLocaleString()}자
-            </span>
-            {isOverLimit && (
-              <span className="text-[11px] text-red-400/80 hidden sm:inline">
-                · 글자 수를 줄여주세요
+                총 글자 수:{" "}
+                <span
+                  className={`font-semibold ${
+                    isOverLimit ? "text-red-400" : "text-white"
+                  }`}
+                >
+                  {totalChars.toLocaleString()}
+                </span>{" "}
+                / {MAX_TOTAL_CHARS.toLocaleString()}자
               </span>
-            )}
-          </div>
+            </div>
 
-          {/* 결제 + 분석 버튼 */}
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            size="lg"
-            className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-400 hover:to-cyan-300 text-white px-6 py-3 text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-cyan-500/25 transition-all disabled:opacity-40 disabled:shadow-none whitespace-nowrap flex-shrink-0"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                분석 중...
-              </>
-            ) : (
-              <>
-                <CreditCard className="w-4 h-4 mr-2" />
-                10,000원 결제하고 분석 시작하기
-              </>
-            )}
-          </Button>
+            {/* 결제 + 분석 버튼 */}
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              size="lg"
+              className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-400 hover:to-cyan-300 text-white px-6 py-3 text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-cyan-500/25 transition-all disabled:opacity-40 disabled:shadow-none whitespace-nowrap flex-shrink-0"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  분석 중...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  10,000원 결제하고 분석 시작하기
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* ════════ LOADING OVERLAY ════════ */}
+      {/* ════════ LOADING OVERLAY — Status Step UX ════════ */}
       <AnimatePresence>
         {isLoading && (
           <motion.div
@@ -675,32 +799,10 @@ export default function Analyze() {
                 style={{ animationDuration: "3s" }}
                 viewBox="0 0 100 100"
               >
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.05)"
-                  strokeWidth="4"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  fill="none"
-                  stroke="url(#loadGrad)"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray="80 200"
-                />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="url(#loadGrad)" strokeWidth="4" strokeLinecap="round" strokeDasharray="80 200" />
                 <defs>
-                  <linearGradient
-                    id="loadGrad"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="100%"
-                  >
+                  <linearGradient id="loadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#3B82F6" />
                     <stop offset="100%" stopColor="#22D3EE" />
                   </linearGradient>
@@ -712,30 +814,137 @@ export default function Analyze() {
             </div>
 
             <motion.p
-              className="text-xl font-semibold text-white mb-3 tracking-tight"
+              className="text-xl font-semibold text-white mb-6 tracking-tight"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
               인사이트 리포트를 생성하고 있습니다
             </motion.p>
-            <motion.p
-              className="text-sm text-zinc-500 mb-10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              현직 PM의 합격 로직으로 분석 중...
-            </motion.p>
 
-            {/* Progress bar */}
-            <div className="w-64 h-1 bg-zinc-800 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: "90%" }}
-                transition={{ duration: 2.8, ease: "easeInOut" }}
-              />
+            {/* 3단계 도트 인디케이터 */}
+            <div className="flex items-center gap-3 mb-4">
+              {[1, 2, 3].map((step) => (
+                <div
+                  key={step}
+                  className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
+                    loadingStep >= step
+                      ? "bg-cyan-400 scale-110 shadow-sm shadow-cyan-400/40"
+                      : "bg-zinc-700"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* 상태 텍스트 (fade 전환) */}
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={loadingStep}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4 }}
+                className="text-sm text-zinc-500 mb-10"
+              >
+                {loadingStep === 1 && UI_LABELS.LOADING_STEP_1}
+                {loadingStep === 2 && UI_LABELS.LOADING_STEP_2}
+                {loadingStep === 3 && UI_LABELS.LOADING_STEP_3}
+              </motion.p>
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ════════ ERROR MODAL ════════ */}
+      <AnimatePresence>
+        {errorModal && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setErrorModal(null)}
+          >
+            <motion.div
+              className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">{errorModal.title}</h3>
+              </div>
+              <p className="text-sm text-zinc-400 leading-relaxed mb-6">{errorModal.message}</p>
+              <Button
+                onClick={() => setErrorModal(null)}
+                className="w-full bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl h-11 text-sm font-medium transition-colors"
+              >
+                확인
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ════════ CONFIRM MODAL ════════ */}
+      <AnimatePresence>
+        {confirmModal && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setConfirmModal(null)}
+          >
+            <motion.div
+              className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <Info className="w-5 h-5 text-amber-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">내용이 적어요</h3>
+              </div>
+              <p className="text-sm text-zinc-400 leading-relaxed mb-6">{confirmModal.message}</p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setConfirmModal(null)}
+                  variant="outline"
+                  className="flex-1 border-white/[0.1] bg-transparent text-zinc-300 hover:bg-white/[0.05] rounded-xl h-11 text-sm font-medium"
+                >
+                  돌아가기
+                </Button>
+                <Button
+                  onClick={confirmModal.onConfirm}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-400 hover:to-cyan-300 text-white rounded-xl h-11 text-sm font-medium"
+                >
+                  그래도 진행하기
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ════════ DRAFT RESTORED TOAST ════════ */}
+      <AnimatePresence>
+        {draftRestored && (
+          <motion.div
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+          >
+            <div className="px-5 py-3 rounded-xl border border-cyan-500/20 bg-zinc-900/95 backdrop-blur-xl shadow-2xl shadow-black/40 text-sm font-medium text-cyan-400">
+              {UI_LABELS.DRAFT_RESTORED}
             </div>
           </motion.div>
         )}
@@ -743,3 +952,4 @@ export default function Analyze() {
     </div>
   );
 }
+

@@ -2,7 +2,7 @@ export const UI_LABELS = {
   // Navigation & Actions
   BACK: "뒤로 가기",
   API_TEST: "API 테스트",
-  
+
   // Act 1: First Impression
   FIRST_IMPRESSION_TITLE: (userName: string) => `현직자 시선에서 본 ${userName}님의 첫인상입니다.`,
   APPLICANT_PROFILE: "지원자 프로필",
@@ -89,5 +89,21 @@ export const UI_LABELS = {
   API_TEST_SENDING: "API 테스트 요청 중...",
   API_TEST_SUCCESS: "API 연결 성공",
   API_TEST_FAILED: "API 연결 실패: ",
-  API_TEST_NETWORK_ERROR: "네트워크 오류가 발생했습니다."
+  API_TEST_NETWORK_ERROR: "네트워크 오류가 발생했습니다.",
+
+  // Error & Edge Case Messages
+  CHAR_MINIMUM_WARNING: "입력된 내용이 적어 피드백이 뻔할 수 있어요. 그래도 진행할까요?",
+  CHAR_OVER_LIMIT: "글자 수 제한(6,000자)을 초과했어요. 내용을 줄여야 다음 단계로 넘어갈 수 있어요.",
+  DUPLICATE_DETECTED: "중복된 문장이 여러번 감지되었어요. 문항별로 다른 내용이 입력되었는지 한 번 더 확인해주세요.",
+  NETWORK_ERROR: "앗, 서버와 연결이 불안정해요. 작성하신 내용은 안전하게 보관 중이니 잠시 후 다시 시도해 주세요.",
+  JSON_PARSE_ERROR: "AI가 결과를 정리하다 실수했어요. 다시 시도해주세요.",
+  RATE_LIMIT_ERROR: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+  CONTEXT_IRRELEVANT: "자기소개서와 무관한 내용이 감지되었어요. 자소서 내용을 입력해 주세요.",
+  DRAFT_RESTORED: "이전에 작성 중이던 내용을 복원했어요.",
+  ANALYSIS_FAILED: "분석에 실패했습니다. 다시 시도해주세요.",
+
+  // Loading Status Steps
+  LOADING_STEP_1: "자소서 내용을 꼼꼼하게 읽어보는 중이에요...",
+  LOADING_STEP_2: "합격 포인트와 아쉬운 점을 분석하고 있어요...",
+  LOADING_STEP_3: "거의 다 왔어요! 리포트를 정리하고 있어요...",
 };

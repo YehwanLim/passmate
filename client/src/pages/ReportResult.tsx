@@ -3,6 +3,7 @@ import { useLocation } from "wouter"
 import { X, Check, ChevronDown, ArrowRight, FileText, Sparkles, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, Target, Zap, MessageSquare } from "lucide-react"
 import type { ReportData } from "../types/report"
 import { UI_LABELS } from "../constants/labels"
+import { loadReportData, loadAnalysisFromStorage } from "../utils/storage"
 
 const FALLBACK_DATA: ReportData = {
     companyInsight: {
@@ -85,9 +86,10 @@ export default function PassMateReport() {
     const searchParams = new URLSearchParams(window.location.search)
     const useMock = searchParams.get('mock') === 'true'
 
-    // ── sessionStorage에서 회사명/직무명 복원 ──
-    const targetCompany = sessionStorage.getItem('passmate_company') || "지원 기업"
-    const userName = sessionStorage.getItem('passmate_job') || "지원자"
+    // ── sessionStorage에서 회사명/직무명 복원 (통합 구조 우선) ──
+    const storedAnalysis = loadAnalysisFromStorage()
+    const targetCompany = storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "지원 기업"
+    const userName = storedAnalysis?.jobKeyword || sessionStorage.getItem('passmate_job') || "지원자"
 
     const [reportData, setReportData] = useState<ReportData>(() => {
         // mock 모드: 무조건 FALLBACK_DATA 사용
@@ -96,20 +98,13 @@ export default function PassMateReport() {
             return FALLBACK_DATA
         }
 
-        // 일반 모드: sessionStorage에서 실제 데이터 로드
-        try {
-            const stored = sessionStorage.getItem('passmate_analysis_result')
-            console.log("🔥 sessionStorage 데이터 존재 여부:", !!stored)
-            if (stored) {
-                const parsed = JSON.parse(stored)
-                console.log("🔥 파싱된 데이터:", parsed)
-                if (parsed && Array.isArray(parsed.questionTabs) && parsed.questionTabs.length > 0) {
-                    return parsed
-                }
-            }
-        } catch (e) {
-            console.warn('[ReportResult] sessionStorage parse failed:', e)
+        // 일반 모드: 통합 스토리지 유틸리티 사용
+        const data = loadReportData()
+        if (data) {
+            console.log("🔥 분석 결과 복원 성공")
+            return data as unknown as ReportData
         }
+
         console.log("🔥 실제 데이터 없음 → FALLBACK_DATA 사용")
         return FALLBACK_DATA
     })

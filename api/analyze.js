@@ -120,7 +120,28 @@ const MASTER_SYSTEM_PROMPT = `
 - actionPlan 개수는 자소서 품질에 따라 유동적.
 - pmComment는 실제 면접관이 할 법한 말투로.
 - companyInsight는 기업명에 따라 동적으로 추론한다. 하드코딩 금지.
+
+# [문맥 이탈 방지]
+사용자의 텍스트가 자기소개서 맥락과 완전히 무관하거나 장난스러운 내용(의미 없는 반복, 욕설, 무작위 텍스트, 노래 가사, 급식체 도배 등)인 경우,
+분석을 진행하지 말고 다음 JSON만 반환하라:
+{"error": "CONTEXT_IRRELEVANT", "message": "자기소개서와 무관한 내용입니다."}
+이 경우 위의 리포트 JSON 스키마를 사용하지 않는다.
 `;
+
+// ── XSS 방어: 서버 측 텍스트 정제 ──
+function sanitizeInput(text) {
+  if (!text) return "";
+  return text
+    .replace(/\0/g, "")                                                       // null bytes
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")       // <script> 태그
+    .replace(/\s*on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "")             // on* 이벤트 핸들러
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")          // <style> 태그
+    .replace(/<\/?(?:iframe|object|embed|form|input|button|link|meta)\b[^>]*>/gi, "")  // 위험 태그
+    .replace(/javascript\s*:/gi, "")                                           // javascript: 프로토콜
+    .replace(/data\s*:[^,]*,/gi, "")                                           // data: 프로토콜
+    .replace(/<\/?[a-z][a-z0-9]*\b[^>]*>/gi, "")                              // 나머지 HTML 태그
+    .trim();
+}
 
 async function analyzeCoverLetter(input) {
   let request;
@@ -144,17 +165,29 @@ async function analyzeCoverLetter(input) {
   try {
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 55000); // 55초 타임아웃 (Vercel 60초 한도 전에 중단)
+
     const apiRes = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
+      signal: controller.signal,
       body: JSON.stringify({
         contents: [
           { role: "user", parts: [{ text: MASTER_SYSTEM_PROMPT + "\n\n" + userPrompt }] }
         ]
       })
     });
+
+    clearTimeout(timeout);
+
+    // Rate Limit 감지
+    if (apiRes.status === 429) {
+      console.error("[analyze] Gemini API Rate Limit (429)");
+      return { error: "RATE_LIMIT", message: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." };
+    }
 
     if (!apiRes.ok) {
       const errorText = await apiRes.text();
@@ -174,6 +207,12 @@ async function analyzeCoverLetter(input) {
     if (!parsed) {
       console.error("[analyze] JSON 파싱 최종 실패 → fallback 반환");
       return buildFallbackData(request, "Gemini 응답 JSON 파싱에 실패했습니다.");
+    }
+
+    // 문맥 이탈 감지: AI가 CONTEXT_IRRELEVANT 에러 반환한 경우
+    if (parsed.error === "CONTEXT_IRRELEVANT") {
+      console.warn("[analyze] AI가 문맥 이탈로 판단:", parsed.message);
+      return { error: "CONTEXT_IRRELEVANT", message: parsed.message || "자기소개서와 무관한 내용입니다." };
     }
 
     if (parsed.questionTabs) {
@@ -358,10 +397,52 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'questions 또는 content가 필요합니다.' });
     }
 
+    // ── 서버 측 입력 유효성 검증 ──
+    if (input.questions && Array.isArray(input.questions)) {
+      // XSS Sanitization
+      input.questions = input.questions.map(q => ({
+        question: sanitizeInput(q.question || ''),
+        answer: sanitizeInput(q.answer || ''),
+      }));
+      if (input.company) input.company = sanitizeInput(input.company);
+      if (input.jobKeyword) input.jobKeyword = sanitizeInput(input.jobKeyword);
+
+      // 글자 수 검증
+      const totalChars = input.questions.reduce((sum, q) => sum + (q.answer?.length || 0), 0);
+      
+      if (totalChars < 200) {
+        return res.status(400).json({ error: 'CHAR_MINIMUM', message: '최소 200자 이상 입력해야 분석할 수 있습니다.' });
+      }
+      if (totalChars > 6000) {
+        return res.status(400).json({ error: 'CHAR_OVER_LIMIT', message: '글자 수 제한(6,000자)을 초과했습니다.' });
+      }
+
+      // 빈 답변 검증
+      const hasContent = input.questions.some(q => q.answer && q.answer.trim().length > 0);
+      if (!hasContent) {
+        return res.status(400).json({ error: 'EMPTY_CONTENT', message: '답변 내용을 입력해 주세요.' });
+      }
+    }
+
     const result = await analyzeCoverLetter(input);
+
+    // AI가 에러 코드를 반환한 경우 적절한 HTTP 상태 코드로 전달
+    if (result.error === 'CONTEXT_IRRELEVANT') {
+      return res.status(400).json(result);
+    }
+    if (result.error === 'RATE_LIMIT') {
+      return res.status(429).json(result);
+    }
+
     return res.status(200).json(result);
   } catch (error) {
     console.error('API Error:', error);
+    
+    // AbortError (타임아웃)
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ error: 'TIMEOUT', message: '분석 시간이 초과되었습니다. 다시 시도해 주세요.' });
+    }
+    
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }

@@ -1,0 +1,253 @@
+// =============================================================================
+// PassMate MVP Database Schema
+// Provider: PostgreSQL (Supabase)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+// User — 유저 계정
+// =============================================================================
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique @db.VarChar(320)
+  name      String?  @db.VarChar(100)
+  avatarUrl String?  @map("avatar_url") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  projects  Project[]
+  analyses  Analysis[]
+  feedbacks Feedback[]
+
+  @@map("users")
+}
+
+// =============================================================================
+// Project — 자소서 묶음 단위 (ex. "삼성전자 PM 지원서")
+// =============================================================================
+model Project {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  title       String  @db.VarChar(200)
+  company     String? @db.VarChar(100)    // 지원 기업명
+  jobKeyword  String? @map("job_keyword") @db.VarChar(100) // 지원 직무
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyses Analysis[]
+
+  @@index([userId])
+  @@map("projects")
+}
+
+// =============================================================================
+// Analysis — AI 분석 핵심 테이블
+// =============================================================================
+
+/// 분석 상태 enum
+enum AnalysisStatus {
+  PENDING
+  SUCCESS
+  FAILED
+
+  @@map("analysis_status")
+}
+
+/// 실패 원인 분류 enum
+enum ErrorCode {
+  TIMEOUT
+  RATE_LIMIT
+  PARSE_ERROR
+  CONTEXT_IRRELEVANT
+  API_ERROR
+  UNKNOWN
+
+  @@map("error_code")
+}
+
+model Analysis {
+  id        String @id @default(uuid()) @db.Uuid
+  userId    String @map("user_id") @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+
+  // ── 입력 데이터 ──
+  questionText String @map("question_text") @db.Text     // 문항 질문
+  inputText    String @map("input_text") @db.Text         // 사용자 원문 자소서
+
+  // ── AI 응답 데이터 ──
+  aiResponseJson Json?   @map("ai_response_json")         // AI 전체 응답 JSON 그대로 저장
+  aiScore        Float?  @map("ai_score")                  // 숫자 점수 분리 (optional)
+
+  // ── 상태 관리 ──
+  status       AnalysisStatus @default(PENDING)
+  errorMessage String?        @map("error_message") @db.Text  // 에러 상세 텍스트
+  errorCode    ErrorCode?     @map("error_code")              // 에러 원인 분류 (집계용)
+
+  // ── 프롬프트 연결 ──
+  promptVersion    String  @default("1.0") @map("prompt_version") @db.VarChar(20) // 레거시 호환
+  promptTemplateId String? @map("prompt_template_id") @db.Uuid                    // FK → prompt_templates
+
+  // ── 모델 정보 (JOIN 없이 바로 조회) ──
+  modelName     String? @map("model_name") @db.VarChar(100)
+  modelProvider String? @map("model_provider") @db.VarChar(50)
+
+  // ── 메타데이터 ──
+  totalChars   Int?     @map("total_chars")                // 원문 글자 수
+  responseTime Int?     @map("response_time_ms")           // AI 응답 시간 (ms)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  promptTemplate PromptTemplate? @relation(fields: [promptTemplateId], references: [id])
+  tokenUsages    TokenUsage[]
+  feedbacks      Feedback[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+  @@index([errorCode])
+  @@index([promptTemplateId])
+  @@index([createdAt])
+  @@map("analyses")
+}
+
+// =============================================================================
+// PromptTemplate — 프롬프트 버전 관리 & A/B 테스트
+// =============================================================================
+model PromptTemplate {
+  id String @id @default(uuid()) @db.Uuid
+
+  // ── 버전 식별 ──
+  version String  @db.VarChar(20)           // ex. "1.0", "2.0-beta"
+  name    String  @db.VarChar(100)          // ex. "따뜻한 팩폭 사수 v2"
+  variant String? @db.VarChar(50)           // A/B 변형: "A", "B", "control"
+
+  // ── 프롬프트 본문 ──
+  systemPrompt String  @map("system_prompt") @db.Text  // 시스템 프롬프트 전문
+  userTemplate String? @map("user_template") @db.Text  // 유저 프롬프트 템플릿 (선택)
+
+  // ── 모델 설정 ──
+  modelName     String @map("model_name") @db.VarChar(100)     // ex. gemini-2.5-flash
+  modelProvider String @map("model_provider") @db.VarChar(50)  // ex. gemini
+  temperature   Float? @default(0.7)
+  maxTokens     Int?   @map("max_tokens")
+
+  // ── 상태 관리 ──
+  isActive  Boolean @default(false) @map("is_active")   // 현재 프로덕션 활성 프롬프트
+  isDefault Boolean @default(false) @map("is_default")  // 기본 프롬프트 여부
+
+  // ── 메타 ──
+  description String?  @db.Text                           // 변경 사유/설명
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  analyses Analysis[]
+
+  @@unique([version, variant], map: "uq_prompt_version_variant")
+  @@index([isActive])
+  @@index([modelProvider])
+  @@map("prompt_templates")
+}
+
+// =============================================================================
+// TokenUsage — AI 호출 비용 추적 (Analysis 1:N)
+// =============================================================================
+
+/// API 호출 유형
+enum CallType {
+  ANALYSIS   // 최초 분석 요청
+  RETRY      // 파싱 실패 등으로 인한 재시도
+  FALLBACK   // 다른 모델로 폴백
+  REWRITE    // 자소서 리라이트 요청
+  SUMMARY    // 요약 생성 등 부가 기능
+
+  @@map("call_type")
+}
+
+model TokenUsage {
+  id         String @id @default(uuid()) @db.Uuid
+  analysisId String @map("analysis_id") @db.Uuid
+
+  // ── 모델 정보 ──
+  modelName     String @map("model_name") @db.VarChar(100)     // ex. gemini-2.5-flash
+  modelProvider String @map("model_provider") @db.VarChar(50)  // ex. gemini / openai / anthropic
+
+  // ── 토큰 사용량 ──
+  promptTokens     Int @map("prompt_tokens")
+  completionTokens Int @map("completion_tokens")
+  totalTokens      Int @map("total_tokens")
+
+  // ── 비용 ──
+  cost         Float?  @map("cost")                            // 비용 (USD 기준)
+  costCurrency String  @default("USD") @map("cost_currency") @db.VarChar(3) // 통화 단위
+
+  // ── 호출 유형 ──
+  callType CallType @default(ANALYSIS) @map("call_type")
+
+  // ── 호출 메타데이터 ──
+  latencyMs  Int?    @map("latency_ms")       // 이 개별 호출의 응답 시간 (ms)
+  httpStatus Int?    @map("http_status")      // API HTTP 상태 코드 (200, 429, 500 등)
+  isSuccess  Boolean @default(true) @map("is_success") // 이 호출이 성공했는지
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([modelProvider])
+  @@index([callType])
+  @@index([createdAt])
+  @@map("token_usages")
+}
+
+// =============================================================================
+// Feedback — 유저 피드백 (Analysis 1:N, 중복 투표 방지)
+// =============================================================================
+
+/// 피드백 평가 유형
+enum Rating {
+  THUMBS_UP
+  THUMBS_DOWN
+
+  @@map("rating")
+}
+
+model Feedback {
+  id         String @id @default(uuid()) @db.Uuid
+  analysisId String @map("analysis_id") @db.Uuid
+  userId     String @map("user_id") @db.Uuid
+
+  // ── 평가 ──
+  rating  Rating
+  comment String? @db.Text   // 선택적 코멘트
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 동일 유저가 동일 분석에 중복 투표 불가
+  @@unique([analysisId, userId], map: "uq_feedback_analysis_user")
+  @@index([analysisId])
+  @@index([userId])
+  @@index([rating])
+  @@map("feedbacks")
+}
