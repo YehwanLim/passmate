@@ -9,7 +9,7 @@ import EmptyState from "@/components/my/EmptyState";
 import SkeletonCard from "@/components/my/SkeletonCard";
 
 // =============================================================================
-// Mock Data — API 응답과 동일한 형태 (연동 후 제거)
+// Mock Data — API 연동 실패 시 Fallback (최소 유지)
 // =============================================================================
 const MOCK_PROJECT: ProjectSummary = {
   id: "mock-proj-1",
@@ -30,27 +30,9 @@ const MOCK_ANALYSES: AnalysisSummary[] = [
     question_text:
       "본인이 주도적으로 문제를 해결했던 경험을 구체적으로 서술하시오.",
     input_text:
-      "발로 뛰어 얻은 3,000개의 데이터, 정확도 87%를 달성하다\n\n교내 캡스톤 디자인 프로젝트에서 소상공인을 위한 매출 예측 모델을 개발했습니다. 초기에는 공공 데이터만으로 모델링을 시도했으나, 지역별 특성이 반영되지 않아 예측 정확도가 60%에 머물렀습니다. 이를 해결하기 위해 팀원들과 직접 50곳 이상의 매장을 방문하여 인터뷰를 진행하고 신뢰를 쌓았습니다.\n\n결과적으로 3,000건 이상의 실제 매출 데이터를 수집할 수 있었습니다. 수집된 데이터를 바탕으로 Python과 scikit-learn을 활용하여 예측 모델을 고도화했습니다. 예측 정확도 87%를 달성했으며, 이 성과를 인정받아 교내 캡스톤 디자인 경진대회에서 최우수상을 수상했습니다.",
+      "발로 뛰어 얻은 3,000개의 데이터, 정확도 87%를 달성하다",
     status: "SUCCESS",
     created_at: "2026-05-05T14:32:00Z",
-  },
-  {
-    id: "mock-analysis-2",
-    question_text:
-      "팀 프로젝트에서 갈등 상황을 해결한 경험을 작성해 주세요.",
-    input_text:
-      "개발과 디자인 팀 간의 우선순위 충돌을 중재한 경험\n\n졸업 프로젝트에서 프로젝트 매니저 역할을 맡았습니다. 프론트엔드 개발팀은 기능 구현을 우선시했고, 디자인팀은 UX 완성도를 강조하면서 일정이 지연되고 있었습니다.\n\n양 팀의 입장을 개별 면담으로 파악한 후, '사용자 테스트 기반 우선순위 매트릭스'를 제안했습니다. 핵심 사용자 시나리오 5개를 정의하고, 각 시나리오에서 가장 임팩트가 큰 기능과 디자인 요소를 함께 선정하는 워크숍을 진행했습니다. 결과적으로 양 팀이 합의된 기준으로 작업하게 되어 2주 내에 프로젝트를 정상 궤도에 올릴 수 있었습니다.",
-    status: "SUCCESS",
-    created_at: "2026-05-05T14:34:00Z",
-  },
-  {
-    id: "mock-analysis-3",
-    question_text:
-      "데이터 기반 의사결정을 통해 성과를 개선한 경험이 있다면 상세히 기술해 주세요.",
-    input_text:
-      "A/B 테스트를 통한 이탈률 개선\n\n동아리에서 운영하던 온라인 커뮤니티의 가입 전환율이 낮아 문제를 분석했습니다. Google Analytics 데이터를 확인한 결과, 가입 페이지에서의 이탈률이 35%에 달하는 것을 발견했습니다.\n\n가설을 세우고 A/B 테스트를 설계했습니다. 기존 3단계 가입 프로세스를 1단계 간소화 버전과 비교한 결과, 이탈률이 18%로 감소했습니다.",
-    status: "FAILED",
-    created_at: "2026-05-05T14:36:00Z",
   },
 ];
 
@@ -69,22 +51,23 @@ export default function MyAnalyses() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // TODO: API 연동 시 아래 URL을 실제 엔드포인트로 교체
+        // Project 단건 + Analysis 리스트 병렬 조회
         const [projRes, analysesRes] = await Promise.all([
           fetch(`/api/projects/${projectId}`),
           fetch(`/api/projects/${projectId}/analyses`),
         ]);
 
         if (!projRes.ok || !analysesRes.ok)
-          throw new Error("API fetch failed");
+          throw new Error(`HTTP ${projRes.status}/${analysesRes.status}`);
 
         const projData: ProjectSummary = await projRes.json();
         const analysesData: AnalysisSummary[] = await analysesRes.json();
 
         setProject(projData);
         setAnalyses(analysesData);
+        console.log(`[MyAnalyses] ✅ API 연동 성공 — ${analysesData.length}개 문항`);
       } catch (e) {
-        console.warn("[MyAnalyses] API 미연동 — Mock 데이터로 대체:", e);
+        console.warn("[MyAnalyses] ⚠️ API 실패 — Mock 데이터로 대체:", e);
         setProject(MOCK_PROJECT);
         setAnalyses(MOCK_ANALYSES);
       } finally {

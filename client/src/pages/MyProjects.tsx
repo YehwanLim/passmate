@@ -9,7 +9,7 @@ import EmptyState from "@/components/my/EmptyState";
 import SkeletonCard from "@/components/my/SkeletonCard";
 
 // =============================================================================
-// Mock Data — API 응답과 동일한 형태 (연동 후 제거)
+// Mock Data — API 연동 실패 시 Fallback (최소 유지)
 // =============================================================================
 const MOCK_PROJECTS: ProjectSummary[] = [
   {
@@ -24,18 +24,6 @@ const MOCK_PROJECTS: ProjectSummary[] = [
       "데이터 기반 실행력은 강하지만, 네이버 웹툰 기준 '콘텐츠 임팩트 연결'이 부족합니다",
     keywords: ["데이터 기반 분석", "실행력", "문제 해결"],
   },
-  {
-    id: "mock-proj-2",
-    title: "토스 프론트엔드 개발 지원",
-    company_name: "토스(비바리퍼블리카)",
-    job_role: "프론트엔드 개발",
-    created_at: "2026-05-03T09:15:00Z",
-    analysis_count: 2,
-    total_chars: 1860,
-    summary:
-      "UI/UX 감각과 기술 역량은 충분하나, 금융 도메인 이해도를 보강해야 합니다",
-    keywords: ["UI/UX 감각", "컴포넌트 설계", "성능 최적화"],
-  },
 ];
 
 // =============================================================================
@@ -49,13 +37,13 @@ export default function MyProjects() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        // TODO: API 연동 시 아래 URL을 실제 엔드포인트로 교체
         const response = await fetch("/api/projects");
-        if (!response.ok) throw new Error("Failed to fetch projects");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data: ProjectSummary[] = await response.json();
         setProjects(data);
+        console.log(`[MyProjects] ✅ API 연동 성공 — ${data.length}개 프로젝트`);
       } catch (e) {
-        console.warn("[MyProjects] API 미연동 — Mock 데이터로 대체:", e);
+        console.warn("[MyProjects] ⚠️ API 실패 — Mock 데이터로 대체:", e);
         setProjects(MOCK_PROJECTS);
       } finally {
         setIsLoading(false);
