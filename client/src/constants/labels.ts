@@ -85,6 +85,25 @@ export const UI_LABELS = {
   DIAGNOSIS_DETAIL: "진단 상세",
   ORIGINAL_ANALYSIS: "원본 분석",
 
+  // Feedback (만족도)
+  FEEDBACK_TITLE: "이 리포트, 실제로 도움이 됐나요?",
+  FEEDBACK_SUBTITLE: "더 나은 분석을 위해 의견을 남겨주세요.",
+  FEEDBACK_THUMBS_UP: "도움됐어요",
+  FEEDBACK_THUMBS_DOWN: "아쉬워요",
+  FEEDBACK_REASON_TITLE: "어떤 부분이 아쉬웠나요?",
+  FEEDBACK_REASONS: [
+    "피드백이 너무 일반적이에요",
+    "내 자소서와 맞지 않는 분석이에요",
+    "개선안이 도움이 안 돼요",
+    "기업 분석이 부정확해요",
+    "기타",
+  ] as string[],
+  FEEDBACK_SUBMIT: "의견 보내기",
+  FEEDBACK_THANKS_TITLE: "소중한 의견 감사합니다",
+  FEEDBACK_THANKS_DESC: "더 나은 리포트를 위해 활용하겠습니다.",
+  FEEDBACK_ALREADY_VOTED: "이미 의견을 보내주셨어요",
+  FEEDBACK_ERROR: "의견 전송에 실패했어요. 잠시 후 다시 시도해주세요.",
+
   // API Test Messages
   API_TEST_SENDING: "API 테스트 요청 중...",
   API_TEST_SUCCESS: "API 연결 성공",

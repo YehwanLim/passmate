@@ -4,6 +4,7 @@ import { X, Check, ChevronDown, ArrowRight, FileText, Sparkles, ArrowLeft, Downl
 import type { ReportData } from "../types/report"
 import { UI_LABELS } from "../constants/labels"
 import { loadReportData, loadAnalysisFromStorage } from "../utils/storage"
+import FeedbackSection from "../components/FeedbackSection"
 
 const FALLBACK_DATA: ReportData = {
     companyInsight: {
@@ -90,6 +91,7 @@ export default function PassMateReport() {
     const storedAnalysis = loadAnalysisFromStorage()
     const targetCompany = storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "지원 기업"
     const userName = storedAnalysis?.jobKeyword || sessionStorage.getItem('passmate_job') || "지원자"
+    const analysisId = storedAnalysis?.analysis_id || null
 
     const [reportData, setReportData] = useState<ReportData>(() => {
         // mock 모드: 무조건 FALLBACK_DATA 사용
@@ -621,6 +623,11 @@ export default function PassMateReport() {
                         </div>
                     </div>
                 </section>
+
+                {/* ================================================================= */}
+                {/* FEEDBACK SECTION */}
+                {/* ================================================================= */}
+                <FeedbackSection analysisId={analysisId} />
 
                 {/* ================================================================= */}
                 {/* PREMIUM UPSELL */}

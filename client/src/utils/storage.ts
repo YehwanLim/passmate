@@ -18,6 +18,10 @@ export const STORAGE_KEYS = {
   LATEST_ANALYSIS: "passmate_latest_analysis",
   /** 작성 중인 자소서 초안 */
   DRAFT: "passmate_draft",
+  /** 익명 사용자 UUID */
+  ANONYMOUS_USER_ID: "passmate_anonymous_uid",
+  /** Feedback 캐시 접두사 (passmate_feedback_{analysisId}) */
+  FEEDBACK_PREFIX: "passmate_feedback_",
   /** [레거시] sessionStorage 분석 결과 — 추후 제거 예정 */
   SESSION_RESULT: "passmate_analysis_result",
   SESSION_QUESTIONS: "passmate_raw_questions",
@@ -62,6 +66,8 @@ export interface StoredAnalysis {
   created_at: string;
   /** 프로젝트 ID (DB 저장 시 부여, 없으면 null) */
   project_id: string | null;
+  /** DB Analysis ID (Feedback 연결용, DB 저장 시 부여) */
+  analysis_id?: string;
 }
 
 /** localStorage 저장 포맷 (메타데이터 래퍼) */
@@ -286,3 +292,63 @@ export const saveAnalysisResult = saveAnalysisToStorage;
 
 /** @deprecated loadAnalysisFromStorage() 사용 권장 */
 export const loadAnalysisResult = loadAnalysisFromStorage;
+
+// ─────────────────────────────────────────────────────────────
+// 익명 사용자 UUID — Feedback 등 비로그인 기능에 사용
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * 익명 사용자 UUID를 조회하거나 발급
+ * - localStorage에 저장하여 세션 간 동일 UUID 유지
+ * - 향후 로그인 시 실제 계정으로 병합 가능
+ */
+export function getAnonymousUserId(): string {
+  if (!isBrowser()) return "";
+
+  try {
+    const existing = localStorage.getItem(STORAGE_KEYS.ANONYMOUS_USER_ID);
+    if (existing) return existing;
+
+    const newId = crypto.randomUUID();
+    localStorage.setItem(STORAGE_KEYS.ANONYMOUS_USER_ID, newId);
+    return newId;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Feedback — 로컬 캐싱 (중복 투표 방지 + 상태 복원)
+// ─────────────────────────────────────────────────────────────
+
+/** Feedback 로컬 캐시 구조 */
+export interface StoredFeedback {
+  rating: "THUMBS_UP" | "THUMBS_DOWN";
+  comment?: string;
+  savedAt: string;
+}
+
+/** 특정 분석에 대한 Feedback을 localStorage에 캐싱 */
+export function saveFeedbackLocally(analysisId: string, feedback: StoredFeedback): void {
+  if (!isBrowser()) return;
+  try {
+    localStorage.setItem(
+      STORAGE_KEYS.FEEDBACK_PREFIX + analysisId,
+      JSON.stringify(feedback)
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+/** 특정 분석에 대한 캐싱된 Feedback 조회 */
+export function loadFeedbackLocally(analysisId: string): StoredFeedback | null {
+  if (!isBrowser()) return null;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.FEEDBACK_PREFIX + analysisId);
+    if (stored) return JSON.parse(stored) as StoredFeedback;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
