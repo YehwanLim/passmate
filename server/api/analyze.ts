@@ -1,6 +1,7 @@
 // No SDK imports needed; using raw fetch
 import dotenv from "dotenv";
 import { MASTER_SYSTEM_PROMPT } from "../prompts/reportPrompt";
+import { getGeminiUrl } from "../config/gemini";
 
 dotenv.config();
 
@@ -19,7 +20,66 @@ interface AnalyzeRequest {
   content?: string;
 }
 
-// Gemini API call
+// =============================================================================
+// Gemini API 호출 (재시도 로직 포함)
+// =============================================================================
+
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 3000; // 첫 재시도 3초, 이후 지수 백오프
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Gemini API에 단일 요청을 보낸다.
+ * 성공 시 parsed JSON, 실패 시 throw.
+ */
+async function callGeminiOnce(userPrompt: string): Promise<any> {
+  const url = getGeminiUrl(GEMINI_API_KEY!);
+
+  const apiRes = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        { role: "user", parts: [{ text: MASTER_SYSTEM_PROMPT + "\n\n" + userPrompt }] }
+      ]
+    })
+  });
+
+  if (!apiRes.ok) {
+    const errorText = await apiRes.text();
+    const err = new Error(`Google API Error ${apiRes.status}: ${errorText}`) as any;
+    err.statusCode = apiRes.status;
+    throw err;
+  }
+
+  const data = await apiRes.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  if (!rawText) {
+    throw new Error("Gemini 응답이 비어 있습니다.");
+  }
+
+  const parsed = safeParseJson(rawText);
+  if (!parsed) {
+    throw new Error("Gemini 응답 JSON 파싱 실패");
+  }
+
+  return parsed;
+}
+
+/**
+ * 재시도 가능한 HTTP 상태 코드인지 판별
+ * 503 (과부하), 429 (Rate Limit), 500 (서버 내부) 에 대해 재시도
+ */
+function isRetryable(error: any): boolean {
+  const code = error?.statusCode;
+  return code === 503 || code === 429 || code === 500;
+}
+
+// Gemini API call (메인 진입점)
 export async function analyzeCoverLetter(input: AnalyzeRequest | string) {
   let request: AnalyzeRequest;
   if (typeof input === "string") {
@@ -31,64 +91,50 @@ export async function analyzeCoverLetter(input: AnalyzeRequest | string) {
   }
 
   if (!GEMINI_API_KEY) {
-    console.warn("GEMINI_API_KEY not set - returning dummy data");
-    return buildFallbackData(request);
+    console.error("[analyze] ❌ GEMINI_API_KEY not set");
+    throw new Error("GEMINI_API_KEY가 설정되지 않았습니다. 서버 환경변수를 확인해주세요.");
   }
 
   const userPrompt = buildUserPrompt(request);
 
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  // 재시도 루프 (최대 MAX_RETRIES회)
+  let lastError: any = null;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        console.log(`[analyze] ⏳ 재시도 ${attempt}/${MAX_RETRIES} (${delay}ms 후)...`);
+        await sleep(delay);
+      }
 
-    const apiRes = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: MASTER_SYSTEM_PROMPT + "\n\n" + userPrompt }] }
-        ]
-      })
-    });
+      const parsed = await callGeminiOnce(userPrompt);
 
-    if (!apiRes.ok) {
-      const errorText = await apiRes.text();
-      throw new Error(`Google API Error ${apiRes.status}: ${errorText}`);
+      // questionTabs에 원본 질문/답변 주입 (서버 소스 오브 트루스)
+      if (parsed.questionTabs) {
+        parsed.questionTabs.forEach((tab: any, idx: number) => {
+          if (request.questions[idx]) {
+            tab.fullAnswer = request.questions[idx].answer;
+            tab.prompt = request.questions[idx].question || `문항 ${idx + 1}`;
+          }
+        });
+      }
+
+      console.log(`[analyze] ✅ Gemini 응답 파싱 성공 (시도 ${attempt + 1})`);
+      return parsed;
+    } catch (error: any) {
+      lastError = error;
+      console.error(`[analyze] 시도 ${attempt + 1} 실패:`, error.message);
+
+      // 재시도 불가능한 에러면 즉시 중단
+      if (!isRetryable(error)) {
+        break;
+      }
     }
-
-    const data = await apiRes.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    if (!rawText) {
-      console.error("[analyze] Gemini 응답이 비어 있습니다.");
-      return buildFallbackData(request);
-    }
-
-    // JSON 안전 파싱: 코드블록 제거 → { } 범위 추출 → parse
-    const parsed = safeParseJson(rawText);
-
-    if (!parsed) {
-      console.error("[analyze] JSON 파싱 최종 실패 → fallback 반환");
-      return buildFallbackData(request);
-    }
-
-    // questionTabs에 원본 질문/답변 주입 (서버 소스 오브 트루스)
-    if (parsed.questionTabs) {
-      parsed.questionTabs.forEach((tab: any, idx: number) => {
-        if (request.questions[idx]) {
-          tab.fullAnswer = request.questions[idx].answer;
-          tab.prompt = request.questions[idx].question || `문항 ${idx + 1}`;
-        }
-      });
-    }
-
-    console.log("[analyze] ✅ Gemini 응답 파싱 성공");
-    return parsed;
-  } catch (error: any) {
-    console.error("[analyze] Gemini API call failed:", error.message);
-    return buildFallbackData(request);
   }
+
+  // 모든 재시도 소진 → 에러를 throw하여 프론트에서 인지하도록 함
+  console.error("[analyze] ❌ 모든 재시도 실패:", lastError?.message);
+  throw lastError || new Error("AI 분석 서비스에 연결할 수 없습니다.");
 }
 
 // =============================================================================

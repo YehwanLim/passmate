@@ -201,22 +201,22 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 1: FIRST IMPRESSION */}
                 {/* ================================================================= */}
-                <header className="pt-8 pb-16 border-b border-white/10">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium text-white tracking-tight leading-tight md:leading-tight text-balance mb-6">
+                <header className="pt-8 pb-20 border-b border-white/[0.06]">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-white tracking-tight leading-tight md:leading-tight text-balance mb-6">
                         {UI_LABELS.FIRST_IMPRESSION_TITLE(userName)}
                     </h1>
 
-                    <p className="text-lg text-zinc-300 leading-relaxed mb-8 max-w-3xl font-medium">
+                    <p className="text-xl text-zinc-200 leading-relaxed mb-8 max-w-3xl font-semibold">
                         {reportData.firstImpression.summaryOneLiner}
                     </p>
 
-                    {/* Persona + Hashtags */}
-                    <div className="bg-zinc-900/40 border border-white/[0.04] p-6 rounded-2xl mb-0">
-                        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3">{UI_LABELS.APPLICANT_PROFILE}</p>
+                    {/* Persona + Hashtags — Primary Card */}
+                    <div className="bg-zinc-900/60 border border-white/[0.08] p-7 rounded-2xl shadow-lg shadow-black/20 mb-0">
+                        <p className="text-xs text-[#6366F1]/60 uppercase tracking-widest mb-3">{UI_LABELS.APPLICANT_PROFILE}</p>
                         <p className="text-base text-white font-medium leading-relaxed mb-4">{reportData.firstImpression.persona}</p>
                         <div className="flex flex-wrap gap-2">
                             {reportData.firstImpression.hashtags.map((tag: string) => (
-                                <span key={tag} className="px-3 py-1 text-xs text-zinc-400 bg-zinc-800/60 border border-white/[0.06] rounded-full">{tag}</span>
+                                <span key={tag} className="px-3 py-1.5 text-xs text-zinc-300 bg-zinc-800/60 border border-white/[0.08] rounded-full font-medium">{tag}</span>
                             ))}
                         </div>
                     </div>
@@ -225,14 +225,14 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 1.5: COMPANY INSIGHT */}
                 {/* ================================================================= */}
-                <section className="py-16 border-b border-white/10">
-                    <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-3">{UI_LABELS.COMPANY_ANALYSIS}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-medium text-white mb-5 tracking-tight">{UI_LABELS.HIRING_CRITERIA(targetCompany)}</h3>
-                    <p className="text-base text-zinc-400 mb-10 max-w-2xl leading-relaxed">{reportData.companyInsight.summary}</p>
+                <section className="py-20 border-b border-white/[0.06]">
+                    <h2 className="text-sm uppercase tracking-widest text-[#6366F1]/60 mb-3">{UI_LABELS.COMPANY_ANALYSIS}</h2>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-5 tracking-tight">{UI_LABELS.HIRING_CRITERIA(targetCompany)}</h3>
+                    <p className="text-base text-zinc-400 mb-12 max-w-2xl leading-relaxed">{reportData.companyInsight.summary}</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Talent Keywords */}
-                        <div className="bg-zinc-900/40 border border-white/[0.04] p-6 rounded-xl">
+                        {/* Talent Keywords — Muted */}
+                        <div className="bg-zinc-900/25 border border-white/[0.03] p-6 rounded-xl">
                             <div className="flex items-center gap-2 mb-4">
                                 <Target className="w-4 h-4 text-zinc-500" />
                                 <p className="text-xs text-zinc-500 uppercase tracking-widest">{UI_LABELS.TALENT_PROFILE}</p>
@@ -244,38 +244,38 @@ export default function PassMateReport() {
                             </div>
                         </div>
 
-                        {/* Hiring Signals */}
-                        <div className="bg-zinc-900/40 border border-white/[0.04] p-6 rounded-xl">
+                        {/* Hiring Signals — Standard */}
+                        <div className="bg-zinc-900/40 border border-white/[0.05] p-6 rounded-xl">
                             <div className="flex items-center gap-2 mb-4">
-                                <Zap className="w-4 h-4 text-emerald-500/70" />
+                                <Zap className="w-4 h-4 text-emerald-400/80" />
                                 <p className="text-xs text-zinc-500 uppercase tracking-widest">{UI_LABELS.ACCEPTANCE_CRITERIA}</p>
                             </div>
                             <ul className="space-y-2">
                                 {reportData.companyInsight.hiringSignals.map((s, i) => (
                                     <li key={i} className="text-sm text-zinc-400 leading-relaxed flex items-start gap-2">
-                                        <Check className="w-3.5 h-3.5 text-emerald-500/60 mt-0.5 shrink-0" />{s}
+                                        <Check className="w-3.5 h-3.5 text-emerald-400/70 mt-0.5 shrink-0" />{s}
                                     </li>
                                 ))}
                             </ul>
                         </div>
 
-                        {/* Rejection Triggers */}
-                        <div className="bg-zinc-900/40 border border-red-500/[0.06] p-6 rounded-xl">
+                        {/* Rejection Triggers — Standard */}
+                        <div className="bg-zinc-900/40 border border-rose-400/[0.08] p-6 rounded-xl">
                             <div className="flex items-center gap-2 mb-4">
-                                <AlertTriangle className="w-4 h-4 text-red-400/70" />
-                                <p className="text-xs text-red-400/70 uppercase tracking-widest">{UI_LABELS.REJECTION_TRIGGERS}</p>
+                                <AlertTriangle className="w-4 h-4 text-rose-400/60" />
+                                <p className="text-xs text-rose-400/60 uppercase tracking-widest">{UI_LABELS.REJECTION_TRIGGERS}</p>
                             </div>
                             <ul className="space-y-2">
                                 {reportData.companyInsight.rejectionTriggers.map((r, i) => (
                                     <li key={i} className="text-sm text-zinc-400 leading-relaxed flex items-start gap-2">
-                                        <X className="w-3.5 h-3.5 text-red-400/50 mt-0.5 shrink-0" />{r}
+                                        <X className="w-3.5 h-3.5 text-rose-400/50 mt-0.5 shrink-0" />{r}
                                     </li>
                                 ))}
                             </ul>
                         </div>
 
-                        {/* Culture Signals */}
-                        <div className="bg-zinc-900/40 border border-white/[0.04] p-6 rounded-xl">
+                        {/* Culture Signals — Muted */}
+                        <div className="bg-zinc-900/25 border border-white/[0.03] p-6 rounded-xl">
                             <div className="flex items-center gap-2 mb-4">
                                 <MessageSquare className="w-4 h-4 text-zinc-500" />
                                 <p className="text-xs text-zinc-500 uppercase tracking-widest">{UI_LABELS.CULTURE_SIGNALS}</p>
@@ -292,26 +292,26 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 2: CORE DIAGNOSIS */}
                 {/* ================================================================= */}
-                <section className="py-16 border-b border-white/10">
-                    <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-3">{UI_LABELS.CORE_DIAGNOSIS}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-medium text-white mb-10 tracking-tight">{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
+                <section className="py-20 border-b border-white/[0.06]">
+                    <h2 className="text-sm uppercase tracking-widest text-[#6366F1]/60 mb-3">{UI_LABELS.CORE_DIAGNOSIS}</h2>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-12 tracking-tight">{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-14">
                         <div>
-                            <p className="text-xs text-emerald-400/70 uppercase tracking-widest mb-4 font-medium">{UI_LABELS.STRENGTHS}</p>
+                            <p className="text-xs text-emerald-400/80 uppercase tracking-widest mb-4 font-medium">{UI_LABELS.STRENGTHS}</p>
                             <div className="space-y-3">
                                 {reportData.strengths.map((s, i) => (
-                                    <div key={i} className="bg-zinc-900/40 border border-emerald-500/[0.08] p-5 rounded-xl">
+                                    <div key={i} className="bg-zinc-900/40 border border-emerald-400/[0.12] p-5 rounded-xl">
                                         <p className="text-sm text-zinc-300 leading-relaxed">{s}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
                         <div>
-                            <p className="text-xs text-amber-400/70 uppercase tracking-widest mb-4 font-medium">{UI_LABELS.GAPS}</p>
+                            <p className="text-xs text-amber-300/60 uppercase tracking-widest mb-4 font-medium">{UI_LABELS.GAPS}</p>
                             <div className="space-y-3">
                                 {reportData.gaps.map((g, i) => (
-                                    <div key={i} className="bg-zinc-900/40 border border-amber-500/[0.08] p-5 rounded-xl">
+                                    <div key={i} className="bg-zinc-900/40 border border-amber-300/[0.10] p-5 rounded-xl">
                                         <p className="text-sm text-zinc-300 leading-relaxed">{g}</p>
                                     </div>
                                 ))}
@@ -319,9 +319,9 @@ export default function PassMateReport() {
                         </div>
                     </div>
 
-                    {/* Positioning */}
-                    <div className="bg-zinc-900/40 border border-white/[0.04] p-8 rounded-2xl">
-                        <p className="text-xs text-zinc-500 uppercase tracking-widest mb-6">{UI_LABELS.STRATEGIC_POSITIONING}</p>
+                    {/* Positioning — Primary Card */}
+                    <div className="bg-zinc-900/60 border border-white/[0.08] p-8 rounded-2xl shadow-lg shadow-black/20">
+                        <p className="text-xs text-[#6366F1]/60 uppercase tracking-widest mb-6">{UI_LABELS.STRATEGIC_POSITIONING}</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">{UI_LABELS.POSITION_CURRENT}</p>
@@ -329,13 +329,13 @@ export default function PassMateReport() {
                             </div>
                             <div>
                                 <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">{UI_LABELS.POSITION_TARGET}</p>
-                                <p className="text-sm text-white font-medium leading-relaxed">{reportData.positioning.target}</p>
+                                <p className="text-sm text-white font-semibold leading-relaxed">{reportData.positioning.target}</p>
                             </div>
                         </div>
-                        <div className="border-t border-white/[0.04] pt-5 space-y-4">
+                        <div className="border-t border-white/[0.06] pt-5 space-y-4">
                             <div>
                                 <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">{UI_LABELS.POSITION_GAP}</p>
-                                <p className="text-sm text-amber-400/80 leading-relaxed">{reportData.positioning.gap}</p>
+                                <p className="text-sm text-amber-300 font-medium leading-relaxed">{reportData.positioning.gap}</p>
                             </div>
                             <div>
                                 <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">{UI_LABELS.POSITION_STRATEGY}</p>
@@ -349,41 +349,41 @@ export default function PassMateReport() {
             {/* ================================================================= */}
             {/* ACT 3: LINE-BY-LINE ANALYSIS (Split View) */}
             {/* ================================================================= */}
-            <section className="py-16 border-b border-white/10 max-w-[1440px] mx-auto px-6 md:px-10">
+            <section className="py-16 border-b border-white/[0.06] max-w-[1440px] mx-auto px-6 md:px-10">
                 <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-3">{UI_LABELS.DETAILED_DIAGNOSIS}</h2>
-                <h3 className="text-2xl sm:text-3xl font-medium text-white mb-6 tracking-tight">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
+                <h3 className="text-xl sm:text-2xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
 
                 {/* Tab buttons */}
                 <div className="flex items-center gap-1 mb-5">
                     {reportData.questionTabs.map((tab, index) => (
                         <button key={tab.id} onClick={() => handleTabChange(index)}
-                            className={`px-5 py-2 text-sm rounded-lg transition-all ${activeTab === index ? "bg-white/[0.08] text-white font-medium" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]"}`}>
+                            className={`px-5 py-2 text-sm rounded-lg transition-all ${activeTab === index ? "bg-[#6366F1]/[0.12] text-white font-semibold border border-[#6366F1]/30 shadow-sm shadow-[#6366F1]/10" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]"}`}>
                             {tab.title}
                         </button>
                     ))}
                 </div>
 
                 {/* Split View */}
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-0 border border-white/[0.06] rounded-2xl overflow-hidden" style={{ minHeight: '620px' }}>
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-0 border border-white/[0.05] rounded-2xl overflow-hidden" style={{ minHeight: '620px' }}>
 
                     {/* LEFT PANEL */}
-                    <div className="border-r border-white/[0.06] flex flex-col bg-zinc-900/20">
-                        <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+                    <div className="border-r border-white/[0.05] flex flex-col bg-zinc-900/20">
+                        <div className="px-5 py-3.5 border-b border-white/[0.05] flex items-center justify-between shrink-0">
                             <p className="text-[11px] text-zinc-500 uppercase tracking-widest">{UI_LABELS.FEEDBACK}</p>
                             <div className="flex bg-zinc-800/60 rounded-lg p-0.5">
                                 <button onClick={() => setViewMode('focus')}
-                                    className={`px-3 py-1 text-[11px] rounded-md transition-all ${viewMode === 'focus' ? 'bg-zinc-700 text-white font-medium shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                                    className={`px-3 py-1 text-[11px] rounded-md transition-all ${viewMode === 'focus' ? 'bg-zinc-700 text-white font-semibold shadow-sm ring-1 ring-[#6366F1]/30' : 'text-zinc-500 hover:text-zinc-300'}`}>
                                     {UI_LABELS.VIEW_MODE_FOCUS}
                                 </button>
                                 <button onClick={() => setViewMode('list')}
-                                    className={`px-3 py-1 text-[11px] rounded-md transition-all ${viewMode === 'list' ? 'bg-zinc-700 text-white font-medium shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                                    className={`px-3 py-1 text-[11px] rounded-md transition-all ${viewMode === 'list' ? 'bg-zinc-700 text-white font-semibold shadow-sm ring-1 ring-[#6366F1]/30' : 'text-zinc-500 hover:text-zinc-300'}`}>
                                     {UI_LABELS.VIEW_MODE_LIST}
                                 </button>
                             </div>
                         </div>
 
                         {/* Subtitle diagnosis */}
-                        <div className="border-b border-white/[0.06] shrink-0">
+                        <div className="border-b border-white/[0.05] shrink-0">
                             <button onClick={() => setShowSubtitle(!showSubtitle)}
                                 className="w-full px-5 py-3 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors">
                                 <span className="text-[11px] text-zinc-500 uppercase tracking-widest">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
@@ -408,7 +408,7 @@ export default function PassMateReport() {
                         </div>
 
                         {/* Overview */}
-                        <div className="px-5 py-3 border-b border-white/[0.06] shrink-0">
+                        <div className="px-5 py-3 border-b border-white/[0.05] shrink-0">
                             <p className="text-xs text-zinc-500 leading-relaxed">{currentTab.overview}</p>
                         </div>
 
@@ -425,7 +425,7 @@ export default function PassMateReport() {
                                     const isActive = activeCardIndex === realIdx
                                     return (
                                         <div key={realIdx} onClick={() => setActiveCardIndex(realIdx)}
-                                            className={`rounded-xl overflow-hidden cursor-pointer transition-all ${isActive ? 'border border-[#6366F1]/40 shadow-lg shadow-[#6366F1]/5 bg-zinc-800/50' : 'border border-white/[0.06] bg-zinc-800/30 hover:border-white/[0.12] shadow-sm shadow-black/10'}`}>
+                                            className={`rounded-xl overflow-hidden cursor-pointer transition-all ${isActive ? 'border border-[#6366F1]/35 shadow-lg shadow-[#6366F1]/8 bg-[#6366F1]/[0.04]' : 'border border-white/[0.06] bg-zinc-800/30 hover:border-white/[0.12] shadow-sm shadow-black/10'}`}>
                                             <div className="px-4 pt-3.5 pb-2.5 flex items-start gap-3">
                                                 <span className={`shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center mt-0.5 ${isActive ? 'bg-[#6366F1] text-white' : 'bg-[#6366F1]/60 text-white/80'}`}>
                                                     {realIdx + 1}
@@ -443,8 +443,8 @@ export default function PassMateReport() {
                                             </div>
                                             {/* Interview Link */}
                                             {card.interviewLink && (
-                                                <div className="px-4 py-2.5 bg-amber-500/[0.04] border-t border-amber-500/[0.08]">
-                                                    <p className="text-[10px] text-amber-400/70 tracking-wider uppercase mb-1">{UI_LABELS.INTERVIEW_ATTACK_POINT}</p>
+                                                <div className="px-4 py-2.5 bg-amber-400/[0.04] border-t border-amber-300/[0.08]">
+                                                    <p className="text-[10px] text-amber-300/60 tracking-wider uppercase mb-1">{UI_LABELS.INTERVIEW_ATTACK_POINT}</p>
                                                     <p className="text-xs text-zinc-400 leading-relaxed">"{card.interviewLink.question}"</p>
                                                 </div>
                                             )}
@@ -455,7 +455,7 @@ export default function PassMateReport() {
                                                         {card.type === 'improvement' ? card.suggestion : card.original}
                                                     </p>
                                                     <button onClick={(e) => { e.stopPropagation(); setAiLogicModal({ isOpen: true, original: card.original, feedback: card.type === 'praise' ? card.praisePoint : card.feedback, suggestion: card.type === 'improvement' ? card.suggestion : undefined, type: card.type, interviewLink: card.interviewLink }) }}
-                                                        className="shrink-0 text-[11px] text-zinc-400 px-3 py-1.5 rounded-lg border border-zinc-600/80 hover:border-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] transition-all mt-0.5 font-medium">
+                                                        className="shrink-0 text-[11px] text-zinc-400 px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-[#6366F1]/40 hover:text-[#6366F1] hover:bg-[#6366F1]/[0.04] transition-all mt-0.5 font-medium">
                                                         {UI_LABELS.DETAIL_VIEW}
                                                     </button>
                                                 </div>
@@ -469,7 +469,7 @@ export default function PassMateReport() {
 
                     {/* RIGHT PANEL */}
                     <div className="flex flex-col">
-                        <div className="px-6 py-3.5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+                        <div className="px-6 py-3.5 border-b border-white/[0.05] flex items-center justify-between shrink-0">
                             <p className="text-[11px] text-zinc-500 uppercase tracking-widest">{UI_LABELS.ORIGINAL_TEXT_PANEL}</p>
                             <p className="text-[11px] text-zinc-600">{currentTab.title}</p>
                         </div>
@@ -503,7 +503,7 @@ export default function PassMateReport() {
                                                     const isActive = activeCardIndex === matchedCardIdx
                                                     result.push(
                                                         <span key={`hl-${pIdx}-${keyCounter++}`} onClick={() => setActiveCardIndex(matchedCardIdx)}
-                                                            className={`cursor-pointer relative inline rounded-sm px-0.5 -mx-0.5 transition-all duration-200 ${isActive ? 'bg-[#6366F1]/35 text-white ring-1 ring-[#6366F1]/50' : 'bg-[#6366F1]/[0.12] text-zinc-300 hover:bg-[#6366F1]/25 hover:text-white'}`}>
+                                                            className={`cursor-pointer relative inline rounded-sm px-0.5 -mx-0.5 transition-all duration-200 ${isActive ? 'bg-[#6366F1]/30 text-white ring-1 ring-[#6366F1]/40' : 'bg-[#6366F1]/[0.10] text-zinc-300 hover:bg-[#6366F1]/20 hover:text-white'}`}>
                                                             <span className="absolute -top-3.5 -left-0.5 w-[18px] h-[18px] rounded-full bg-[#6366F1] text-white text-[9px] font-bold flex items-center justify-center shadow-sm shadow-[#6366F1]/30">
                                                                 {matchedCardIdx + 1}
                                                             </span>
@@ -531,9 +531,9 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 4: INTERVIEW DRILL */}
                 {/* ================================================================= */}
-                <section className="py-20 border-b border-white/10">
+                <section className="pt-24 pb-20 border-b border-white/[0.06]">
                     <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-4">{UI_LABELS.INTERVIEW_DRILL}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-medium text-white mb-5 tracking-tight">{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-5 tracking-tight">{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
                     <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-relaxed">{UI_LABELS.INTERVIEW_DRILL_DESC}</p>
 
                     <div className="space-y-2">
@@ -550,11 +550,11 @@ export default function PassMateReport() {
                                         {/* Follow-ups */}
                                         {item.followUps && item.followUps.length > 0 && (
                                             <div className="mb-4">
-                                                <p className="text-[11px] uppercase tracking-widest text-amber-400/60 mb-2">{UI_LABELS.FOLLOW_UP_QUESTIONS}</p>
+                                                <p className="text-[11px] uppercase tracking-widest text-amber-300/50 mb-2">{UI_LABELS.FOLLOW_UP_QUESTIONS}</p>
                                                 <ul className="space-y-1.5">
                                                     {item.followUps.map((fu, fi) => (
                                                         <li key={fi} className="text-sm text-zinc-500 leading-relaxed flex items-start gap-2">
-                                                            <ArrowRight className="w-3 h-3 text-amber-400/40 mt-1 shrink-0" />{fu}
+                                                            <ArrowRight className="w-3 h-3 text-amber-300/40 mt-1 shrink-0" />{fu}
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -572,13 +572,13 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 5: ACTION PLAN */}
                 {/* ================================================================= */}
-                <section className="py-20 border-b border-white/10">
+                <section className="py-16 border-b border-white/[0.06]">
                     <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-4">{UI_LABELS.ACTION_PLAN}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-medium text-white mb-5 tracking-tight">{UI_LABELS.ACTION_PLAN_TITLE}</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-white mb-5 tracking-tight">{UI_LABELS.ACTION_PLAN_TITLE}</h3>
 
                     <div className="flex items-center gap-5 mb-14 mt-10">
                         <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-zinc-400 transition-all duration-500" style={{ width: `${taskProgress}%` }} />
+                            <div className="h-full bg-[#6366F1] transition-all duration-500" style={{ width: `${taskProgress}%` }} />
                         </div>
                         <span className="text-sm text-zinc-500 tabular-nums">{completedTasks.length}/{reportData.actionPlan.length}</span>
                     </div>
@@ -588,13 +588,13 @@ export default function PassMateReport() {
                             const isComplete = completedTasks.includes(index)
                             return (
                                 <button key={index} onClick={() => toggleTask(index)} className="w-full text-left py-5 flex items-start gap-5 group">
-                                    <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors mt-0.5 ${isComplete ? "bg-zinc-300 border-zinc-300" : "border-zinc-600 group-hover:border-zinc-400"}`}>
-                                        {isComplete && <Check className="w-3 h-3 text-zinc-900" />}
+                                    <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors mt-0.5 ${isComplete ? "bg-[#6366F1] border-[#6366F1]" : "border-zinc-600 group-hover:border-zinc-400"}`}>
+                                        {isComplete && <Check className="w-3 h-3 text-white" />}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <span className={`text-base transition-colors leading-relaxed block mb-1 ${isComplete ? "line-through text-zinc-600" : "text-zinc-200 group-hover:text-white"}`}>{task.title}</span>
                                         <p className={`text-sm transition-colors leading-relaxed ${isComplete ? "text-zinc-700" : "text-zinc-500"}`}>{task.description}</p>
-                                        <p className={`text-xs mt-2 transition-colors ${isComplete ? "text-zinc-700" : "text-emerald-500/60"}`}>{UI_LABELS.EXPECTED_IMPACT}: {task.expectedImpact}</p>
+                                        <p className={`text-xs mt-2 transition-colors ${isComplete ? "text-zinc-700" : "text-emerald-400/60"}`}>{UI_LABELS.EXPECTED_IMPACT}: {task.expectedImpact}</p>
                                     </div>
                                 </button>
                             )
@@ -605,9 +605,9 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 6: PM COMMENT */}
                 {/* ================================================================= */}
-                <section className="py-20 border-b border-white/10">
+                <section className="pt-24 pb-16 border-b border-white/[0.06]">
                     <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-4">{UI_LABELS.PM_VERDICT}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-medium text-white mb-10 tracking-tight">{UI_LABELS.PM_VERDICT_TITLE}</h3>
+                    <h3 className="text-xl sm:text-2xl font-medium text-white mb-10 tracking-tight">{UI_LABELS.PM_VERDICT_TITLE}</h3>
                     <div className="flex items-start gap-4">
                         <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center shrink-0 mt-0.5">
                             <span className="text-zinc-300 text-xs font-bold tracking-tight">PM</span>
@@ -617,7 +617,7 @@ export default function PassMateReport() {
                                 <span className="text-sm font-medium text-white">PM Yehwan</span>
                                 <span className="text-xs text-zinc-600">{UI_LABELS.JUST_NOW}</span>
                             </div>
-                            <div className="border-l-2 border-zinc-700 pl-5">
+                            <div className="border-l-2 border-[#6366F1]/30 pl-5">
                                 <p className="text-sm text-zinc-400 leading-loose">{reportData.pmComment}</p>
                             </div>
                         </div>
@@ -717,7 +717,7 @@ export default function PassMateReport() {
                                     <span className="text-[11px] text-zinc-500 font-medium tabular-nums">02</span>
                                     <span className="text-sm font-medium text-zinc-300">{aiLogicModal.type === "praise" ? UI_LABELS.STRENGTHS : UI_LABELS.IMPROVED_SENTENCE}</span>
                                 </div>
-                                <div className="ml-7 border-l border-[#6B8AFF]/30 pl-4 space-y-4">
+                                <div className="ml-7 border-l-2 border-[#6366F1]/30 pl-4 space-y-4">
                                     <p className="text-sm text-zinc-400 leading-relaxed">{aiLogicModal.feedback}</p>
                                     {aiLogicModal.suggestion && (
                                         <div className="pt-2 border-t border-white/[0.04]">
@@ -730,9 +730,9 @@ export default function PassMateReport() {
                                 <div>
                                     <div className="flex items-center gap-2.5 mb-3">
                                         <span className="text-[11px] text-zinc-500 font-medium tabular-nums">03</span>
-                                        <span className="text-sm font-medium text-amber-400/80">{UI_LABELS.INTERVIEW_ATTACK_POINT}</span>
+                                        <span className="text-sm font-medium text-amber-300/60">{UI_LABELS.INTERVIEW_ATTACK_POINT}</span>
                                     </div>
-                                    <div className="ml-7 border-l border-amber-400/20 pl-4 space-y-2">
+                                    <div className="ml-7 border-l border-amber-300/20 pl-4 space-y-2">
                                         <p className="text-sm text-zinc-300 leading-relaxed">"{aiLogicModal.interviewLink.question}"</p>
                                         <p className="text-xs text-zinc-500 leading-relaxed">{aiLogicModal.interviewLink.intent}</p>
                                     </div>

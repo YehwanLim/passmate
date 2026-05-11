@@ -427,9 +427,9 @@ export default function Analyze() {
     // 로컬 스토리지 초안 백업
     saveDraft({ company, selectedJob, customJob, questions });
 
-    // 타임아웃 설정 (60초)
+    // 타임아웃 설정 (120초 - AI 분석이 길어질 수 있으므로 여유롭게 설정)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
 
     try {
       const response = await fetch("/api/analyze", {
@@ -475,6 +475,21 @@ export default function Analyze() {
       if (!data || !Array.isArray(data.questionTabs) || data.questionTabs.length === 0) {
         console.error("❌ API 응답이 올바른 리포트 구조가 아닙니다:", data);
         setErrorModal({ title: "분석 오류", message: UI_LABELS.JSON_PARSE_ERROR });
+        return;
+      }
+
+      // 방어: fallback(더미) 데이터가 정상 응답으로 넘어온 경우 감지
+      const isFallback = data.questionTabs.every(
+        (tab: any) =>
+          (!tab.feedbackCards || tab.feedbackCards.length === 0) &&
+          (tab.overview?.includes("서비스 연결 실패") || tab.overview?.includes("연결할 수 없습니다"))
+      );
+      if (isFallback) {
+        console.error("❌ Fallback(더미) 데이터 감지 — AI 분석이 실패한 것으로 판단");
+        setErrorModal({
+          title: "분석 실패",
+          message: "AI 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해 주세요."
+        });
         return;
       }
 

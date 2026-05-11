@@ -143,6 +143,58 @@ function sanitizeInput(text) {
     .trim();
 }
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 3000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableStatus(status) {
+  return status === 503 || status === 429 || status === 500;
+}
+
+async function callGeminiOnce(userPrompt, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+
+  const apiRes = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    signal: controller.signal,
+    body: JSON.stringify({
+      contents: [
+        { role: "user", parts: [{ text: MASTER_SYSTEM_PROMPT + "\n\n" + userPrompt }] }
+      ]
+    })
+  });
+
+  clearTimeout(timeout);
+
+  if (!apiRes.ok) {
+    const errorText = await apiRes.text();
+    const err = new Error(`Google API Error ${apiRes.status}: ${errorText}`);
+    err.statusCode = apiRes.status;
+    throw err;
+  }
+
+  const data = await apiRes.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  if (!rawText) {
+    throw new Error("Gemini 응답이 비어 있습니다.");
+  }
+
+  const parsed = safeParseJson(rawText);
+  if (!parsed) {
+    throw new Error("Gemini 응답 JSON 파싱 실패");
+  }
+
+  return parsed;
+}
+
 async function analyzeCoverLetter(input) {
   let request;
   if (typeof input === "string") {
@@ -156,80 +208,52 @@ async function analyzeCoverLetter(input) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
-    console.warn("GEMINI_API_KEY not set - returning dummy data");
-    return buildFallbackData(request, "Vercel 환경변수에 GEMINI_API_KEY가 없습니다.");
+    console.error("[analyze] ❌ GEMINI_API_KEY not set");
+    throw new Error("GEMINI_API_KEY가 설정되지 않았습니다. 서버 환경변수를 확인해주세요.");
   }
 
   const userPrompt = buildUserPrompt(request);
 
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  let lastError = null;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        console.log(`[analyze] ⏳ 재시도 ${attempt}/${MAX_RETRIES} (${delay}ms 후)...`);
+        await sleep(delay);
+      }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 55000); // 55초 타임아웃 (Vercel 60초 한도 전에 중단)
+      const parsed = await callGeminiOnce(userPrompt, GEMINI_API_KEY);
 
-    const apiRes = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: MASTER_SYSTEM_PROMPT + "\n\n" + userPrompt }] }
-        ]
-      })
-    });
+      // 문맥 이탈 감지: AI가 CONTEXT_IRRELEVANT 에러 반환한 경우
+      if (parsed.error === "CONTEXT_IRRELEVANT") {
+        console.warn("[analyze] AI가 문맥 이탈로 판단:", parsed.message);
+        return { error: "CONTEXT_IRRELEVANT", message: parsed.message || "자기소개서와 무관한 내용입니다." };
+      }
 
-    clearTimeout(timeout);
+      if (parsed.questionTabs) {
+        parsed.questionTabs.forEach((tab, idx) => {
+          if (request.questions[idx]) {
+            tab.fullAnswer = request.questions[idx].answer;
+            tab.prompt = request.questions[idx].question || `문항 ${idx + 1}`;
+          }
+        });
+      }
 
-    // Rate Limit 감지
-    if (apiRes.status === 429) {
-      console.error("[analyze] Gemini API Rate Limit (429)");
-      return { error: "RATE_LIMIT", message: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." };
+      console.log(`[analyze] ✅ Gemini 응답 파싱 성공 (시도 ${attempt + 1})`);
+      return parsed;
+    } catch (error) {
+      lastError = error;
+      console.error(`[analyze] 시도 ${attempt + 1} 실패:`, error.message);
+
+      if (!isRetryableStatus(error.statusCode)) {
+        break;
+      }
     }
-
-    if (!apiRes.ok) {
-      const errorText = await apiRes.text();
-      throw new Error(`Google API Error ${apiRes.status}: ${errorText}`);
-    }
-
-    const data = await apiRes.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    if (!rawText) {
-      console.error("[analyze] Gemini 응답이 비어 있습니다.");
-      return buildFallbackData(request, "Gemini API 응답이 비어 있습니다.");
-    }
-
-    const parsed = safeParseJson(rawText);
-
-    if (!parsed) {
-      console.error("[analyze] JSON 파싱 최종 실패 → fallback 반환");
-      return buildFallbackData(request, "Gemini 응답 JSON 파싱에 실패했습니다.");
-    }
-
-    // 문맥 이탈 감지: AI가 CONTEXT_IRRELEVANT 에러 반환한 경우
-    if (parsed.error === "CONTEXT_IRRELEVANT") {
-      console.warn("[analyze] AI가 문맥 이탈로 판단:", parsed.message);
-      return { error: "CONTEXT_IRRELEVANT", message: parsed.message || "자기소개서와 무관한 내용입니다." };
-    }
-
-    if (parsed.questionTabs) {
-      parsed.questionTabs.forEach((tab, idx) => {
-        if (request.questions[idx]) {
-          tab.fullAnswer = request.questions[idx].answer;
-          tab.prompt = request.questions[idx].question || `문항 ${idx + 1}`;
-        }
-      });
-    }
-
-    console.log("[analyze] ✅ Gemini 응답 파싱 성공");
-    return parsed;
-  } catch (error) {
-    console.error("[analyze] Gemini API call failed:", error.message);
-    return buildFallbackData(request, `Gemini 호출 에러: ${error.message}`);
   }
+
+  console.error("[analyze] ❌ 모든 재시도 실패:", lastError?.message);
+  throw lastError || new Error("AI 분석 서비스에 연결할 수 없습니다.");
 }
 
 function safeParseJson(rawText) {

@@ -44,7 +44,7 @@ async function startServer() {
       if (!apiKey) {
         return res.status(500).json({ ok: false, error: "GEMINI_API_KEY가 .env에 설정되지 않았습니다." });
       }
-      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
       const apiRes = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
