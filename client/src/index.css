@@ -250,3 +250,160 @@
   background-size: 200% 200%;
   animation: gradient-move 4s ease infinite;
 }
+
+/* ── Editorial Report: Smooth Scroll ── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Editorial Report: Mini Navigator ── */
+.report-nav {
+  position: fixed;
+  top: 50%;
+  left: max(calc((100vw - 1600px) / 2), 12px);
+  transform: translateY(-50%);
+  width: 120px;
+  z-index: 40;
+  pointer-events: auto;
+}
+
+.report-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(180, 180, 180, 0.4);
+  transition: color 0.25s ease;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+}
+
+.report-nav-item::before {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  background: rgba(180, 180, 180, 0.1);
+  flex-shrink: 0;
+  transition: background 0.3s ease, height 0.3s ease;
+}
+
+.report-nav-item:hover { color: rgba(200, 200, 200, 0.7); }
+
+.report-nav-item.active {
+  color: #E5E5E5;
+  font-weight: 500;
+}
+
+.report-nav-item.active::before {
+  background: #4ADE80;
+  height: 18px;
+}
+
+/* ── Annotation Highlight: Clean underline ── */
+.annotation-hl {
+  position: relative;
+  display: inline;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  border-bottom: 2px solid rgba(74, 222, 128, 0.35);
+  padding-bottom: 1px;
+  color: #E5E5E5;
+}
+
+.annotation-hl:hover {
+  border-bottom-color: rgba(74, 222, 128, 0.7);
+  color: #fff;
+}
+
+.annotation-hl.active {
+  border-bottom-color: #4ADE80;
+  color: #fff;
+}
+
+/* Dimming effect — still readable */
+.original-text-dimmed .annotation-hl:not(.active) {
+  color: rgba(180, 180, 180, 0.45);
+  border-bottom-color: rgba(74, 222, 128, 0.1);
+  transition: all 0.3s ease-in-out;
+}
+.original-text-dimmed p {
+  color: rgba(180, 180, 180, 0.45);
+  transition: color 0.3s ease-in-out;
+}
+.original-text-dimmed .annotation-hl.active {
+  color: #fff;
+  border-bottom-color: #4ADE80;
+  transition: all 0.3s ease-in-out;
+}
+
+.annotation-badge {
+  position: absolute;
+  top: -12px;
+  left: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #333;
+  color: #999;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.annotation-hl:hover .annotation-badge,
+.annotation-hl.active .annotation-badge {
+  opacity: 1;
+  transform: scale(1);
+  background: #4ADE80;
+  color: #1A1A1A;
+}
+
+/* ── Fade-in ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeInUp 0.3s ease-out forwards; }
+
+/* ── Surface utilities (Greyscale) ── */
+.surface-base { background: #1A1A1A; }
+.surface-1 { background: #1E1E1E; }
+.surface-2 { background: #242424; }
+.surface-elevated { background: #2A2A2A; }
+
+/* ── Hide scrollbar ── */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Feedback card: Elevated active ── */
+.feedback-card {
+  transition: all 0.3s ease-in-out;
+  background: #242424;
+  border: 1px solid #333;
+  border-radius: 12px;
+  transform: scale(1);
+}
+.feedback-card:hover {
+  border-color: #444;
+  background: #2A2A2A;
+}
+.feedback-card.active {
+  border-color: rgba(74, 222, 128, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.015);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(74, 222, 128, 0.08);
+}
+
+/* ── Section divider ── */
+.section-divider { border-bottom: 1px solid #2A2A2A; }

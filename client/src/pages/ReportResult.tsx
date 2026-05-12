@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useLocation } from "wouter"
 import { X, Check, ChevronDown, ArrowRight, FileText, Sparkles, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, Target, Zap, MessageSquare } from "lucide-react"
 import type { ReportData } from "../types/report"
@@ -76,6 +76,46 @@ const FALLBACK_DATA: ReportData = {
     ],
     pmComment: "실행력은 상위 20%입니다. 다만, 지금 상태로는 '열심히 한 사람'이지 '뽑고 싶은 사람'은 아닙니다. 경험을 비즈니스 가치로 번역하는 한 줄이 빠져 있어요."
 }
+
+// =============================================================================
+// NAVIGATION SECTIONS
+// =============================================================================
+const NAV_SECTIONS = [
+    { id: 'section-first-impression', label: '첫인상' },
+    { id: 'section-company-insight', label: '기업 분석' },
+    { id: 'section-core-diagnosis', label: '핵심 진단' },
+    { id: 'section-line-analysis', label: '문장 분석' },
+    { id: 'section-interview-drill', label: '면접 대비' },
+    { id: 'section-action-plan', label: '실행 계획' },
+    { id: 'section-pm-comment', label: '총평' },
+]
+
+// =============================================================================
+// MINI NAVIGATOR
+// =============================================================================
+function MiniNavigator({ activeSection }: { activeSection: string }) {
+    return (
+        <nav className="report-nav hidden xl:block">
+            <div className="space-y-0.5">
+                {NAV_SECTIONS.map((sec, idx) => (
+                    <a
+                        key={sec.id}
+                        href={`#${sec.id}`}
+                        className={`report-nav-item ${activeSection === sec.id ? 'active' : ''}`}
+                        onClick={(e) => {
+                            e.preventDefault()
+                            document.getElementById(sec.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }}
+                    >
+                        <span className="text-[10px] tabular-nums opacity-60 min-w-[14px]">{String(idx + 1).padStart(2, '0')}</span>
+                        {sec.label}
+                    </a>
+                ))}
+            </div>
+        </nav>
+    )
+}
+
 // =============================================================================
 // MAIN COMPONENT
 // =============================================================================
@@ -117,7 +157,26 @@ export default function PassMateReport() {
     const [completedTasks, setCompletedTasks] = useState<number[]>([])
     const [viewMode, setViewMode] = useState<'focus' | 'list'>('list')
     const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null)
-    const [showSubtitle, setShowSubtitle] = useState(false)
+    const [showSubtitle, setShowSubtitle] = useState(true)
+    const [activeSection, setActiveSection] = useState(NAV_SECTIONS[0].id)
+
+    // ── Scroll Spy (IntersectionObserver) ──
+    useEffect(() => {
+        const observers: IntersectionObserver[] = []
+        NAV_SECTIONS.forEach((sec) => {
+            const el = document.getElementById(sec.id)
+            if (!el) return
+            const observer = new IntersectionObserver(
+                ([entry]) => {
+                    if (entry.isIntersecting) setActiveSection(sec.id)
+                },
+                { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
+            )
+            observer.observe(el)
+            observers.push(observer)
+        })
+        return () => observers.forEach((o) => o.disconnect())
+    }, [])
 
     useEffect(() => {
         if (toastMessage) {
@@ -162,7 +221,26 @@ export default function PassMateReport() {
 
     const taskProgress = Math.round((completedTasks.length / reportData.actionPlan.length) * 100)
     const currentTab = reportData.questionTabs[activeTab]
-    const visibleCards = viewMode === 'list' ? currentTab.feedbackCards : activeCardIndex !== null ? [currentTab.feedbackCards[activeCardIndex]] : []
+
+    // 원문 텍스트 위치 기준으로 번호 재배정 (위에서부터 1, 2, 3...)
+    const cardDisplayNumbers = useMemo(() => {
+        const fullText = currentTab.fullAnswer
+        const positions = currentTab.feedbackCards.map((card: any, idx: number) => ({
+            idx, pos: fullText.indexOf(card.original)
+        }))
+        positions.sort((a: any, b: any) => a.pos - b.pos)
+        const map: Record<number, number> = {}
+        positions.forEach((p: any, rank: number) => { map[p.idx] = rank + 1 })
+        return map
+    }, [currentTab])
+
+    const visibleCards = viewMode === 'list'
+        ? [...currentTab.feedbackCards].map((c: any, i: number) => ({ ...c, _origIdx: i })).sort((a: any, b: any) => {
+            const posA = currentTab.fullAnswer.indexOf(a.original)
+            const posB = currentTab.fullAnswer.indexOf(b.original)
+            return posA - posB
+        })
+        : activeCardIndex !== null ? [{ ...currentTab.feedbackCards[activeCardIndex], _origIdx: activeCardIndex }] : []
 
     useEffect(() => {
         const anyOpen = aiLogicModal?.isOpen
@@ -177,7 +255,8 @@ export default function PassMateReport() {
     }, [aiLogicModal?.isOpen])
 
     return (
-        <main className="min-h-screen bg-[#09090B] text-zinc-100 font-sans selection:bg-zinc-700/50">
+        <main className="min-h-screen bg-[#09090B] text-zinc-100 font-sans selection:bg-indigo-500/20">
+            <MiniNavigator activeSection={activeSection} />
             <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10">
                 {/* TOP NAV */}
                 <div className="pt-8 pb-4 flex items-center justify-between">
@@ -201,22 +280,22 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 1: FIRST IMPRESSION */}
                 {/* ================================================================= */}
-                <header className="pt-8 pb-20 border-b border-white/[0.06]">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-white tracking-tight leading-tight md:leading-tight text-balance mb-6">
+                <header id="section-first-impression" className="pt-8 pb-24 section-divider">
+                    <h1 className="text-3xl sm:text-4xl md:text-[2.75rem] font-semibold text-white tracking-tight leading-snug md:leading-snug text-balance mb-8">
                         {UI_LABELS.FIRST_IMPRESSION_TITLE(userName)}
                     </h1>
 
-                    <p className="text-xl text-zinc-200 leading-relaxed mb-8 max-w-3xl font-semibold">
+                    <p className="text-lg sm:text-xl text-zinc-200 leading-[1.7] mb-10 max-w-3xl font-medium">
                         {reportData.firstImpression.summaryOneLiner}
                     </p>
 
                     {/* Persona + Hashtags — Primary Card */}
-                    <div className="bg-zinc-900/60 border border-white/[0.08] p-7 rounded-2xl shadow-lg shadow-black/20 mb-0">
-                        <p className="text-xs text-[#6366F1]/60 uppercase tracking-widest mb-3">{UI_LABELS.APPLICANT_PROFILE}</p>
-                        <p className="text-base text-white font-medium leading-relaxed mb-4">{reportData.firstImpression.persona}</p>
+                    <div className="bg-white/[0.02] border border-white/[0.05] p-7 rounded-xl">
+                        <p className="text-sm text-zinc-500 uppercase tracking-[0.15em] mb-3 font-medium">{UI_LABELS.APPLICANT_PROFILE}</p>
+                        <p className="text-[17px] text-zinc-100 font-medium leading-[1.7] mb-5">{reportData.firstImpression.persona}</p>
                         <div className="flex flex-wrap gap-2">
                             {reportData.firstImpression.hashtags.map((tag: string) => (
-                                <span key={tag} className="px-3 py-1.5 text-xs text-zinc-300 bg-zinc-800/60 border border-white/[0.08] rounded-full font-medium">{tag}</span>
+                                <span key={tag} className="px-3 py-1.5 text-xs text-zinc-400 bg-white/[0.03] border border-white/[0.04] rounded-full font-medium">{tag}</span>
                             ))}
                         </div>
                     </div>
@@ -225,64 +304,52 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 1.5: COMPANY INSIGHT */}
                 {/* ================================================================= */}
-                <section className="py-20 border-b border-white/[0.06]">
-                    <h2 className="text-sm uppercase tracking-widest text-[#6366F1]/60 mb-3">{UI_LABELS.COMPANY_ANALYSIS}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-5 tracking-tight">{UI_LABELS.HIRING_CRITERIA(targetCompany)}</h3>
-                    <p className="text-base text-zinc-400 mb-12 max-w-2xl leading-relaxed">{reportData.companyInsight.summary}</p>
+                <section id="section-company-insight" className="py-24 section-divider">
+                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.COMPANY_ANALYSIS}</h2>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.HIRING_CRITERIA(targetCompany)}</h3>
+                    <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.75]">{reportData.companyInsight.summary}</p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Talent Keywords — Muted */}
-                        <div className="bg-zinc-900/25 border border-white/[0.03] p-6 rounded-xl">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Target className="w-4 h-4 text-zinc-500" />
-                                <p className="text-xs text-zinc-500 uppercase tracking-widest">{UI_LABELS.TALENT_PROFILE}</p>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Talent Keywords */}
+                        <div className="py-2">
+                            <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-5 font-semibold">{UI_LABELS.TALENT_PROFILE}</p>
+                            <div className="flex flex-wrap gap-2.5">
                                 {reportData.companyInsight.talentKeywords.map((kw) => (
-                                    <span key={kw} className="px-3 py-1.5 text-xs text-zinc-300 bg-zinc-800/60 border border-white/[0.08] rounded-lg font-medium">{kw}</span>
+                                    <span key={kw} className="px-4 py-2 text-sm text-zinc-200 bg-white/[0.04] border border-white/[0.05] rounded-lg font-medium">{kw}</span>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Hiring Signals — Standard */}
-                        <div className="bg-zinc-900/40 border border-white/[0.05] p-6 rounded-xl">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Zap className="w-4 h-4 text-emerald-400/80" />
-                                <p className="text-xs text-zinc-500 uppercase tracking-widest">{UI_LABELS.ACCEPTANCE_CRITERIA}</p>
-                            </div>
-                            <ul className="space-y-2">
+                        {/* Hiring Signals */}
+                        <div className="py-2">
+                            <p className="text-sm text-emerald-400/70 uppercase tracking-[0.12em] mb-5 font-semibold">{UI_LABELS.ACCEPTANCE_CRITERIA}</p>
+                            <ul className="space-y-3">
                                 {reportData.companyInsight.hiringSignals.map((s, i) => (
-                                    <li key={i} className="text-sm text-zinc-400 leading-relaxed flex items-start gap-2">
-                                        <Check className="w-3.5 h-3.5 text-emerald-400/70 mt-0.5 shrink-0" />{s}
+                                    <li key={i} className="text-[15px] text-zinc-200 leading-[1.7] flex items-start gap-2.5">
+                                        <Check className="w-4 h-4 text-emerald-400/50 mt-0.5 shrink-0" />{s}
                                     </li>
                                 ))}
                             </ul>
                         </div>
 
-                        {/* Rejection Triggers — Standard */}
-                        <div className="bg-zinc-900/40 border border-rose-400/[0.08] p-6 rounded-xl">
-                            <div className="flex items-center gap-2 mb-4">
-                                <AlertTriangle className="w-4 h-4 text-rose-400/60" />
-                                <p className="text-xs text-rose-400/60 uppercase tracking-widest">{UI_LABELS.REJECTION_TRIGGERS}</p>
-                            </div>
-                            <ul className="space-y-2">
+                        {/* Rejection Triggers */}
+                        <div className="py-2">
+                            <p className="text-sm text-rose-400/60 uppercase tracking-[0.12em] mb-5 font-semibold">{UI_LABELS.REJECTION_TRIGGERS}</p>
+                            <ul className="space-y-3">
                                 {reportData.companyInsight.rejectionTriggers.map((r, i) => (
-                                    <li key={i} className="text-sm text-zinc-400 leading-relaxed flex items-start gap-2">
-                                        <X className="w-3.5 h-3.5 text-rose-400/50 mt-0.5 shrink-0" />{r}
+                                    <li key={i} className="text-[15px] text-zinc-400 leading-[1.7] flex items-start gap-2.5">
+                                        <X className="w-4 h-4 text-rose-400/35 mt-0.5 shrink-0" />{r}
                                     </li>
                                 ))}
                             </ul>
                         </div>
 
-                        {/* Culture Signals — Muted */}
-                        <div className="bg-zinc-900/25 border border-white/[0.03] p-6 rounded-xl">
-                            <div className="flex items-center gap-2 mb-4">
-                                <MessageSquare className="w-4 h-4 text-zinc-500" />
-                                <p className="text-xs text-zinc-500 uppercase tracking-widest">{UI_LABELS.CULTURE_SIGNALS}</p>
-                            </div>
-                            <ul className="space-y-2">
+                        {/* Culture Signals */}
+                        <div className="py-2">
+                            <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-5 font-semibold">{UI_LABELS.CULTURE_SIGNALS}</p>
+                            <ul className="space-y-3">
                                 {reportData.companyInsight.cultureSignals.map((c, i) => (
-                                    <li key={i} className="text-sm text-zinc-400 leading-relaxed">{c}</li>
+                                    <li key={i} className="text-[15px] text-zinc-400 leading-[1.7]">{c}</li>
                                 ))}
                             </ul>
                         </div>
@@ -292,54 +359,54 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 2: CORE DIAGNOSIS */}
                 {/* ================================================================= */}
-                <section className="py-20 border-b border-white/[0.06]">
-                    <h2 className="text-sm uppercase tracking-widest text-[#6366F1]/60 mb-3">{UI_LABELS.CORE_DIAGNOSIS}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-12 tracking-tight">{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
+                <section id="section-core-diagnosis" className="py-24 section-divider">
+                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.CORE_DIAGNOSIS}</h2>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-14 tracking-tight">{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-14">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                         <div>
-                            <p className="text-xs text-emerald-400/80 uppercase tracking-widest mb-4 font-medium">{UI_LABELS.STRENGTHS}</p>
-                            <div className="space-y-3">
+                            <p className="text-sm text-emerald-400/70 uppercase tracking-[0.12em] mb-6 font-semibold">{UI_LABELS.STRENGTHS}</p>
+                            <div className="space-y-5">
                                 {reportData.strengths.map((s, i) => (
-                                    <div key={i} className="bg-zinc-900/40 border border-emerald-400/[0.12] p-5 rounded-xl">
-                                        <p className="text-sm text-zinc-300 leading-relaxed">{s}</p>
+                                    <div key={i} className="pl-0 py-0">
+                                        <p className="text-[16px] text-zinc-100 leading-[1.8] font-normal">{s}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
                         <div>
-                            <p className="text-xs text-amber-300/60 uppercase tracking-widest mb-4 font-medium">{UI_LABELS.GAPS}</p>
-                            <div className="space-y-3">
+                            <p className="text-sm text-amber-300/60 uppercase tracking-[0.12em] mb-6 font-semibold">{UI_LABELS.GAPS}</p>
+                            <div className="space-y-5">
                                 {reportData.gaps.map((g, i) => (
-                                    <div key={i} className="bg-zinc-900/40 border border-amber-300/[0.10] p-5 rounded-xl">
-                                        <p className="text-sm text-zinc-300 leading-relaxed">{g}</p>
+                                    <div key={i} className="pl-0 py-0">
+                                        <p className="text-[16px] text-zinc-300 leading-[1.8] font-normal">{g}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Positioning — Primary Card */}
-                    <div className="bg-zinc-900/60 border border-white/[0.08] p-8 rounded-2xl shadow-lg shadow-black/20">
-                        <p className="text-xs text-[#6366F1]/60 uppercase tracking-widest mb-6">{UI_LABELS.STRATEGIC_POSITIONING}</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    {/* Positioning */}
+                    <div className="bg-white/[0.03] border border-white/[0.05] p-8 rounded-xl backdrop-blur-sm">
+                        <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-7 font-semibold">{UI_LABELS.STRATEGIC_POSITIONING}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-7">
                             <div>
-                                <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">{UI_LABELS.POSITION_CURRENT}</p>
-                                <p className="text-sm text-zinc-400 leading-relaxed">{reportData.positioning.current}</p>
+                                <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-3 font-medium">{UI_LABELS.POSITION_CURRENT}</p>
+                                <p className="text-base text-zinc-400 leading-[1.7]">{reportData.positioning.current}</p>
                             </div>
                             <div>
-                                <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">{UI_LABELS.POSITION_TARGET}</p>
-                                <p className="text-sm text-white font-semibold leading-relaxed">{reportData.positioning.target}</p>
+                                <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-3 font-medium">{UI_LABELS.POSITION_TARGET}</p>
+                                <p className="text-[17px] text-white font-bold leading-[1.7]">{reportData.positioning.target}</p>
                             </div>
                         </div>
-                        <div className="border-t border-white/[0.06] pt-5 space-y-4">
+                        <div className="border-t border-white/[0.04] pt-6 space-y-5">
                             <div>
-                                <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">{UI_LABELS.POSITION_GAP}</p>
-                                <p className="text-sm text-amber-300 font-medium leading-relaxed">{reportData.positioning.gap}</p>
+                                <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-3 font-medium">{UI_LABELS.POSITION_GAP}</p>
+                                <p className="text-base text-amber-300 font-semibold leading-[1.7]">{reportData.positioning.gap}</p>
                             </div>
                             <div>
-                                <p className="text-[11px] text-zinc-600 uppercase tracking-wider mb-2">{UI_LABELS.POSITION_STRATEGY}</p>
-                                <p className="text-sm text-zinc-300 leading-relaxed">{reportData.positioning.strategy}</p>
+                                <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-3 font-medium">{UI_LABELS.POSITION_STRATEGY}</p>
+                                <p className="text-[15px] text-zinc-300 leading-[1.7]">{reportData.positioning.strategy}</p>
                             </div>
                         </div>
                     </div>
@@ -349,58 +416,60 @@ export default function PassMateReport() {
             {/* ================================================================= */}
             {/* ACT 3: LINE-BY-LINE ANALYSIS (Split View) */}
             {/* ================================================================= */}
-            <section className="py-16 border-b border-white/[0.06] max-w-[1440px] mx-auto px-6 md:px-10">
-                <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-3">{UI_LABELS.DETAILED_DIAGNOSIS}</h2>
-                <h3 className="text-xl sm:text-2xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
+            <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10">
+                <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.DETAILED_DIAGNOSIS}</h2>
+                <h3 className="text-xl sm:text-2xl font-semibold text-white mb-8 tracking-tight">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
 
-                {/* Tab buttons */}
-                <div className="flex items-center gap-1 mb-5">
-                    {reportData.questionTabs.map((tab, index) => (
-                        <button key={tab.id} onClick={() => handleTabChange(index)}
-                            className={`px-5 py-2 text-sm rounded-lg transition-all ${activeTab === index ? "bg-[#6366F1]/[0.12] text-white font-semibold border border-[#6366F1]/30 shadow-sm shadow-[#6366F1]/10" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]"}`}>
-                            {tab.title}
+                {/* Tab buttons + View Mode Toggle */}
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-1.5">
+                        {reportData.questionTabs.map((tab, index) => (
+                            <button key={tab.id} onClick={() => handleTabChange(index)}
+                                className={`px-5 py-2 text-sm rounded-lg transition-all ${activeTab === index ? "bg-[#333] text-white font-medium border border-[#444]" : "text-[#888] hover:text-[#ccc] hover:bg-[#242424]"}`}>
+                                {tab.title}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex bg-[#242424] rounded-lg p-0.5 border border-[#333]">
+                        <button onClick={() => setViewMode('focus')}
+                            className={`px-4 py-1.5 text-sm rounded-md transition-all ${viewMode === 'focus' ? 'bg-[#333] text-white font-medium' : 'text-[#888] hover:text-[#ccc]'}`}>
+                            {UI_LABELS.VIEW_MODE_FOCUS}
                         </button>
-                    ))}
+                        <button onClick={() => setViewMode('list')}
+                            className={`px-4 py-1.5 text-sm rounded-md transition-all ${viewMode === 'list' ? 'bg-[#333] text-white font-medium' : 'text-[#888] hover:text-[#ccc]'}`}>
+                            {UI_LABELS.VIEW_MODE_LIST}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Split View */}
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-0 border border-white/[0.05] rounded-2xl overflow-hidden" style={{ minHeight: '620px' }}>
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-0 border border-white/[0.08] rounded-xl lg:items-start">
 
                     {/* LEFT PANEL */}
-                    <div className="border-r border-white/[0.05] flex flex-col bg-zinc-900/20">
-                        <div className="px-5 py-3.5 border-b border-white/[0.05] flex items-center justify-between shrink-0">
-                            <p className="text-[11px] text-zinc-500 uppercase tracking-widest">{UI_LABELS.FEEDBACK}</p>
-                            <div className="flex bg-zinc-800/60 rounded-lg p-0.5">
-                                <button onClick={() => setViewMode('focus')}
-                                    className={`px-3 py-1 text-[11px] rounded-md transition-all ${viewMode === 'focus' ? 'bg-zinc-700 text-white font-semibold shadow-sm ring-1 ring-[#6366F1]/30' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                                    {UI_LABELS.VIEW_MODE_FOCUS}
-                                </button>
-                                <button onClick={() => setViewMode('list')}
-                                    className={`px-3 py-1 text-[11px] rounded-md transition-all ${viewMode === 'list' ? 'bg-zinc-700 text-white font-semibold shadow-sm ring-1 ring-[#6366F1]/30' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                                    {UI_LABELS.VIEW_MODE_LIST}
-                                </button>
-                            </div>
+                    <div className="border-r border-white/[0.08] bg-[#1A1A1A]">
+                        <div className="px-5 py-4 border-b border-white/[0.08]">
+                            <p className="text-sm text-[#999] uppercase tracking-[0.12em] font-medium">{UI_LABELS.FEEDBACK}</p>
                         </div>
 
                         {/* Subtitle diagnosis */}
-                        <div className="border-b border-white/[0.05] shrink-0">
+                        <div className="border-b border-white/[0.08]">
                             <button onClick={() => setShowSubtitle(!showSubtitle)}
-                                className="w-full px-5 py-3 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors">
-                                <span className="text-[11px] text-zinc-500 uppercase tracking-widest">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
-                                <ChevronDown className={`w-3.5 h-3.5 text-zinc-600 transition-transform ${showSubtitle ? 'rotate-180' : ''}`} />
+                                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-[#242424] transition-colors">
+                                <span className="text-sm text-[#999] uppercase tracking-[0.12em] font-medium">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
+                                <ChevronDown className={`w-4 h-4 text-[#666] transition-transform ${showSubtitle ? 'rotate-180' : ''}`} />
                             </button>
                             {showSubtitle && (
-                                <div className="px-5 pb-4 space-y-2">
+                                <div className="px-6 pb-6 space-y-3">
                                     {currentTab.subtitleDiagnosis.exists ? (
                                         <>
-                                            <p className="text-xs text-zinc-500 leading-relaxed">"{currentTab.subtitleDiagnosis.original}"</p>
-                                            <p className="text-sm text-white font-semibold leading-[1.6]">{currentTab.subtitleDiagnosis.suggestion}</p>
-                                            <p className="text-xs text-zinc-500 leading-relaxed">{currentTab.subtitleDiagnosis.feedback}</p>
+                                            <p className="text-sm text-[#888] leading-[1.7] italic">"{currentTab.subtitleDiagnosis.original}"</p>
+                                            <p className="text-[17px] text-white font-bold leading-[1.7] mt-2">{currentTab.subtitleDiagnosis.suggestion}</p>
+                                            <p className="text-[15px] text-[#bbb] leading-[1.7] mt-1">{currentTab.subtitleDiagnosis.feedback}</p>
                                         </>
                                     ) : (
                                         <>
-                                            <p className="text-xs text-zinc-500 leading-relaxed">{currentTab.subtitleDiagnosis.feedback}</p>
-                                            <p className="text-sm text-white font-semibold whitespace-pre-wrap leading-[1.6]">{currentTab.subtitleDiagnosis.suggestion}</p>
+                                            <p className="text-[15px] text-[#bbb] leading-[1.7]">{currentTab.subtitleDiagnosis.feedback}</p>
+                                            <p className="text-[17px] text-white font-bold whitespace-pre-wrap leading-[1.7] mt-2">{currentTab.subtitleDiagnosis.suggestion}</p>
                                         </>
                                     )}
                                 </div>
@@ -408,57 +477,59 @@ export default function PassMateReport() {
                         </div>
 
                         {/* Overview */}
-                        <div className="px-5 py-3 border-b border-white/[0.05] shrink-0">
-                            <p className="text-xs text-zinc-500 leading-relaxed">{currentTab.overview}</p>
+                        <div className="px-6 py-5 border-b border-white/[0.08]">
+                            <p className="text-sm text-[#aaa] leading-[1.75]">{currentTab.overview}</p>
                         </div>
 
                         {/* Feedback Cards */}
-                        <div className="flex-1 overflow-y-auto">
+                        <div>
                             {viewMode === 'focus' && activeCardIndex === null && (
-                                <div className="flex items-center justify-center h-full px-6">
-                                    <p className="text-sm text-zinc-600 text-center leading-relaxed whitespace-pre-wrap">{UI_LABELS.CLICK_HIGHLIGHT_GUIDE}</p>
+                                <div className="flex items-center justify-center py-16 px-6">
+                                    <p className="text-sm text-[#666] text-center leading-relaxed whitespace-pre-wrap">{UI_LABELS.CLICK_HIGHLIGHT_GUIDE}</p>
                                 </div>
                             )}
-                            <div className="p-4 space-y-3">
+                            <div className="p-4 space-y-5">
                                 {visibleCards.map((card: any, idx: number) => {
-                                    const realIdx = viewMode === 'focus' && activeCardIndex !== null ? activeCardIndex : idx
+                                    const realIdx = viewMode === 'focus' && activeCardIndex !== null ? activeCardIndex : (card._origIdx ?? idx)
                                     const isActive = activeCardIndex === realIdx
+                                    const displayNum = cardDisplayNumbers[realIdx] ?? (realIdx + 1)
                                     return (
-                                        <div key={realIdx} onClick={() => setActiveCardIndex(realIdx)}
-                                            className={`rounded-xl overflow-hidden cursor-pointer transition-all ${isActive ? 'border border-[#6366F1]/35 shadow-lg shadow-[#6366F1]/8 bg-[#6366F1]/[0.04]' : 'border border-white/[0.06] bg-zinc-800/30 hover:border-white/[0.12] shadow-sm shadow-black/10'}`}>
-                                            <div className="px-4 pt-3.5 pb-2.5 flex items-start gap-3">
-                                                <span className={`shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center mt-0.5 ${isActive ? 'bg-[#6366F1] text-white' : 'bg-[#6366F1]/60 text-white/80'}`}>
-                                                    {realIdx + 1}
+                                        <div key={realIdx} id={`feedback-card-${realIdx}`}
+                                            onClick={() => {
+                                                setActiveCardIndex(realIdx)
+                                                setAiLogicModal({ isOpen: true, original: card.original, feedback: card.type === 'praise' ? card.praisePoint : card.feedback, suggestion: card.type === 'improvement' ? card.suggestion : undefined, type: card.type, interviewLink: card.interviewLink })
+                                            }}
+                                            className={`feedback-card overflow-hidden cursor-pointer ${isActive ? 'active' : ''}`}>
+                                            {/* 원본 문장 */}
+                                            <div className="px-5 pt-5 pb-3 flex items-start gap-3">
+                                                <span className={`shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center mt-0.5 ${isActive ? 'bg-[#4ADE80] text-[#1A1A1A]' : 'bg-[#333] text-[#999]'}`}>
+                                                    {displayNum}
                                                 </span>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[10px] text-zinc-600 tracking-wider uppercase mb-1.5">{UI_LABELS.ORIGINAL_SENTENCE}</p>
-                                                    <p className="text-xs text-zinc-500 leading-relaxed">"{card.original}"</p>
+                                                    <p className="text-xs text-[#777] tracking-[0.1em] uppercase mb-2 font-medium">{UI_LABELS.ORIGINAL_SENTENCE}</p>
+                                                    <p className="text-sm text-[#999] leading-[1.7] italic">"{card.original}"</p>
                                                 </div>
                                             </div>
-                                            <div className="border-l-2 border-[#6366F1] bg-[#6366F1]/[0.05] px-4 py-3">
-                                                <p className="text-[10px] text-zinc-600 tracking-wider uppercase mb-1.5">{UI_LABELS.AI_DIAGNOSIS}</p>
-                                                <p className="text-xs text-zinc-400 leading-relaxed">
+                                            {/* AI 진단 */}
+                                            <div className="mx-5 px-4 py-4 bg-[#2A2A2A] rounded-lg mb-2">
+                                                <p className="text-xs text-[#4ADE80]/60 tracking-[0.1em] uppercase mb-2 font-semibold">{UI_LABELS.AI_DIAGNOSIS}</p>
+                                                <p className="text-[15px] text-[#E5E5E5] leading-[1.75]">
                                                     {card.type === 'improvement' ? card.feedback : card.praisePoint}
                                                 </p>
                                             </div>
-                                            {/* Interview Link */}
+                                            {/* 면접 예상 질문 */}
                                             {card.interviewLink && (
-                                                <div className="px-4 py-2.5 bg-amber-400/[0.04] border-t border-amber-300/[0.08]">
-                                                    <p className="text-[10px] text-amber-300/60 tracking-wider uppercase mb-1">{UI_LABELS.INTERVIEW_ATTACK_POINT}</p>
-                                                    <p className="text-xs text-zinc-400 leading-relaxed">"{card.interviewLink.question}"</p>
+                                                <div className="mx-5 px-4 py-3 bg-[#2A2A2A] rounded-lg mb-2 border-l-2 border-[#F59E0B]/30">
+                                                    <p className="text-xs text-[#F59E0B]/60 tracking-[0.1em] uppercase mb-1.5 font-semibold">{UI_LABELS.INTERVIEW_ATTACK_POINT}</p>
+                                                    <p className="text-sm text-[#ccc] leading-[1.7]">"{card.interviewLink.question}"</p>
                                                 </div>
                                             )}
-                                            <div className="px-4 pt-3 pb-3.5 border-t border-white/[0.04]">
-                                                <p className="text-[10px] text-zinc-600 tracking-wider uppercase mb-1.5">{card.type === 'improvement' ? UI_LABELS.IMPROVED_SENTENCE : UI_LABELS.VERDICT}</p>
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <p className="text-sm text-white font-semibold leading-[1.6] flex-1">
-                                                        {card.type === 'improvement' ? card.suggestion : card.original}
-                                                    </p>
-                                                    <button onClick={(e) => { e.stopPropagation(); setAiLogicModal({ isOpen: true, original: card.original, feedback: card.type === 'praise' ? card.praisePoint : card.feedback, suggestion: card.type === 'improvement' ? card.suggestion : undefined, type: card.type, interviewLink: card.interviewLink }) }}
-                                                        className="shrink-0 text-[11px] text-zinc-400 px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-[#6366F1]/40 hover:text-[#6366F1] hover:bg-[#6366F1]/[0.04] transition-all mt-0.5 font-medium">
-                                                        {UI_LABELS.DETAIL_VIEW}
-                                                    </button>
-                                                </div>
+                                            {/* 개선안 */}
+                                            <div className="px-5 pt-4 pb-5">
+                                                <p className="text-xs text-[#777] tracking-[0.1em] uppercase mb-2 font-medium">{card.type === 'improvement' ? UI_LABELS.IMPROVED_SENTENCE : UI_LABELS.VERDICT}</p>
+                                                <p className="text-[17px] text-white font-bold leading-[1.65]">
+                                                    {card.type === 'improvement' ? card.suggestion : card.original}
+                                                </p>
                                             </div>
                                         </div>
                                     )
@@ -467,20 +538,20 @@ export default function PassMateReport() {
                         </div>
                     </div>
 
-                    {/* RIGHT PANEL */}
-                    <div className="flex flex-col">
-                        <div className="px-6 py-3.5 border-b border-white/[0.05] flex items-center justify-between shrink-0">
-                            <p className="text-[11px] text-zinc-500 uppercase tracking-widest">{UI_LABELS.ORIGINAL_TEXT_PANEL}</p>
-                            <p className="text-[11px] text-zinc-600">{currentTab.title}</p>
+                    {/* RIGHT PANEL — sticky */}
+                    <div className="lg:sticky lg:top-[15vh] lg:self-start lg:max-h-[75vh] lg:overflow-y-auto flex flex-col bg-white/[0.03]" onClick={(e) => { if ((e.target as HTMLElement).closest('.annotation-hl') === null) setActiveCardIndex(null) }}>
+                        <div className="px-6 py-4 border-b border-white/[0.08] shrink-0">
+                            <p className="text-sm text-[#999] uppercase tracking-[0.12em] font-medium">{UI_LABELS.ORIGINAL_TEXT_PANEL}</p>
                         </div>
-                        <div className="mx-6 mt-4 mb-2 px-4 py-3 bg-zinc-800/40 rounded-lg border border-white/[0.04] shrink-0">
-                            <p className="text-[11px] text-zinc-600 mb-1">{UI_LABELS.QUESTION}</p>
-                            <p className="text-sm text-zinc-400 leading-relaxed">{currentTab.prompt}</p>
+                        {/* 문항 질문 — 전체 너비 강조 */}
+                        <div className="border-b border-white/[0.08] bg-white/[0.04] px-6 py-4 shrink-0">
+                            <p className="text-xs text-[#4ADE80]/70 uppercase tracking-[0.12em] mb-2 font-semibold">{currentTab.title}</p>
+                            <p className="text-[15px] text-[#E5E5E5] leading-[1.7] font-medium">{currentTab.prompt}</p>
                         </div>
-                        <div className="flex-1 overflow-y-auto px-6 py-4">
-                            <div className="text-sm text-zinc-400 leading-[1.8] whitespace-pre-wrap">
+                        <div className="px-6 py-6">
+                            <div className={`text-[15px] text-[#999] leading-[2] whitespace-pre-wrap transition-all duration-300 ease-in-out ${activeCardIndex !== null ? 'original-text-dimmed' : ''}`}>
                                 {currentTab.fullAnswer.split('\n').map((paragraph, pIdx) => (
-                                    <p key={pIdx} className="mb-3">
+                                    <p key={pIdx} className="mb-5">
                                         {(() => {
                                             const highlights = currentTab.feedbackCards.map((c: any) => c.original)
                                             let result: React.ReactNode[] = []
@@ -501,11 +572,18 @@ export default function PassMateReport() {
                                                 if (matchedHighlight) {
                                                     if (earliestIdx > 0) result.push(remaining.slice(0, earliestIdx))
                                                     const isActive = activeCardIndex === matchedCardIdx
+                                                    const displayNum = cardDisplayNumbers[matchedCardIdx] ?? (matchedCardIdx + 1)
                                                     result.push(
-                                                        <span key={`hl-${pIdx}-${keyCounter++}`} onClick={() => setActiveCardIndex(matchedCardIdx)}
-                                                            className={`cursor-pointer relative inline rounded-sm px-0.5 -mx-0.5 transition-all duration-200 ${isActive ? 'bg-[#6366F1]/30 text-white ring-1 ring-[#6366F1]/40' : 'bg-[#6366F1]/[0.10] text-zinc-300 hover:bg-[#6366F1]/20 hover:text-white'}`}>
-                                                            <span className="absolute -top-3.5 -left-0.5 w-[18px] h-[18px] rounded-full bg-[#6366F1] text-white text-[9px] font-bold flex items-center justify-center shadow-sm shadow-[#6366F1]/30">
-                                                                {matchedCardIdx + 1}
+                                                        <span key={`hl-${pIdx}-${keyCounter++}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setActiveCardIndex(matchedCardIdx)
+                                                                const el = document.getElementById(`feedback-card-${matchedCardIdx}`)
+                                                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                                            }}
+                                                            className={`annotation-hl ${isActive ? 'active' : ''}`}>
+                                                            <span className="annotation-badge">
+                                                                {displayNum}
                                                             </span>
                                                             {matchedHighlight}
                                                         </span>
@@ -531,37 +609,36 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 4: INTERVIEW DRILL */}
                 {/* ================================================================= */}
-                <section className="pt-24 pb-20 border-b border-white/[0.06]">
-                    <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-4">{UI_LABELS.INTERVIEW_DRILL}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-5 tracking-tight">{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
-                    <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-relaxed">{UI_LABELS.INTERVIEW_DRILL_DESC}</p>
+                <section id="section-interview-drill" className="pt-24 pb-24 section-divider">
+                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.INTERVIEW_DRILL}</h2>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
+                    <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.7]">{UI_LABELS.INTERVIEW_DRILL_DESC}</p>
 
-                    <div className="space-y-2">
+                    <div className="space-y-0">
                         {reportData.interviewQA.map((item, index) => (
-                            <div key={index} className="border-b border-white/5 last:border-0">
+                            <div key={index} className="border-b border-white/[0.04] last:border-0">
                                 <button onClick={() => setOpenQuestionIndex(openQuestionIndex === index ? null : index)}
                                     className="w-full py-6 flex items-start gap-5 text-left group">
-                                    <span className="text-[11px] uppercase tracking-widest text-zinc-500 mt-1 min-w-[50px]">Q{index + 1}</span>
-                                    <span className="flex-1 text-base text-zinc-300 group-hover:text-white transition-colors leading-relaxed">{item.question}</span>
+                                    <span className="text-xs uppercase tracking-[0.12em] text-zinc-500 mt-1 min-w-[50px] font-medium">Q{index + 1}</span>
+                                    <span className="flex-1 text-[17px] text-zinc-300 group-hover:text-white transition-colors leading-[1.6]">{item.question}</span>
                                     <ChevronDown className={`w-5 h-5 text-zinc-600 transition-transform mt-0.5 ${openQuestionIndex === index ? "rotate-180" : ""}`} />
                                 </button>
                                 {openQuestionIndex === index && (
                                     <div className="pb-8 pl-[70px] space-y-4">
-                                        {/* Follow-ups */}
                                         {item.followUps && item.followUps.length > 0 && (
                                             <div className="mb-4">
-                                                <p className="text-[11px] uppercase tracking-widest text-amber-300/50 mb-2">{UI_LABELS.FOLLOW_UP_QUESTIONS}</p>
-                                                <ul className="space-y-1.5">
+                                                <p className="text-xs uppercase tracking-[0.12em] text-amber-300/50 mb-3 font-medium">{UI_LABELS.FOLLOW_UP_QUESTIONS}</p>
+                                                <ul className="space-y-2">
                                                     {item.followUps.map((fu, fi) => (
-                                                        <li key={fi} className="text-sm text-zinc-500 leading-relaxed flex items-start gap-2">
-                                                            <ArrowRight className="w-3 h-3 text-amber-300/40 mt-1 shrink-0" />{fu}
+                                                        <li key={fi} className="text-[15px] text-zinc-500 leading-[1.7] flex items-start gap-2.5">
+                                                            <ArrowRight className="w-3 h-3 text-amber-300/35 mt-1.5 shrink-0" />{fu}
                                                         </li>
                                                     ))}
                                                 </ul>
                                             </div>
                                         )}
-                                        <p className="text-[11px] uppercase tracking-widest text-zinc-500 mb-3">{UI_LABELS.MODEL_ANSWER}</p>
-                                        <p className="text-sm text-zinc-400 leading-loose">{item.modelAnswer}</p>
+                                        <p className="text-xs uppercase tracking-[0.12em] text-zinc-500 mb-3 font-medium">{UI_LABELS.MODEL_ANSWER}</p>
+                                        <p className="text-[15px] text-zinc-400 leading-[1.8]">{item.modelAnswer}</p>
                                     </div>
                                 )}
                             </div>
@@ -572,29 +649,29 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 5: ACTION PLAN */}
                 {/* ================================================================= */}
-                <section className="py-16 border-b border-white/[0.06]">
-                    <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-4">{UI_LABELS.ACTION_PLAN}</h2>
-                    <h3 className="text-xl sm:text-2xl font-semibold text-white mb-5 tracking-tight">{UI_LABELS.ACTION_PLAN_TITLE}</h3>
+                <section id="section-action-plan" className="py-24 section-divider">
+                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.ACTION_PLAN}</h2>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.ACTION_PLAN_TITLE}</h3>
 
                     <div className="flex items-center gap-5 mb-14 mt-10">
-                        <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-[#6366F1] transition-all duration-500" style={{ width: `${taskProgress}%` }} />
+                        <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500/70 transition-all duration-500" style={{ width: `${taskProgress}%` }} />
                         </div>
                         <span className="text-sm text-zinc-500 tabular-nums">{completedTasks.length}/{reportData.actionPlan.length}</span>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-0">
                         {reportData.actionPlan.map((task, index) => {
                             const isComplete = completedTasks.includes(index)
                             return (
-                                <button key={index} onClick={() => toggleTask(index)} className="w-full text-left py-5 flex items-start gap-5 group">
-                                    <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors mt-0.5 ${isComplete ? "bg-[#6366F1] border-[#6366F1]" : "border-zinc-600 group-hover:border-zinc-400"}`}>
+                                <button key={index} onClick={() => toggleTask(index)} className="w-full text-left py-5 flex items-start gap-5 group border-b border-white/[0.03] last:border-0">
+                                    <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors mt-0.5 ${isComplete ? "bg-indigo-500 border-indigo-500" : "border-zinc-700 group-hover:border-zinc-500"}`}>
                                         {isComplete && <Check className="w-3 h-3 text-white" />}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <span className={`text-base transition-colors leading-relaxed block mb-1 ${isComplete ? "line-through text-zinc-600" : "text-zinc-200 group-hover:text-white"}`}>{task.title}</span>
-                                        <p className={`text-sm transition-colors leading-relaxed ${isComplete ? "text-zinc-700" : "text-zinc-500"}`}>{task.description}</p>
-                                        <p className={`text-xs mt-2 transition-colors ${isComplete ? "text-zinc-700" : "text-emerald-400/60"}`}>{UI_LABELS.EXPECTED_IMPACT}: {task.expectedImpact}</p>
+                                        <span className={`text-base transition-colors leading-[1.6] block mb-1.5 ${isComplete ? "line-through text-zinc-600" : "text-zinc-200 group-hover:text-white"}`}>{task.title}</span>
+                                        <p className={`text-[15px] transition-colors leading-[1.7] ${isComplete ? "text-zinc-700" : "text-zinc-500"}`}>{task.description}</p>
+                                        <p className={`text-sm mt-2.5 transition-colors ${isComplete ? "text-zinc-700" : "text-emerald-400/50"}`}>{UI_LABELS.EXPECTED_IMPACT}: {task.expectedImpact}</p>
                                     </div>
                                 </button>
                             )
@@ -605,20 +682,20 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 6: PM COMMENT */}
                 {/* ================================================================= */}
-                <section className="pt-24 pb-16 border-b border-white/[0.06]">
-                    <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-4">{UI_LABELS.PM_VERDICT}</h2>
+                <section id="section-pm-comment" className="pt-24 pb-20 section-divider">
+                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.PM_VERDICT}</h2>
                     <h3 className="text-xl sm:text-2xl font-medium text-white mb-10 tracking-tight">{UI_LABELS.PM_VERDICT_TITLE}</h3>
-                    <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-zinc-300 text-xs font-bold tracking-tight">PM</span>
+                    <div className="flex items-start gap-5">
+                        <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-zinc-400 text-xs font-bold tracking-tight">PM</span>
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-3">
                                 <span className="text-sm font-medium text-white">PM Yehwan</span>
                                 <span className="text-xs text-zinc-600">{UI_LABELS.JUST_NOW}</span>
                             </div>
-                            <div className="border-l-2 border-[#6366F1]/30 pl-5">
-                                <p className="text-sm text-zinc-400 leading-loose">{reportData.pmComment}</p>
+                            <div className="border-l-2 border-indigo-400/20 pl-5">
+                                <p className="text-[17px] text-zinc-200 leading-[1.8] font-normal">{reportData.pmComment}</p>
                             </div>
                         </div>
                     </div>
@@ -632,28 +709,28 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* PREMIUM UPSELL */}
                 {/* ================================================================= */}
-                <section className="py-20">
-                    <h2 className="text-sm uppercase tracking-widest text-zinc-500 mb-4">{UI_LABELS.PREMIUM}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-medium text-white mb-5 tracking-tight">{UI_LABELS.PREMIUM_NEXT_STEPS}</h3>
-                    <p className="text-base text-zinc-400 mb-12 max-w-2xl leading-relaxed">{UI_LABELS.PREMIUM_DESC}</p>
+                <section className="py-24">
+                    <h2 className="text-xs uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.PREMIUM}</h2>
+                    <h3 className="text-2xl sm:text-3xl font-medium text-white mb-6 tracking-tight">{UI_LABELS.PREMIUM_NEXT_STEPS}</h3>
+                    <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.7]">{UI_LABELS.PREMIUM_DESC}</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="group relative bg-zinc-900/40 border border-white/[0.06] rounded-xl p-8 hover:border-white/[0.15] transition-all duration-300">
-                            <div className="w-10 h-10 rounded-lg bg-zinc-800/80 flex items-center justify-center mb-6">
+                        <div className="group relative bg-white/[0.02] border border-white/[0.04] rounded-xl p-8 hover:border-white/[0.08] transition-all duration-300">
+                            <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center mb-6">
                                 <FileText className="w-5 h-5 text-zinc-400" />
                             </div>
                             <h4 className="text-lg font-medium text-white mb-3">{UI_LABELS.PAST_QUESTIONS}</h4>
-                            <p className="text-sm text-zinc-500 leading-relaxed mb-8">{UI_LABELS.PAST_QUESTIONS_DESC}</p>
-                            <button className="text-sm text-zinc-300 hover:text-white transition-colors flex items-center gap-2 group/btn">
+                            <p className="text-[15px] text-zinc-500 leading-[1.7] mb-8">{UI_LABELS.PAST_QUESTIONS_DESC}</p>
+                            <button className="text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-2 group/btn">
                                 <span>{UI_LABELS.GO_TO}</span><ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                             </button>
                         </div>
-                        <div className="group relative bg-zinc-900/40 border border-white/[0.06] rounded-xl p-8 hover:border-zinc-400/30 transition-all duration-300">
-                            <div className="w-10 h-10 rounded-lg bg-zinc-800/80 flex items-center justify-center mb-6 border border-zinc-500/20">
-                                <Sparkles className="w-5 h-5 text-zinc-300" />
+                        <div className="group relative bg-white/[0.02] border border-white/[0.04] rounded-xl p-8 hover:border-white/[0.08] transition-all duration-300">
+                            <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center mb-6">
+                                <Sparkles className="w-5 h-5 text-zinc-400" />
                             </div>
                             <h4 className="text-lg font-medium text-white mb-3">{UI_LABELS.EXPERT_REVIEW}</h4>
-                            <p className="text-sm text-zinc-500 leading-relaxed mb-8">{UI_LABELS.EXPERT_REVIEW_DESC}</p>
-                            <button className="text-sm text-zinc-300 hover:text-white transition-colors flex items-center gap-2 group/btn">
+                            <p className="text-[15px] text-zinc-500 leading-[1.7] mb-8">{UI_LABELS.EXPERT_REVIEW_DESC}</p>
+                            <button className="text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-2 group/btn">
                                 <span>{UI_LABELS.APPLY_PREMIUM}</span><ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                             </button>
                         </div>
@@ -661,7 +738,7 @@ export default function PassMateReport() {
                 </section>
 
                 {/* NEXT STEP */}
-                <section className="py-16 mt-10 bg-zinc-900/80 rounded-2xl border border-white/[0.04] px-6 md:px-10 text-center">
+                <section className="py-16 mt-10 bg-white/[0.02] rounded-xl border border-white/[0.04] px-6 md:px-10 text-center">
                     <h3 className="text-xl font-medium text-white mb-8">{UI_LABELS.WHATS_NEXT}</h3>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button onClick={() => navigate("/analyze")} className="w-full sm:w-auto px-6 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2">
@@ -691,50 +768,49 @@ export default function PassMateReport() {
             {/* AI LOGIC DETAIL MODAL */}
             {/* ================================================================= */}
             {aiLogicModal?.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setAiLogicModal(null)}>
-                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0">
-                            <div>
-                                <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1">{UI_LABELS.ANALYSIS_LOGIC}</p>
-                                <h3 className="text-base font-medium text-white">{UI_LABELS.DIAGNOSIS_DETAIL}</h3>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setAiLogicModal(null)}>
+                    <div className="bg-[#1E1E1E] border border-[#333] rounded-xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-8 py-6 border-b border-[#333] shrink-0">
+                            <div className="flex items-center gap-4">
+                                <span className={`px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider ${aiLogicModal.type === 'praise' ? 'bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/20' : 'bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/20'}`}>
+                                    {aiLogicModal.type === 'praise' ? '강점 분석' : '개선 분석'}
+                                </span>
+                                <h3 className="text-lg font-semibold text-white">{UI_LABELS.DIAGNOSIS_DETAIL}</h3>
                             </div>
-                            <button onClick={() => setAiLogicModal(null)} className="w-7 h-7 flex items-center justify-center rounded-md text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors">
+                            <button onClick={() => setAiLogicModal(null)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#666] hover:text-white hover:bg-[#333] transition-colors">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
-                        <div className="px-6 py-5 overflow-y-auto space-y-5">
+                        <div className="px-8 py-8 overflow-y-auto space-y-8">
+                            {/* 원문 */}
                             <div>
-                                <div className="flex items-center gap-2.5 mb-3">
-                                    <span className="text-[11px] text-zinc-500 font-medium tabular-nums">01</span>
-                                    <span className="text-sm font-medium text-zinc-300">{UI_LABELS.ORIGINAL_ANALYSIS}</span>
-                                </div>
-                                <div className="ml-7 border-l border-white/[0.06] pl-4">
-                                    <p className="text-sm text-zinc-300 leading-relaxed">"{aiLogicModal.original}"</p>
+                                <p className="text-sm text-[#888] uppercase tracking-[0.12em] mb-3 font-semibold">{UI_LABELS.ORIGINAL_ANALYSIS}</p>
+                                <div className="bg-[#242424] border border-[#333] rounded-lg px-5 py-4">
+                                    <p className="text-[16px] text-[#ccc] leading-[1.75] italic">"{aiLogicModal.original}"</p>
                                 </div>
                             </div>
+                            {/* AI 진단 */}
                             <div>
-                                <div className="flex items-center gap-2.5 mb-3">
-                                    <span className="text-[11px] text-zinc-500 font-medium tabular-nums">02</span>
-                                    <span className="text-sm font-medium text-zinc-300">{aiLogicModal.type === "praise" ? UI_LABELS.STRENGTHS : UI_LABELS.IMPROVED_SENTENCE}</span>
-                                </div>
-                                <div className="ml-7 border-l-2 border-[#6366F1]/30 pl-4 space-y-4">
-                                    <p className="text-sm text-zinc-400 leading-relaxed">{aiLogicModal.feedback}</p>
-                                    {aiLogicModal.suggestion && (
-                                        <div className="pt-2 border-t border-white/[0.04]">
-                                            <p className="text-base text-white font-semibold leading-relaxed">{aiLogicModal.suggestion}</p>
-                                        </div>
-                                    )}
-                                </div>
+                                <p className="text-sm text-[#4ADE80]/70 uppercase tracking-[0.12em] mb-3 font-semibold">{aiLogicModal.type === "praise" ? "AI 강점 분석" : "AI 개선 분석"}</p>
+                                <p className="text-[16px] text-[#E5E5E5] leading-[1.8]">{aiLogicModal.feedback}</p>
                             </div>
+                            {/* 개선안 */}
+                            {aiLogicModal.suggestion && (
+                                <div className="bg-[#242424] border border-[#4ADE80]/15 rounded-lg px-5 py-5">
+                                    <p className="text-sm text-[#4ADE80]/60 uppercase tracking-[0.12em] mb-3 font-semibold">{UI_LABELS.IMPROVED_SENTENCE}</p>
+                                    <p className="text-[18px] text-white font-bold leading-[1.65]">{aiLogicModal.suggestion}</p>
+                                </div>
+                            )}
+                            {/* 면접 예상 질문 + 출제 의도 */}
                             {aiLogicModal.interviewLink && (
-                                <div>
-                                    <div className="flex items-center gap-2.5 mb-3">
-                                        <span className="text-[11px] text-zinc-500 font-medium tabular-nums">03</span>
-                                        <span className="text-sm font-medium text-amber-300/60">{UI_LABELS.INTERVIEW_ATTACK_POINT}</span>
+                                <div className="bg-[#242424] border border-[#F59E0B]/10 rounded-lg px-5 py-5 space-y-4">
+                                    <div>
+                                        <p className="text-sm text-[#F59E0B]/70 uppercase tracking-[0.12em] mb-2 font-semibold">{UI_LABELS.INTERVIEW_ATTACK_POINT}</p>
+                                        <p className="text-[16px] text-[#E5E5E5] leading-[1.7]">"{aiLogicModal.interviewLink.question}"</p>
                                     </div>
-                                    <div className="ml-7 border-l border-amber-300/20 pl-4 space-y-2">
-                                        <p className="text-sm text-zinc-300 leading-relaxed">"{aiLogicModal.interviewLink.question}"</p>
-                                        <p className="text-xs text-zinc-500 leading-relaxed">{aiLogicModal.interviewLink.intent}</p>
+                                    <div className="border-t border-[#333] pt-4">
+                                        <p className="text-sm text-[#F59E0B]/50 uppercase tracking-[0.12em] mb-2 font-semibold">출제 의도</p>
+                                        <p className="text-[15px] text-[#ccc] leading-[1.7]">{aiLogicModal.interviewLink.intent}</p>
                                     </div>
                                 </div>
                             )}

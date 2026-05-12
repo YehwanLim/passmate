@@ -38,7 +38,7 @@ export const UI_LABELS = {
   AI_DIAGNOSIS: "AI 진단",
   INTERVIEW_ATTACK_POINT: "면접 예상 질문",
   IMPROVED_SENTENCE: "개선안",
-  VERDICT: "총평",
+  VERDICT: "개선된 문장",
   DETAIL_VIEW: "상세 보기",
   ORIGINAL_TEXT_PANEL: "지원서 원문",
   QUESTION: "문항",
