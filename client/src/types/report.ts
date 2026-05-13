@@ -50,6 +50,8 @@ export interface FeedbackCard {
   original: string
   praisePoint?: string
   feedback?: string
+  /** 다차원 심층 분석 (논리 구조, 면접관 관점, 채용 기준 적합도 등) */
+  detailedAnalysis?: string
   suggestion?: string
   /** 면접에서 이 문장 때문에 어떻게 공격당하는지 */
   interviewLink?: {

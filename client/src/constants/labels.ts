@@ -8,28 +8,29 @@ export const UI_LABELS = {
   APPLICANT_PROFILE: "지원자 프로필",
 
   // Act 1.5: Company Insight
-  COMPANY_ANALYSIS: "기업 분석",
-  HIRING_CRITERIA: (company: string) => `${company} 합격 기준`,
+  COMPANY_ANALYSIS: "02. 합격 기준",
+  HIRING_CRITERIA: (company: string) => `${company}는 이런 지원자를 찾고 있어요`,
   TALENT_PROFILE: "인재상",
   ACCEPTANCE_CRITERIA: "합격 기준",
   REJECTION_TRIGGERS: "탈락 요인",
   CULTURE_SIGNALS: "조직 문화 특징",
 
   // Act 2: Core Diagnosis
-  CORE_DIAGNOSIS: "핵심 진단",
-  STRENGTHS_AND_GAPS: (company: string) => `${company} 기준 핵심 강점 및 보완점`,
+  CORE_DIAGNOSIS: "03. 핵심 진단",
+  STRENGTHS_AND_GAPS: (company: string) => `이 자소서는 이렇게 읽히고 있어요`,
   STRENGTHS: "강점",
   GAPS: "보완점",
   STRATEGIC_POSITIONING: "전략적 포지셔닝",
-  POSITION_CURRENT: "현재 위치",
-  POSITION_TARGET: "목표 위치",
-  POSITION_GAP: "차이점",
-  POSITION_STRATEGY: "극복 전략",
+  POSITION_CURRENT: "현재 자소서가 주는 인상",
+  POSITION_TARGET: "면접관이 기대하는 방향",
+  POSITION_GAP: "지금 가장 아쉬운 부분",
+  POSITION_STRATEGY: "조금 더 설득력 있게 만들려면",
 
   // Act 3: Line-by-line Analysis
-  DETAILED_DIAGNOSIS: "상세 진단",
-  LINE_BY_LINE_ANALYSIS: "문장별 심층 분석",
-  FEEDBACK: "피드백",
+  DETAILED_DIAGNOSIS: "04. 문장 분석",
+  LINE_BY_LINE_ANALYSIS: "문장별로 더 다듬어볼 수 있어요",
+  AI_COMMENTARY: "문장별 코멘트",
+  OVERVIEW: "총평",
   VIEW_MODE_FOCUS: "집중 모드",
   VIEW_MODE_LIST: "목록 모드",
   SUBTITLE_DIAGNOSIS: "소제목 진단",
@@ -42,22 +43,25 @@ export const UI_LABELS = {
   DETAIL_VIEW: "상세 보기",
   ORIGINAL_TEXT_PANEL: "지원서 원문",
   QUESTION: "문항",
+  INTERVIEWER_PERSPECTIVE: "면접관 관점",
+  QUESTION_INTENT: "출제 의도",
+  SENTENCE_DIAGNOSIS: "문장 진단",
 
   // Act 4: Interview Drill
-  INTERVIEW_DRILL: "면접 대비 훈련",
-  INTERVIEW_DRILL_TITLE: "면접관은 반드시 이 부분을 파고듭니다.",
+  INTERVIEW_DRILL: "05. 예상 질문",
+  INTERVIEW_DRILL_TITLE: "면접에서는 이런 질문이 나올 수 있어요",
   INTERVIEW_DRILL_DESC: "제출 전, 아래 질문들에 대해 방어할 수 있는지 스스로 점검해보세요.",
   FOLLOW_UP_QUESTIONS: "꼬리 질문",
   MODEL_ANSWER: "모범 답변",
 
   // Act 5: Action Plan
-  ACTION_PLAN: "실행 계획",
-  ACTION_PLAN_TITLE: "합격률을 높이기 위한 즉각적 액션",
+  ACTION_PLAN: "06. 다음 단계",
+  ACTION_PLAN_TITLE: "이 부분부터 보완해보면 좋아요",
   EXPECTED_IMPACT: "기대 효과",
 
   // Act 6: PM Comment
-  PM_VERDICT: "실무자의 시선",
-  PM_VERDICT_TITLE: "실무 PM의 냉정한 한마디.",
+  PM_VERDICT: "07. 실무자 코멘트",
+  PM_VERDICT_TITLE: "실무자 입장에서는 이런 부분이 보였어요",
   JUST_NOW: "방금 전",
 
   // Premium Upsell

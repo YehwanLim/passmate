@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useLocation } from "wouter"
-import { X, Check, ChevronDown, ArrowRight, FileText, Sparkles, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, Target, Zap, MessageSquare } from "lucide-react"
+import { Check, ChevronDown, ArrowRight, FileText, Sparkles, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X, MessageSquareText, Type, ListChecks } from "lucide-react"
 import type { ReportData } from "../types/report"
 import { UI_LABELS } from "../constants/labels"
 import { loadReportData, loadAnalysisFromStorage } from "../utils/storage"
@@ -43,11 +43,11 @@ const FALLBACK_DATA: ReportData = {
             fullAnswer: "발로 뛰어 얻은 3,000개의 데이터, 정확도 87%를 달성하다\n\n교내 캡스톤 디자인 프로젝트에서 소상공인을 위한 매출 예측 모델을 개발했습니다. 초기에는 공공 데이터만으로 모델링을 시도했으나, 지역별 특성이 반영되지 않아 예측 정확도가 60%에 머물렀습니다. 이를 해결하기 위해 팀원들과 직접 50곳 이상의 매장을 방문하여 인터뷰를 진행하고 신뢰를 쌓았습니다. 소상공인들의 협조를 얻기 어려웠지만, 여러 번 방문하여 취지를 설명했습니다.\n\n결과적으로 3,000건 이상의 실제 매출 데이터를 수집할 수 있었습니다. 수집된 데이터를 바탕으로 Python과 scikit-learn을 활용하여 예측 모델을 고도화했습니다. 예측 정확도 87%를 달성했으며, 이 성과를 인정받아 교내 캡스톤 디자인 경진대회에서 최우수상을 수상했습니다. 입사 후에도 고객 인사이트를 도출하고 비즈니스 성장에 기여하고 싶습니다.",
             overview: "실행력과 정량적 성과는 훌륭하지만, 과정의 논리적 연결과 직무 적합성 어필이 부족합니다.",
             feedbackCards: [
-                { type: "praise", original: "결과적으로 3,000건 이상의 실제 매출 데이터를 수집할 수 있었습니다.", praisePoint: "구체적인 수치(3,000건)를 통해 지원자의 실행력을 증명한 훌륭한 문장입니다.", interviewLink: { question: "3,000건의 데이터를 어떤 기준으로 수집했나요?", intent: "데이터 품질 관리 능력을 검증하려는 의도" } },
-                { type: "praise", original: "직접 50곳 이상의 매장을 방문하여 인터뷰를 진행하고 신뢰를 쌓았습니다.", praisePoint: "현장으로 직접 나가는 능동적인 문제 해결 태도가 실무진에게 큰 호감을 줍니다." },
-                { type: "improvement", original: "소상공인들의 협조를 얻기 어려웠지만, 여러 번 방문하여 취지를 설명했습니다.", feedback: "'어려웠지만 설명했다'는 전개가 평면적입니다. 구체적으로 어떤 전략으로 설득했는지가 필요합니다.", suggestion: "초기 거절에도 불구하고, 예측 모델이 가져올 '악성 재고 비용 절감' 효과를 시각화한 리포트로 설득하여 50곳의 협조를 이끌어냈습니다.", interviewLink: { question: "거절당했을 때 구체적으로 어떤 방식으로 설득했나요?", intent: "커뮤니케이션 능력과 끈기를 검증" } },
-                { type: "improvement", original: "예측 정확도 87%를 달성했으며, 이 성과를 인정받아 교내 캡스톤 디자인 경진대회에서 최우수상을 수상했습니다.", feedback: "정확도를 높인 것에서 끝나면 안 됩니다. 비즈니스적으로 어떤 가치를 창출했는지 결과물 중심으로 재작성해야 합니다.", suggestion: "시계열 예측 모델을 적용해 예측 정확도를 87%까지 끌어올렸으며, 이를 통해 소상공인들의 악성 재고 비용을 15% 이상 절감할 수 있는 솔루션을 제안하여 최우수상을 수상했습니다.", interviewLink: { question: "87%라는 정확도의 비즈니스 임팩트는 구체적으로 무엇이었나요?", intent: "성과를 비즈니스 가치로 연결하는 사고력 검증" } },
-                { type: "improvement", original: "입사 후에도 고객 인사이트를 도출하고 비즈니스 성장에 기여하고 싶습니다.", feedback: "너무 추상적이고 뻔한 마무리입니다. 지원하는 회사의 구체적인 서비스와 연결해야 합니다.", suggestion: "현장에서 얻은 데이터를 비즈니스 가치로 연결했던 경험을 살려, 귀사의 주요 서비스에서 유저 이탈률을 방어하고 결제 전환율을 높이는 데이터 기반 PM이 되겠습니다.", interviewLink: { question: "우리 회사의 어떤 서비스에 기여하고 싶은가요?", intent: "지원 동기와 회사 이해도를 검증" } }
+                { type: "praise", original: "결과적으로 3,000건 이상의 실제 매출 데이터를 수집할 수 있었습니다.", praisePoint: "구체적인 수치(3,000건)를 통해 지원자의 실행력을 증명한 훌륭한 문장입니다.", detailedAnalysis: "이 문장은 정량적 근거를 통해 실행력을 증명하는 핵심 문장입니다. '3,000건'이라는 구체적 수치는 면접관에게 지원자가 단순히 계획만 세운 것이 아니라 실제로 실행에 옮겼다는 강한 인상을 줍니다. 다만, 데이터의 품질 관리 기준이나 수집 과정에서의 의사결정 포인트를 한 줄 추가하면 더욱 설득력이 높아집니다.", interviewLink: { question: "3,000건의 데이터를 어떤 기준으로 수집했나요?", intent: "데이터 품질 관리 능력을 검증하려는 의도" } },
+                { type: "praise", original: "직접 50곳 이상의 매장을 방문하여 인터뷰를 진행하고 신뢰를 쌓았습니다.", praisePoint: "현장으로 직접 나가는 능동적인 문제 해결 태도가 실무진에게 큰 호감을 줍니다.", detailedAnalysis: "이 회사가 중시하는 '현장 밀착형 실행력'을 가장 잘 보여주는 문장입니다. 50곳이라는 숫자가 구체적이고, '신뢰를 쌓았다'는 표현이 단순 방문이 아닌 관계 구축 능력까지 암시합니다. 이 문장은 자소서 전체에서 가장 강력한 차별화 포인트이므로, 가능하면 앞쪽에 배치하는 것을 권장합니다." },
+                { type: "improvement", original: "소상공인들의 협조를 얻기 어려웠지만, 여러 번 방문하여 취지를 설명했습니다.", feedback: "'어려웠지만 설명했다'는 전개가 평면적입니다.", detailedAnalysis: "이 문장은 어려움 → 노력 → 결과의 서사 구조를 갖추고 있지만, '여러 번 방문하여 취지를 설명했다'는 표현이 너무 일반적입니다. 면접관은 '어떤 전략으로 설득했는가'를 보고 싶어합니다. 예를 들어, 시각화 자료를 활용한 설득, 성공 사례 공유를 통한 신뢰 구축 등 구체적인 방법론이 드러나야 합니다. 현재 문장은 '성실함'만 보여주고, '전략적 사고'는 보여주지 못합니다.", suggestion: "초기 거절에도 불구하고, 예측 모델이 가져올 '악성 재고 비용 절감' 효과를 시각화한 리포트로 설득하여 50곳의 협조를 이끌어냈습니다.", interviewLink: { question: "거절당했을 때 구체적으로 어떤 방식으로 설득했나요?", intent: "커뮤니케이션 능력과 끈기를 검증" } },
+                { type: "improvement", original: "예측 정확도 87%를 달성했으며, 이 성과를 인정받아 교내 캡스톤 디자인 경진대회에서 최우수상을 수상했습니다.", feedback: "비즈니스 가치 연결 없이 학내 수상 실적으로만 마무리하고 있습니다.", detailedAnalysis: "87%라는 수치 자체는 인상적이지만, 이 수치가 '비즈니스적으로 어떤 의미인지'가 빠져 있습니다. 면접관은 정확도 향상이 매출, 비용 절감, 고객 만족도 등 어떤 지표에 영향을 미쳤는지를 궁금해합니다. 또한 '최우수상'은 학내 평가이므로 산업 현장에서의 임팩트와는 거리가 있습니다. 수상 사실 자체보다 그 모델이 실제로 적용되었을 때의 효과를 중심으로 서술하는 것이 이 회사의 채용 기준에 부합합니다.", suggestion: "시계열 예측 모델을 적용해 예측 정확도를 87%까지 끌어올렸으며, 이를 통해 소상공인들의 악성 재고 비용을 15% 이상 절감할 수 있는 솔루션을 제안하여 최우수상을 수상했습니다.", interviewLink: { question: "87%라는 정확도의 비즈니스 임팩트는 구체적으로 무엇이었나요?", intent: "성과를 비즈니스 가치로 연결하는 사고력 검증" } },
+                { type: "improvement", original: "입사 후에도 고객 인사이트를 도출하고 비즈니스 성장에 기여하고 싶습니다.", feedback: "범용적인 포부 문장으로, 지원 기업 특화 메시지가 부재합니다.", detailedAnalysis: "마무리 문장은 자소서에서 '지원 동기'를 최종 확인하는 구간입니다. 현재 문장은 어떤 회사에든 복붙할 수 있는 범용 표현이라 차별화가 불가능합니다. 이 회사의 구체적인 서비스명, 최근 이슈, 또는 해당 직무의 핵심 KPI를 언급해야 면접관이 '우리 회사를 진짜 이해하고 지원했구나'라는 인상을 받습니다. 특히 자소서 마지막 문장은 면접관이 가장 마지막에 읽는 문장이므로, 가장 강한 인상을 남겨야 합니다.", suggestion: "현장에서 얻은 데이터를 비즈니스 가치로 연결했던 경험을 살려, 귀사의 주요 서비스에서 유저 이탈률을 방어하고 결제 전환율을 높이는 데이터 기반 PM이 되겠습니다.", interviewLink: { question: "우리 회사의 어떤 서비스에 기여하고 싶은가요?", intent: "지원 동기와 회사 이해도를 검증" } }
             ]
         },
         {
@@ -57,17 +57,19 @@ const FALLBACK_DATA: ReportData = {
             fullAnswer: "IT 연합 동아리에서 팀원들과 협력하여 성공적으로 프로젝트를 완수했습니다. 당시 저희 팀은 유저 이탈률이 높다는 문제를 겪고 있었습니다. 프로젝트를 통해 많은 것을 배웠고 좋은 결과를 얻었습니다. 다양한 팀원들과 협업하며 많은 것을 배웠습니다. 문제 해결 능력이 뛰어납니다. 결국 3주간 A/B 테스트를 통해 이탈률을 35%에서 18%로 개선했습니다.",
             overview: "핵심 성과(이탈률 개선)가 추상적인 문장들에 가려져 있습니다. 구체적인 방법론과 본인의 기여도를 명확히 해야 합니다.",
             feedbackCards: [
-                { type: "praise", original: "결국 3주간 A/B 테스트를 통해 이탈률을 35%에서 18%로 개선했습니다.", praisePoint: "해결 방법(A/B 테스트), 소요 기간(3주), 구체적인 개선 수치(35% -> 18%)가 완벽하게 결합된 핵심 문장입니다.", interviewLink: { question: "A/B 테스트의 가설은 무엇이었고, 대조군은 어떻게 설정했나요?", intent: "실험 설계 능력과 데이터 리터러시 검증" } },
-                { type: "improvement", original: "팀원들과 협력하여 성공적으로 프로젝트를 완수했습니다.", feedback: "본인의 구체적인 역할과 기여 내용이 전혀 드러나지 않는 모호한 표현입니다.", suggestion: "5명의 개발팀과 주 2회 스프린트 회의를 주도하며 UI/UX 개편 프로젝트의 리드 PM 역할을 수행했습니다.", interviewLink: { question: "팀에서 본인의 구체적인 역할은 무엇이었나요?", intent: "리더십과 팀 내 포지셔닝 검증" } },
-                { type: "improvement", original: "프로젝트를 통해 많은 것을 배웠고 좋은 결과를 얻었습니다.", feedback: "무엇을 배웠고 어떤 결과인지 알 수 없는 추상적인 표현입니다.", suggestion: "데이터 분석을 통한 가설 수립 및 검증 프로세스를 체득했으며, 3개월간 MAU를 12만에서 28만으로 133% 성장시켰습니다.", interviewLink: { question: "구체적으로 무엇을 배웠나요?", intent: "성장 가능성과 자기 인식 수준 검증" } },
-                { type: "improvement", original: "문제 해결 능력이 뛰어납니다.", feedback: "본인의 주관적인 평가는 신뢰를 주지 못합니다. 구체적인 과정을 서술하세요.", suggestion: "결제 이탈 구간의 퍼널 데이터를 분석하여 3가지 핵심 병목을 도출하고, 결제 프로세스를 간소화하여 오류율을 2%로 감소시켰습니다.", interviewLink: { question: "문제 해결 능력이 뛰어나다는 근거가 무엇인가요?", intent: "자기 객관화 능력 검증" } }
+                { type: "praise", original: "결국 3주간 A/B 테스트를 통해 이탈률을 35%에서 18%로 개선했습니다.", praisePoint: "방법론, 기간, 수치가 완벽하게 결합된 이 자소서의 핵심 문장입니다.", detailedAnalysis: "해결 방법(A/B 테스트), 소요 기간(3주), 구체적인 개선 수치(35% → 18%)가 하나의 문장에 압축되어 있어 매우 효과적입니다. 이 문장만으로도 지원자의 데이터 기반 문제 해결 역량이 드러납니다. 다만 현재 자소서에서 이 문장이 가장 마지막에 위치해 있어, 앞의 추상적인 문장들에 의해 임팩트가 희석되고 있습니다. 이 문장을 첫 단락으로 올리는 역피라미드 구조를 권장합니다.", interviewLink: { question: "A/B 테스트의 가설은 무엇이었고, 대조군은 어떻게 설정했나요?", intent: "실험 설계 능력과 데이터 리터러시 검증" } },
+                { type: "improvement", original: "팀원들과 협력하여 성공적으로 프로젝트를 완수했습니다.", feedback: "본인의 역할과 기여 내용이 드러나지 않는 모호한 표현입니다.", detailedAnalysis: "팀 프로젝트 경험을 서술할 때 가장 흔한 실수가 바로 이런 '우리 팀은 ~했습니다' 식의 서술입니다. 면접관이 알고 싶은 것은 팀의 성과가 아니라 '당신'의 기여입니다. 어떤 역할(기획/분석/개발)을 맡았는지, 의사결정에 어떻게 참여했는지, 갈등 상황에서 어떤 입장을 취했는지가 드러나야 합니다. 이 문장은 완전히 재작성이 필요합니다.", suggestion: "5명의 개발팀과 주 2회 스프린트 회의를 주도하며 UI/UX 개편 프로젝트의 리드 PM 역할을 수행했습니다.", interviewLink: { question: "팀에서 본인의 구체적인 역할은 무엇이었나요?", intent: "리더십과 팀 내 포지셔닝 검증" } },
+                { type: "improvement", original: "프로젝트를 통해 많은 것을 배웠고 좋은 결과를 얻었습니다.", feedback: "무엇을 배웠고 어떤 결과인지 특정할 수 없는 표현입니다.", detailedAnalysis: "'많은 것'과 '좋은 결과'는 자소서에서 가장 위험한 단어 조합입니다. 면접관은 이 문장을 읽는 순간 '이 지원자는 자기 경험을 분석하지 못한다'라고 판단합니다. 구체적으로 어떤 스킬을 습득했는지(가설 수립, 데이터 분석, 유저 리서치 등), 어떤 결과물을 냈는지(MAU 증가, 전환율 개선 등)를 수치와 함께 제시해야 합니다.", suggestion: "데이터 분석을 통한 가설 수립 및 검증 프로세스를 체득했으며, 3개월간 MAU를 12만에서 28만으로 133% 성장시켰습니다.", interviewLink: { question: "구체적으로 무엇을 배웠나요?", intent: "성장 가능성과 자기 인식 수준 검증" } },
+                { type: "improvement", original: "문제 해결 능력이 뛰어납니다.", feedback: "근거 없는 자기 평가는 신뢰를 떨어뜨립니다.", detailedAnalysis: "자소서에서 '~이 뛰어납니다', '~에 자신 있습니다' 같은 자기 평가형 문장은 거의 항상 마이너스 요인입니다. 면접관은 지원자의 주장이 아닌, 행동과 결과로 역량을 판단합니다. 이 문장을 삭제하고, 대신 구체적인 문제 해결 과정(문제 발견 → 원인 분석 → 해결 방안 → 실행 → 결과)을 서술하면 면접관이 스스로 '이 사람은 문제 해결력이 있다'고 판단하게 됩니다.", suggestion: "결제 이탈 구간의 퍼널 데이터를 분석하여 3가지 핵심 병목을 도출하고, 결제 프로세스를 간소화하여 오류율을 2%로 감소시켰습니다.", interviewLink: { question: "문제 해결 능력이 뛰어나다는 근거가 무엇인가요?", intent: "자기 객관화 능력 검증" } }
             ]
         }
     ],
     interviewQA: [
         { question: "이탈률 개선 시 고려한 주요 변수는 무엇이었나요?", followUps: ["변수 간 우선순위는 어떻게 정했나요?", "해당 변수가 유의미하다는 것을 어떻게 검증했나요?"], modelAnswer: "크게 세 가지 변수를 고려했습니다. 첫째, 유저 세그먼트별 이탈 시점 분석을 통해 온보딩 3일차에 급격한 이탈이 발생함을 확인했습니다. 둘째, 기능별 사용률 데이터를 분석하여 핵심 기능 발견율이 23%에 불과함을 파악했습니다. 셋째, 경쟁사 벤치마킹을 통해 푸시 알림 전략의 차이점을 발견했습니다." },
         { question: "A/B 테스트 외에 대안 방법론은 고려하지 않았나요?", followUps: ["표본 크기가 부족한 경우에는 어떻게 대응했을 건가요?", "A/B 테스트 결과의 통계적 유의성은 어떻게 검증했나요?"], modelAnswer: "A/B 테스트 외에도 다변량 테스트, 코호트 분석, 퍼널 분석 등을 활용할 수 있습니다. 특히 표본 크기가 작은 경우 베이지안 접근법을 적용하거나, 정성적 데이터가 필요할 때는 사용자 인터뷰와 세션 리플레이를 병행합니다." },
-        { question: "팀 내 반대 의견이 있었을 때 어떻게 설득했나요?", followUps: ["설득에 실패한 경험은 없나요?", "의견 충돌이 해결되지 않을 때의 최종 의사결정 방식은요?"], modelAnswer: "반대 의견이 있을 때는 먼저 상대방의 우려사항을 명확히 이해하려 노력합니다. 이후 데이터 기반의 근거를 제시하고, 작은 규모의 파일럿 테스트를 제안하여 리스크를 최소화하는 방식으로 합의점을 찾습니다." }
+        { question: "팀 내 반대 의견이 있었을 때 어떻게 설득했나요?", followUps: ["설득에 실패한 경험은 없나요?", "의견 충돌이 해결되지 않을 때의 최종 의사결정 방식은요?"], modelAnswer: "반대 의견이 있을 때는 먼저 상대방의 우려사항을 명확히 이해하려 노력합니다. 이후 데이터 기반의 근거를 제시하고, 작은 규모의 파일럿 테스트를 제안하여 리스크를 최소화하는 방식으로 합의점을 찾습니다." },
+        { question: "수집한 3,000건의 데이터 중 이상치(Outlier)는 어떻게 처리했나요?", followUps: ["이상치를 판단한 기준은 무엇인가요?", "이상치를 제거했을 때 데이터의 대표성이 훼손되지는 않았나요?"], modelAnswer: "Z-score 방식을 활용하여 평균에서 3표준편차 이상 벗어난 데이터 142건을 이상치로 식별했습니다. 이후 해당 매장의 특수한 이벤트(할인 행사 등) 여부를 수기로 확인한 후, 모델의 일반화를 해칠 우려가 있는 80건만 선별적으로 제거하여 모델의 안정성을 높였습니다." },
+        { question: "소상공인들이 제공한 매출 데이터의 신뢰성은 어떻게 검증했나요?", followUps: ["포스기 데이터가 아닌 구두로 전달받은 데이터도 있었나요?", "신뢰할 수 없는 데이터가 섞여 있었다면 모델에 어떤 영향을 미쳤을까요?"], modelAnswer: "데이터의 신뢰성 확보를 위해 구두 데이터는 철저히 배제하고, POS 시스템의 엑셀 추출본이나 국세청 신고 데이터 등 객관적 증빙이 가능한 자료만 1차로 수집했습니다. 이후 요일별/시간대별 패턴 분석을 통해 인위적인 조작 가능성이 있는 비정상적인 분포를 2차로 필터링했습니다." }
     ],
     actionPlan: [
         { title: "추상적 표현 3개 문장을 정량적 성과로 교체", description: "문항 2에서 지적된 '많은 것을 배웠고', '좋은 결과', '뛰어납니다' 등을 구체적 수치와 방법론으로 재작성하세요.", expectedImpact: "면접관이 '이 사람은 근거 있이 말하는 사람이다'라는 인상을 받게 됩니다." },
@@ -82,12 +84,12 @@ const FALLBACK_DATA: ReportData = {
 // =============================================================================
 const NAV_SECTIONS = [
     { id: 'section-first-impression', label: '첫인상' },
-    { id: 'section-company-insight', label: '기업 분석' },
-    { id: 'section-core-diagnosis', label: '핵심 진단' },
-    { id: 'section-line-analysis', label: '문장 분석' },
-    { id: 'section-interview-drill', label: '면접 대비' },
-    { id: 'section-action-plan', label: '실행 계획' },
-    { id: 'section-pm-comment', label: '총평' },
+    { id: 'section-company-insight', label: '02. 합격 기준' },
+    { id: 'section-core-diagnosis', label: '03. 핵심 진단' },
+    { id: 'section-line-analysis', label: '04. 문장 분석' },
+    { id: 'section-interview-drill', label: '05. 예상 질문' },
+    { id: 'section-action-plan', label: '06. 다음 단계' },
+    { id: 'section-pm-comment', label: '07. 실무자 코멘트' },
 ]
 
 // =============================================================================
@@ -129,8 +131,8 @@ export default function PassMateReport() {
 
     // ── sessionStorage에서 회사명/직무명 복원 (통합 구조 우선) ──
     const storedAnalysis = loadAnalysisFromStorage()
-    const targetCompany = storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "지원 기업"
-    const userName = storedAnalysis?.jobKeyword || sessionStorage.getItem('passmate_job') || "지원자"
+    const targetCompany = storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "삼성전자"
+    const userName = storedAnalysis?.jobKeyword || sessionStorage.getItem('passmate_job') || "김만득"
     const analysisId = storedAnalysis?.analysis_id || null
 
     const [reportData, setReportData] = useState<ReportData>(() => {
@@ -155,10 +157,12 @@ export default function PassMateReport() {
     const [activeTab, setActiveTab] = useState(0)
     const [openQuestionIndex, setOpenQuestionIndex] = useState<number | null>(0)
     const [completedTasks, setCompletedTasks] = useState<number[]>([])
+    const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set())
+    const [focusedCardIndex, setFocusedCardIndex] = useState<number | null>(null)
     const [viewMode, setViewMode] = useState<'focus' | 'list'>('list')
-    const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null)
-    const [showSubtitle, setShowSubtitle] = useState(true)
     const [activeSection, setActiveSection] = useState(NAV_SECTIONS[0].id)
+    const [showOverview, setShowOverview] = useState(true)
+    const [showSubtitle, setShowSubtitle] = useState(true)
 
     // ── Scroll Spy (IntersectionObserver) ──
     useEffect(() => {
@@ -200,19 +204,12 @@ export default function PassMateReport() {
         }
     }
 
-    const [aiLogicModal, setAiLogicModal] = useState<{
-        isOpen: boolean
-        original: string
-        feedback: string
-        suggestion?: string
-        type: string
-        interviewLink?: { question: string; intent: string }
-    } | null>(null)
-
     const handleTabChange = (index: number) => {
         setActiveTab(index)
-        setActiveCardIndex(null)
-        setShowSubtitle(false)
+        setExpandedCards(new Set())
+        setFocusedCardIndex(null)
+        setShowOverview(true)
+        setShowSubtitle(true)
     }
 
     const toggleTask = (index: number) => {
@@ -234,25 +231,53 @@ export default function PassMateReport() {
         return map
     }, [currentTab])
 
-    const visibleCards = viewMode === 'list'
-        ? [...currentTab.feedbackCards].map((c: any, i: number) => ({ ...c, _origIdx: i })).sort((a: any, b: any) => {
+    // Sort cards by their position in the source text
+    const sortedCards = useMemo(() => {
+        return [...currentTab.feedbackCards].map((c: any, i: number) => ({ ...c, _origIdx: i })).sort((a: any, b: any) => {
             const posA = currentTab.fullAnswer.indexOf(a.original)
             const posB = currentTab.fullAnswer.indexOf(b.original)
             return posA - posB
         })
-        : activeCardIndex !== null ? [{ ...currentTab.feedbackCards[activeCardIndex], _origIdx: activeCardIndex }] : []
+    }, [currentTab])
 
-    useEffect(() => {
-        const anyOpen = aiLogicModal?.isOpen
-        if (anyOpen) {
-            document.body.style.overflow = 'hidden'
-            const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAiLogicModal(null) }
-            window.addEventListener('keydown', handleEsc)
-            return () => { document.body.style.overflow = 'unset'; window.removeEventListener('keydown', handleEsc) }
-        } else {
-            document.body.style.overflow = 'unset'
-        }
-    }, [aiLogicModal?.isOpen])
+    // Character count for current answer
+    const charCount = useMemo(() => {
+        return currentTab.fullAnswer.replace(/\n/g, '').length
+    }, [currentTab])
+
+    const sourceTextRef = useRef<HTMLDivElement>(null)
+    const commentaryRef = useRef<HTMLDivElement>(null)
+
+    // Toggle accordion (multi-expand) and scroll source text to matching sentence
+    const handleAccordionToggle = useCallback((cardIdx: number) => {
+        setExpandedCards(prev => {
+            const next = new Set(prev)
+            if (next.has(cardIdx)) {
+                next.delete(cardIdx)
+            } else {
+                next.add(cardIdx)
+            }
+            return next
+        })
+        setFocusedCardIndex(cardIdx)
+    }, [])
+
+    // Click source highlight → expand matching accordion and scroll to it
+    const handleSourceHighlightClick = useCallback((cardIdx: number) => {
+        setFocusedCardIndex(cardIdx)
+        setExpandedCards(prev => {
+            const next = new Set(prev)
+            next.add(cardIdx)
+            return next
+        })
+        // Use setTimeout to allow the accordion to expand before scrolling
+        setTimeout(() => {
+            const el = document.getElementById(`commentary-item-${cardIdx}`)
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+        }, 50)
+    }, [])
 
     return (
         <main className="min-h-screen bg-[#09090B] text-zinc-100 font-sans selection:bg-indigo-500/20">
@@ -349,7 +374,9 @@ export default function PassMateReport() {
                             <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-5 font-semibold">{UI_LABELS.CULTURE_SIGNALS}</p>
                             <ul className="space-y-3">
                                 {reportData.companyInsight.cultureSignals.map((c, i) => (
-                                    <li key={i} className="text-[15px] text-zinc-400 leading-[1.7]">{c}</li>
+                                    <li key={i} className="text-[15px] text-zinc-400 leading-[1.7] flex items-start gap-2.5">
+                                        <div className="w-[5px] h-[5px] rounded-full bg-zinc-600 mt-[9px] shrink-0"></div>{c}
+                                    </li>
                                 ))}
                             </ul>
                         </div>
@@ -391,22 +418,22 @@ export default function PassMateReport() {
                         <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-7 font-semibold">{UI_LABELS.STRATEGIC_POSITIONING}</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-7">
                             <div>
-                                <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-3 font-medium">{UI_LABELS.POSITION_CURRENT}</p>
-                                <p className="text-base text-zinc-400 leading-[1.7]">{reportData.positioning.current}</p>
+                                <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_CURRENT}</span>
+                                <p className="text-base text-zinc-400 leading-[1.7] mt-1">{reportData.positioning.current}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-3 font-medium">{UI_LABELS.POSITION_TARGET}</p>
-                                <p className="text-[17px] text-white font-bold leading-[1.7]">{reportData.positioning.target}</p>
+                                <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_TARGET}</span>
+                                <p className="text-[17px] text-white font-bold leading-[1.7] mt-1">{reportData.positioning.target}</p>
                             </div>
                         </div>
-                        <div className="border-t border-white/[0.04] pt-6 space-y-5">
+                        <div className="border-t border-white/[0.04] pt-6 space-y-7">
                             <div>
-                                <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-3 font-medium">{UI_LABELS.POSITION_GAP}</p>
-                                <p className="text-base text-amber-300 font-semibold leading-[1.7]">{reportData.positioning.gap}</p>
+                                <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_GAP}</span>
+                                <p className="text-base text-amber-300 font-semibold leading-[1.7] mt-1">{reportData.positioning.gap}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-3 font-medium">{UI_LABELS.POSITION_STRATEGY}</p>
-                                <p className="text-[15px] text-zinc-300 leading-[1.7]">{reportData.positioning.strategy}</p>
+                                <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_STRATEGY}</span>
+                                <p className="text-[15px] text-zinc-300 leading-[1.7] mt-1">{reportData.positioning.strategy}</p>
                             </div>
                         </div>
                     </div>
@@ -414,195 +441,276 @@ export default function PassMateReport() {
             </article>
 
             {/* ================================================================= */}
-            {/* ACT 3: LINE-BY-LINE ANALYSIS (Split View) */}
+            {/* ACT 3: LINE-BY-LINE ANALYSIS — Editorial Review Workspace */}
             {/* ================================================================= */}
-            <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10">
+            <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10"
+                onClick={(e) => {
+                    // Click-outside: reset highlight if clicking empty area
+                    if ((e.target as HTMLElement).closest('.annotation-hl') || (e.target as HTMLElement).closest('.commentary-trigger') || (e.target as HTMLElement).closest('.commentary-body') || (e.target as HTMLElement).closest('.view-mode-toggle')) return
+                    setFocusedCardIndex(null)
+                    setExpandedCards(new Set())
+                }}>
                 <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.DETAILED_DIAGNOSIS}</h2>
-                <h3 className="text-xl sm:text-2xl font-semibold text-white mb-8 tracking-tight">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
+                <h3 className="text-xl sm:text-2xl font-semibold text-white mb-10 tracking-tight">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
 
-                {/* Tab buttons + View Mode Toggle */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-1.5">
-                        {reportData.questionTabs.map((tab, index) => (
-                            <button key={tab.id} onClick={() => handleTabChange(index)}
-                                className={`px-5 py-2 text-sm rounded-lg transition-all ${activeTab === index ? "bg-[#333] text-white font-medium border border-[#444]" : "text-[#888] hover:text-[#ccc] hover:bg-[#242424]"}`}>
-                                {tab.title}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="flex bg-[#242424] rounded-lg p-0.5 border border-[#333]">
-                        <button onClick={() => setViewMode('focus')}
-                            className={`px-4 py-1.5 text-sm rounded-md transition-all ${viewMode === 'focus' ? 'bg-[#333] text-white font-medium' : 'text-[#888] hover:text-[#ccc]'}`}>
-                            {UI_LABELS.VIEW_MODE_FOCUS}
-                        </button>
-                        <button onClick={() => setViewMode('list')}
-                            className={`px-4 py-1.5 text-sm rounded-md transition-all ${viewMode === 'list' ? 'bg-[#333] text-white font-medium' : 'text-[#888] hover:text-[#ccc]'}`}>
-                            {UI_LABELS.VIEW_MODE_LIST}
-                        </button>
-                    </div>
-                </div>
+                {/* Split View: Source (Left) + Commentary (Right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-0 lg:items-start">
 
-                {/* Split View */}
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-0 border border-white/[0.08] rounded-xl lg:items-start">
-
-                    {/* LEFT PANEL */}
-                    <div className="border-r border-white/[0.08] bg-[#1A1A1A]">
-                        <div className="px-5 py-4 border-b border-white/[0.08]">
-                            <p className="text-sm text-[#999] uppercase tracking-[0.12em] font-medium">{UI_LABELS.FEEDBACK}</p>
+                    {/* ═══ LEFT PANEL: Source Text ═══ */}
+                    <div ref={sourceTextRef} className="lg:pr-10 lg:sticky lg:top-[10vh] lg:self-start lg:max-h-[85vh] lg:overflow-y-auto hide-scrollbar">
+                        {/* Document Header */}
+                        <div className="doc-header mb-6">
+                            <span>{targetCompany}</span>
+                            <span className="separator">·</span>
+                            <span>{userName}</span>
                         </div>
 
-                        {/* Subtitle diagnosis */}
-                        <div className="border-b border-white/[0.08]">
+                        {/* Section Navigator Tabs */}
+                        <div className="flex items-center border-b border-white/[0.06] mb-8">
+                            {reportData.questionTabs.map((tab, index) => (
+                                <button key={tab.id} onClick={() => handleTabChange(index)}
+                                    className={`section-tab ${activeTab === index ? 'active' : ''}`}>
+                                    {tab.title}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Question Prompt */}
+                        <div className="mb-8">
+                            <p className="question-prompt">{currentTab.prompt}</p>
+                        </div>
+
+                        {/* Source Text Body */}
+                        <div className={`source-text-body ${focusedCardIndex !== null ? 'original-text-dimmed' : ''}`}>
+                            {currentTab.fullAnswer.split('\n').map((paragraph: string, pIdx: number) => (
+                                <p key={pIdx}>
+                                    {(() => {
+                                        const highlights = currentTab.feedbackCards.map((c: any) => c.original)
+                                        let result: React.ReactNode[] = []
+                                        let remaining = paragraph
+                                        let keyCounter = 0
+                                        while (remaining.length > 0) {
+                                            let earliestIdx = remaining.length
+                                            let matchedHighlight = ''
+                                            let matchedCardIdx = -1
+                                            highlights.forEach((h: string, hIdx: number) => {
+                                                const pos = remaining.indexOf(h)
+                                                if (pos !== -1 && pos < earliestIdx) {
+                                                    earliestIdx = pos
+                                                    matchedHighlight = h
+                                                    matchedCardIdx = hIdx
+                                                }
+                                            })
+                                            if (matchedHighlight) {
+                                                if (earliestIdx > 0) result.push(remaining.slice(0, earliestIdx))
+                                                const isActive = focusedCardIndex === matchedCardIdx
+                                                const cardType = currentTab.feedbackCards[matchedCardIdx]?.type
+                                                const typeClass = cardType === 'praise' ? 'praise-hl' : 'improvement-hl'
+                                                const displayNum = cardDisplayNumbers[matchedCardIdx] ?? (matchedCardIdx + 1)
+                                                result.push(
+                                                    <span key={`hl-${pIdx}-${keyCounter++}`}
+                                                        id={`source-sentence-${matchedCardIdx}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleSourceHighlightClick(matchedCardIdx)
+                                                        }}
+                                                        className={`annotation-hl ${typeClass} ${isActive ? 'active' : ''}`}>
+                                                        <span className="annotation-badge">
+                                                            {displayNum}
+                                                        </span>
+                                                        {matchedHighlight}
+                                                    </span>
+                                                )
+                                                remaining = remaining.slice(earliestIdx + matchedHighlight.length)
+                                            } else {
+                                                result.push(remaining)
+                                                remaining = ''
+                                            }
+                                        }
+                                        return result
+                                    })()}
+                                </p>
+                            ))}
+                        </div>
+
+                        {/* Character Count */}
+                        <div className="mt-10 pt-6 border-t border-white/[0.04]">
+                            <span className="char-count">{charCount.toLocaleString()}자</span>
+                        </div>
+                    </div>
+
+                    {/* ═══ RIGHT PANEL: AI Commentary ═══ */}
+                    <div ref={commentaryRef} className="lg:sticky lg:top-[10vh] lg:self-start lg:h-[85vh] flex flex-col lg:border-l border-white/[0.06] lg:pl-8 mt-10 lg:mt-0">
+                        {/* Panel Header + View Mode Toggle */}
+                        <div className="flex items-center justify-between mb-6 shrink-0">
+                            <p className="text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold">{UI_LABELS.AI_COMMENTARY}</p>
+                            <div className="view-mode-toggle">
+                                <button onClick={() => setViewMode('list')}
+                                    className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}>
+                                    {UI_LABELS.VIEW_MODE_LIST}
+                                </button>
+                                <button onClick={() => setViewMode('focus')}
+                                    className={`view-mode-btn ${viewMode === 'focus' ? 'active' : ''}`}>
+                                    {UI_LABELS.VIEW_MODE_FOCUS}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Scrolling Content Area */}
+                        <div className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10">
+
+                        {/* Overview — Collapsible */}
+                        <div className="mb-4 bg-zinc-900/40 border border-white/[0.06] rounded-2xl p-5 hover:bg-zinc-900/60 transition-colors">
+                            <button onClick={() => setShowOverview(!showOverview)}
+                                className="w-full flex items-center justify-between text-left group">
+                                <span className="commentary-section-label panel-header flex items-center gap-3 text-zinc-50" style={{ margin: 0, border: 'none', padding: 0 }}><MessageSquareText className="w-5 h-5 text-zinc-300" />{UI_LABELS.OVERVIEW}</span>
+                                <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${showOverview ? 'rotate-180' : ''}`} />
+                            </button>
+                            {showOverview && (
+                                <div className="pt-4 mt-4 border-t border-white/[0.04]">
+                                    <p className="text-[14px] text-zinc-300 leading-[1.8]">{currentTab.overview}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Subtitle Diagnosis — Collapsible */}
+                        <div className="mb-4 bg-zinc-900/40 border border-white/[0.06] rounded-2xl p-5 hover:bg-zinc-900/60 transition-colors">
                             <button onClick={() => setShowSubtitle(!showSubtitle)}
-                                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-[#242424] transition-colors">
-                                <span className="text-sm text-[#999] uppercase tracking-[0.12em] font-medium">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
-                                <ChevronDown className={`w-4 h-4 text-[#666] transition-transform ${showSubtitle ? 'rotate-180' : ''}`} />
+                                className="w-full flex items-center justify-between text-left group">
+                                <span className="commentary-section-label panel-header flex items-center gap-3 text-zinc-50" style={{ margin: 0, border: 'none', padding: 0 }}><Type className="w-5 h-5 text-zinc-300" />{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
+                                <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${showSubtitle ? 'rotate-180' : ''}`} />
                             </button>
                             {showSubtitle && (
-                                <div className="px-6 pb-6 space-y-3">
+                                <div className="pt-4 mt-4 border-t border-white/[0.04]">
                                     {currentTab.subtitleDiagnosis.exists ? (
-                                        <>
-                                            <p className="text-sm text-[#888] leading-[1.7] italic">"{currentTab.subtitleDiagnosis.original}"</p>
-                                            <p className="text-[17px] text-white font-bold leading-[1.7] mt-2">{currentTab.subtitleDiagnosis.suggestion}</p>
-                                            <p className="text-[15px] text-[#bbb] leading-[1.7] mt-1">{currentTab.subtitleDiagnosis.feedback}</p>
-                                        </>
+                                        <div className="space-y-0">
+                                            <p className="commentary-body-text mb-4">{currentTab.subtitleDiagnosis.feedback}</p>
+                                            
+                                            <p className="commentary-label">소제목 수정 제안</p>
+                                            <p className="commentary-headline mb-0">{currentTab.subtitleDiagnosis.suggestion}</p>
+                                        </div>
                                     ) : (
-                                        <>
-                                            <p className="text-[15px] text-[#bbb] leading-[1.7]">{currentTab.subtitleDiagnosis.feedback}</p>
-                                            <p className="text-[17px] text-white font-bold whitespace-pre-wrap leading-[1.7] mt-2">{currentTab.subtitleDiagnosis.suggestion}</p>
-                                        </>
+                                        <div className="space-y-0">
+                                            <p className="commentary-body-text mb-4">{currentTab.subtitleDiagnosis.feedback}</p>
+                                            
+                                            <p className="commentary-label" style={{ marginTop: '0' }}>소제목 수정 제안</p>
+                                            <p className="commentary-headline mb-0">{currentTab.subtitleDiagnosis.suggestion}</p>
+                                        </div>
                                     )}
                                 </div>
                             )}
                         </div>
 
-                        {/* Overview */}
-                        <div className="px-6 py-5 border-b border-white/[0.08]">
-                            <p className="text-sm text-[#aaa] leading-[1.75]">{currentTab.overview}</p>
-                        </div>
+                        {/* Section Header: 문장 진단 */}
+                        <div className="bg-zinc-900/40 border border-white/[0.06] rounded-2xl p-5">
+                            <div className="flex items-center gap-3 mb-6">
+                                <ListChecks className="w-5 h-5 text-zinc-300" />
+                                <span className="commentary-section-label panel-header text-zinc-50" style={{ margin: 0, border: 'none', padding: 0 }}>{UI_LABELS.SENTENCE_DIAGNOSIS}</span>
+                            </div>
 
-                        {/* Feedback Cards */}
-                        <div>
-                            {viewMode === 'focus' && activeCardIndex === null && (
-                                <div className="flex items-center justify-center py-16 px-6">
-                                    <p className="text-sm text-[#666] text-center leading-relaxed whitespace-pre-wrap">{UI_LABELS.CLICK_HIGHLIGHT_GUIDE}</p>
-                                </div>
-                            )}
-                            <div className="p-4 space-y-5">
-                                {visibleCards.map((card: any, idx: number) => {
-                                    const realIdx = viewMode === 'focus' && activeCardIndex !== null ? activeCardIndex : (card._origIdx ?? idx)
-                                    const isActive = activeCardIndex === realIdx
-                                    const displayNum = cardDisplayNumbers[realIdx] ?? (realIdx + 1)
+                        {/* ── Focus Mode: Full content for focused card ── */}
+                        {viewMode === 'focus' && (
+                            <div>
+                                {focusedCardIndex !== null ? (() => {
+                                    const card = currentTab.feedbackCards[focusedCardIndex] as any
+                                    if (!card) return null
+                                    const displayNum = cardDisplayNumbers[focusedCardIndex] ?? (focusedCardIndex + 1)
                                     return (
-                                        <div key={realIdx} id={`feedback-card-${realIdx}`}
-                                            onClick={() => {
-                                                setActiveCardIndex(realIdx)
-                                                setAiLogicModal({ isOpen: true, original: card.original, feedback: card.type === 'praise' ? card.praisePoint : card.feedback, suggestion: card.type === 'improvement' ? card.suggestion : undefined, type: card.type, interviewLink: card.interviewLink })
-                                            }}
-                                            className={`feedback-card overflow-hidden cursor-pointer ${isActive ? 'active' : ''}`}>
-                                            {/* 원본 문장 */}
-                                            <div className="px-5 pt-5 pb-3 flex items-start gap-3">
-                                                <span className={`shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center mt-0.5 ${isActive ? 'bg-[#4ADE80] text-[#1A1A1A]' : 'bg-[#333] text-[#999]'}`}>
+                                        <div className="focus-card">
+                                            {/* Number + Original */}
+                                            <div className="flex items-start gap-3 mb-5">
+                                                <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${card.type === 'praise' ? 'bg-[#4ADE80] text-[#111]' : 'bg-[#FBBF24] text-[#111]'}`}>
                                                     {displayNum}
                                                 </span>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs text-[#777] tracking-[0.1em] uppercase mb-2 font-medium">{UI_LABELS.ORIGINAL_SENTENCE}</p>
-                                                    <p className="text-sm text-[#999] leading-[1.7] italic">"{card.original}"</p>
-                                                </div>
+                                                <p className="text-[14px] text-zinc-300 leading-[1.7] italic flex-1">"{card.original}"</p>
                                             </div>
-                                            {/* AI 진단 */}
-                                            <div className="mx-5 px-4 py-4 bg-[#2A2A2A] rounded-lg mb-2">
-                                                <p className="text-xs text-[#4ADE80]/60 tracking-[0.1em] uppercase mb-2 font-semibold">{UI_LABELS.AI_DIAGNOSIS}</p>
-                                                <p className="text-[15px] text-[#E5E5E5] leading-[1.75]">
-                                                    {card.type === 'improvement' ? card.feedback : card.praisePoint}
-                                                </p>
-                                            </div>
-                                            {/* 면접 예상 질문 */}
+
+                                            {/* Detailed Analysis */}
+                                            <p className="commentary-body-text mb-4">{card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint)}</p>
+
+                                            {/* Interview perspective */}
                                             {card.interviewLink && (
-                                                <div className="mx-5 px-4 py-3 bg-[#2A2A2A] rounded-lg mb-2 border-l-2 border-[#F59E0B]/30">
-                                                    <p className="text-xs text-[#F59E0B]/60 tracking-[0.1em] uppercase mb-1.5 font-semibold">{UI_LABELS.INTERVIEW_ATTACK_POINT}</p>
-                                                    <p className="text-sm text-[#ccc] leading-[1.7]">"{card.interviewLink.question}"</p>
-                                                </div>
+                                                <>
+                                                    <p className="commentary-label">예상 면접 질문</p>
+                                                    <p className="commentary-headline">"{card.interviewLink.question}"</p>
+                                                    <p className="commentary-meta mb-4">{UI_LABELS.QUESTION_INTENT}: {card.interviewLink.intent}</p>
+                                                </>
                                             )}
-                                            {/* 개선안 */}
-                                            <div className="px-5 pt-4 pb-5">
-                                                <p className="text-xs text-[#777] tracking-[0.1em] uppercase mb-2 font-medium">{card.type === 'improvement' ? UI_LABELS.IMPROVED_SENTENCE : UI_LABELS.VERDICT}</p>
-                                                <p className="text-[17px] text-white font-bold leading-[1.65]">
-                                                    {card.type === 'improvement' ? card.suggestion : card.original}
-                                                </p>
+
+                                            {/* Improvement suggestion */}
+                                            {card.type === 'improvement' && card.suggestion && (
+                                                <>
+                                                    <p className="commentary-label">개선한 문장</p>
+                                                    <p className="commentary-headline">{card.suggestion}</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    )
+                                })() : (
+                                    <div className="py-12 text-center">
+                                        <p className="text-sm text-zinc-600 leading-relaxed">{UI_LABELS.CLICK_HIGHLIGHT_GUIDE}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ── List Mode: Accordion ── */}
+                        {viewMode === 'list' && (
+                            <div>
+                                {sortedCards.map((card: any) => {
+                                    const realIdx = card._origIdx
+                                    const isExpanded = expandedCards.has(realIdx)
+                                    const isFocused = focusedCardIndex === realIdx
+                                    const displayNum = cardDisplayNumbers[realIdx] ?? (realIdx + 1)
+                                    const previewText = card.type === 'improvement' ? card.feedback : card.praisePoint
+
+                                    return (
+                                        <div key={realIdx}
+                                            id={`commentary-item-${realIdx}`}
+                                            className={`commentary-item ${card.type} ${isExpanded ? 'expanded' : ''} ${isFocused && !isExpanded ? 'focused' : ''}`}>
+
+                                            {/* Trigger */}
+                                            <button className="commentary-trigger" onClick={() => handleAccordionToggle(realIdx)}>
+                                                <span className="commentary-num">{displayNum}</span>
+                                                <span className="commentary-preview flex-1 min-w-0">{previewText}</span>
+                                                <ChevronDown className="commentary-chevron" />
+                                            </button>
+
+                                            {/* Body */}
+                                            <div className="commentary-body pt-2">
+                                                {/* Detailed Analysis */}
+                                                <p className="commentary-body-text mb-4">{card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint)}</p>
+
+                                                {/* Interview perspective */}
+                                                {card.interviewLink && (
+                                                    <>
+                                                        <p className="commentary-label">예상 면접 질문</p>
+                                                        <p className="commentary-headline">"{card.interviewLink.question}"</p>
+                                                        <p className="commentary-meta mt-1">{UI_LABELS.QUESTION_INTENT}: {card.interviewLink.intent}</p>
+                                                    </>
+                                                )}
+
+                                                {/* Improvement suggestion */}
+                                                {card.type === 'improvement' && card.suggestion && (
+                                                    <>
+                                                        <p className="commentary-label">개선한 문장</p>
+                                                        <p className="commentary-headline">{card.suggestion}</p>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     )
                                 })}
                             </div>
+                        )}
                         </div>
-                    </div>
 
-                    {/* RIGHT PANEL — sticky */}
-                    <div className="lg:sticky lg:top-[15vh] lg:self-start lg:max-h-[75vh] lg:overflow-y-auto flex flex-col bg-white/[0.03]" onClick={(e) => { if ((e.target as HTMLElement).closest('.annotation-hl') === null) setActiveCardIndex(null) }}>
-                        <div className="px-6 py-4 border-b border-white/[0.08] shrink-0">
-                            <p className="text-sm text-[#999] uppercase tracking-[0.12em] font-medium">{UI_LABELS.ORIGINAL_TEXT_PANEL}</p>
-                        </div>
-                        {/* 문항 질문 — 전체 너비 강조 */}
-                        <div className="border-b border-white/[0.08] bg-white/[0.04] px-6 py-4 shrink-0">
-                            <p className="text-xs text-[#4ADE80]/70 uppercase tracking-[0.12em] mb-2 font-semibold">{currentTab.title}</p>
-                            <p className="text-[15px] text-[#E5E5E5] leading-[1.7] font-medium">{currentTab.prompt}</p>
-                        </div>
-                        <div className="px-6 py-6">
-                            <div className={`text-[15px] text-[#999] leading-[2] whitespace-pre-wrap transition-all duration-300 ease-in-out ${activeCardIndex !== null ? 'original-text-dimmed' : ''}`}>
-                                {currentTab.fullAnswer.split('\n').map((paragraph, pIdx) => (
-                                    <p key={pIdx} className="mb-5">
-                                        {(() => {
-                                            const highlights = currentTab.feedbackCards.map((c: any) => c.original)
-                                            let result: React.ReactNode[] = []
-                                            let remaining = paragraph
-                                            let keyCounter = 0
-                                            while (remaining.length > 0) {
-                                                let earliestIdx = remaining.length
-                                                let matchedHighlight = ''
-                                                let matchedCardIdx = -1
-                                                highlights.forEach((h: string, hIdx: number) => {
-                                                    const pos = remaining.indexOf(h)
-                                                    if (pos !== -1 && pos < earliestIdx) {
-                                                        earliestIdx = pos
-                                                        matchedHighlight = h
-                                                        matchedCardIdx = hIdx
-                                                    }
-                                                })
-                                                if (matchedHighlight) {
-                                                    if (earliestIdx > 0) result.push(remaining.slice(0, earliestIdx))
-                                                    const isActive = activeCardIndex === matchedCardIdx
-                                                    const displayNum = cardDisplayNumbers[matchedCardIdx] ?? (matchedCardIdx + 1)
-                                                    result.push(
-                                                        <span key={`hl-${pIdx}-${keyCounter++}`}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setActiveCardIndex(matchedCardIdx)
-                                                                const el = document.getElementById(`feedback-card-${matchedCardIdx}`)
-                                                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                                            }}
-                                                            className={`annotation-hl ${isActive ? 'active' : ''}`}>
-                                                            <span className="annotation-badge">
-                                                                {displayNum}
-                                                            </span>
-                                                            {matchedHighlight}
-                                                        </span>
-                                                    )
-                                                    remaining = remaining.slice(earliestIdx + matchedHighlight.length)
-                                                } else {
-                                                    result.push(remaining)
-                                                    remaining = ''
-                                                }
-                                            }
-                                            return result
-                                        })()}
-                                    </p>
-                                ))}
-                            </div>
-                        </div>
+                        </div> {/* End Scrolling Content Area */}
                     </div>
                 </div>
             </section>
+
+
 
             <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10">
 
@@ -686,12 +794,12 @@ export default function PassMateReport() {
                     <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.PM_VERDICT}</h2>
                     <h3 className="text-xl sm:text-2xl font-medium text-white mb-10 tracking-tight">{UI_LABELS.PM_VERDICT_TITLE}</h3>
                     <div className="flex items-start gap-5">
-                        <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-zinc-400 text-xs font-bold tracking-tight">PM</span>
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-indigo-400 text-xs font-bold tracking-tight">H</span>
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-3">
-                                <span className="text-sm font-medium text-white">PM Yehwan</span>
+                                <span className="text-sm font-medium text-white">Mentor Hansi</span>
                                 <span className="text-xs text-zinc-600">{UI_LABELS.JUST_NOW}</span>
                             </div>
                             <div className="border-l-2 border-indigo-400/20 pl-5">
@@ -764,60 +872,6 @@ export default function PassMateReport() {
                 </footer>
             </article>
 
-            {/* ================================================================= */}
-            {/* AI LOGIC DETAIL MODAL */}
-            {/* ================================================================= */}
-            {aiLogicModal?.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setAiLogicModal(null)}>
-                    <div className="bg-[#1E1E1E] border border-[#333] rounded-xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between px-8 py-6 border-b border-[#333] shrink-0">
-                            <div className="flex items-center gap-4">
-                                <span className={`px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider ${aiLogicModal.type === 'praise' ? 'bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/20' : 'bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/20'}`}>
-                                    {aiLogicModal.type === 'praise' ? '강점 분석' : '개선 분석'}
-                                </span>
-                                <h3 className="text-lg font-semibold text-white">{UI_LABELS.DIAGNOSIS_DETAIL}</h3>
-                            </div>
-                            <button onClick={() => setAiLogicModal(null)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#666] hover:text-white hover:bg-[#333] transition-colors">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                        <div className="px-8 py-8 overflow-y-auto space-y-8">
-                            {/* 원문 */}
-                            <div>
-                                <p className="text-sm text-[#888] uppercase tracking-[0.12em] mb-3 font-semibold">{UI_LABELS.ORIGINAL_ANALYSIS}</p>
-                                <div className="bg-[#242424] border border-[#333] rounded-lg px-5 py-4">
-                                    <p className="text-[16px] text-[#ccc] leading-[1.75] italic">"{aiLogicModal.original}"</p>
-                                </div>
-                            </div>
-                            {/* AI 진단 */}
-                            <div>
-                                <p className="text-sm text-[#4ADE80]/70 uppercase tracking-[0.12em] mb-3 font-semibold">{aiLogicModal.type === "praise" ? "AI 강점 분석" : "AI 개선 분석"}</p>
-                                <p className="text-[16px] text-[#E5E5E5] leading-[1.8]">{aiLogicModal.feedback}</p>
-                            </div>
-                            {/* 개선안 */}
-                            {aiLogicModal.suggestion && (
-                                <div className="bg-[#242424] border border-[#4ADE80]/15 rounded-lg px-5 py-5">
-                                    <p className="text-sm text-[#4ADE80]/60 uppercase tracking-[0.12em] mb-3 font-semibold">{UI_LABELS.IMPROVED_SENTENCE}</p>
-                                    <p className="text-[18px] text-white font-bold leading-[1.65]">{aiLogicModal.suggestion}</p>
-                                </div>
-                            )}
-                            {/* 면접 예상 질문 + 출제 의도 */}
-                            {aiLogicModal.interviewLink && (
-                                <div className="bg-[#242424] border border-[#F59E0B]/10 rounded-lg px-5 py-5 space-y-4">
-                                    <div>
-                                        <p className="text-sm text-[#F59E0B]/70 uppercase tracking-[0.12em] mb-2 font-semibold">{UI_LABELS.INTERVIEW_ATTACK_POINT}</p>
-                                        <p className="text-[16px] text-[#E5E5E5] leading-[1.7]">"{aiLogicModal.interviewLink.question}"</p>
-                                    </div>
-                                    <div className="border-t border-[#333] pt-4">
-                                        <p className="text-sm text-[#F59E0B]/50 uppercase tracking-[0.12em] mb-2 font-semibold">출제 의도</p>
-                                        <p className="text-[15px] text-[#ccc] leading-[1.7]">{aiLogicModal.interviewLink.intent}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Toast */}
             {toastMessage && (

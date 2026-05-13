@@ -260,7 +260,7 @@ html {
 .report-nav {
   position: fixed;
   top: 50%;
-  left: max(calc((100vw - 1600px) / 2), 12px);
+  left: max(calc((100vw - 1800px) / 2), 24px);
   transform: translateY(-50%);
   width: 120px;
   z-index: 40;
@@ -304,40 +304,77 @@ html {
   height: 18px;
 }
 
-/* ── Annotation Highlight: Clean underline ── */
+/* ── Annotation Highlight: Highlighter Pen Effect ── */
 .annotation-hl {
   position: relative;
   display: inline;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
-  border-bottom: 2px solid rgba(74, 222, 128, 0.35);
-  padding-bottom: 1px;
-  color: #E5E5E5;
+  border-radius: 2px;
+  padding: 2px 0;
+  color: rgba(220, 220, 220, 0.95);
+}
+
+/* Default: light translucent highlighter (praise = green, improvement = yellow) */
+.annotation-hl.praise-hl {
+  background: rgba(74, 222, 128, 0.10);
+}
+.annotation-hl.improvement-hl {
+  background: rgba(251, 191, 36, 0.10);
 }
 
 .annotation-hl:hover {
-  border-bottom-color: rgba(74, 222, 128, 0.7);
+  color: #fff;
+}
+.annotation-hl.praise-hl:hover {
+  background: rgba(74, 222, 128, 0.22);
+}
+.annotation-hl.improvement-hl:hover {
+  background: rgba(251, 191, 36, 0.18);
+}
+
+/* Active: deeper highlighter fill */
+.annotation-hl.active.praise-hl {
+  background: rgba(74, 222, 128, 0.28);
+  color: #fff;
+}
+.annotation-hl.active.improvement-hl {
+  background: rgba(251, 191, 36, 0.22);
   color: #fff;
 }
 
-.annotation-hl.active {
-  border-bottom-color: #4ADE80;
-  color: #fff;
-}
-
-/* Dimming effect — still readable */
+/* Dimming effect — highlights remain faintly visible */
 .original-text-dimmed .annotation-hl:not(.active) {
-  color: rgba(180, 180, 180, 0.45);
-  border-bottom-color: rgba(74, 222, 128, 0.1);
+  color: rgba(180, 180, 180, 0.5);
   transition: all 0.3s ease-in-out;
+}
+.original-text-dimmed .annotation-hl.praise-hl:not(.active) {
+  background: rgba(74, 222, 128, 0.06);
+}
+.original-text-dimmed .annotation-hl.improvement-hl:not(.active) {
+  background: rgba(251, 191, 36, 0.06);
+}
+/* Hover in dimmed state: brighten the highlighter */
+.original-text-dimmed .annotation-hl.praise-hl:not(.active):hover {
+  background: rgba(74, 222, 128, 0.20);
+  color: #ddd;
+}
+.original-text-dimmed .annotation-hl.improvement-hl:not(.active):hover {
+  background: rgba(251, 191, 36, 0.16);
+  color: #ddd;
 }
 .original-text-dimmed p {
   color: rgba(180, 180, 180, 0.45);
   transition: color 0.3s ease-in-out;
 }
-.original-text-dimmed .annotation-hl.active {
+.original-text-dimmed .annotation-hl.active.praise-hl {
   color: #fff;
-  border-bottom-color: #4ADE80;
+  background: rgba(74, 222, 128, 0.28);
+  transition: all 0.3s ease-in-out;
+}
+.original-text-dimmed .annotation-hl.active.improvement-hl {
+  color: #fff;
+  background: rgba(251, 191, 36, 0.22);
   transition: all 0.3s ease-in-out;
 }
 
@@ -365,8 +402,18 @@ html {
 .annotation-hl.active .annotation-badge {
   opacity: 1;
   transform: scale(1);
+}
+.annotation-hl.active.praise-hl .annotation-badge {
   background: #4ADE80;
-  color: #1A1A1A;
+  color: #111;
+}
+.annotation-hl.active.improvement-hl .annotation-badge {
+  background: #FBBF24;
+  color: #111;
+}
+.annotation-hl:hover:not(.active) .annotation-badge {
+  background: rgba(200, 200, 200, 0.3);
+  color: #ddd;
 }
 
 /* ── Fade-in ── */
@@ -386,24 +433,344 @@ html {
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Feedback card: Elevated active ── */
-.feedback-card {
+/* ── Document Header ── */
+.doc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(180, 180, 180, 0.6);
+  letter-spacing: 0.02em;
+}
+.doc-header .separator {
+  color: rgba(180, 180, 180, 0.25);
+}
+
+/* ── Section Navigator Tabs ── */
+.section-tab {
+  position: relative;
+  padding: 10px 0;
+  margin-right: 28px;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(160, 160, 160, 0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.25s ease;
+  letter-spacing: 0.01em;
+}
+.section-tab:last-child { margin-right: 0; }
+.section-tab:hover { color: rgba(200, 200, 200, 0.8); }
+.section-tab.active {
+  color: #E5E5E5;
+  font-weight: 500;
+}
+.section-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #4ADE80;
+  border-radius: 1px;
+}
+
+/* ── Source Text: Reading Typography ── */
+.source-text-body {
+  font-size: 16px;
+  line-height: 2.15;
+  color: rgba(200, 200, 200, 0.85);
+  white-space: pre-wrap;
+  word-break: keep-all;
   transition: all 0.3s ease-in-out;
-  background: #242424;
-  border: 1px solid #333;
-  border-radius: 12px;
-  transform: scale(1);
 }
-.feedback-card:hover {
-  border-color: #444;
-  background: #2A2A2A;
+.source-text-body p {
+  margin-bottom: 24px;
 }
-.feedback-card.active {
-  border-color: rgba(74, 222, 128, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-  transform: scale(1.015);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(74, 222, 128, 0.08);
+.source-text-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Question Prompt ── */
+.question-prompt {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(220, 220, 220, 0.9);
+  line-height: 1.7;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid rgba(220, 220, 220, 0.25);
+  border-radius: 0 4px 4px 0;
+}
+
+/* ── Character Count Metadata ── */
+.char-count {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(180, 180, 180, 0.6);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Commentary Accordion Item ── */
+.commentary-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s ease;
+}
+.commentary-item:last-child {
+  border-bottom: none;
+}
+
+/* Focused state: highlight border without expanding */
+.commentary-item.focused {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.commentary-item.focused .commentary-num {
+  background: rgba(200, 200, 200, 0.2);
+  color: #fff;
+}
+.commentary-item.focused .commentary-preview {
+  color: #ddd;
+}
+
+.commentary-trigger {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.commentary-trigger:hover {
+  opacity: 0.85;
+}
+
+/* Commentary number: bright white by default, colored on expand */
+.commentary-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(230, 230, 230, 0.9);
+}
+
+/* Expanded: colored by type */
+.commentary-item.praise.expanded .commentary-num {
+  background: #4ADE80;
+  color: #111;
+}
+.commentary-item.improvement.expanded .commentary-num {
+  background: #FBBF24;
+  color: #111;
+}
+
+.commentary-preview {
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(210, 210, 210, 0.85);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.25s ease;
+}
+.commentary-item.expanded .commentary-preview {
+  color: #ddd;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.commentary-body {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease 0.05s,
+              padding 0.3s ease;
+  padding: 0 0 0 36px;
+}
+.commentary-item.expanded .commentary-body {
+  max-height: 800px;
+  opacity: 1;
+  padding: 0 0 20px 36px;
+}
+
+/* ═══ Commentary Typography Hierarchy ═══ */
+
+/*
+ * TIER 1 — Panel Section Headers (총평, 소제목 진단, 문장 진단)
+ * The biggest, most prominent. Navigation landmarks.
+ */
+.panel-header {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+}
+
+/*
+ * TIER 2 — Structure Labels (원본 문장, 상세 분석, 면접관 관점, 개선안)
+ * Small, quiet, uppercase-ish. Just markers, not content.
+ */
+.commentary-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  color: rgba(160, 160, 160, 0.55);
+  margin-top: 28px;
+  margin-bottom: 6px;
+}
+.commentary-label:first-child {
+  margin-top: 4px;
+}
+
+/*
+ * TIER 3 — Headlines / Key Insights (개선안 문장, praisePoint, interview question)
+ * Bright, prominent, tight line-height. These "pop" off the page.
+ */
+.commentary-headline {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: rgba(245, 245, 245, 0.95);
+  margin-bottom: 20px;
+}
+
+/*
+ * TIER 4a — Body Text (detailedAnalysis, explanatory prose)
+ * Stepped back from headlines. Comfortable reading rhythm.
+ */
+.commentary-body-text {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.9;
+  color: rgba(190, 190, 190, 0.78);
+  margin-bottom: 4px;
+}
+
+/*
+ * TIER 4b — Metadata (출제 의도, intent 등)
+ * Most subdued. Informational footnote feel.
+ */
+.commentary-meta {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(140, 140, 140, 0.55);
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/*
+ * Original sentence quote — italic, quiet, distinct from analysis
+ */
+.commentary-quote {
+  font-size: 13px;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.75;
+  color: rgba(180, 180, 180, 0.65);
+  margin-bottom: 20px;
+}
+
+/* Legacy — keep for backward compat with collapsible section buttons */
+.commentary-section-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(200, 200, 200, 0.8);
+  margin-bottom: 8px;
+  margin-top: 16px;
+}
+
+/* ── Commentary Chevron ── */
+.commentary-chevron {
+  width: 16px;
+  height: 16px;
+  color: rgba(140, 140, 140, 0.35);
+  flex-shrink: 0;
+  margin-top: 3px;
+  margin-left: auto;
+  transition: transform 0.3s ease, color 0.25s ease;
+}
+.commentary-item.expanded .commentary-chevron {
+  transform: rotate(180deg);
+  color: rgba(200, 200, 200, 0.5);
+}
+
+/* ── Focus Mode: Full card display ── */
+.focus-card {
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.focus-card:last-child {
+  border-bottom: none;
+}
+
+/* ── View mode toggle ── */
+.view-mode-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.view-mode-btn {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(160, 160, 160, 0.6);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.view-mode-btn:hover {
+  color: rgba(200, 200, 200, 0.8);
+}
+.view-mode-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #E5E5E5;
 }
 
 /* ── Section divider ── */
 .section-divider { border-bottom: 1px solid #2A2A2A; }
+
+/* ── Visible thin scrollbar for right panel ── */
+.commentary-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.commentary-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.commentary-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+.commentary-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.commentary-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}

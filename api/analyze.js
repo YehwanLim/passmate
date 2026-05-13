@@ -83,8 +83,9 @@ const MASTER_SYSTEM_PROMPT = `
         {
           "type": "praise 또는 improvement",
           "original": "fullAnswer에서 정확히 일치하는 부분 문자열",
-          "praisePoint": "왜 좋은 문장인지 (praise일 때만)",
-          "feedback": "왜 고쳐야 하는지 (improvement일 때만)",
+          "praisePoint": "왜 좋은 문장인지 한 줄 요약 (praise일 때만)",
+          "feedback": "왜 고쳐야 하는지 한 줄 요약 (improvement일 때만)",
+          "detailedAnalysis": "이 문장에 대한 다차원 심층 분석. 논리 구조, 면접관이 받을 인상, 회사 채용 기준과의 적합도, 구체적 개선 방향 등을 3~5문장으로 서술 (praise/improvement 모두 필수)",
           "suggestion": "개선된 문장 (improvement일 때만)",
           "interviewLink": {
             "question": "이 문장 때문에 면접관이 물을 질문",
@@ -108,17 +109,18 @@ const MASTER_SYSTEM_PROMPT = `
       "expectedImpact": "이걸 하면 뭐가 달라지는지"
     }
   ],
-  "pmComment": "면접관이 실제로 할 법한 냉정한 한마디 (예: 지금 상태로는 서류는 통과하지만 면접에서 걸러집니다.)"
+  "pmComment": "실무자(Mentor Hansi) 입장에서 남기는 구체적이고 심도 있는 총평 코멘트 (최소 3문장 이상, 또는 3가지 이상의 구체적인 지적/조언 포함)"
 }
 
 # [제약 조건]
 - feedbackCards의 original 필드는 반드시 fullAnswer의 정확한 부분 문자열이어야 한다. 한 글자라도 다르면 하이라이팅이 깨진다.
 - interviewLink는 improvement 유형에서는 필수, praise 유형에서는 선택.
+- detailedAnalysis는 praise/improvement 모두 필수. feedback 또는 praisePoint의 단순 반복 금지. 논리 구조 분석, 면접관 관점, 채용 기준 적합도, 개선 방향 등 다양한 시각을 포함해야 한다.
 - 이모지 사용 금지.
 - 문항당 feedbackCards는 4~8개. 최소 1개는 praise 유형 포함.
-- interviewQA는 3~5개, 각각 followUps 2개씩.
+- interviewQA는 최소 5개에서 10개 작성, 각각 followUps 2~3개씩.
 - actionPlan 개수는 자소서 품질에 따라 유동적.
-- pmComment는 실제 면접관이 할 법한 말투로.
+- pmComment는 실제 면접관이 할 법한 말투로, 최소 3문장 이상 상세하게 작성.
 - companyInsight는 기업명에 따라 동적으로 추론한다. 하드코딩 금지.
 
 # [문맥 이탈 방지]
