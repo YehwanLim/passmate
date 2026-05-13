@@ -127,7 +127,7 @@ export default function PassMateReport() {
 
     // ── query parameter에서 mock 여부 판단 ──
     const searchParams = new URLSearchParams(window.location.search)
-    const useMock = searchParams.get('mock') === 'true'
+    const useMock = searchParams.get('mock') === 'true' || searchParams.get('dummy') === 'true'
 
     // ── sessionStorage에서 회사명/직무명 복원 (통합 구조 우선) ──
     const storedAnalysis = loadAnalysisFromStorage()
