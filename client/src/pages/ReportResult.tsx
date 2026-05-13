@@ -83,7 +83,7 @@ const FALLBACK_DATA: ReportData = {
 // NAVIGATION SECTIONS
 // =============================================================================
 const NAV_SECTIONS = [
-    { id: 'section-first-impression', label: '첫인상' },
+    { id: 'section-first-impression', label: '01. 첫인상' },
     { id: 'section-company-insight', label: '02. 합격 기준' },
     { id: 'section-core-diagnosis', label: '03. 핵심 진단' },
     { id: 'section-line-analysis', label: '04. 문장 분석' },
@@ -109,7 +109,6 @@ function MiniNavigator({ activeSection }: { activeSection: string }) {
                             document.getElementById(sec.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                         }}
                     >
-                        <span className="text-[10px] tabular-nums opacity-60 min-w-[14px]">{String(idx + 1).padStart(2, '0')}</span>
                         {sec.label}
                     </a>
                 ))}

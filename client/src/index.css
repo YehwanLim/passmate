@@ -267,6 +267,12 @@ html {
   pointer-events: auto;
 }
 
+@media (max-width: 1680px) {
+  .report-nav {
+    display: none !important;
+  }
+}
+
 .report-nav-item {
   display: flex;
   align-items: center;
