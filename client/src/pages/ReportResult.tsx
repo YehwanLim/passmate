@@ -131,7 +131,7 @@ export default function PassMateReport() {
     // ── sessionStorage에서 회사명/직무명 복원 (통합 구조 우선) ──
     const storedAnalysis = loadAnalysisFromStorage()
     const targetCompany = storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "삼성전자"
-    const userName = storedAnalysis?.jobKeyword || sessionStorage.getItem('passmate_job') || "김만득"
+    const userName = storedAnalysis?.userName || sessionStorage.getItem('passmate_user') || "김민지"
     const analysisId = storedAnalysis?.analysis_id || null
 
     const [reportData, setReportData] = useState<ReportData>(() => {
