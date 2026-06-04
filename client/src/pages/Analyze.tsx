@@ -788,8 +788,7 @@ export default function Analyze() {
                 </>
               ) : (
                 <>
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  10,000원 결제하고 분석 시작하기
+                  분석 시작
                 </>
               )}
             </Button>

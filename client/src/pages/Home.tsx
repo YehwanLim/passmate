@@ -172,11 +172,6 @@ function TypeWriter({
 
 export default function Home() {
   const [, navigate] = useLocation();
-  const [hoveredMetric, setHoveredMetric] = useState<number | null>(null);
-
-  // 3D tilt for interactive card
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const cardRef = useRef<HTMLDivElement>(null);
 
   // Scroll progress
   const { scrollYProgress } = useScroll();
@@ -184,44 +179,6 @@ export default function Home() {
     stiffness: 100,
     damping: 30,
   });
-
-  const handleCardMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
-      const cx = (e.clientX - rect.left) / rect.width - 0.5;
-      const cy = (e.clientY - rect.top) / rect.height - 0.5;
-      setTilt({ x: cy * -10, y: cx * 10 });
-    },
-    []
-  );
-  const handleCardMouseLeave = useCallback(
-    () => setTilt({ x: 0, y: 0 }),
-    []
-  );
-
-  // Score card metric data
-  const metrics = [
-    {
-      label: "논리 구조",
-      value: "A",
-      color: "text-emerald-400",
-      detail: "STAR 기법 완벽 적용",
-    },
-    {
-      label: "직무 적합",
-      value: "B+",
-      color: "text-blue-400",
-      detail: "키워드 매칭률 78%",
-    },
-    {
-      label: "설득력",
-      value: "A-",
-      color: "text-amber-400",
-      detail: "정량 데이터 포함",
-    },
-  ];
-
   /* ─── Render ─── */
   return (
     <div className="min-h-screen bg-[#000000] text-white" style={{ overflowX: "clip" }}>
@@ -257,18 +214,28 @@ export default function Home() {
 
           <div className="hidden md:flex items-center gap-7">
             {[
-              "자소서 분석",
-              "취준 OS 가이드",
-              "1:1 멘토링",
-              "합격 포스트",
-            ].map((label, i) => (
-              <span
+              { label: "자소서 분석", type: "ready" },
+              { label: "1:1 멘토링", type: "coming_soon" },
+              { label: "합격 포스트", type: "coming_soon" },
+            ].map(({ label, type }) => (
+              <div
                 key={label}
-                className="text-[13px] text-gray-500 hover:text-white transition-colors duration-200 cursor-pointer"
-                onClick={() => i === 0 && navigate("/analyze")}
+                className="relative flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-white transition-colors duration-200 cursor-pointer"
+                onClick={() => {
+                  if (type === "ready") {
+                    navigate("/analyze");
+                  } else {
+                    alert("아직 오픈 준비중입니다.");
+                  }
+                }}
               >
                 {label}
-              </span>
+                {type === "coming_soon" && (
+                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 tracking-wider">
+                    COMING SOON
+                  </span>
+                )}
+              </div>
             ))}
           </div>
 
@@ -509,194 +476,7 @@ export default function Home() {
           ══════════════════════════════════════════════════ */}
       <ReportShowcase />
 
-      {/* ── Interactive Demo Card ── */}
-      <section className="relative py-12 md:py-20 px-6">
-        <div className="max-w-xl mx-auto">
-          <ScrollReveal>
-            <div
-              ref={cardRef}
-              onMouseMove={handleCardMouseMove}
-              onMouseLeave={handleCardMouseLeave}
-              style={{
-                transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-                transformStyle: "preserve-3d",
-                transition: "transform 0.2s ease-out",
-              }}
-            >
-              <div className="relative">
-                {/* Glow */}
-                <div
-                  className="absolute -inset-8 rounded-3xl blur-3xl opacity-60"
-                  style={{
-                    background:
-                      "radial-gradient(ellipse at center, rgba(59,130,246,0.1) 0%, transparent 70%)",
-                  }}
-                />
 
-                {/* Card */}
-                <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-2xl backdrop-blur-md overflow-hidden">
-                  {/* Window chrome */}
-                  <div className="flex items-center gap-1.5 px-5 py-3 border-b border-white/[0.06]">
-                    <div className="w-2 h-2 rounded-full bg-white/[0.08]" />
-                    <div className="w-2 h-2 rounded-full bg-white/[0.08]" />
-                    <div className="w-2 h-2 rounded-full bg-white/[0.08]" />
-                    <span className="ml-3 text-[11px] text-gray-600 font-medium tracking-wide">
-                      PassMate — 분석 리포트
-                    </span>
-                  </div>
-
-                  <div className="p-7 space-y-6">
-                    {/* Score ring */}
-                    <div className="text-center py-2">
-                      <p className="text-[10px] font-medium text-gray-500 uppercase tracking-[0.2em] mb-4">
-                        현직자 점수
-                      </p>
-                      <div className="relative inline-flex items-center justify-center">
-                        <svg
-                          className="w-28 h-28"
-                          viewBox="0 0 120 120"
-                        >
-                          <circle
-                            cx="60"
-                            cy="60"
-                            r="50"
-                            fill="none"
-                            stroke="rgba(255,255,255,0.04)"
-                            strokeWidth="6"
-                          />
-                          <defs>
-                            <linearGradient
-                              id="scoreGrad"
-                              x1="0%"
-                              y1="0%"
-                              x2="100%"
-                              y2="100%"
-                            >
-                              <stop
-                                offset="0%"
-                                stopColor="#3B82F6"
-                              />
-                              <stop
-                                offset="100%"
-                                stopColor="#8B5CF6"
-                              />
-                            </linearGradient>
-                          </defs>
-                          <motion.circle
-                            cx="60"
-                            cy="60"
-                            r="50"
-                            fill="none"
-                            stroke="url(#scoreGrad)"
-                            strokeWidth="6"
-                            strokeLinecap="round"
-                            strokeDasharray={`${82 * 3.14} ${100 * 3.14}`}
-                            transform="rotate(-90 60 60)"
-                            initial={{
-                              strokeDasharray: `0 ${100 * 3.14}`,
-                            }}
-                            whileInView={{
-                              strokeDasharray: `${82 * 3.14} ${100 * 3.14}`,
-                            }}
-                            transition={{
-                              duration: 1.8,
-                              delay: 0.3,
-                              ease: "easeOut",
-                            }}
-                            viewport={{ once: true }}
-                          />
-                        </svg>
-                        <motion.span
-                          className="absolute text-3xl font-bold tracking-tight"
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          transition={{
-                            delay: 1,
-                            type: "spring",
-                            stiffness: 200,
-                          }}
-                          viewport={{ once: true }}
-                        >
-                          82
-                        </motion.span>
-                      </div>
-                    </div>
-
-                    {/* Interactive Metrics */}
-                    <div className="grid grid-cols-3 gap-3">
-                      {metrics.map(
-                        ({ label, value, color, detail }, i) => (
-                          <motion.div
-                            key={label}
-                            className="relative bg-white/[0.03] border border-white/[0.06] rounded-xl p-3.5 text-center cursor-pointer"
-                            onMouseEnter={() =>
-                              setHoveredMetric(i)
-                            }
-                            onMouseLeave={() =>
-                              setHoveredMetric(null)
-                            }
-                            whileHover={{
-                              borderColor:
-                                "rgba(255,255,255,0.15)",
-                              backgroundColor:
-                                "rgba(255,255,255,0.05)",
-                            }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-[0.15em] mb-1">
-                              {label}
-                            </p>
-                            <p
-                              className={`text-lg font-bold ${color}`}
-                            >
-                              {value}
-                            </p>
-                            <AnimatePresence>
-                              {hoveredMetric === i && (
-                                <motion.div
-                                  className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white/[0.06] border border-white/[0.1] backdrop-blur-xl text-[10px] text-gray-300 px-3 py-1.5 rounded-lg whitespace-nowrap z-20"
-                                  initial={{
-                                    opacity: 0,
-                                    y: 4,
-                                  }}
-                                  animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                  }}
-                                  exit={{
-                                    opacity: 0,
-                                    y: 4,
-                                  }}
-                                  transition={{
-                                    duration: 0.15,
-                                  }}
-                                >
-                                  {detail}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </motion.div>
-                        )
-                      )}
-                    </div>
-
-                    {/* Typing status */}
-                    <div className="flex items-center gap-2 bg-blue-500/[0.06] border border-blue-500/[0.1] rounded-lg px-4 py-2.5">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                      <span className="text-[11px] text-blue-400 font-medium">
-                        <TypeWriter
-                          text="PM 어드바이스 준비 완료 — 3건의 제안이 생성되었습니다"
-                          delay={600}
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
 
       {/* ── Stats ── */}
       <section className="py-6 border-y border-white/[0.04]">
