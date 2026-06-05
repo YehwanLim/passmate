@@ -3,6 +3,7 @@ import ReportShowcase from "@/components/ReportShowcase";
 import ProcessSection from "@/components/ProcessSection";
 import PricingSection from "@/components/PricingSection";
 import FounderSection from "@/components/FounderSection";
+import SubtleBackground from "@/components/SubtleBackground";
 import {
   ArrowRight,
   CheckCircle2,
@@ -23,7 +24,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   motion,
   useScroll,
-  useTransform,
   useSpring,
   AnimatePresence,
 } from "framer-motion";
@@ -181,7 +181,10 @@ export default function Home() {
   });
   /* ─── Render ─── */
   return (
-    <div className="min-h-screen bg-[#000000] text-white" style={{ overflowX: "clip" }}>
+    <div className="min-h-screen bg-[#050505] text-white" style={{ overflowX: "clip" }}>
+      {/* ── Subtle Background (Cursor/Linear style) ── */}
+      <SubtleBackground />
+
       {/* ── Scroll Progress ── */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-px z-[60] origin-left"
@@ -196,7 +199,7 @@ export default function Home() {
           GNB
           ══════════════════════════════════════════════════ */}
       <motion.nav
-        className="sticky top-0 z-50 bg-[#000]/70 backdrop-blur-2xl border-b border-white/[0.06]"
+        className="sticky top-0 z-50 bg-[#050505]/70 backdrop-blur-2xl border-b border-white/[0.06]"
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
@@ -261,16 +264,6 @@ export default function Home() {
           HERO  (Step 1 – Premium Centered Hero)
           ══════════════════════════════════════════════════ */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
-        {/* Background aura */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div
-            className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1200px] h-[700px]"
-            style={{
-              background:
-                "radial-gradient(ellipse 60% 50% at 50% 40%, rgba(59,130,246,0.07) 0%, rgba(139,92,246,0.03) 40%, transparent 70%)",
-            }}
-          />
-        </div>
 
         <div className="relative z-10 max-w-4xl mx-auto">
           {/* Announcement Badge */}

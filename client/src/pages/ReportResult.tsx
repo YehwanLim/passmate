@@ -278,7 +278,7 @@ export default function PassMateReport() {
             <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10">
                 {/* TOP NAV */}
                 <div className="pt-8 pb-4 flex items-center justify-between">
-                    <button onClick={() => navigate("/analyze")} className="inline-flex items-center gap-2.5 text-sm text-zinc-500 hover:text-white transition-colors group">
+                    <button onClick={() => window.history.back()} className="inline-flex items-center gap-2.5 text-sm text-zinc-500 hover:text-white transition-colors group">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                         <span>{UI_LABELS.BACK}</span>
                     </button>

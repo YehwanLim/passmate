@@ -50,8 +50,14 @@ async function callGeminiOnce(userPrompt: string): Promise<any> {
 
   if (!apiRes.ok) {
     const errorText = await apiRes.text();
+    let parsedError: any = null;
+    try { parsedError = JSON.parse(errorText); } catch(e) {}
+    
+    const isBillingIssue = parsedError?.error?.message?.includes('credits are depleted') || parsedError?.error?.message?.includes('billing');
+
     const err = new Error(`Google API Error ${apiRes.status}: ${errorText}`) as any;
     err.statusCode = apiRes.status;
+    err.isBillingIssue = isBillingIssue;
     throw err;
   }
 
@@ -75,6 +81,7 @@ async function callGeminiOnce(userPrompt: string): Promise<any> {
  * 503 (과부하), 429 (Rate Limit), 500 (서버 내부) 에 대해 재시도
  */
 function isRetryable(error: any): boolean {
+  if (error?.isBillingIssue) return false;
   const code = error?.statusCode;
   return code === 503 || code === 429 || code === 500;
 }

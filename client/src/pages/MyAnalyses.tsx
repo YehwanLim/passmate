@@ -13,8 +13,8 @@ import SkeletonCard from "@/components/my/SkeletonCard";
 // =============================================================================
 const MOCK_PROJECT: ProjectSummary = {
   id: "mock-proj-1",
-  title: "네이버 웹툰 서비스 PM 지원",
-  company_name: "네이버 웹툰",
+  title: "현대자동차 서비스 PM 지원",
+  company_name: "현대자동차",
   job_role: "서비스 PM",
   created_at: "2026-05-05T14:30:00Z",
   analysis_count: 3,

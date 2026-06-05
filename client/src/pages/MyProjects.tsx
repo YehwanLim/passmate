@@ -14,8 +14,8 @@ import SkeletonCard from "@/components/my/SkeletonCard";
 const MOCK_PROJECTS: ProjectSummary[] = [
   {
     id: "mock-proj-1",
-    title: "네이버 웹툰 서비스 PM 지원",
-    company_name: "네이버 웹툰",
+    title: "현대자동차 서비스 PM 지원",
+    company_name: "현대자동차",
     job_role: "서비스 PM",
     created_at: "2026-05-05T14:30:00Z",
     analysis_count: 3,
@@ -171,7 +171,9 @@ export default function MyProjects() {
                   project={project}
                   onViewQuestions={() => navigate(`/my/${project.id}`)}
                   onViewReport={() => {
-                    // TODO: 추후 /api/analyses/:id 기반 상세 조회로 전환 예정
+                    if (project.company_name) {
+                      sessionStorage.setItem('passmate_company', project.company_name);
+                    }
                     navigate("/report-new");
                   }}
                   onDelete={() => handleDelete(project.id)}
