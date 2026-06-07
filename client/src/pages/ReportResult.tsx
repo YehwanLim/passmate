@@ -8,44 +8,44 @@ import FeedbackSection from "../components/FeedbackSection"
 
 const FALLBACK_DATA: ReportData = {
     companyInsight: {
-        summary: "글로벌 콘텐츠 IP 생태계를 주도하며, 정량적 데이터와 정성적 콘텐츠 감각을 동시에 요구하는 유연한 조직",
-        talentKeywords: ["콘텐츠 이해도", "데이터 기반 의사결정", "글로벌 비즈니스 감각", "유저 중심", "빠른 실행력"],
-        hiringSignals: ["단순 수치를 넘어 콘텐츠 임팩트로 연결한 경험", "글로벌 시장의 문화적 차이를 반영한 기획", "가설 수립부터 검증, 프로덕트 개선까지의 완결성 있는 경험"],
-        rejectionTriggers: ["콘텐츠 플랫폼 특성을 이해하지 못한 기계적인 데이터 분석", "유저의 감정적 경험(UX)을 간과한 효율성 중심의 기획", "본인 기여도가 불분명한 팀 프로젝트 나열"],
+        summary: "글로벌 모빌리티 생태계를 주도하며, 정량적 데이터와 사용자 중심의 모빌리티 감각을 동시에 요구하는 유연한 조직",
+        talentKeywords: ["모빌리티 이해도", "데이터 기반 의사결정", "글로벌 비즈니스 감각", "고객 중심", "빠른 실행력"],
+        hiringSignals: ["단순 수치를 넘어 모빌리티 임팩트로 연결한 경험", "글로벌 시장의 특성을 반영한 기획", "가설 수립부터 검증, 프로덕트 개선까지의 완결성 있는 경험"],
+        rejectionTriggers: ["모빌리티 플랫폼 특성을 이해하지 못한 기계적인 데이터 분석", "고객의 감정적 경험(UX)을 간과한 효율성 중심의 기획", "본인 기여도가 불분명한 팀 프로젝트 나열"],
         cultureSignals: ["수평적인 소통과 치열한 토론", "빠른 실패와 학습(Fail Fast)", "다양성을 존중하는 열린 조직 문화"]
     },
     firstImpression: {
-        summaryOneLiner: "데이터 기반 실행력은 강하지만, 네이버 웹툰 기준 '콘텐츠 임팩트 연결'이 부족합니다",
-        persona: "데이터를 통해 인사이트를 도출하고 실행에 옮기는 그로스 PM",
+        summaryOneLiner: "데이터 기반 실행력은 강하지만, 현대자동차 기준 '모빌리티 임팩트 연결'이 부족합니다",
+        persona: "데이터를 통해 인사이트를 도출하고 실행에 옮기는 PM",
         hashtags: ["#데이터분석", "#가설검증", "#글로벌잠재력"]
     },
     strengths: [
-        "A/B 테스트를 통한 이탈률 개선(35% to 18%)은 구체적인 방법론과 정량적 결과를 동시에 보여주는 강력한 사례입니다. 네이버 웹툰의 데이터 드리븐 문화와 잘 맞습니다.",
-        "글로벌 서비스 분석에 대한 주도적인 리서치와 3,000건의 데이터 수집 과정은 글로벌 확장을 지속하는 네이버 웹툰에 긍정적인 신호를 줍니다."
+        "A/B 테스트를 통한 이탈률 개선(35% to 18%)은 구체적인 방법론과 정량적 결과를 동시에 보여주는 강력한 사례입니다. 현대자동차의 데이터 드리븐 문화와 잘 맞습니다.",
+        "글로벌 서비스 분석에 대한 주도적인 리서치와 3,000건의 데이터 수집 과정은 글로벌 확장을 지속하는 현대자동차에 긍정적인 신호를 줍니다."
     ],
     gaps: [
-        "개선한 지표가 네이버 웹툰의 핵심 비즈니스 모델(열람률, 결제 전환율, IP 확장 등)과 어떻게 연결될 수 있는지에 대한 고민이 부족합니다.",
-        "웹툰/콘텐츠 플랫폼만의 특수성(유저의 감정적 몰입, 팬덤 문화 등)을 고려한 기획이나 분석 경험이 잘 드러나지 않습니다.",
+        "개선한 지표가 현대자동차의 핵심 비즈니스 모델(차량 연동 서비스, 모빌리티 확장 등)과 어떻게 연결될 수 있는지에 대한 고민이 부족합니다.",
+        "모빌리티 플랫폼만의 특수성(사용자의 주행 경험, 안전성 등)을 고려한 기획이나 분석 경험이 잘 드러나지 않습니다.",
         "팀 프로젝트에서 본인의 구체적인 역할과 의사결정 과정이 뚜렷하지 않아 협업 및 리더십 역량을 판단하기 어렵습니다."
     ],
     positioning: {
-        current: "데이터 툴 활용과 실행력은 검증되었으나, 콘텐츠 비즈니스에 대한 이해가 부족한 주니어",
-        target: "데이터 인사이트를 바탕으로 유저의 몰입도를 높이고 콘텐츠 비즈니스 가치를 극대화하는 PM",
-        gap: "경험의 나열에서 그치고 있으며, '왜 네이버 웹툰인가'에 대한 전략적 포지셔닝이 부재합니다",
-        strategy: "데이터 분석 경험을 네이버 웹툰의 주요 서비스(추천 시스템, 결제 유도, 글로벌 현지화 등)와 직접 연결하고, 콘텐츠 플랫폼에 대한 깊은 이해를 바탕으로 한 기획 능력을 어필하세요."
+        current: "데이터 툴 활용과 실행력은 검증되었으나, 모빌리티 비즈니스에 대한 이해가 부족한 주니어",
+        target: "데이터 인사이트를 바탕으로 고객 경험을 높이고 모빌리티 비즈니스 가치를 극대화하는 PM",
+        gap: "경험의 나열에서 그치고 있으며, '왜 현대자동차인가'에 대한 전략적 포지셔닝이 부재합니다",
+        strategy: "데이터 분석 경험을 현대자동차의 주요 서비스(커넥티드 카, 차량 데이터 분석 등)와 직접 연결하고, 모빌리티 플랫폼에 대한 깊은 이해를 바탕으로 한 기획 능력을 어필하세요."
     },
     questionTabs: [
         {
             id: 1, title: "문항 1",
             prompt: "자신이 주도적으로 문제를 발견하고 해결한 경험에 대해 서술해 주세요. (어떤 문제를 어떻게 해결했는지 구체적으로 작성할 것)",
-            subtitleDiagnosis: { exists: true, original: "3,000건의 데이터로 사용자 맞춤 추천을 개선하다", feedback: "성과는 드러나지만, 추천 개선이 어떤 비즈니스 문제를 해결했는지 목적이 더 명확하면 좋습니다.", suggestion: "콘텐츠 탐색 이탈률 15% 방어를 위한 3,000건의 유저 데이터 분석과 맞춤 추천 고도화" },
-            fullAnswer: "3,000건의 데이터로 사용자 맞춤 추천을 개선하다\n\n교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영한 경험이 있습니다. 런칭 초기, 유저들이 메인 화면에서 콘텐츠를 탐색하다가 이탈하는 비율이 매우 높다는 문제를 발견했습니다. 이를 해결하기 위해 직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다. 유저의 클릭 패턴과 체류 시간을 분석한 결과, 장르별 개인화가 부족하다는 점을 파악했습니다.\n\n이를 해결하기 위해 추천 로직을 개선하고 A/B 테스트를 진행했습니다. 결과적으로 메인 화면 이탈률을 35%에서 18%로 낮출 수 있었으며, 일간 활성 사용자 수(DAU)도 20% 증가했습니다. 이러한 데이터 기반의 문제 해결 경험을 살려 네이버 웹툰에서도 글로벌 유저들에게 최적화된 콘텐츠 경험을 제공하는 데 기여하고 싶습니다.",
-            overview: "데이터를 활용한 문제 해결 과정이 잘 드러나 있으나, 네이버 웹툰의 비즈니스적 맥락과의 연결이 다소 추상적입니다.",
+            subtitleDiagnosis: { exists: true, original: "3,000건의 데이터로 사용자 맞춤 추천을 개선하다", feedback: "성과는 드러나지만, 추천 개선이 어떤 비즈니스 문제를 해결했는지 목적이 더 명확하면 좋습니다.", suggestion: "서비스 탐색 이탈률 15% 방어를 위한 3,000건의 고객 데이터 분석과 사용성 고도화" },
+            fullAnswer: "3,000건의 데이터로 사용자 맞춤 추천을 개선하다\n\n교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영한 경험이 있습니다. 런칭 초기, 유저들이 메인 화면에서 탐색하다가 이탈하는 비율이 매우 높다는 문제를 발견했습니다. 이를 해결하기 위해 직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다. 유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.\n\n이를 해결하기 위해 로직을 개선하고 A/B 테스트를 진행했습니다. 결과적으로 메인 화면 이탈률을 35%에서 18%로 낮출 수 있었으며, 일간 활성 사용자 수(DAU)도 20% 증가했습니다. 이러한 데이터 기반의 문제 해결 경험을 살려 현대자동차에서도 글로벌 고객들에게 최적화된 모빌리티 경험을 제공하는 데 기여하고 싶습니다.",
+            overview: "데이터를 활용한 문제 해결 과정이 잘 드러나 있으나, 현대자동차의 비즈니스적 맥락과의 연결이 다소 추상적입니다.",
             feedbackCards: [
                 { type: "praise", original: "직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다.", praisePoint: "구체적인 수치(3,000건)를 통해 지원자의 주도적인 문제 해결 의지와 실행력을 증명한 훌륭한 문장입니다.", detailedAnalysis: "이 문장은 정량적 근거를 통해 실행력을 증명하는 핵심 문장입니다. 다만, 데이터의 수집 기준이나 분석 과정에서의 주요 의사결정 포인트를 한 줄 추가하면 더욱 설득력이 높아집니다." },
                 { type: "praise", original: "메인 화면 이탈률을 35%에서 18%로 낮출 수 있었으며, 일간 활성 사용자 수(DAU)도 20% 증가했습니다.", praisePoint: "A/B 테스트라는 방법론과 명확한 수치적 개선 성과가 잘 결합되어 있습니다.", detailedAnalysis: "해결 방법과 구체적인 개선 수치가 결합되어 지원자의 데이터 기반 문제 해결 역량을 명확히 보여줍니다. 성과를 구체적으로 증명하는 좋은 사례입니다." },
-                { type: "improvement", original: "유저의 클릭 패턴과 체류 시간을 분석한 결과, 장르별 개인화가 부족하다는 점을 파악했습니다.", feedback: "분석의 깊이가 다소 얕게 느껴집니다.", detailedAnalysis: "클릭 패턴과 체류 시간만으로 '장르별 개인화 부족'을 도출한 논리적 비약이 있을 수 있습니다. 좀 더 구체적으로 어떤 세그먼트의 유저가 어떤 행동 양상을 보였는지 상세히 서술하면 분석 역량을 더 돋보이게 할 수 있습니다.", suggestion: "유저 코호트 분석 결과, 신규 가입 후 3일 내 특정 장르만 소비하는 유저군에서 이탈률이 두드러짐을 확인하여 세밀한 장르별 개인화 필요성을 도출했습니다." },
-                { type: "improvement", original: "이러한 데이터 기반의 문제 해결 경험을 살려 네이버 웹툰에서도 글로벌 유저들에게 최적화된 콘텐츠 경험을 제공하는 데 기여하고 싶습니다.", feedback: "범용적인 포부 문장으로, 네이버 웹툰만의 특화된 메시지가 부재합니다.", detailedAnalysis: "마무리 문장은 '지원 동기'를 최종 확인하는 구간입니다. 현재 문장은 다른 플랫폼에도 그대로 쓸 수 있는 범용 표현입니다. 네이버 웹툰의 특정 서비스나 글로벌 진출 국가 등 구체적인 타겟을 언급해야 면접관에게 강한 인상을 남길 수 있습니다.", suggestion: "이러한 데이터 분석 기반의 개인화 역량을 바탕으로, 네이버 웹툰의 글로벌 서비스에서 국가별 유저 취향을 반영한 큐레이션을 고도화하여 글로벌 열람률을 극대화하는 PM이 되겠습니다." }
+                { type: "improvement", original: "유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.", feedback: "분석의 깊이가 다소 얕게 느껴집니다.", detailedAnalysis: "클릭 패턴과 체류 시간만으로 '개인화 부족'을 도출한 논리적 비약이 있을 수 있습니다. 좀 더 구체적으로 어떤 세그먼트의 유저가 어떤 행동 양상을 보였는지 상세히 서술하면 분석 역량을 더 돋보이게 할 수 있습니다.", suggestion: "유저 코호트 분석 결과, 신규 가입 후 3일 내 특정 기능만 소비하는 고객군에서 이탈률이 두드러짐을 확인하여 세밀한 개인화 필요성을 도출했습니다." },
+                { type: "improvement", original: "이러한 데이터 기반의 문제 해결 경험을 살려 현대자동차에서도 글로벌 고객들에게 최적화된 모빌리티 경험을 제공하는 데 기여하고 싶습니다.", feedback: "범용적인 포부 문장으로, 현대자동차만의 특화된 메시지가 부재합니다.", detailedAnalysis: "마무리 문장은 '지원 동기'를 최종 확인하는 구간입니다. 현재 문장은 다른 곳에도 그대로 쓸 수 있는 범용 표현입니다. 현대자동차의 특정 서비스나 글로벌 진출 국가 등 구체적인 타겟을 언급해야 면접관에게 강한 인상을 남길 수 있습니다.", suggestion: "이러한 데이터 분석 기반의 역량을 바탕으로, 현대자동차의 커넥티드 서비스에서 국가별 고객 특성을 반영한 개인화를 고도화하여 글로벌 만족도를 극대화하는 PM이 되겠습니다." }
             ]
         },
         {
@@ -62,15 +62,15 @@ const FALLBACK_DATA: ReportData = {
         }
     ],
     interviewQA: [
-        { question: "네이버 웹툰의 추천 로직을 개선한다면 어떤 데이터를 가장 먼저 볼 것 같나요?", followUps: ["왜 그 데이터가 가장 중요하다고 생각하나요?", "해당 데이터를 수집하기 위해 어떤 기획이 필요할까요?"], modelAnswer: "단순 클릭수보다는 '회차별 체류 시간'과 '연속 열람(정주행) 비율'을 가장 먼저 확인하겠습니다. 콘텐츠의 몰입도를 판단하는 데 있어 단순히 눌러본 것보다 끝까지 읽었는지가 핵심 지표이기 때문입니다." },
-        { question: "글로벌 유저 타겟팅 시 고려해야 할 문화적 차이는 어떻게 파악할 계획인가요?", followUps: ["현지 유저 인터뷰가 어렵다면 어떻게 데이터를 얻을 건가요?"], modelAnswer: "현지 소셜 미디어 트렌드와 경쟁 플랫폼의 인기 순위를 분석하는 동시에, 네이버 웹툰의 기존 현지화 콘텐츠 댓글 반응(감성 분석)을 텍스트 마이닝하여 현지 유저들의 감정적 반응 포인트를 파악하겠습니다." },
-        { question: "개발팀과 기획 스펙으로 충돌할 때, 네이버 웹툰의 빠른 실행 문화에 맞춰 어떻게 조율할 것인가요?", followUps: ["개발팀이 절대 불가능하다고 한다면요?"], modelAnswer: "먼저 '가장 검증하고 싶은 핵심 가설' 하나만 남기고 부가 기능을 과감히 덜어내는 MVP 모델을 제안하겠습니다. 이를 통해 개발 부담을 줄이고 빠른 테스트와 피봇이 가능하도록 조율하겠습니다." }
+        { question: "현대자동차의 모빌리티 서비스를 개선한다면 어떤 데이터를 가장 먼저 볼 것 같나요?", followUps: ["왜 그 데이터가 가장 중요하다고 생각하나요?", "해당 데이터를 수집하기 위해 어떤 기획이 필요할까요?"], modelAnswer: "단순 앱 접속수보다는 '차량 내 서비스 체류 시간'과 '핵심 기능 전환율'을 가장 먼저 확인하겠습니다. 모빌리티 환경에서 고객이 우리 기능을 얼마나 유용하게 쓰는지 판단하는 핵심 지표이기 때문입니다." },
+        { question: "글로벌 고객 타겟팅 시 고려해야 할 지역별 특성은 어떻게 파악할 계획인가요?", followUps: ["현지 조사가 어렵다면 어떻게 데이터를 얻을 건가요?"], modelAnswer: "현지 모빌리티 시장 트렌드와 경쟁사의 동향을 분석하는 동시에, 현대자동차의 현지 서비스 피드백 데이터를 텍스트 마이닝하여 고객들의 주요 페인포인트를 파악하겠습니다." },
+        { question: "개발팀과 기획 스펙으로 충돌할 때, 현대자동차의 빠른 실행 문화에 맞춰 어떻게 조율할 것인가요?", followUps: ["개발팀이 절대 불가능하다고 한다면요?"], modelAnswer: "먼저 '가장 검증하고 싶은 핵심 가설' 하나만 남기고 부가 기능을 과감히 덜어내는 MVP 모델을 제안하겠습니다. 이를 통해 개발 부담을 줄이고 빠른 테스트와 개선이 가능하도록 조율하겠습니다." }
     ],
     actionPlan: [
         { title: "문항 2를 구체적인 STAR 기법으로 전면 재작성", description: "협업 문항에서 '많은 것을 배웠고' 등 추상적 표현을 배제하고, 구체적인 도구(Jira 등) 활용과 의사결정 과정을 서술하세요.", expectedImpact: "팀 프로젝트에서의 리더십과 커뮤니케이션 역량을 명확히 어필할 수 있습니다." },
-        { title: "콘텐츠 도메인 지식 어필 문구 추가", description: "문항 1의 마무리 문장에 단순 '글로벌 유저' 대신 '글로벌 국가별 장르 선호도'나 '정주행 전환율' 등 도메인 특화 용어를 사용하세요.", expectedImpact: "네이버 웹툰 비즈니스에 대한 높은 이해도를 증명할 수 있습니다." }
+        { title: "모빌리티 도메인 지식 어필 문구 추가", description: "문항 1의 마무리 문장에 단순 '글로벌 유저' 대신 '차량 데이터'나 '커넥티드 서비스' 등 도메인 특화 용어를 사용하세요.", expectedImpact: "현대자동차 비즈니스에 대한 높은 이해도를 증명할 수 있습니다." }
     ],
-    pmComment: "데이터를 다루는 스킬과 실행력은 뛰어납니다. 다만, 이 역량이 네이버 웹툰이라는 '콘텐츠 플랫폼'에서 어떻게 발휘될지에 대한 고민이 10% 부족합니다. 지원 동기 부분을 콘텐츠 특화 인사이트로 조금만 더 뾰족하게 다듬어 보세요."
+    pmComment: "데이터를 다루는 스킬과 실행력은 뛰어납니다. 다만, 이 역량이 현대자동차라는 '모빌리티 플랫폼'에서 어떻게 발휘될지에 대한 고민이 10% 부족합니다. 지원 동기 부분을 모빌리티 특화 인사이트로 조금만 더 뾰족하게 다듬어 보세요."
 }
 
 // =============================================================================
@@ -183,6 +183,10 @@ export default function PassMateReport() {
     }, [toastMessage])
 
     const handleApiTest = async () => {
+        if (useMock) {
+            setToastMessage({ type: 'success', text: "샘플 모드입니다 (API 호출 생략)" })
+            return
+        }
         try {
             setToastMessage({ type: 'success', text: UI_LABELS.API_TEST_SENDING })
             const res = await fetch('/api/test-gemini')
@@ -199,11 +203,23 @@ export default function PassMateReport() {
 
     const handleTabChange = (index: number) => {
         setActiveTab(index)
-        setExpandedCards(new Set())
-        setFocusedCardIndex(null)
         setShowOverview(true)
         setShowSubtitle(true)
     }
+
+    // 아무것도 클릭하지 않은 상태에서도 1번 문장이 디폴트로 선택되어 있게 처리
+    useEffect(() => {
+        const currentTab = reportData?.questionTabs?.[activeTab]
+        if (currentTab?.feedbackCards?.length > 0) {
+            const firstIdx = currentTab.feedbackCards.map((c: any, i: number) => ({ i, pos: currentTab.fullAnswer.indexOf(c.original) }))
+                                         .sort((a: any, b: any) => a.pos - b.pos)[0]?.i ?? 0;
+            setFocusedCardIndex(firstIdx)
+            setExpandedCards(new Set([firstIdx]))
+        } else {
+            setFocusedCardIndex(null)
+            setExpandedCards(new Set())
+        }
+    }, [activeTab, reportData])
 
     const toggleTask = (index: number) => {
         setCompletedTasks(prev => prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index])
@@ -275,9 +291,10 @@ export default function PassMateReport() {
     return (
         <main className="min-h-screen bg-[#09090B] text-zinc-100 font-sans selection:bg-indigo-500/20">
             <MiniNavigator activeSection={activeSection} />
-            <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10">
-                {/* TOP NAV */}
-                <div className="pt-8 pb-4 flex items-center justify-between">
+
+            {/* TOP NAV (Global Sticky) */}
+            <div className="sticky top-0 z-50 w-full bg-[#09090B]/95 backdrop-blur-md border-b border-white/[0.05]">
+                <div className="max-w-4xl mx-auto px-6 md:px-8 pt-6 pb-4 flex items-center justify-between">
                     <button onClick={() => window.history.back()} className="inline-flex items-center gap-2.5 text-sm text-zinc-500 hover:text-white transition-colors group">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                         <span>{UI_LABELS.BACK}</span>
@@ -286,6 +303,9 @@ export default function PassMateReport() {
                         {UI_LABELS.API_TEST}
                     </button>
                 </div>
+            </div>
+
+            <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10 pt-4">
 
                 {/* Mock 모드 안내 배너 */}
                 {useMock && (
@@ -660,7 +680,7 @@ export default function PassMateReport() {
                                     return (
                                         <div key={realIdx}
                                             id={`commentary-item-${realIdx}`}
-                                            className={`commentary-item ${card.type} ${isExpanded ? 'expanded' : ''} ${isFocused && !isExpanded ? 'focused' : ''}`}>
+                                            className={`commentary-item ${card.type} ${isExpanded ? 'expanded' : ''} ${isFocused ? 'focused' : ''}`}>
 
                                             {/* Trigger */}
                                             <button className="commentary-trigger" onClick={() => handleAccordionToggle(realIdx)}>
@@ -877,3 +897,4 @@ export default function PassMateReport() {
         </main>
     )
 }
+

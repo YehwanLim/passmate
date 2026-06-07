@@ -20,6 +20,7 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react";
+import Logo from "@/components/Logo";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
@@ -578,32 +579,25 @@ export default function Analyze() {
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </button>
             <div
-              className="flex items-center gap-2.5 cursor-pointer"
+              className="flex items-center cursor-pointer"
               onClick={() => navigate("/")}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-lg font-bold text-white">PassMate</span>
+              <Logo className="w-6 h-6" textClassName="text-lg md:text-xl text-white" />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white font-medium"
+            <button
+              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
               onClick={() => navigate("/my")}
             >
               My
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white font-medium"
+            </button>
+            <button
+              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
             >
               로그인
-            </Button>
+            </button>
           </div>
         </div>
       </motion.nav>

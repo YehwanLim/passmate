@@ -4,6 +4,7 @@ import ProcessSection from "@/components/ProcessSection";
 import PricingSection from "@/components/PricingSection";
 import FounderSection from "@/components/FounderSection";
 import SubtleBackground from "@/components/SubtleBackground";
+import Logo from "@/components/Logo";
 import {
   ArrowRight,
   CheckCircle2,
@@ -206,13 +207,10 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between h-14 px-6 lg:px-10">
           <div
-            className="flex items-center gap-2 cursor-pointer"
+            className="flex items-center cursor-pointer"
             onClick={() => navigate("/")}
           >
-            <Sparkles className="w-4 h-4 text-white" />
-            <span className="text-[14px] font-semibold tracking-tight">
-              PassMate
-            </span>
+            <Logo className="w-5 h-5" textClassName="text-lg font-bold text-white" />
           </div>
 
           <div className="hidden md:flex items-center gap-7">
@@ -223,7 +221,7 @@ export default function Home() {
             ].map(({ label, type }) => (
               <div
                 key={label}
-                className="relative flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-white transition-colors duration-200 cursor-pointer"
+                className="relative flex items-center gap-1.5 text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200 cursor-pointer"
                 onClick={() => {
                   if (type === "ready") {
                     navigate("/analyze");
@@ -245,17 +243,15 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/my")}
-              className="text-[13px] text-gray-500 hover:text-white font-medium h-8 px-3 rounded-md transition-colors duration-200"
+              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
             >
               My
             </button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-[13px] text-gray-500 hover:text-white font-medium h-8 px-3"
+            <button
+              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
             >
               로그인
-            </Button>
+            </button>
           </div>
         </div>
       </motion.nav>
@@ -266,25 +262,6 @@ export default function Home() {
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
 
         <div className="relative z-10 max-w-4xl mx-auto">
-          {/* Announcement Badge */}
-          <motion.a
-            href="#"
-            className="group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm text-[13px] text-gray-400 hover:border-blue-500/30 hover:text-gray-300 transition-all duration-300 cursor-pointer mb-10"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: 0.1,
-              duration: 0.7,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
-          >
-            <Rocket className="w-3.5 h-3.5 text-blue-400" />
-            <span>
-              <span className="font-semibold text-blue-400">[New]</span>{" "}
-              현직 삼성·현차 PM의 합격 로직 데이터베이스 업데이트 완료
-            </span>
-            <ArrowRight className="w-3 h-3 text-gray-600 group-hover:translate-x-0.5 transition-transform duration-200" />
-          </motion.a>
 
           {/* H1 */}
           <motion.h1

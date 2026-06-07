@@ -7,6 +7,8 @@ import type { ProjectSummary } from "@/types/my";
 import ProjectCard from "@/components/my/ProjectCard";
 import EmptyState from "@/components/my/EmptyState";
 import SkeletonCard from "@/components/my/SkeletonCard";
+import SubtleBackground from "@/components/SubtleBackground";
+import Logo from "@/components/Logo";
 
 // =============================================================================
 // Mock Data — API 연동 실패 시 Fallback (최소 유지)
@@ -92,33 +94,23 @@ export default function MyProjects() {
             >
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </button>
-            <div
-              className="flex items-center gap-2.5 cursor-pointer"
-              onClick={() => navigate("/")}
-            >
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-lg font-bold text-white">PassMate</span>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+              <Logo className="w-6 h-6" textClassName="text-lg md:text-xl text-white" />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-zinc-400 hover:text-white font-medium"
+            <button
+              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
               onClick={() => navigate("/my")}
             >
               My
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white font-medium"
+            </button>
+            <button
+              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
             >
               로그인
-            </Button>
+            </button>
           </div>
         </div>
       </motion.nav>
@@ -174,7 +166,11 @@ export default function MyProjects() {
                     if (project.company_name) {
                       sessionStorage.setItem('passmate_company', project.company_name);
                     }
-                    navigate("/report-new");
+                    if (project.id === "mock-proj-1") {
+                      navigate("/report-new?mock=true");
+                    } else {
+                      navigate("/report-new");
+                    }
                   }}
                   onDelete={() => handleDelete(project.id)}
                 />

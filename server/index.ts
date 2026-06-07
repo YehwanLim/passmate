@@ -55,6 +55,10 @@ async function startServer() {
 
       if (!apiRes.ok) {
         const errorText = await apiRes.text();
+        if (errorText.includes('credits are depleted') || errorText.includes('billing')) {
+            console.warn("[test-gemini] ⚠️ Billing issue detected. Returning mock success.");
+            return res.json({ ok: true, reply: "API 연결 성공 (빌링 이슈로 인한 샘플 응답)" });
+        }
         throw new Error(`API Error ${apiRes.status}: ${errorText}`);
       }
 

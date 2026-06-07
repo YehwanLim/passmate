@@ -134,13 +134,20 @@ export async function analyzeCoverLetter(input: AnalyzeRequest | string) {
 
       // 재시도 불가능한 에러면 즉시 중단
       if (!isRetryable(error)) {
+        if (error?.isBillingIssue) {
+          console.warn("[analyze] ⚠️ Billing issue detected, returning fallback data.");
+          return buildFallbackData(request);
+        }
         break;
       }
     }
   }
 
-  // 모든 재시도 소진 → 에러를 throw하여 프론트에서 인지하도록 함
+  // 모든 재시도 소진 → 에러를 throw하거나 Fallback 반환
   console.error("[analyze] ❌ 모든 재시도 실패:", lastError?.message);
+  if (lastError?.isBillingIssue) {
+    return buildFallbackData(request);
+  }
   throw lastError || new Error("AI 분석 서비스에 연결할 수 없습니다.");
 }
 

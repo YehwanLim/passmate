@@ -40,15 +40,22 @@ export default function ProjectCard({
         {/* ───────────────────────────────────────────────────────────── */}
         <div className="lg:col-span-3 flex flex-col justify-center">
           {/* 타이틀 영역 (수정 가능한 input 필드) */}
-          <div className="relative mb-3 group/title w-full">
-            <input
-              type="text"
-              defaultValue={project.title}
-              className="w-full bg-transparent text-[18px] font-bold text-zinc-100 tracking-tight transition-colors focus:outline-none focus:border-b focus:border-zinc-500 pb-1 border-b border-transparent group-hover/title:border-zinc-700"
-              placeholder="프로젝트 제목을 입력하세요"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <PenLine className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 opacity-0 group-hover/title:opacity-100 transition-opacity pointer-events-none" />
+          <div className="relative mb-3 group/title w-full flex items-center gap-2">
+            {project.id === "mock-proj-1" && (
+              <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 whitespace-nowrap">
+                샘플
+              </span>
+            )}
+            <div className="relative w-full">
+                <input
+                  type="text"
+                  defaultValue={project.title}
+                  className="w-full bg-transparent text-[18px] font-bold text-zinc-100 tracking-tight transition-colors focus:outline-none focus:border-b focus:border-zinc-500 pb-1 border-b border-transparent group-hover/title:border-zinc-700"
+                  placeholder="프로젝트 제목을 입력하세요"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <PenLine className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 opacity-0 group-hover/title:opacity-100 transition-opacity pointer-events-none" />
+            </div>
           </div>
 
           {/* 회사/직무 메타 정보 */}

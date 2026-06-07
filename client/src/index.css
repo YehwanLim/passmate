@@ -323,10 +323,10 @@ html {
 
 /* Default: light translucent highlighter (praise = green, improvement = yellow) */
 .annotation-hl.praise-hl {
-  background: rgba(74, 222, 128, 0.10);
+  background: rgba(74, 222, 128, 0.25);
 }
 .annotation-hl.improvement-hl {
-  background: rgba(251, 191, 36, 0.10);
+  background: rgba(251, 191, 36, 0.25);
 }
 
 .annotation-hl:hover {
@@ -351,14 +351,14 @@ html {
 
 /* Dimming effect — highlights remain faintly visible */
 .original-text-dimmed .annotation-hl:not(.active) {
-  color: rgba(180, 180, 180, 0.5);
+  color: rgba(180, 180, 180, 0.7);
   transition: all 0.3s ease-in-out;
 }
 .original-text-dimmed .annotation-hl.praise-hl:not(.active) {
-  background: rgba(74, 222, 128, 0.06);
+  background: rgba(74, 222, 128, 0.15);
 }
 .original-text-dimmed .annotation-hl.improvement-hl:not(.active) {
-  background: rgba(251, 191, 36, 0.06);
+  background: rgba(251, 191, 36, 0.15);
 }
 /* Hover in dimmed state: brighten the highlighter */
 .original-text-dimmed .annotation-hl.praise-hl:not(.active):hover {
@@ -530,18 +530,28 @@ html {
   border-bottom: none;
 }
 
-/* Focused state: highlight border without expanding */
+/* Focused state: highlight border and make it prominent */
 .commentary-item.focused {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  border-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  margin: 4px -12px;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+}
+.commentary-item.praise.focused {
+  border-left: 3px solid #4ADE80;
+}
+.commentary-item.improvement.focused {
+  border-left: 3px solid #FBBF24;
 }
 .commentary-item.focused .commentary-num {
   background: rgba(200, 200, 200, 0.2);
   color: #fff;
 }
 .commentary-item.focused .commentary-preview {
-  color: #ddd;
+  color: #fff;
+  font-weight: 500;
 }
 
 .commentary-trigger {

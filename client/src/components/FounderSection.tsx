@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Sparkles, ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
+import Logo from "@/components/Logo";
 
 /* ─────────────────────────────────────────────────────────
    FounderSection — Founder Profile + CTA + Footer
@@ -206,11 +207,8 @@ export default function FounderSection() {
 
           {/* Bottom bar */}
           <div className="text-center pt-8 border-t border-white/[0.04]">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Sparkles className="w-3.5 h-3.5 text-gray-700" />
-              <span className="text-[13px] font-medium text-gray-700 tracking-tight">
-                PassMate
-              </span>
+            <div className="flex items-center justify-center mb-4">
+              <Logo className="w-4 h-4" textClassName="text-[13px] text-gray-400" />
             </div>
             <p className="text-[12px] text-gray-700">
               &copy; 2026 PassMate. All rights reserved.{" "}

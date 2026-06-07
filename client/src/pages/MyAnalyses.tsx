@@ -7,6 +7,8 @@ import type { ProjectSummary, AnalysisSummary } from "@/types/my";
 import AnalysisCard from "@/components/my/AnalysisCard";
 import EmptyState from "@/components/my/EmptyState";
 import SkeletonCard from "@/components/my/SkeletonCard";
+import SubtleBackground from "@/components/SubtleBackground";
+import Logo from "@/components/Logo";
 
 // =============================================================================
 // Mock Data — API 연동 실패 시 Fallback (최소 유지)
@@ -27,20 +29,25 @@ const MOCK_PROJECT: ProjectSummary = {
 const MOCK_ANALYSES: AnalysisSummary[] = [
   {
     id: "mock-analysis-1",
-    question_text:
-      "본인이 주도적으로 문제를 해결했던 경험을 구체적으로 서술하시오.",
-    input_text:
-      "발로 뛰어 얻은 3,000개의 데이터, 정확도 87%를 달성하다",
+    question_text: "직무 경험을 중심으로 본인을 어필해주세요.",
+    input_text: "3,000건의 데이터로 사용자 맞춤 추천을 개선하다\n\n교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영한 경험이 있습니다. 런칭 초기, 유저들이 메인 화면에서 탐색하다가 이탈하는 비율이 매우 높다는 문제를 발견했습니다. 이를 해결하기 위해 직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다. 유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.\n\n이를 해결하기 위해 로직을 개선하고 A/B 테스트를 진행했습니다. 결과적으로 메인 화면 이탈률을 35%에서 18%로 낮출 수 있었으며, 일간 활성 사용자 수(DAU)도 20% 증가했습니다. 이러한 데이터 기반의 문제 해결 경험을 살려 현대자동차에서도 글로벌 고객들에게 최적화된 모빌리티 경험을 제공하는 데 기여하고 싶습니다.",
     status: "SUCCESS",
     created_at: "2026-05-05T14:32:00Z",
   },
+  {
+    id: "mock-analysis-2",
+    question_text: "팀 프로젝트나 협업 과정에서 발생한 갈등을 극복하고 성과를 이끌어낸 경험을 설명해 주세요.",
+    input_text: "학교 프로젝트에서 서비스 기획을 맡아 개발팀, 디자인팀과 협업했습니다. 당시 저희 팀은 일정 지연과 소통 부족이라는 문제를 겪고 있었습니다. 저는 기획자로서 이 문제를 해결하기 위해 적극적으로 나섰습니다. 프로젝트를 진행하며 많은 것을 배웠고 좋은 결과를 얻었습니다. 다양한 팀원들과 협업하며 서로의 입장을 이해하는 법을 배웠습니다. 결국 지속적인 회의와 일정 관리를 통해 프로젝트를 기한 내에 마칠 수 있었습니다.",
+    status: "SUCCESS",
+    created_at: "2026-05-05T14:35:00Z",
+  }
 ];
 
 // =============================================================================
 // Page Component
 // =============================================================================
 export default function MyAnalyses() {
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
   const params = useParams<{ projectId: string }>();
   const projectId = params.projectId;
 
@@ -90,39 +97,29 @@ export default function MyAnalyses() {
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate("/my")}
+              onClick={() => setLocation("/my")}
               className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </button>
-            <div
-              className="flex items-center gap-2.5 cursor-pointer"
-              onClick={() => navigate("/")}
-            >
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-lg font-bold text-white">PassMate</span>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation("/")}>
+              <Logo className="w-6 h-6" textClassName="text-lg md:text-xl text-white" />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-zinc-400 hover:text-white font-medium"
-              onClick={() => navigate("/my")}
+            <button
+              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
+              onClick={() => setLocation("/my")}
             >
               My
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white font-medium"
+            </button>
+            <button
+              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
             >
               로그인
-            </Button>
+            </button>
           </div>
         </div>
       </motion.nav>
