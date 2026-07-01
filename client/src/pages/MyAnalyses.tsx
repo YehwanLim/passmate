@@ -9,6 +9,8 @@ import EmptyState from "@/components/my/EmptyState";
 import SkeletonCard from "@/components/my/SkeletonCard";
 import SubtleBackground from "@/components/SubtleBackground";
 import Logo from "@/components/Logo";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+
 
 // =============================================================================
 // Mock Data — API 연동 실패 시 Fallback (최소 유지)
@@ -48,6 +50,7 @@ const MOCK_ANALYSES: AnalysisSummary[] = [
 // =============================================================================
 export default function MyAnalyses() {
   const [, setLocation] = useLocation();
+  useRequireAuth(); // 미인증 시 /login 리다이렉트
   const params = useParams<{ projectId: string }>();
   const projectId = params.projectId;
 

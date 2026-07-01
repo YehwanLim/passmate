@@ -4,17 +4,20 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import Home from "./pages/Home";
 import Analyze from "./pages/Analyze";
 import ReportResult from "./pages/ReportResult";
 import MyProjects from "./pages/MyProjects";
 import MyAnalyses from "./pages/MyAnalyses";
+import Login from "./pages/Login";
 
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/login"} component={Login} />
       <Route path={"/analyze"} component={Analyze} />
       <Route path={"/report-new"} component={ReportResult} />
       <Route path={"/my"} component={MyProjects} />
@@ -38,10 +41,12 @@ function App() {
         defaultTheme="light"
       // switchable
       >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

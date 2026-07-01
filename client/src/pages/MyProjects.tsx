@@ -9,6 +9,9 @@ import EmptyState from "@/components/my/EmptyState";
 import SkeletonCard from "@/components/my/SkeletonCard";
 import SubtleBackground from "@/components/SubtleBackground";
 import Logo from "@/components/Logo";
+import AuthButton from "@/components/AuthButton";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+
 
 // =============================================================================
 // Mock Data — API 연동 실패 시 Fallback (최소 유지)
@@ -33,6 +36,7 @@ const MOCK_PROJECTS: ProjectSummary[] = [
 // =============================================================================
 export default function MyProjects() {
   const [, navigate] = useLocation();
+  const { isLoading: authLoading } = useRequireAuth(); // 미인증 시 /login 리다이렉트
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -106,11 +110,7 @@ export default function MyProjects() {
             >
               My
             </button>
-            <button
-              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-            >
-              로그인
-            </button>
+            <AuthButton />
           </div>
         </div>
       </motion.nav>

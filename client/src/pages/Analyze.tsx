@@ -28,6 +28,9 @@ import { sanitizeText } from "@/utils/sanitize";
 import { checkDuplicateQuestions } from "@/utils/textSimilarity";
 import { saveDraft, loadDraft, saveAnalysisToStorage, clearAnalysisResult } from "@/utils/storage";
 import { UI_LABELS } from "@/constants/labels";
+import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+
 
 /**
  * PassMate - 자소서 분석 페이지 (/analyze)
@@ -44,19 +47,6 @@ const MIN_TOTAL_CHARS = 200;
 const WARN_TOTAL_CHARS = 1000;
 
 /* ── 더미 데이터 ── */
-const COMPANY_PRESETS = [
-  "삼성전자",
-  "SK하이닉스",
-  "LG전자",
-  "현대자동차",
-  "카카오",
-  "네이버",
-  "배달의민족(우아한형제들)",
-  "토스(비바리퍼블리카)",
-  "쿠팡",
-  "라인플러스",
-];
-
 const JOB_ROLE_PRESETS = [
   "서비스 PM",
   "프론트엔드 개발",
@@ -98,12 +88,13 @@ function CompanyCombobox({
   // 입력값으로 필터링된 목록
   const filtered = useMemo(() => {
     if (!value.trim()) return COMPANY_PRESETS;
+    const normalizedQuery = normalizeCompanyName(value);
     return COMPANY_PRESETS.filter((c) =>
-      c.toLowerCase().includes(value.toLowerCase())
+      normalizeCompanyName(c).includes(normalizedQuery)
     );
   }, [value]);
 
-  const showDropdown = isFocused && filtered.length > 0;
+  const showDropdown = isFocused && (filtered.length > 0 || value.trim() !== "");
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -146,28 +137,42 @@ function CompanyCombobox({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18 }}
-            className="absolute z-30 mt-2 w-full max-h-52 overflow-y-auto rounded-xl border border-white/[0.1] bg-[#141414] backdrop-blur-xl shadow-2xl shadow-black/40 py-1.5"
+            className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-white/[0.1] bg-[#141414] backdrop-blur-xl shadow-2xl shadow-black/40 py-1.5"
           >
-            {filtered.map((company) => (
-              <li key={company}>
+            {filtered.length > 0 ? (
+              filtered.map((company) => (
+                <li key={company}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      onChange(company);
+                      setIsFocused(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
+                      value === company
+                        ? "text-cyan-400 bg-cyan-400/[0.08]"
+                        : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                    {company}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li>
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => {
-                    onChange(company);
-                    setIsFocused(false);
-                  }}
-                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
-                    value === company
-                      ? "text-cyan-400 bg-cyan-400/[0.08]"
-                      : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
-                  }`}
+                  onClick={() => setIsFocused(false)}
+                  className="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06]"
                 >
-                  <Building2 className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-                  {company}
+                  <Plus className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                  <span className="font-medium">"{value}"</span> 직접 입력하기
                 </button>
               </li>
-            ))}
+            )}
           </motion.ul>
         )}
       </AnimatePresence>
@@ -333,6 +338,7 @@ function QuestionCard({
 ────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
+  useRequireAuth(); // 미인증 시 /login 리다이렉트
   const [company, setCompany] = useState("");
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [customJob, setCustomJob] = useState("");

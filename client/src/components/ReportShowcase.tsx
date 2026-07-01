@@ -53,9 +53,7 @@ export default function ReportShowcase() {
               >
                 {/* Image Side */}
                 <div className="w-full lg:w-3/5">
-                  <div className="relative rounded-2xl bg-white/[0.02] border border-white/[0.06] p-4 lg:p-8 overflow-hidden group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.02] to-purple-500/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    
+                  <div className="relative p-4 lg:p-8 group">
                     <motion.div 
                       whileHover={{ scale: 1.02 }}
                       transition={{ duration: 0.5 }}

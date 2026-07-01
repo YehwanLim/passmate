@@ -29,6 +29,8 @@ import {
   AnimatePresence,
 } from "framer-motion";
 import { useLocation } from "wouter";
+import AuthButton from "@/components/AuthButton";
+
 
 /**
  * PassMate – Premium Dark SaaS Landing Page
@@ -247,11 +249,7 @@ export default function Home() {
             >
               My
             </button>
-            <button
-              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-            >
-              로그인
-            </button>
+            <AuthButton />
           </div>
         </div>
       </motion.nav>
