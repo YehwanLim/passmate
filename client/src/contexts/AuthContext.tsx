@@ -8,6 +8,7 @@ import React, {
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import type { AuthState, UserProfile } from "@/types/auth";
+import { trackLogin, trackSignUp } from "@/lib/analytics";
 
 // ============================================================
 // Context
@@ -72,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     let resolved = false;
+    // GA4 중복 이벤트 방지: 세션 ID별로 한 번만 추적
+    let trackedSessionId: string | null = null;
 
     const resolve = (session: import("@supabase/supabase-js").Session | null, source: string) => {
       if (!mounted || resolved) return;
@@ -99,8 +102,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           upsertUser(profile);
         }
+        // GA4: 로그인 이벤트 추적 (세션 ID 기준 중복 방지)
+        if (event === "SIGNED_IN" && trackedSessionId !== session.user.id) {
+          trackedSessionId = session.user.id;
+          const provider = session.user.app_metadata?.provider ?? "google";
+          trackLogin(provider);
+          // 신규 가입 판별: created_at과 updated_at이 5초 이내면 최초 가입으로 간주
+          const createdAt = new Date(session.user.created_at).getTime();
+          const updatedAt = new Date(
+            session.user.updated_at ?? session.user.created_at
+          ).getTime();
+          if (Math.abs(updatedAt - createdAt) < 5000) {
+            trackSignUp(provider);
+          }
+        }
       } else {
         setUser(null);
+        trackedSessionId = null; // 로그아웃 시 초기화
       }
 
       // 최초 resolved 처리 (INITIAL_SESSION 또는 SIGNED_IN으로)

@@ -11,11 +11,17 @@ import ReportResult from "./pages/ReportResult";
 import MyProjects from "./pages/MyProjects";
 import MyAnalyses from "./pages/MyAnalyses";
 import Login from "./pages/Login";
+import AdminRoot from "./pages/admin/AdminRoot";
 
 
 function Router() {
   return (
     <Switch>
+      {/* ── Admin routes (자체 레이아웃 + 권한 가드 포함) ── */}
+      <Route path={"/admin"} component={AdminRoot} />
+      <Route path={"/admin/:rest*"} component={AdminRoot} />
+
+      {/* ── User-facing routes ── */}
       <Route path={"/"} component={Home} />
       <Route path={"/login"} component={Login} />
       <Route path={"/analyze"} component={Analyze} />

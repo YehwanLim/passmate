@@ -109,3 +109,5 @@ temp/
 .webdev/
 
 /generated/prisma
+.vercel
+.env*

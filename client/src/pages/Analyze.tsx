@@ -30,6 +30,12 @@ import { saveDraft, loadDraft, saveAnalysisToStorage, clearAnalysisResult } from
 import { UI_LABELS } from "@/constants/labels";
 import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import {
+  trackResumeUpload,
+  trackAnalysisStart,
+  trackAnalysisComplete,
+  trackAnalysisFailed,
+} from "@/lib/analytics";
 
 
 /**
@@ -421,6 +427,8 @@ export default function Analyze() {
   // ── 분석 제출 (모든 예외 처리 포함) ──
   const executeSubmit = async () => {
     setIsLoading(true);
+    // GA4: 분석 시작 시간 기록
+    const analysisStartTime = performance.now();
 
     const jobLabel =
       selectedJob === "__custom__" ? customJob.trim() : selectedJob ?? "";
@@ -430,6 +438,10 @@ export default function Analyze() {
       question: sanitizeText(q.question.trim()) || `문항 ${i + 1}`,
       answer: sanitizeText(q.answer),
     }));
+
+    // GA4: 자소서 입력 완료 + 분석 시작 이벤트
+    trackResumeUpload("text", totalChars);
+    trackAnalysisStart("cover_letter", totalChars);
 
     // 로컬 스토리지 초안 백업
     saveDraft({ company, selectedJob, customJob, questions });
@@ -454,6 +466,7 @@ export default function Analyze() {
 
       // Rate Limit (429)
       if (response.status === 429) {
+        trackAnalysisFailed("cover_letter", "rate_limit");
         setErrorModal({ title: "요청 제한", message: UI_LABELS.RATE_LIMIT_ERROR });
         return;
       }
@@ -463,6 +476,7 @@ export default function Analyze() {
         let errorData;
         try { errorData = await response.json(); } catch { /* ignore */ }
         if (errorData?.error === "CONTEXT_IRRELEVANT") {
+          trackAnalysisFailed("cover_letter", "context_irrelevant");
           setErrorModal({ title: "내용 확인 필요", message: UI_LABELS.CONTEXT_IRRELEVANT });
           return;
         }
@@ -474,6 +488,7 @@ export default function Analyze() {
       try {
         data = await response.json();
       } catch {
+        trackAnalysisFailed("cover_letter", "parse_error");
         setErrorModal({ title: "파싱 오류", message: UI_LABELS.JSON_PARSE_ERROR });
         return;
       }
@@ -481,6 +496,7 @@ export default function Analyze() {
       // 유효성 검사: 정상적인 리포트 구조인지 확인
       if (!data || !Array.isArray(data.questionTabs) || data.questionTabs.length === 0) {
         console.error("❌ API 응답이 올바른 리포트 구조가 아닙니다:", data);
+        trackAnalysisFailed("cover_letter", "invalid_response");
         setErrorModal({ title: "분석 오류", message: UI_LABELS.JSON_PARSE_ERROR });
         return;
       }
@@ -493,6 +509,7 @@ export default function Analyze() {
       );
       if (isFallback) {
         console.error("❌ Fallback(더미) 데이터 감지 — AI 분석이 실패한 것으로 판단");
+        trackAnalysisFailed("cover_letter", "fallback_detected");
         setErrorModal({
           title: "분석 실패",
           message: "AI 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해 주세요."
@@ -508,14 +525,19 @@ export default function Analyze() {
         jobKeyword: jobLabel,
       });
 
+      // GA4: 분석 성공 이벤트
+      trackAnalysisComplete("cover_letter", Math.round(performance.now() - analysisStartTime));
+
       navigate("/report-new");
     } catch (error: any) {
       console.error(error);
       clearAnalysisResult();
 
       if (error.name === "AbortError") {
+        trackAnalysisFailed("cover_letter", "timeout");
         setErrorModal({ title: "연결 불안정", message: UI_LABELS.NETWORK_ERROR });
       } else {
+        trackAnalysisFailed("cover_letter", "server_error");
         setErrorModal({ title: "분석 실패", message: UI_LABELS.ANALYSIS_FAILED });
       }
     } finally {
