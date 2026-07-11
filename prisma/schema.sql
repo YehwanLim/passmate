@@ -106,6 +106,7 @@ CREATE TABLE prompt_templates (
   id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
 
   -- 버전 식별
+  prompt_type     VARCHAR(50),
   version         VARCHAR(20)  NOT NULL,
   name            VARCHAR(100) NOT NULL,
   variant         VARCHAR(50),
@@ -126,13 +127,20 @@ CREATE TABLE prompt_templates (
 
   -- 메타
   description     TEXT,
+  notes           TEXT,
+  updated_by      VARCHAR(255),
   created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
   CONSTRAINT uq_prompt_version_variant UNIQUE (version, variant)
 );
 
 CREATE INDEX idx_prompt_templates_is_active       ON prompt_templates(is_active);
 CREATE INDEX idx_prompt_templates_model_provider  ON prompt_templates(model_provider);
+CREATE UNIQUE INDEX uq_prompt_templates_type_version
+  ON prompt_templates(prompt_type, version)
+  WHERE prompt_type IS NOT NULL;
+CREATE INDEX idx_prompt_templates_prompt_type ON prompt_templates(prompt_type);
 
 -- FK: analyses → prompt_templates (테이블 생성 순서 이슈 해결)
 ALTER TABLE analyses
