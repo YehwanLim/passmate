@@ -36,6 +36,41 @@ export interface MockPromptRun {
   estimatedCost: number;
 }
 
+export interface BuildDraftRecordInput {
+  type: PromptType;
+  versions: string[];
+  name: string;
+  variant?: string | null;
+  systemPrompt: string;
+  userTemplate: string | null;
+  modelName?: string | null;
+  modelProvider?: string | null;
+  temperature: number | null;
+  maxTokens: number | null;
+  isDefault?: boolean;
+  description?: string | null;
+  notes: string | null;
+  updatedBy: string | null;
+}
+
+export interface PromptTemplateInsertRecord {
+  prompt_type: PromptType;
+  version: string;
+  name: string;
+  variant: string | null;
+  system_prompt: string;
+  user_template: string | null;
+  model_name?: string;
+  model_provider?: string;
+  temperature: number | null;
+  max_tokens: number | null;
+  is_active: boolean;
+  is_default: boolean;
+  description: string | null;
+  notes: string | null;
+  updated_by: string | null;
+}
+
 export function nextPromptVersion(versions: string[]): string {
   const parsed = versions
     .map((version) => /^v(\d+)\.(\d+)$/.exec(version))
@@ -51,6 +86,59 @@ export function nextPromptVersion(versions: string[]): string {
   }
 
   return `v${parsed[0][0]}.${parsed[0][1] + 1}`;
+}
+
+export function buildDraftRecord({
+  type,
+  versions,
+  name,
+  variant = null,
+  systemPrompt,
+  userTemplate,
+  modelName,
+  modelProvider,
+  temperature,
+  maxTokens,
+  isDefault = false,
+  description = null,
+  notes,
+  updatedBy,
+}: BuildDraftRecordInput): PromptTemplateInsertRecord {
+  const draft: PromptTemplateInsertRecord = {
+    prompt_type: type,
+    version: nextPromptVersion(versions),
+    name,
+    variant,
+    system_prompt: systemPrompt,
+    user_template: userTemplate,
+    temperature,
+    max_tokens: maxTokens,
+    is_active: false,
+    is_default: isDefault,
+    description,
+    notes,
+    updated_by: updatedBy,
+  };
+
+  if (modelName) {
+    draft.model_name = modelName;
+  }
+
+  if (modelProvider) {
+    draft.model_provider = modelProvider;
+  }
+
+  return draft;
+}
+
+export function buildActivationUpdates(promptType: PromptType, activateId: string) {
+  return {
+    deactivate: {
+      prompt_type: promptType,
+      is_active: false,
+    },
+    activateId,
+  };
 }
 
 export function createMockPromptRun(

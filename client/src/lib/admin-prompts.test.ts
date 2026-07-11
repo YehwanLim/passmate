@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildActivationUpdates,
+  buildDraftRecord,
   createMockPromptRun,
   nextPromptVersion,
   PROMPT_TYPES,
@@ -24,6 +26,35 @@ describe("nextPromptVersion", () => {
 
   it("increments the largest minor version", () => {
     expect(nextPromptVersion(["v1.0", "v1.2", "v2.0"])).toBe("v2.1");
+  });
+});
+
+describe("buildDraftRecord", () => {
+  it("creates a draft with the next version and inactive status", () => {
+    const draft = buildDraftRecord({
+      type: "summary",
+      versions: ["v1.0"],
+      name: "Summary",
+      systemPrompt: "system",
+      userTemplate: "{{resume}}",
+      temperature: 0.4,
+      maxTokens: 800,
+      notes: "Shorter output",
+      updatedBy: "admin@passmate.ai",
+    });
+
+    expect(draft.version).toBe("v1.1");
+    expect(draft.is_active).toBe(false);
+    expect(draft.prompt_type).toBe("summary");
+  });
+});
+
+describe("buildActivationUpdates", () => {
+  it("targets only matching prompt type records when activating", () => {
+    expect(buildActivationUpdates("feedback", "selected-id")).toEqual({
+      deactivate: { prompt_type: "feedback", is_active: false },
+      activateId: "selected-id",
+    });
   });
 });
 
