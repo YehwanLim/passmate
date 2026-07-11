@@ -8,6 +8,13 @@ CREATE TYPE analysis_status AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
 
 -- Enum: 실패 원인 분류
 CREATE TYPE error_code AS ENUM ('TIMEOUT', 'RATE_LIMIT', 'PARSE_ERROR', 'CONTEXT_IRRELEVANT', 'API_ERROR', 'UNKNOWN');
+CREATE TYPE prompt_template_type AS ENUM (
+  'resume-analysis',
+  'cover-letter',
+  'summary',
+  'feedback',
+  'interview-questions'
+);
 
 -- =============================================================================
 -- users — 유저 계정
@@ -106,7 +113,7 @@ CREATE TABLE prompt_templates (
   id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
 
   -- 버전 식별
-  prompt_type     VARCHAR(50),
+  prompt_type     prompt_template_type,
   version         VARCHAR(20)  NOT NULL,
   name            VARCHAR(100) NOT NULL,
   variant         VARCHAR(50),
@@ -141,6 +148,10 @@ CREATE UNIQUE INDEX uq_prompt_templates_type_version
   ON prompt_templates(prompt_type, version)
   WHERE prompt_type IS NOT NULL;
 CREATE INDEX idx_prompt_templates_prompt_type ON prompt_templates(prompt_type);
+
+CREATE TRIGGER set_prompt_templates_updated_at
+  BEFORE UPDATE ON prompt_templates
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- FK: analyses → prompt_templates (테이블 생성 순서 이슈 해결)
 ALTER TABLE analyses

@@ -78,6 +78,16 @@ enum ErrorCode {
   @@map("error_code")
 }
 
+enum PromptType {
+  RESUME_ANALYSIS     @map("resume-analysis")
+  COVER_LETTER        @map("cover-letter")
+  SUMMARY             @map("summary")
+  FEEDBACK            @map("feedback")
+  INTERVIEW_QUESTIONS @map("interview-questions")
+
+  @@map("prompt_template_type")
+}
+
 model Analysis {
   id        String @id @default(uuid()) @db.Uuid
   userId    String @map("user_id") @db.Uuid
@@ -133,10 +143,10 @@ model PromptTemplate {
   id String @id @default(uuid()) @db.Uuid
 
   // ── 버전 식별 ──
-  promptType String? @map("prompt_type") @db.VarChar(50)
-  version    String  @db.VarChar(20)   // ex. "1.0", "2.0-beta"
-  name       String  @db.VarChar(100)  // ex. "따뜻한 팩폭 사수 v2"
-  variant    String? @db.VarChar(50)   // A/B 변형: "A", "B", "control"
+  promptType PromptType? @map("prompt_type")
+  version    String      @db.VarChar(20)   // ex. "1.0", "2.0-beta"
+  name       String      @db.VarChar(100)  // ex. "따뜻한 팩폭 사수 v2"
+  variant    String?     @db.VarChar(50)   // A/B 변형: "A", "B", "control"
 
   // ── 프롬프트 본문 ──
   systemPrompt String  @map("system_prompt") @db.Text  // 시스템 프롬프트 전문
@@ -157,7 +167,7 @@ model PromptTemplate {
   notes       String?  @db.Text
   updatedBy   String?  @map("updated_by") @db.VarChar(255)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
   analyses Analysis[]

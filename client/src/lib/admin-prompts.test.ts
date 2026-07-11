@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { createMockPromptRun, nextPromptVersion } from "./admin-prompts";
+import {
+  createMockPromptRun,
+  nextPromptVersion,
+  PROMPT_TYPES,
+} from "./admin-prompts";
+
+describe("PROMPT_TYPES", () => {
+  it("matches the supported admin prompt types exactly", () => {
+    expect(PROMPT_TYPES).toEqual([
+      "resume-analysis",
+      "cover-letter",
+      "summary",
+      "feedback",
+      "interview-questions",
+    ]);
+  });
+});
 
 describe("nextPromptVersion", () => {
   it("starts a prompt type at v1.0", () => {
