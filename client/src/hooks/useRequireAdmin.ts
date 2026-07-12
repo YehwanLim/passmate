@@ -49,22 +49,43 @@ export function useRequireAdmin() {
     const fetchRole = async () => {
       setRoleState("loading");
 
-      const { data, error } = await supabase
+      const { data: roleById, error: idError } = await supabase
         .from("users")
         .select("role")
         .eq("id", user.id)
-        .single<{ role: UserRole }>();
+        .maybeSingle<{ role: UserRole }>();
 
       if (cancelled) return;
 
-      if (error) {
-        console.warn("[useRequireAdmin] role 조회 실패:", error.message);
+      if (idError) {
+        console.warn("[useRequireAdmin] id 기준 role 조회 실패:", idError.message);
         // 조회 실패 시 보안 원칙에 따라 forbidden 처리
         setRoleState("forbidden");
         return;
       }
 
-      setRoleState(data?.role === "admin" ? "admin" : "forbidden");
+      if (roleById?.role === "admin") {
+        setRoleState("admin");
+        return;
+      }
+
+      // Supabase에서 관리자 계정을 이메일 기준으로 먼저 등록한 경우,
+      // auth.uid()와 users.id가 달라질 수 있어 이메일 기준으로 한 번 더 확인합니다.
+      const { data: roleByEmail, error: emailError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("email", user.email)
+        .maybeSingle<{ role: UserRole }>();
+
+      if (cancelled) return;
+
+      if (emailError) {
+        console.warn("[useRequireAdmin] email 기준 role 조회 실패:", emailError.message);
+        setRoleState("forbidden");
+        return;
+      }
+
+      setRoleState(roleByEmail?.role === "admin" ? "admin" : "forbidden");
     };
 
     fetchRole();

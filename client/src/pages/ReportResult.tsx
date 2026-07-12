@@ -4,7 +4,22 @@ import { Check, ChevronDown, ArrowRight, FileText, Sparkles, ArrowLeft, Download
 import type { ReportData } from "../types/report"
 import { UI_LABELS } from "../constants/labels"
 import { loadReportData, loadAnalysisFromStorage } from "../utils/storage"
+import {
+    getFreeAnalysisStatus,
+    isReportSectionLocked,
+    markFreeAnalysisUsed,
+    shouldShowNextAnalysisNotice,
+} from "../utils/reportAccess"
 import FeedbackSection from "../components/FeedbackSection"
+import { FreeAnalysisNotice, ReportAccessGate } from "../components/report/ReportAccessGate"
+import { useAuth } from "../contexts/AuthContext"
+import { REPORT_NAV_SECTIONS } from "./reportNavigation"
+import {
+    buildEditorialKeywords,
+    buildHiringMemoryItems,
+    compressPersonaForHero,
+    splitPersonaForHeroLines,
+} from "./reportFirstImpression"
 
 const FALLBACK_DATA: ReportData = {
     companyInsight: {
@@ -74,36 +89,25 @@ const FALLBACK_DATA: ReportData = {
 }
 
 // =============================================================================
-// NAVIGATION SECTIONS
-// =============================================================================
-const NAV_SECTIONS = [
-    { id: 'section-first-impression', label: '01. 첫인상' },
-    { id: 'section-company-insight', label: '02. 합격 기준' },
-    { id: 'section-core-diagnosis', label: '03. 핵심 진단' },
-    { id: 'section-line-analysis', label: '04. 문장 분석' },
-    { id: 'section-interview-drill', label: '05. 예상 질문' },
-    { id: 'section-action-plan', label: '06. 다음 단계' },
-    { id: 'section-pm-comment', label: '07. 실무자 코멘트' },
-]
-
-// =============================================================================
 // MINI NAVIGATOR
 // =============================================================================
 function MiniNavigator({ activeSection }: { activeSection: string }) {
     return (
-        <nav className="report-nav hidden xl:block">
-            <div className="space-y-0.5">
-                {NAV_SECTIONS.map((sec, idx) => (
+        <nav className="report-nav hidden xl:block" aria-label="리포트 목차">
+            <div className="report-nav-list">
+                {REPORT_NAV_SECTIONS.map((sec) => (
                     <a
                         key={sec.id}
                         href={`#${sec.id}`}
                         className={`report-nav-item ${activeSection === sec.id ? 'active' : ''}`}
+                        aria-current={activeSection === sec.id ? 'location' : undefined}
                         onClick={(e) => {
                             e.preventDefault()
                             document.getElementById(sec.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                         }}
                     >
-                        {sec.label}
+                        <span className="report-nav-index">{sec.indexLabel}.</span>
+                        <span>{sec.label}</span>
                     </a>
                 ))}
             </div>
@@ -117,6 +121,7 @@ function MiniNavigator({ activeSection }: { activeSection: string }) {
 
 export default function PassMateReport() {
     const [, navigate] = useLocation()
+    const { user, isAuthenticated, isLoading: authLoading } = useAuth()
 
     // ── query parameter에서 mock 여부 판단 ──
     const searchParams = new URLSearchParams(window.location.search)
@@ -125,8 +130,9 @@ export default function PassMateReport() {
     // ── sessionStorage에서 회사명/직무명 복원 (통합 구조 우선) ──
     const storedAnalysis = loadAnalysisFromStorage()
     const targetCompany = storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "네이버 웹툰"
-    const userName = storedAnalysis?.userName || sessionStorage.getItem('passmate_user') || "김민지"
+    const userName = sessionStorage.getItem('passmate_user') || "김민지"
     const analysisId = storedAnalysis?.analysis_id || null
+    const analysisKey = analysisId || storedAnalysis?.created_at || "mock-report"
 
     const [reportData, setReportData] = useState<ReportData>(() => {
         // mock 모드: 무조건 FALLBACK_DATA 사용
@@ -153,14 +159,36 @@ export default function PassMateReport() {
     const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set())
     const [focusedCardIndex, setFocusedCardIndex] = useState<number | null>(null)
     const [viewMode, setViewMode] = useState<'focus' | 'list'>('list')
-    const [activeSection, setActiveSection] = useState(NAV_SECTIONS[0].id)
+    const [activeSection, setActiveSection] = useState(REPORT_NAV_SECTIONS[0].id)
     const [showOverview, setShowOverview] = useState(true)
     const [showSubtitle, setShowSubtitle] = useState(true)
+    const [showNextAnalysisNotice, setShowNextAnalysisNotice] = useState(false)
+
+    const isLockedFromSection = (sectionIndex: number) =>
+        isReportSectionLocked({
+            sectionIndex,
+            isAuthenticated,
+        })
+
+    const handleLoginToUnlock = useCallback(() => {
+        navigate(`/login?redirect=${encodeURIComponent("/report-new")}`)
+    }, [navigate])
+
+    useEffect(() => {
+        if (authLoading || !user?.id || !analysisKey) {
+            setShowNextAnalysisNotice(false)
+            return
+        }
+
+        const statusBeforeClaim = getFreeAnalysisStatus(user.id, analysisKey)
+        setShowNextAnalysisNotice(shouldShowNextAnalysisNotice(statusBeforeClaim))
+        markFreeAnalysisUsed(user.id, analysisKey)
+    }, [analysisKey, authLoading, user?.id])
 
     // ── Scroll Spy (IntersectionObserver) ──
     useEffect(() => {
         const observers: IntersectionObserver[] = []
-        NAV_SECTIONS.forEach((sec) => {
+        REPORT_NAV_SECTIONS.forEach((sec) => {
             const el = document.getElementById(sec.id)
             if (!el) return
             const observer = new IntersectionObserver(
@@ -227,6 +255,22 @@ export default function PassMateReport() {
 
     const taskProgress = Math.round((completedTasks.length / reportData.actionPlan.length) * 100)
     const currentTab = reportData.questionTabs[activeTab]
+    const heroPersona = useMemo(() => compressPersonaForHero(reportData.firstImpression.persona), [reportData.firstImpression.persona])
+    const heroPersonaLines = useMemo(() => splitPersonaForHeroLines(heroPersona), [heroPersona])
+    const editorialKeywords = useMemo(
+        () => buildEditorialKeywords({
+            hashtags: reportData.firstImpression.hashtags,
+            talentKeywords: reportData.companyInsight.talentKeywords,
+        }),
+        [reportData.companyInsight.talentKeywords, reportData.firstImpression.hashtags]
+    )
+    const hiringMemoryItems = useMemo(
+        () => buildHiringMemoryItems({
+            strengths: reportData.strengths,
+            gaps: reportData.gaps,
+        }),
+        [reportData.gaps, reportData.strengths]
+    )
 
     // 원문 텍스트 위치 기준으로 번호 재배정 (위에서부터 1, 2, 3...)
     const cardDisplayNumbers = useMemo(() => {
@@ -315,26 +359,69 @@ export default function PassMateReport() {
                     </div>
                 )}
 
+                <FreeAnalysisNotice show={showNextAnalysisNotice} />
+
                 {/* ================================================================= */}
                 {/* ACT 1: FIRST IMPRESSION */}
                 {/* ================================================================= */}
                 <header id="section-first-impression" className="pt-8 pb-24 section-divider">
-                    <h1 className="text-3xl sm:text-4xl md:text-[2.75rem] font-semibold text-white tracking-tight leading-snug md:leading-snug text-balance mb-8">
-                        {UI_LABELS.FIRST_IMPRESSION_TITLE(userName)}
-                    </h1>
+                    <div className="relative min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0B0B0E] px-5 py-5 sm:px-8 sm:py-7 md:px-10 md:py-9">
+                        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.09),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent_48%)]" />
+                        <div className="pointer-events-none absolute inset-px rounded-[15px] border border-white/[0.035]" />
 
-                    <p className="text-lg sm:text-xl text-zinc-200 leading-[1.7] mb-10 max-w-3xl font-medium">
-                        {reportData.firstImpression.summaryOneLiner}
-                    </p>
+                        <div className="relative flex min-w-0 flex-col gap-2 border-b border-white/[0.06] pb-4 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+                            <span>PassMate Report</span>
+                            <span className="min-w-0 break-words sm:text-right">First Read · {targetCompany}</span>
+                        </div>
 
-                    {/* Persona + Hashtags — Primary Card */}
-                    <div className="bg-white/[0.02] border border-white/[0.05] p-7 rounded-xl">
-                        <p className="text-sm text-zinc-500 uppercase tracking-[0.15em] mb-3 font-medium">{UI_LABELS.APPLICANT_PROFILE}</p>
-                        <p className="text-[17px] text-zinc-100 font-medium leading-[1.7] mb-5">{reportData.firstImpression.persona}</p>
-                        <div className="flex flex-wrap gap-2">
-                            {reportData.firstImpression.hashtags.map((tag: string) => (
-                                <span key={tag} className="px-3 py-1.5 text-xs text-zinc-400 bg-white/[0.03] border border-white/[0.04] rounded-full font-medium">{tag}</span>
+                        <div className="relative min-w-0 py-14 text-center sm:py-16 md:py-20">
+                            <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{userName}님은</p>
+                            <h1 className="mx-auto max-w-3xl text-[2.35rem] sm:text-[3.6rem] md:text-[4.7rem] font-semibold leading-[1.02] tracking-tight text-white">
+                                {heroPersonaLines.map((line) => (
+                                    <span key={line} className="block">
+                                        {line}
+                                    </span>
+                                ))}
+                            </h1>
+                            <p className="mx-auto mt-7 max-w-2xl text-[16px] sm:text-xl leading-[1.75] text-zinc-300 text-balance">
+                                {reportData.firstImpression.summaryOneLiner}
+                            </p>
+                        </div>
+
+                        <div className="relative flex min-w-0 flex-wrap justify-center gap-2 pb-7">
+                            {editorialKeywords.map((keyword) => (
+                                <span key={keyword} className="max-w-full rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-zinc-400">
+                                    {keyword}
+                                </span>
                             ))}
+                        </div>
+
+                        <div className="relative grid items-start gap-4 md:grid-cols-2">
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+                                <p className="mb-3 text-sm font-semibold text-white">채용담당자가 기억할 모습</p>
+                                <ul className="space-y-2.5">
+                                    {hiringMemoryItems.map((item) => (
+                                        <li key={`${item.mark}-${item.text}`} className="grid grid-cols-[18px_1fr] gap-2.5 text-sm leading-[1.55] text-zinc-300">
+                                            <span className="font-semibold text-zinc-100">{item.mark}</span>
+                                            <span>{item.text}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+                                <p className="mb-3 text-sm font-semibold text-white">{UI_LABELS.APPLICANT_PROFILE}</p>
+                                <p className="text-sm leading-[1.7] text-zinc-400">
+                                    {reportData.firstImpression.persona}라는 인상이 먼저 남습니다. 경험의 흐름은 문제를 발견하고 근거를 모아 실행으로 옮기는 방향으로 읽힙니다.
+                                </p>
+                            </div>
+
+                            <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 md:col-span-2">
+                                <p className="mb-3 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">현직자 한 줄 코멘트</p>
+                                <blockquote className="max-w-3xl text-sm leading-[1.7] text-zinc-300">
+                                    “{reportData.pmComment}”
+                                </blockquote>
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -399,9 +486,13 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 2: CORE DIAGNOSIS */}
                 {/* ================================================================= */}
-                <section id="section-core-diagnosis" className="py-24 section-divider">
-                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.CORE_DIAGNOSIS}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-14 tracking-tight">{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
+                <ReportAccessGate
+                    isLocked={isLockedFromSection(2)}
+                    onLogin={handleLoginToUnlock}
+                >
+                    <section id="section-core-diagnosis" className="py-24 section-divider">
+                        <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.CORE_DIAGNOSIS}</h2>
+                        <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-14 tracking-tight">{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                         <div>
@@ -450,12 +541,18 @@ export default function PassMateReport() {
                             </div>
                         </div>
                     </div>
-                </section>
+                    </section>
+                </ReportAccessGate>
             </article>
 
             {/* ================================================================= */}
             {/* ACT 3: LINE-BY-LINE ANALYSIS — Editorial Review Workspace */}
             {/* ================================================================= */}
+            <ReportAccessGate
+                isLocked={isLockedFromSection(3)}
+                onLogin={handleLoginToUnlock}
+                showOverlay={false}
+            >
             <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10"
                 onClick={(e) => {
                     // Click-outside: reset highlight if clicking empty area
@@ -722,9 +819,13 @@ export default function PassMateReport() {
                     </div>
                 </div>
             </section>
+            </ReportAccessGate>
 
-
-
+            <ReportAccessGate
+                isLocked={isLockedFromSection(4)}
+                onLogin={handleLoginToUnlock}
+                showOverlay={false}
+            >
             <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10">
 
                 {/* ================================================================= */}
@@ -884,6 +985,7 @@ export default function PassMateReport() {
                     </div>
                 </footer>
             </article>
+            </ReportAccessGate>
 
 
             {/* Toast */}

@@ -30,6 +30,7 @@ export interface AnalysisRow {
   user_name: string | null;
   project_title: string | null;
   project_company: string | null;
+  project_job_keyword: string | null;
 }
 
 export interface UseAnalysesDataParams {
@@ -86,7 +87,7 @@ export function useAnalysesData({
           total_chars,
           created_at,
           users(email, name),
-          projects(title, company),
+          projects(title, company, job_keyword),
           token_usages(total_tokens, cost)
         `,
           { count: "exact" }
@@ -155,6 +156,7 @@ export function useAnalysesData({
         user_name: (r.users as any)?.name ?? null,
         project_title: (r.projects as any)?.title ?? null,
         project_company: (r.projects as any)?.company ?? null,
+        project_job_keyword: (r.projects as any)?.job_keyword ?? null,
       }));
 
       // 클라이언트 이메일 검색 (embedded 필터 한계 대응)

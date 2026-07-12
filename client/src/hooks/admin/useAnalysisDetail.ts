@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 export interface AnalysisDetail {
   // 기본
   id: string;
+  project_id: string;
   status: "PENDING" | "SUCCESS" | "FAILED";
   error_code: string | null;
   error_message: string | null;
@@ -42,6 +43,16 @@ export interface AnalysisDetail {
     company: string | null;
     job_keyword: string | null;
   } | null;
+  project_analyses: Array<{
+    id: string;
+    status: "PENDING" | "SUCCESS" | "FAILED";
+    question_text: string;
+    input_text: string;
+    total_chars: number | null;
+    ai_response_json: unknown;
+    ai_score: number | null;
+    created_at: string;
+  }>;
   prompt_template: {
     id: string;
     name: string;
@@ -85,6 +96,7 @@ export function useAnalysisDetail(analysisId: string) {
         .select(
           `
           id,
+          project_id,
           status,
           error_code,
           error_message,
@@ -116,9 +128,37 @@ export function useAnalysisDetail(analysisId: string) {
       }
 
       const r = data as any;
+      const { data: projectAnalysesData } = await supabase
+        .from("analyses")
+        .select(
+          `
+          id,
+          status,
+          question_text,
+          input_text,
+          total_chars,
+          ai_response_json,
+          ai_score,
+          created_at
+        `
+        )
+        .eq("project_id", r.project_id)
+        .order("created_at", { ascending: false });
+
+      const projectAnalyses = ((projectAnalysesData ?? []) as any[]).map(a => ({
+        id: a.id,
+        status: a.status,
+        question_text: a.question_text,
+        input_text: a.input_text,
+        total_chars: a.total_chars ?? null,
+        ai_response_json: a.ai_response_json,
+        ai_score: a.ai_score ?? null,
+        created_at: a.created_at,
+      }));
 
       setDetail({
         id: r.id,
+        project_id: r.project_id,
         status: r.status,
         error_code: r.error_code ?? null,
         error_message: r.error_message ?? null,
@@ -143,6 +183,21 @@ export function useAnalysisDetail(analysisId: string) {
               job_keyword: r.projects.job_keyword ?? null,
             }
           : null,
+        project_analyses:
+          projectAnalyses.length > 0
+            ? projectAnalyses
+            : [
+                {
+                  id: r.id,
+                  status: r.status,
+                  question_text: r.question_text,
+                  input_text: r.input_text,
+                  total_chars: r.total_chars ?? null,
+                  ai_response_json: r.ai_response_json,
+                  ai_score: r.ai_score ?? null,
+                  created_at: r.created_at,
+                },
+              ],
         prompt_template: r.prompt_templates
           ? {
               id: r.prompt_templates.id,

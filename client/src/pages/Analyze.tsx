@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
   ArrowLeft,
-  Sparkles,
   Plus,
   Trash2,
   Loader2,
@@ -17,6 +16,8 @@ import {
   Info,
   Search,
   Building2,
+  FileSearch,
+  FileText,
   X,
   AlertTriangle,
 } from "lucide-react";
@@ -29,7 +30,6 @@ import { checkDuplicateQuestions } from "@/utils/textSimilarity";
 import { saveDraft, loadDraft, saveAnalysisToStorage, clearAnalysisResult } from "@/utils/storage";
 import { UI_LABELS } from "@/constants/labels";
 import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
 import {
   trackResumeUpload,
   trackAnalysisStart,
@@ -51,6 +51,48 @@ const MAX_QUESTIONS = 5;
 const MAX_TOTAL_CHARS = 6000;
 const MIN_TOTAL_CHARS = 200;
 const WARN_TOTAL_CHARS = 1000;
+
+export function getAnalyzeErrorMessage(errorData: unknown): string {
+  if (!errorData || typeof errorData !== "object") {
+    return UI_LABELS.ANALYSIS_FAILED;
+  }
+
+  const { message, error } = errorData as {
+    message?: unknown;
+    error?: unknown;
+  };
+
+  if (typeof message === "string" && message.trim()) {
+    return message;
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+
+  return UI_LABELS.ANALYSIS_FAILED;
+}
+
+const LOADING_STEPS = {
+  1: {
+    icon: FileSearch,
+    title: "자소서를 한 줄씩 읽고 있어요",
+    label: UI_LABELS.LOADING_STEP_1,
+    accent: "text-sky-400",
+  },
+  2: {
+    icon: BarChart3,
+    title: "합격 신호를 찾는 중이에요",
+    label: UI_LABELS.LOADING_STEP_2,
+    accent: "text-cyan-400",
+  },
+  3: {
+    icon: FileText,
+    title: "인사이트 리포트를 정리하고 있어요",
+    label: UI_LABELS.LOADING_STEP_3,
+    accent: "text-emerald-400",
+  },
+} as const;
 
 /* ── 더미 데이터 ── */
 const JOB_ROLE_PRESETS = [
@@ -344,7 +386,6 @@ function QuestionCard({
 ────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
-  useRequireAuth(); // 미인증 시 /login 리다이렉트
   const [company, setCompany] = useState("");
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [customJob, setCustomJob] = useState("");
@@ -385,6 +426,9 @@ export default function Analyze() {
     () => questions.reduce((sum, q) => sum + q.answer.length, 0),
     [questions]
   );
+  const currentLoadingStep =
+    LOADING_STEPS[(loadingStep || 1) as keyof typeof LOADING_STEPS];
+  const LoadingIcon = currentLoadingStep.icon;
   const isOverLimit = totalChars > MAX_TOTAL_CHARS;
   const isBelowMinimum = totalChars < MIN_TOTAL_CHARS;
   const isAtMaxQuestions = questions.length >= MAX_QUESTIONS;
@@ -480,7 +524,7 @@ export default function Analyze() {
           setErrorModal({ title: "내용 확인 필요", message: UI_LABELS.CONTEXT_IRRELEVANT });
           return;
         }
-        throw new Error(errorData?.message || "분석 중 오류가 발생했습니다.");
+        throw new Error(getAnalyzeErrorMessage(errorData));
       }
 
       // JSON 파싱 에러 방지
@@ -538,7 +582,10 @@ export default function Analyze() {
         setErrorModal({ title: "연결 불안정", message: UI_LABELS.NETWORK_ERROR });
       } else {
         trackAnalysisFailed("cover_letter", "server_error");
-        setErrorModal({ title: "분석 실패", message: UI_LABELS.ANALYSIS_FAILED });
+        setErrorModal({
+          title: "분석 실패",
+          message: error?.message || UI_LABELS.ANALYSIS_FAILED,
+        });
       }
     } finally {
       clearTimeout(timeoutId);
@@ -584,7 +631,7 @@ export default function Analyze() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
+      transition: { duration: 0.5 },
     },
   };
 
@@ -623,6 +670,7 @@ export default function Analyze() {
             </button>
             <button
               className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
+              onClick={() => navigate("/login?redirect=/analyze")}
             >
               로그인
             </button>
@@ -845,17 +893,30 @@ export default function Analyze() {
                 </defs>
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-cyan-400 animate-pulse" />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={loadingStep}
+                    initial={{ opacity: 0, scale: 0.75, rotate: -8 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.75, rotate: 8 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    <LoadingIcon
+                      className={`w-8 h-8 ${currentLoadingStep.accent} animate-pulse`}
+                    />
+                  </motion.div>
+                </AnimatePresence>
               </div>
             </div>
 
             <motion.p
+              key={`loading-title-${loadingStep}`}
               className="text-xl font-semibold text-white mb-6 tracking-tight"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              인사이트 리포트를 생성하고 있습니다
+              {currentLoadingStep.title}
             </motion.p>
 
             {/* 3단계 도트 인디케이터 */}
@@ -882,9 +943,7 @@ export default function Analyze() {
                 transition={{ duration: 0.4 }}
                 className="text-sm text-zinc-500 mb-10"
               >
-                {loadingStep === 1 && UI_LABELS.LOADING_STEP_1}
-                {loadingStep === 2 && UI_LABELS.LOADING_STEP_2}
-                {loadingStep === 3 && UI_LABELS.LOADING_STEP_3}
+                {currentLoadingStep.label}
               </motion.p>
             </AnimatePresence>
           </motion.div>

@@ -110,9 +110,18 @@ export default function AnalysisDetailPage() {
   if (!detail) return null;
 
   // 토큰 합산 계산
-  const totalPromptTokens = detail.token_usages.reduce((s, t) => s + t.prompt_tokens, 0);
-  const totalCompletionTokens = detail.token_usages.reduce((s, t) => s + t.completion_tokens, 0);
-  const totalTokens = detail.token_usages.reduce((s, t) => s + t.total_tokens, 0);
+  const totalPromptTokens = detail.token_usages.reduce(
+    (s, t) => s + t.prompt_tokens,
+    0
+  );
+  const totalCompletionTokens = detail.token_usages.reduce(
+    (s, t) => s + t.completion_tokens,
+    0
+  );
+  const totalTokens = detail.token_usages.reduce(
+    (s, t) => s + t.total_tokens,
+    0
+  );
   const totalCost = detail.token_usages.reduce((s, t) => s + (t.cost ?? 0), 0);
 
   return (
@@ -131,14 +140,20 @@ export default function AnalysisDetailPage() {
         description={`ID: ${detail.id}`}
         actions={
           <div className="flex items-center gap-2">
-            <AnalysisStatusBadge status={detail.status} errorCode={detail.error_code} />
+            <AnalysisStatusBadge
+              status={detail.status}
+              errorCode={detail.error_code}
+            />
           </div>
         }
       />
 
       {/* 에러 상세 메시지 표시 (있을 때만) */}
       {detail.error_message && (
-        <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive">
+        <Alert
+          variant="destructive"
+          className="bg-destructive/5 border-destructive/20 text-destructive"
+        >
           <AlertCircle className="size-4 flex-shrink-0" />
           <AlertDescription className="text-sm font-mono whitespace-pre-wrap">
             {detail.error_message}
@@ -169,7 +184,9 @@ export default function AnalysisDetailPage() {
                     <ExternalLink className="size-3" />
                   </Link>
                 ) : (
-                  <p className="font-medium text-muted-foreground">알 수 없는 사용자</p>
+                  <p className="font-medium text-muted-foreground">
+                    알 수 없는 사용자
+                  </p>
                 )}
               </div>
             </div>
@@ -182,15 +199,20 @@ export default function AnalysisDetailPage() {
                 <p className="text-xs text-muted-foreground">프로젝트</p>
                 {detail.project ? (
                   <>
-                    <p className="font-medium truncate">{detail.project.title}</p>
+                    <p className="font-medium truncate">
+                      {detail.project.title}
+                    </p>
                     {detail.project.company && (
                       <p className="text-xs text-muted-foreground">
-                        기업: {detail.project.company} | 직무: {detail.project.job_keyword ?? "미지정"}
+                        기업: {detail.project.company} | 직무:{" "}
+                        {detail.project.job_keyword ?? "미지정"}
                       </p>
                     )}
                   </>
                 ) : (
-                  <p className="font-medium text-muted-foreground">연관 프로젝트 없음</p>
+                  <p className="font-medium text-muted-foreground">
+                    연관 프로젝트 없음
+                  </p>
                 )}
               </div>
             </div>
@@ -212,7 +234,9 @@ export default function AnalysisDetailPage() {
                 <p className="font-medium">
                   {detail.model_name ?? "–"}{" "}
                   {detail.model_provider && (
-                    <span className="text-xs text-muted-foreground">({detail.model_provider})</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({detail.model_provider})
+                    </span>
                   )}
                 </p>
               </div>
@@ -223,7 +247,9 @@ export default function AnalysisDetailPage() {
             <div className="flex items-start gap-2.5">
               <Clock className="size-4 text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-xs text-muted-foreground">응답 처리 시간 / 실행 시각</p>
+                <p className="text-xs text-muted-foreground">
+                  응답 처리 시간 / 실행 시각
+                </p>
                 <p className="font-medium">{fmtMs(detail.response_time_ms)}</p>
                 <p className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
                   <Calendar className="size-3" />
@@ -245,11 +271,15 @@ export default function AnalysisDetailPage() {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <p className="text-xs text-muted-foreground">프롬프트 토큰</p>
-                <p className="font-mono font-medium">{totalPromptTokens.toLocaleString("ko-KR")}</p>
+                <p className="font-mono font-medium">
+                  {totalPromptTokens.toLocaleString("ko-KR")}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">완성 토큰</p>
-                <p className="font-mono font-medium">{totalCompletionTokens.toLocaleString("ko-KR")}</p>
+                <p className="font-mono font-medium">
+                  {totalCompletionTokens.toLocaleString("ko-KR")}
+                </p>
               </div>
             </div>
 
@@ -259,7 +289,10 @@ export default function AnalysisDetailPage() {
               <div>
                 <p className="text-xs text-muted-foreground">총 사용량</p>
                 <p className="font-mono font-bold text-base text-foreground">
-                  {totalTokens.toLocaleString("ko-KR")} <span className="text-xs font-normal text-muted-foreground">Tokens</span>
+                  {totalTokens.toLocaleString("ko-KR")}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    Tokens
+                  </span>
                 </p>
               </div>
               <div className="text-right">
@@ -274,14 +307,14 @@ export default function AnalysisDetailPage() {
         </Card>
       </div>
 
-      {/* 탭 구조: 원본 자소서, AI 결과, Prompt, Response */}
-      <Tabs defaultValue="source" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full md:w-[480px]">
-          <TabsTrigger value="source" className="text-xs">
-            원본 자소서
+      {/* 탭 구조: 프로젝트 전체, 원본 + 피드백, Prompt, Response */}
+      <Tabs defaultValue="project" className="w-full">
+        <TabsList className="grid grid-cols-4 w-full md:w-[560px]">
+          <TabsTrigger value="project" className="text-xs">
+            프로젝트 전체
           </TabsTrigger>
-          <TabsTrigger value="result" className="text-xs">
-            AI 결과
+          <TabsTrigger value="source" className="text-xs">
+            원본 + 피드백
           </TabsTrigger>
           <TabsTrigger value="prompt" className="text-xs">
             Prompt
@@ -291,77 +324,182 @@ export default function AnalysisDetailPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* 1. 원본 자소서 */}
-        <TabsContent value="source" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">입력 정보 및 자기소개서 본문</CardTitle>
-              {detail.total_chars != null && (
-                <CardDescription className="text-xs">
-                  글자 수: {detail.total_chars.toLocaleString("ko-KR")} 자
-                </CardDescription>
-              )}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase">문항 질문</h4>
-                <div className="p-3.5 rounded-lg bg-muted/40 border text-sm whitespace-pre-wrap leading-relaxed">
-                  {detail.question_text || "(질문 없음)"}
-                </div>
-              </div>
+        {/* 1. 프로젝트 전체 문항 + 자소서 전문 + AI 응답 */}
+        <TabsContent value="project" className="mt-4">
+          <div className="space-y-4">
+            {detail.project_analyses.map((analysis, index) => (
+              <Card
+                key={analysis.id}
+                className={
+                  analysis.id === detail.id
+                    ? "border-primary/40 bg-primary/5"
+                    : ""
+                }
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <CardTitle className="text-sm font-semibold">
+                        문항 {detail.project_analyses.length - index}
+                        {analysis.id === detail.id && (
+                          <span className="ml-2 text-xs font-normal text-primary">
+                            선택됨
+                          </span>
+                        )}
+                      </CardTitle>
+                      <CardDescription className="mt-1 text-xs">
+                        {formatDate(analysis.created_at)}
+                        {analysis.total_chars != null &&
+                          ` · ${analysis.total_chars.toLocaleString("ko-KR")}자`}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <AnalysisStatusBadge
+                        status={analysis.status}
+                        errorCode={null}
+                      />
+                      {analysis.ai_score != null && (
+                        <span className="text-xs font-semibold text-primary tabular-nums">
+                          {analysis.ai_score.toFixed(0)}점
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                          문항 질문
+                        </h4>
+                        <div className="min-h-20 rounded-lg border bg-muted/40 p-4 text-sm leading-relaxed whitespace-pre-wrap">
+                          {analysis.question_text || "(질문 없음)"}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                          작성 본문
+                        </h4>
+                        <ScrollArea className="h-[360px] w-full rounded-lg border bg-muted/20 p-4">
+                          <div className="text-sm leading-7 whitespace-pre-wrap">
+                            {analysis.input_text || "(내용 없음)"}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    </div>
 
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase">작성 본문</h4>
-                <div className="p-3.5 rounded-lg bg-muted/40 border text-sm whitespace-pre-wrap leading-relaxed font-sans">
-                  {detail.input_text || "(내용 없음)"}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="space-y-1.5">
+                      <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                        AI 리포트 응답
+                      </h4>
+                      {analysis.ai_response_json ? (
+                        <ScrollArea className="h-[494px] w-full rounded-lg border bg-muted/20 p-4">
+                          <pre className="text-xs font-mono leading-6 whitespace-pre-wrap">
+                            {formatJson(analysis.ai_response_json)}
+                          </pre>
+                        </ScrollArea>
+                      ) : (
+                        <div className="flex h-[494px] items-center justify-center rounded-lg border bg-muted/20 text-sm text-muted-foreground">
+                          {analysis.status === "FAILED"
+                            ? "분석이 실패하여 결과가 존재하지 않습니다."
+                            : "결과 데이터가 존재하지 않습니다."}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
 
-        {/* 2. AI 결과 */}
-        <TabsContent value="result" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-sm font-semibold">AI 평가 분석 결과</CardTitle>
+        {/* 2. 원본 자소서 + AI 피드백 */}
+        <TabsContent value="source" className="mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <Card className="min-h-[800px]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">
+                  자소서 문항 및 작성 본문
+                </CardTitle>
+                {detail.total_chars != null && (
                   <CardDescription className="text-xs">
-                    정량적/정성적 점수와 결과 요약입니다.
+                    글자 수: {detail.total_chars.toLocaleString("ko-KR")} 자
                   </CardDescription>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">
+                    문항 질문
+                  </h4>
+                  <div className="min-h-24 p-4 rounded-lg bg-muted/40 border text-sm whitespace-pre-wrap leading-relaxed">
+                    {detail.question_text || "(질문 없음)"}
+                  </div>
                 </div>
-                {detail.ai_score != null && (
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground leading-none mb-1">AI 점수</p>
-                    <p className="text-3xl font-extrabold text-primary tabular-nums">
-                      {detail.ai_score.toFixed(0)}
-                    </p>
+
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">
+                    작성 본문
+                  </h4>
+                  <ScrollArea className="h-[540px] w-full rounded-lg border bg-muted/20 p-4">
+                    <div className="text-sm whitespace-pre-wrap leading-7 font-sans">
+                      {detail.input_text || "(내용 없음)"}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="min-h-[800px]">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-sm font-semibold">
+                      AI 피드백
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      분석 결과와 피드백을 원문 옆에서 바로 확인합니다.
+                    </CardDescription>
+                  </div>
+                  {detail.ai_score != null && (
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground leading-none mb-1">
+                        AI 점수
+                      </p>
+                      <p className="text-3xl font-extrabold text-primary tabular-nums">
+                        {detail.ai_score.toFixed(0)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {detail.ai_response_json ? (
+                  <ScrollArea className="h-[800px] w-full rounded-lg border bg-muted/20 p-4">
+                    <pre className="text-xs font-mono whitespace-pre-wrap leading-6">
+                      {formatJson(detail.ai_response_json)}
+                    </pre>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex h-[800px] items-center justify-center rounded-lg border bg-muted/20 text-sm text-muted-foreground">
+                    {detail.status === "FAILED"
+                      ? "분석이 실패하여 결과가 존재하지 않습니다."
+                      : "결과 데이터가 존재하지 않습니다."}
                   </div>
                 )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {detail.ai_response_json ? (
-                <ScrollArea className="h-[450px] w-full rounded-lg border bg-muted/20 p-4">
-                  <pre className="text-xs font-mono whitespace-pre-wrap">
-                    {formatJson(detail.ai_response_json)}
-                  </pre>
-                </ScrollArea>
-              ) : (
-                <div className="text-center py-10 text-muted-foreground text-sm">
-                  {detail.status === "FAILED" ? "분석이 실패하여 결과가 존재하지 않습니다." : "결과 데이터가 존재하지 않습니다."}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* 3. Prompt */}
         <TabsContent value="prompt" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-semibold">프롬프트 템플릿 및 실행 환경</CardTitle>
+              <CardTitle className="text-sm font-semibold">
+                프롬프트 템플릿 및 실행 환경
+              </CardTitle>
               <CardDescription className="text-xs">
                 분석 시 사용된 시스템 지침 및 버전 관리 정보입니다.
               </CardDescription>
@@ -376,12 +514,16 @@ export default function AnalysisDetailPage() {
                   <>
                     <div>
                       <span className="text-muted-foreground">이름:</span>{" "}
-                      <span className="font-semibold">{detail.prompt_template.name}</span>
+                      <span className="font-semibold">
+                        {detail.prompt_template.name}
+                      </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">설정:</span>{" "}
                       <span className="font-semibold">
-                        Temp {detail.prompt_template.temperature ?? "Default"} / MaxToken {detail.prompt_template.max_tokens ?? "Default"}
+                        Temp {detail.prompt_template.temperature ?? "Default"} /
+                        MaxToken{" "}
+                        {detail.prompt_template.max_tokens ?? "Default"}
                       </span>
                     </div>
                   </>
@@ -395,7 +537,8 @@ export default function AnalysisDetailPage() {
                 </h4>
                 <ScrollArea className="h-[250px] w-full rounded-lg border bg-muted/20 p-3.5">
                   <pre className="text-xs font-mono whitespace-pre-wrap leading-normal">
-                    {detail.prompt_template?.system_prompt || "(시스템 프롬프트 없음 - 기본 내장값 사용)"}
+                    {detail.prompt_template?.system_prompt ||
+                      "(시스템 프롬프트 없음 - 기본 내장값 사용)"}
                   </pre>
                 </ScrollArea>
               </div>
@@ -421,14 +564,16 @@ export default function AnalysisDetailPage() {
         <TabsContent value="response" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-semibold">AI API 원시 JSON 응답</CardTitle>
+              <CardTitle className="text-sm font-semibold">
+                AI API 원시 JSON 응답
+              </CardTitle>
               <CardDescription className="text-xs">
                 LLM 모델로부터 받아온 로우(Raw) 데이터 응답 구조입니다.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {detail.ai_response_json ? (
-                <ScrollArea className="h-[450px] w-full rounded-lg border bg-muted/20 p-4">
+                <ScrollArea className="h-[800px] w-full rounded-lg border bg-muted/20 p-4">
                   <pre className="text-xs font-mono whitespace-pre-wrap text-foreground">
                     {formatJson(detail.ai_response_json)}
                   </pre>

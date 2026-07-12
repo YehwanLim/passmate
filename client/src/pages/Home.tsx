@@ -31,6 +31,11 @@ import {
 import { useLocation } from "wouter";
 import AuthButton from "@/components/AuthButton";
 
+export const HOME_NAV_ITEMS = [
+  { label: "서비스 소개", type: "section", target: "service-intro" },
+  { label: "자소서 분석", type: "route", target: "/analyze" },
+  { label: "내 지원서", type: "route", target: "/my" },
+] as const;
 
 /**
  * PassMate – Premium Dark SaaS Landing Page
@@ -176,6 +181,15 @@ function TypeWriter({
 export default function Home() {
   const [, navigate] = useLocation();
 
+  const handleNavClick = useCallback((target: string, type: string) => {
+    if (type === "section") {
+      document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    navigate(target);
+  }, [navigate]);
+
   // Scroll progress
   const { scrollYProgress } = useScroll();
   const smoothProgress = useSpring(scrollYProgress, {
@@ -216,39 +230,18 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex items-center gap-7">
-            {[
-              { label: "자소서 분석", type: "ready" },
-              { label: "1:1 멘토링", type: "coming_soon" },
-              { label: "합격 포스트", type: "coming_soon" },
-            ].map(({ label, type }) => (
-              <div
+            {HOME_NAV_ITEMS.map(({ label, type, target }) => (
+              <button
                 key={label}
-                className="relative flex items-center gap-1.5 text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200 cursor-pointer"
-                onClick={() => {
-                  if (type === "ready") {
-                    navigate("/analyze");
-                  } else {
-                    alert("아직 오픈 준비중입니다.");
-                  }
-                }}
+                className="relative flex items-center text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200 cursor-pointer"
+                onClick={() => handleNavClick(target, type)}
               >
                 {label}
-                {type === "coming_soon" && (
-                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 tracking-wider">
-                    COMING SOON
-                  </span>
-                )}
-              </div>
+              </button>
             ))}
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate("/my")}
-              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-            >
-              My
-            </button>
             <AuthButton />
           </div>
         </div>
@@ -288,9 +281,9 @@ export default function Home() {
               ease: [0.21, 0.47, 0.32, 0.98],
             }}
           >
-            단순한 스펙 나열은 그만. 실무진이 당장 &lsquo;같이 일하고 싶은
-            사람&rsquo;으로 느낄 수 있도록, 현직 PM의 시선으로 분석한 인사이트
-            리포트를 받아보세요.
+            강점은 더 선명하게, 빈틈은 더 꼼꼼하게.
+            <br />
+            현직자의 시선으로 &lsquo;같이 일하고 싶은 사람&rsquo;으로 기억될 수 있도록 피드백합니다.
           </motion.p>
 
           {/* CTA */}
@@ -307,7 +300,7 @@ export default function Home() {
               className="group inline-flex items-center gap-2 bg-white text-[#000] h-12 px-7 rounded-[10px] text-[14px] font-medium transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] hover:bg-gray-100 active:scale-[0.98]"
               onClick={() => navigate("/analyze")}
             >
-              내 자소서 무료로 진단받기
+              1회 무료로 진단 받기
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </button>
           </motion.div>
@@ -364,7 +357,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           STEP 2-B: How it Works — 6-Card Feature Grid
           ══════════════════════════════════════════════════ */}
-      <section className="relative py-28 md:py-36 border-t border-white/[0.04]">
+      <section id="service-intro" className="relative py-28 md:py-36 border-t border-white/[0.04]">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
           <ScrollReveal className="text-center mb-16">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-600 tracking-widest uppercase mb-5">

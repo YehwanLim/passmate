@@ -19,17 +19,43 @@ model User {
   email     String   @unique @db.VarChar(320)
   name      String?  @db.VarChar(100)
   avatarUrl String?  @map("avatar_url") @db.Text
+  role      String   @default("user") @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  projects  Project[]
-  analyses  Analysis[]
-  feedbacks Feedback[]
+  projects   Project[]
+  analyses   Analysis[]
+  feedbacks  Feedback[]
+  apiKey     UserApiKey?
 
   @@map("users")
 }
+
+// =============================================================================
+// UserApiKey — 유저별 Gemini API Key 저장
+// =============================================================================
+model UserApiKey {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @unique @map("user_id") @db.Uuid
+
+  encryptedKey String  @map("encrypted_key") @db.Text  // 실제 키 (서버 전용)
+  keyPreview   String? @map("key_preview") @db.VarChar(20) // 마스킹 표시용 (AIza...fpQ)
+
+  isActive   Boolean  @default(true) @map("is_active")
+  lastTestedAt DateTime? @map("last_tested_at") @db.Timestamptz
+  lastTestOk   Boolean?  @map("last_test_ok")
+
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_api_keys")
+}
+
 
 // =============================================================================
 // Project — 자소서 묶음 단위 (ex. "삼성전자 PM 지원서")
@@ -79,10 +105,10 @@ enum ErrorCode {
 }
 
 enum PromptType {
-  RESUME_ANALYSIS     @map("resume-analysis")
-  COVER_LETTER        @map("cover-letter")
-  SUMMARY             @map("summary")
-  FEEDBACK            @map("feedback")
+  RESUME_ANALYSIS    @map("resume-analysis")
+  COVER_LETTER       @map("cover-letter")
+  SUMMARY            @map("summary")
+  FEEDBACK           @map("feedback")
   INTERVIEW_QUESTIONS @map("interview-questions")
 
   @@map("prompt_template_type")

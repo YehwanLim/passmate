@@ -1,3 +1,8 @@
+import dotenv from "dotenv";
+import { getActiveModel } from "./lib/ai-model-settings.js";
+
+dotenv.config();
+
 const MASTER_SYSTEM_PROMPT = `
 # [역할]
 당신은 국내 대기업·유니콘 스타트업에서 10년간 서류 심사와 면접을 진행해온 시니어 채용 전문가입니다.
@@ -156,8 +161,8 @@ function isRetryableStatus(status) {
   return status === 503 || status === 429 || status === 500;
 }
 
-async function callGeminiOnce(userPrompt, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+async function callGeminiOnce(userPrompt, apiKey, modelName) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 55000);
@@ -197,6 +202,81 @@ async function callGeminiOnce(userPrompt, apiKey) {
   return parsed;
 }
 
+function getOpenAiResponseText(data) {
+  if (typeof data.output_text === "string") return data.output_text;
+  return (data.output ?? [])
+    .flatMap((item) => item.content ?? [])
+    .map((content) => content.text ?? "")
+    .join("")
+    .trim();
+}
+
+async function callOpenAiOnce(userPrompt, apiKey, modelName) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000);
+
+  const apiRes = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    signal: controller.signal,
+    body: JSON.stringify({
+      model: modelName,
+      input: MASTER_SYSTEM_PROMPT + "\n\n" + userPrompt,
+    }),
+  });
+
+  clearTimeout(timeout);
+
+  if (!apiRes.ok) {
+    const errorText = await apiRes.text();
+    const err = new Error(`OpenAI API Error ${apiRes.status}: ${errorText}`);
+    err.statusCode = apiRes.status;
+    throw err;
+  }
+
+  const data = await apiRes.json();
+  const rawText = getOpenAiResponseText(data);
+
+  if (!rawText) {
+    throw new Error("OpenAI 응답이 비어 있습니다.");
+  }
+
+  const parsed = safeParseJson(rawText);
+  if (!parsed) {
+    throw new Error("OpenAI 응답 JSON 파싱 실패");
+  }
+
+  return parsed;
+}
+
+function getActiveApiKey(activeModel) {
+  if (activeModel.providerKey === "openai") {
+    return {
+      apiKey: process.env.OPENAI_API_KEY,
+      envKey: "OPENAI_API_KEY",
+    };
+  }
+
+  return {
+    apiKey: process.env.GEMINI_API_KEY,
+    envKey: "GEMINI_API_KEY",
+  };
+}
+
+async function callActiveModelOnce(userPrompt, activeModel, apiKey) {
+  if (activeModel.providerKey === "openai") {
+    return callOpenAiOnce(userPrompt, apiKey, activeModel.modelName);
+  }
+  if (activeModel.providerKey === "gemini" || activeModel.providerKey === "google") {
+    return callGeminiOnce(userPrompt, apiKey, activeModel.modelName);
+  }
+
+  throw new Error(`${activeModel.providerKey} 제공자는 아직 분석 호출을 지원하지 않습니다.`);
+}
+
 async function analyzeCoverLetter(input) {
   let request;
   if (typeof input === "string") {
@@ -207,11 +287,12 @@ async function analyzeCoverLetter(input) {
     request = input;
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const activeModel = getActiveModel();
+  const { apiKey, envKey } = getActiveApiKey(activeModel);
 
-  if (!GEMINI_API_KEY) {
-    console.error("[analyze] ❌ GEMINI_API_KEY not set");
-    throw new Error("GEMINI_API_KEY가 설정되지 않았습니다. 서버 환경변수를 확인해주세요.");
+  if (!apiKey) {
+    console.error(`[analyze] ❌ ${envKey} not set`);
+    throw new Error(`${envKey}가 설정되지 않았습니다. 서버 환경변수를 확인해주세요.`);
   }
 
   const userPrompt = buildUserPrompt(request);
@@ -225,7 +306,7 @@ async function analyzeCoverLetter(input) {
         await sleep(delay);
       }
 
-      const parsed = await callGeminiOnce(userPrompt, GEMINI_API_KEY);
+      const parsed = await callActiveModelOnce(userPrompt, activeModel, apiKey);
 
       // 문맥 이탈 감지: AI가 CONTEXT_IRRELEVANT 에러 반환한 경우
       if (parsed.error === "CONTEXT_IRRELEVANT") {
@@ -242,7 +323,7 @@ async function analyzeCoverLetter(input) {
         });
       }
 
-      console.log(`[analyze] ✅ Gemini 응답 파싱 성공 (시도 ${attempt + 1})`);
+      console.log(`[analyze] ✅ ${activeModel.providerKey}/${activeModel.modelName} 응답 파싱 성공 (시도 ${attempt + 1})`);
       return parsed;
     } catch (error) {
       lastError = error;

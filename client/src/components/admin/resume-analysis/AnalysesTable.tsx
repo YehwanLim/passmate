@@ -153,14 +153,25 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
 
                   {/* 프로젝트 */}
                   <TableCell className="hidden sm:table-cell">
-                    <div className="min-w-0 max-w-[160px]">
-                      <p className="text-sm truncate">{r.project_title ?? "–"}</p>
-                      {r.project_company && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {r.project_company}
+                    <Link href={`/admin/resume-analysis/${r.id}`}>
+                      <div className="min-w-0 max-w-[180px]">
+                        <p className="text-sm font-medium truncate hover:underline">
+                          {r.project_title ?? "–"}
                         </p>
-                      )}
-                    </div>
+                        {(r.project_company || r.project_job_keyword) && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {[r.project_company, r.project_job_keyword]
+                              .filter(Boolean)
+                              .join(" / ")}
+                          </p>
+                        )}
+                        {r.total_chars != null && (
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {r.total_chars.toLocaleString("ko-KR")}자
+                          </p>
+                        )}
+                      </div>
+                    </Link>
                   </TableCell>
 
                   {/* 모델 */}

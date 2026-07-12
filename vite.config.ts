@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 // analyzeCoverLetter는 요청 시점에 dynamic import (HMR 무한 재평가 방지)
@@ -158,6 +159,45 @@ function vitePluginApi(): Plugin {
   return {
     name: "dev-api-server",
     configureServer(server: ViteDevServer) {
+      // /api/admin/ai-models — 관리자 AI 모델 현황
+      server.middlewares.use("/api/admin/ai-models", (req, res, next) => {
+        if (req.method !== "GET" && req.method !== "POST") return next();
+
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk.toString();
+        });
+
+        req.on("end", async () => {
+          try {
+            const handlerUrl = pathToFileURL(
+              path.join(PROJECT_ROOT, "api", "admin", "ai-models.js")
+            ).href;
+            const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+            const request = {
+              method: req.method,
+              body: body ? JSON.parse(body) : undefined,
+            };
+            const response = {
+              status(code: number) {
+                res.statusCode = code;
+                return this;
+              },
+              json(payload: unknown) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(payload));
+              },
+            };
+
+            await handler(request, response);
+          } catch (e: any) {
+            console.error("[api/admin/ai-models] 실패:", e);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+          }
+        });
+      });
+
       // /api/test-gemini — Gemini API 핑 테스트
       server.middlewares.use("/api/test-gemini", async (_req, res, next) => {
         if (_req.method !== "GET") return next();
@@ -255,9 +295,9 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 3000,
-    strictPort: false, // Will find next available port if 3000 is busy
-    host: true,
+    port: 5173,
+    strictPort: true,
+    host: "127.0.0.1",
     allowedHosts: [
       ".manuspre.computer",
       ".manus.computer",

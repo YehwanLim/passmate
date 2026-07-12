@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { useLocation } from "wouter";
 import {
   Breadcrumb,
@@ -18,6 +19,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   users: "Users",
   "resume-analysis": "Resume Analysis",
   "ai-usage": "AI Usage",
+  "ai-settings": "AI Settings",
+  prompts: "Prompts",
   analytics: "Analytics",
   payments: "Payments",
   feedback: "Feedback",
@@ -76,21 +79,21 @@ export function AdminBreadcrumb() {
         {segments.map((seg, idx) => {
           const isLast = idx === segments.length - 1;
           return (
-            <BreadcrumbItem key={idx}>
-              {isLast ? (
-                <BreadcrumbPage>{seg.label}</BreadcrumbPage>
-              ) : (
-                <>
+            <Fragment key={`${seg.href ?? seg.label}-${idx}`}>
+              <BreadcrumbItem>
+                {isLast ? (
+                  <BreadcrumbPage>{seg.label}</BreadcrumbPage>
+                ) : (
                   <BreadcrumbLink
                     href={seg.href}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {seg.label}
                   </BreadcrumbLink>
-                  <BreadcrumbSeparator />
-                </>
-              )}
-            </BreadcrumbItem>
+                )}
+              </BreadcrumbItem>
+              {!isLast && <BreadcrumbSeparator />}
+            </Fragment>
           );
         })}
       </BreadcrumbList>

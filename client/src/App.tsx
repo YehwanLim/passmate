@@ -13,11 +13,22 @@ import MyAnalyses from "./pages/MyAnalyses";
 import Login from "./pages/Login";
 import AdminRoot from "./pages/admin/AdminRoot";
 
+const ADMIN_EXPLICIT_ROUTES = [
+  "/admin/resume-analysis/:id",
+  "/admin/prompts/resume-analysis",
+  "/admin/prompts/cover-letter",
+  "/admin/prompts/summary",
+  "/admin/prompts/feedback",
+  "/admin/prompts/interview-questions",
+];
 
 function Router() {
   return (
     <Switch>
       {/* ── Admin routes (자체 레이아웃 + 권한 가드 포함) ── */}
+      {ADMIN_EXPLICIT_ROUTES.map(path => (
+        <Route key={path} path={path} component={AdminRoot} />
+      ))}
       <Route path={"/admin"} component={AdminRoot} />
       <Route path={"/admin/:rest*"} component={AdminRoot} />
 

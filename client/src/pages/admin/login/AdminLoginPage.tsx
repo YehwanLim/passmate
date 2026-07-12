@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, AlertCircle, Eye, EyeOff, Lock } from "lucide-react";
+import { Shield, AlertCircle, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { getGoogleOAuthOptions } from "@/lib/authOptions";
 import Logo from "@/components/Logo";
 import type { UserRole } from "@/types/admin";
-import { Separator } from "@/components/ui/separator";
 
 // ============================================================
 // Google 아이콘 SVG
@@ -38,9 +38,6 @@ export default function AdminLoginPage() {
   const [, navigate] = useLocation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,62 +56,6 @@ export default function AdminLoginPage() {
     });
   }, [authLoading, isAuthenticated, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
-      // 1) Supabase 이메일/비밀번호 로그인
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({ email, password });
-
-      if (authError) {
-        setError(getAuthErrorMessage(authError.message));
-        setIsSubmitting(false);
-        return;
-      }
-
-      const userId = authData.user?.id;
-      if (!userId) {
-        setError("로그인 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 2) role 확인
-      const { data: userData, error: roleError } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", userId)
-        .single<{ role: UserRole }>();
-
-      if (roleError || !userData) {
-        // users 테이블에 row가 없는 경우 (아직 upsert 되지 않은 신규 관리자)
-        setError("사용자 정보를 찾을 수 없습니다. 관리자에게 문의해 주세요.");
-        await supabase.auth.signOut();
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 3) admin role 확인
-      if (userData.role !== "admin") {
-        setError("관리자 권한이 없는 계정입니다.");
-        await supabase.auth.signOut();
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 4) 성공 → /admin으로 이동
-      navigate("/admin");
-    } catch (err) {
-      setError("알 수 없는 오류가 발생했습니다. 다시 시도해 주세요.");
-      setIsSubmitting(false);
-    }
-  };
-
   const handleGoogleLogin = async () => {
     if (isSubmitting) return;
     setError(null);
@@ -122,13 +63,7 @@ export default function AdminLoginPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/admin`,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
+        options: getGoogleOAuthOptions(`${window.location.origin}/admin`),
       });
       if (error) {
         setError(error.message);
@@ -240,7 +175,7 @@ export default function AdminLoginPage() {
               onClick={handleGoogleLogin}
               disabled={isSubmitting}
               className={[
-                "relative w-full flex items-center justify-center gap-3 mb-6",
+                "relative w-full flex items-center justify-center gap-3",
                 "h-11 px-6 rounded-xl font-medium text-[14px]",
                 "bg-white text-gray-900",
                 "border border-white/20",
@@ -263,116 +198,6 @@ export default function AdminLoginPage() {
                 </>
               )}
             </button>
-
-            {/* 구분선 */}
-            <div className="flex items-center gap-2 mb-6">
-              <Separator className="flex-1 bg-white/[0.08]" />
-              <span className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold whitespace-nowrap">
-                또는 이메일로 로그인
-              </span>
-              <Separator className="flex-1 bg-white/[0.08]" />
-            </div>
-
-            {/* 로그인 폼 */}
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              {/* 이메일 */}
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="admin-email"
-                  className="block text-[13px] font-medium text-gray-300"
-                >
-                  이메일
-                </label>
-                <input
-                  id="admin-email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isSubmitting}
-                  className={[
-                    "w-full h-11 px-4 rounded-xl text-[14px]",
-                    "bg-white/[0.05] border border-white/[0.1] text-white placeholder:text-gray-600",
-                    "focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50",
-                    "transition-all duration-200",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                  ].join(" ")}
-                />
-              </div>
-
-              {/* 비밀번호 */}
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="admin-password"
-                  className="block text-[13px] font-medium text-gray-300"
-                >
-                  비밀번호
-                </label>
-                <div className="relative">
-                  <input
-                    id="admin-password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isSubmitting}
-                    className={[
-                      "w-full h-11 px-4 pr-11 rounded-xl text-[14px]",
-                      "bg-white/[0.05] border border-white/[0.1] text-white placeholder:text-gray-600",
-                      "focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50",
-                      "transition-all duration-200",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
-                    ].join(" ")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-                    tabIndex={-1}
-                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="size-4" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* 로그인 버튼 */}
-              <button
-                id="admin-login-btn"
-                type="submit"
-                disabled={isSubmitting || !email || !password}
-                className={[
-                  "relative w-full flex items-center justify-center gap-2.5",
-                  "h-11 px-6 rounded-xl font-semibold text-[14px] mt-2",
-                  "bg-blue-600 text-white",
-                  "border border-blue-500/50",
-                  "transition-all duration-200",
-                  "hover:bg-blue-500 hover:scale-[1.01] active:scale-[0.99]",
-                  "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
-                  "shadow-[0_4px_16px_rgba(59,130,246,0.25)]",
-                ].join(" ")}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>로그인 중...</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="size-4" />
-                    <span>관리자 로그인</span>
-                  </>
-                )}
-              </button>
-            </form>
 
             {/* 하단 보안 안내 */}
             <div className="mt-6 pt-5 border-t border-white/[0.06]">
@@ -397,27 +222,4 @@ export default function AdminLoginPage() {
       </main>
     </div>
   );
-}
-
-// ============================================================
-// 에러 메시지 한글화
-// ============================================================
-
-function getAuthErrorMessage(message: string): string {
-  if (
-    message.includes("Invalid login credentials") ||
-    message.includes("invalid_credentials")
-  ) {
-    return "이메일 또는 비밀번호가 올바르지 않습니다.";
-  }
-  if (message.includes("Email not confirmed")) {
-    return "이메일 인증이 완료되지 않았습니다. 이메일을 확인해 주세요.";
-  }
-  if (message.includes("Too many requests")) {
-    return "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.";
-  }
-  if (message.includes("User not found")) {
-    return "등록되지 않은 이메일입니다.";
-  }
-  return "로그인 중 오류가 발생했습니다. 다시 시도해 주세요.";
 }

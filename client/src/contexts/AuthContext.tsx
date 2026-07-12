@@ -9,6 +9,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import type { AuthState, UserProfile } from "@/types/auth";
 import { trackLogin, trackSignUp } from "@/lib/analytics";
+import { getGoogleOAuthOptions } from "@/lib/authOptions";
 
 // ============================================================
 // Context
@@ -45,8 +46,7 @@ async function upsertUser(profile: UserProfile): Promise<void> {
       id: profile.id,
       email: profile.email,
       name: profile.name,
-      profile_image: profile.profile_image,
-      provider: profile.provider,
+      avatar_url: profile.profile_image,
       updated_at: new Date().toISOString(),
     },
     {
@@ -139,17 +139,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Google OAuth 로그인
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (options?: { redirectTo?: string }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        // OAuth 완료 후 돌아올 URL (현재 origin 기준)
-        redirectTo: `${window.location.origin}/`,
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent",
-        },
-      },
+      options: getGoogleOAuthOptions(options?.redirectTo ?? `${window.location.origin}/`),
     });
     if (error) {
       console.error("[AuthContext] Google 로그인 오류:", error.message);

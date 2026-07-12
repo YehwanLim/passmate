@@ -4,10 +4,11 @@ import { AlertCircle, Home } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function NotFound() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const isAdminRoute = location.startsWith("/admin");
 
   const handleGoHome = () => {
-    setLocation("/");
+    setLocation(isAdminRoute ? "/admin" : "/");
   };
 
   return (
@@ -39,7 +40,7 @@ export default function NotFound() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <Home className="w-4 h-4 mr-2" />
-              Go Home
+              {isAdminRoute ? "Go Admin Home" : "Go Home"}
             </Button>
           </div>
         </CardContent>

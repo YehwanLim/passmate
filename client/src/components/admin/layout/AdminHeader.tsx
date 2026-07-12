@@ -1,7 +1,7 @@
-import { Bell, LogOut, User } from "lucide-react";
+import { Bell, LogOut, Menu, User } from "lucide-react";
 import { useLocation } from "wouter";
 
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export function AdminHeader() {
   const { user, signOut } = useAuth();
   const [, navigate] = useLocation();
+  const { toggleSidebar } = useSidebar();
 
   /** 이메일 앞 두 글자로 아바타 폴백 텍스트 생성 */
   const avatarFallback = (user?.name ?? user?.email ?? "AD")
@@ -37,7 +38,20 @@ export function AdminHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
       {/* 사이드바 토글 트리거 */}
-      <SidebarTrigger className="-ml-1" />
+      <div className="flex items-center gap-2">
+        <SidebarTrigger className="hidden md:inline-flex -ml-1 size-8 rounded-md border border-border bg-background shadow-sm" />
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="md:hidden gap-2 rounded-md border-border bg-background px-3 shadow-sm"
+          onClick={toggleSidebar}
+          aria-label="사이드바 열기"
+        >
+          <Menu className="size-4" />
+          <span className="text-sm font-medium">메뉴</span>
+        </Button>
+      </div>
 
       <Separator orientation="vertical" className="h-4" />
 

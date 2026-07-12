@@ -1,0 +1,411 @@
+# Review package: b2b039ae20783b1599c91e5fac93852897dabf8c..HEAD
+
+## Commits
+089dcab fix: tighten admin prompt metadata constraints
+ca157b4 feat: add prompt version data helpers
+
+## Files changed
+ client/src/lib/admin-prompts.test.ts               | 39 ++++++++++
+ client/src/lib/admin-prompts.ts                    | 68 +++++++++++++++++
+ .../migration.sql                                  | 85 ++++++++++++++++++++++
+ prisma/schema.prisma                               | 24 +++++-
+ prisma/schema.sql                                  | 19 +++++
+ 5 files changed, 231 insertions(+), 4 deletions(-)
+
+## Diff
+diff --git a/client/src/lib/admin-prompts.test.ts b/client/src/lib/admin-prompts.test.ts
+new file mode 100644
+index 0000000..c6af394
+--- /dev/null
++++ b/client/src/lib/admin-prompts.test.ts
+@@ -0,0 +1,39 @@
++import { describe, expect, it } from "vitest";
++import {
++  createMockPromptRun,
++  nextPromptVersion,
++  PROMPT_TYPES,
++} from "./admin-prompts";
++
++describe("PROMPT_TYPES", () => {
++  it("matches the supported admin prompt types exactly", () => {
++    expect(PROMPT_TYPES).toEqual([
++      "resume-analysis",
++      "cover-letter",
++      "summary",
++      "feedback",
++      "interview-questions",
++    ]);
++  });
++});
++
++describe("nextPromptVersion", () => {
++  it("starts a prompt type at v1.0", () => {
++    expect(nextPromptVersion([])).toBe("v1.0");
++  });
++
++  it("increments the largest minor version", () => {
++    expect(nextPromptVersion(["v1.0", "v1.2", "v2.0"])).toBe("v2.1");
++  });
++});
++
++describe("createMockPromptRun", () => {
++  it("does not require a provider request and returns usage metadata", () => {
++    const result = createMockPromptRun("지원자 이력서", "Resume Analysis");
++
++    expect(result.response).toContain("Resume Analysis");
++    expect(result.responseTimeMs).toBeGreaterThan(0);
++    expect(result.totalTokens).toBeGreaterThan(0);
++    expect(result.estimatedCost).toBeGreaterThan(0);
++  });
++});
+diff --git a/client/src/lib/admin-prompts.ts b/client/src/lib/admin-prompts.ts
+new file mode 100644
+index 0000000..ba47295
+--- /dev/null
++++ b/client/src/lib/admin-prompts.ts
+@@ -0,0 +1,68 @@
++export const PROMPT_TYPES = [
++  "resume-analysis",
++  "cover-letter",
++  "summary",
++  "feedback",
++  "interview-questions",
++] as const;
++
++export type PromptType = (typeof PROMPT_TYPES)[number];
++
++export interface PromptTemplateRecord {
++  id: string;
++  promptType: PromptType | null;
++  version: string;
++  name: string;
++  variant: string | null;
++  systemPrompt: string;
++  userTemplate: string | null;
++  modelName: string;
++  modelProvider: string;
++  temperature: number | null;
++  maxTokens: number | null;
++  isActive: boolean;
++  isDefault: boolean;
++  description: string | null;
++  notes: string | null;
++  updatedBy: string | null;
++  createdAt: string | Date;
++  updatedAt: string | Date;
++}
++
++export interface MockPromptRun {
++  response: string;
++  responseTimeMs: number;
++  totalTokens: number;
++  estimatedCost: number;
++}
++
++export function nextPromptVersion(versions: string[]): string {
++  const parsed = versions
++    .map((version) => /^v(\d+)\.(\d+)$/.exec(version))
++    .filter((match): match is RegExpExecArray => Boolean(match))
++    .map((match) => [Number(match[1]), Number(match[2])] as const)
++    .sort(
++      ([majorA, minorA], [majorB, minorB]) =>
++        majorB - majorA || minorB - minorA,
++    );
++
++  if (!parsed[0]) {
++    return "v1.0";
++  }
++
++  return `v${parsed[0][0]}.${parsed[0][1] + 1}`;
++}
++
++export function createMockPromptRun(
++  resume: string,
++  promptName: string,
++): MockPromptRun {
++  const totalTokens = Math.max(180, Math.ceil(resume.trim().length / 2.8));
++
++  return {
++    response: `${promptName} mock response\n\n입력된 이력서를 바탕으로 핵심 강점과 다음 개선 우선순위를 제안합니다.`,
++    responseTimeMs: 420 + (totalTokens % 280),
++    totalTokens,
++    estimatedCost: Number(((totalTokens / 1_000_000) * 0.4).toFixed(6)),
++  };
++}
+diff --git a/prisma/migrations/20260711_add_admin_prompt_metadata/migration.sql b/prisma/migrations/20260711_add_admin_prompt_metadata/migration.sql
+new file mode 100644
+index 0000000..5a19ea3
+--- /dev/null
++++ b/prisma/migrations/20260711_add_admin_prompt_metadata/migration.sql
+@@ -0,0 +1,85 @@
++DO $$
++BEGIN
++  IF NOT EXISTS (
++    SELECT 1
++    FROM pg_type
++    WHERE typname = 'prompt_template_type'
++  ) THEN
++    CREATE TYPE prompt_template_type AS ENUM (
++      'resume-analysis',
++      'cover-letter',
++      'summary',
++      'feedback',
++      'interview-questions'
++    );
++  END IF;
++END
++$$;
++
++ALTER TABLE prompt_templates
++  ADD COLUMN IF NOT EXISTS prompt_type prompt_template_type,
++  ADD COLUMN IF NOT EXISTS notes TEXT,
++  ADD COLUMN IF NOT EXISTS updated_by VARCHAR(255),
++  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
++
++DO $$
++BEGIN
++  IF EXISTS (
++    SELECT 1
++    FROM information_schema.columns
++    WHERE table_schema = current_schema()
++      AND table_name = 'prompt_templates'
++      AND column_name = 'prompt_type'
++      AND udt_name <> 'prompt_template_type'
++  ) THEN
++    IF EXISTS (
++      SELECT 1
++      FROM prompt_templates
++      WHERE prompt_type IS NOT NULL
++        AND prompt_type::text NOT IN (
++          'resume-analysis',
++          'cover-letter',
++          'summary',
++          'feedback',
++          'interview-questions'
++        )
++    ) THEN
++      RAISE EXCEPTION 'prompt_templates.prompt_type contains unsupported values';
++    END IF;
++
++    ALTER TABLE prompt_templates
++      ALTER COLUMN prompt_type TYPE prompt_template_type
++      USING prompt_type::prompt_template_type;
++  END IF;
++END
++$$;
++
++UPDATE prompt_templates
++SET updated_at = NOW()
++WHERE updated_at IS NULL;
++
++ALTER TABLE prompt_templates
++  ALTER COLUMN updated_at SET DEFAULT NOW(),
++  ALTER COLUMN updated_at SET NOT NULL;
++
++CREATE OR REPLACE FUNCTION set_prompt_templates_updated_at()
++RETURNS TRIGGER AS $$
++BEGIN
++  NEW.updated_at = NOW();
++  RETURN NEW;
++END;
++$$ LANGUAGE plpgsql;
++
++DROP TRIGGER IF EXISTS set_prompt_templates_updated_at ON prompt_templates;
++
++CREATE TRIGGER set_prompt_templates_updated_at
++  BEFORE UPDATE ON prompt_templates
++  FOR EACH ROW
++  EXECUTE FUNCTION set_prompt_templates_updated_at();
++
++CREATE UNIQUE INDEX IF NOT EXISTS uq_prompt_templates_type_version
++  ON prompt_templates (prompt_type, version)
++  WHERE prompt_type IS NOT NULL;
++
++CREATE INDEX IF NOT EXISTS idx_prompt_templates_prompt_type
++  ON prompt_templates (prompt_type);
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index 293e284..bd98e6a 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -71,20 +71,30 @@ enum ErrorCode {
+   TIMEOUT
+   RATE_LIMIT
+   PARSE_ERROR
+   CONTEXT_IRRELEVANT
+   API_ERROR
+   UNKNOWN
+ 
+   @@map("error_code")
+ }
+ 
++enum PromptType {
++  RESUME_ANALYSIS     @map("resume-analysis")
++  COVER_LETTER        @map("cover-letter")
++  SUMMARY             @map("summary")
++  FEEDBACK            @map("feedback")
++  INTERVIEW_QUESTIONS @map("interview-questions")
++
++  @@map("prompt_template_type")
++}
++
+ model Analysis {
+   id        String @id @default(uuid()) @db.Uuid
+   userId    String @map("user_id") @db.Uuid
+   projectId String @map("project_id") @db.Uuid
+ 
+   // ── 입력 데이터 ──
+   questionText String @map("question_text") @db.Text     // 문항 질문
+   inputText    String @map("input_text") @db.Text         // 사용자 원문 자소서
+ 
+   // ── AI 응답 데이터 ──
+@@ -126,48 +136,54 @@ model Analysis {
+   @@map("analyses")
+ }
+ 
+ // =============================================================================
+ // PromptTemplate — 프롬프트 버전 관리 & A/B 테스트
+ // =============================================================================
+ model PromptTemplate {
+   id String @id @default(uuid()) @db.Uuid
+ 
+   // ── 버전 식별 ──
+-  version String  @db.VarChar(20)           // ex. "1.0", "2.0-beta"
+-  name    String  @db.VarChar(100)          // ex. "따뜻한 팩폭 사수 v2"
+-  variant String? @db.VarChar(50)           // A/B 변형: "A", "B", "control"
++  promptType PromptType? @map("prompt_type")
++  version    String      @db.VarChar(20)   // ex. "1.0", "2.0-beta"
++  name       String      @db.VarChar(100)  // ex. "따뜻한 팩폭 사수 v2"
++  variant    String?     @db.VarChar(50)   // A/B 변형: "A", "B", "control"
+ 
+   // ── 프롬프트 본문 ──
+   systemPrompt String  @map("system_prompt") @db.Text  // 시스템 프롬프트 전문
+   userTemplate String? @map("user_template") @db.Text  // 유저 프롬프트 템플릿 (선택)
+ 
+   // ── 모델 설정 ──
+   modelName     String @map("model_name") @db.VarChar(100)     // ex. gemini-2.5-flash
+   modelProvider String @map("model_provider") @db.VarChar(50)  // ex. gemini
+   temperature   Float? @default(0.7)
+   maxTokens     Int?   @map("max_tokens")
+ 
+   // ── 상태 관리 ──
+   isActive  Boolean @default(false) @map("is_active")   // 현재 프로덕션 활성 프롬프트
+   isDefault Boolean @default(false) @map("is_default")  // 기본 프롬프트 여부
+ 
+   // ── 메타 ──
+-  description String?  @db.Text                           // 변경 사유/설명
++  description String?  @db.Text                            // 변경 사유/설명
++  notes       String?  @db.Text
++  updatedBy   String?  @map("updated_by") @db.VarChar(255)
+   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
++  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+ 
+   // Relations
+   analyses Analysis[]
+ 
+   @@unique([version, variant], map: "uq_prompt_version_variant")
++  @@unique([promptType, version], map: "uq_prompt_templates_type_version")
+   @@index([isActive])
+   @@index([modelProvider])
++  @@index([promptType])
+   @@map("prompt_templates")
+ }
+ 
+ // =============================================================================
+ // TokenUsage — AI 호출 비용 추적 (Analysis 1:N)
+ // =============================================================================
+ 
+ /// API 호출 유형
+ enum CallType {
+   ANALYSIS   // 최초 분석 요청
+diff --git a/prisma/schema.sql b/prisma/schema.sql
+index e832258..8504e27 100644
+--- a/prisma/schema.sql
++++ b/prisma/schema.sql
+@@ -1,20 +1,27 @@
+ -- =============================================================================
+ -- PassMate MVP Database Schema — PostgreSQL DDL
+ -- Supabase (PostgreSQL 15+) 호환
+ -- =============================================================================
+ 
+ -- Enum: 분석 상태
+ CREATE TYPE analysis_status AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
+ 
+ -- Enum: 실패 원인 분류
+ CREATE TYPE error_code AS ENUM ('TIMEOUT', 'RATE_LIMIT', 'PARSE_ERROR', 'CONTEXT_IRRELEVANT', 'API_ERROR', 'UNKNOWN');
++CREATE TYPE prompt_template_type AS ENUM (
++  'resume-analysis',
++  'cover-letter',
++  'summary',
++  'feedback',
++  'interview-questions'
++);
+ 
+ -- =============================================================================
+ -- users — 유저 계정
+ -- =============================================================================
+ CREATE TABLE users (
+   id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+   email       VARCHAR(320) NOT NULL UNIQUE,
+   name        VARCHAR(100),
+   avatar_url  TEXT,
+ 
+@@ -99,47 +106,59 @@ CREATE INDEX idx_analyses_error_code         ON analyses(error_code);
+ CREATE INDEX idx_analyses_prompt_template_id ON analyses(prompt_template_id);
+ CREATE INDEX idx_analyses_created_at         ON analyses(created_at);
+ 
+ -- =============================================================================
+ -- prompt_templates — 프롬프트 버전 관리 & A/B 테스트
+ -- =============================================================================
+ CREATE TABLE prompt_templates (
+   id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+ 
+   -- 버전 식별
++  prompt_type     prompt_template_type,
+   version         VARCHAR(20)  NOT NULL,
+   name            VARCHAR(100) NOT NULL,
+   variant         VARCHAR(50),
+ 
+   -- 프롬프트 본문
+   system_prompt   TEXT         NOT NULL,
+   user_template   TEXT,
+ 
+   -- 모델 설정
+   model_name      VARCHAR(100) NOT NULL,
+   model_provider  VARCHAR(50)  NOT NULL,
+   temperature     DOUBLE PRECISION DEFAULT 0.7,
+   max_tokens      INTEGER,
+ 
+   -- 상태 관리
+   is_active       BOOLEAN      NOT NULL DEFAULT FALSE,
+   is_default      BOOLEAN      NOT NULL DEFAULT FALSE,
+ 
+   -- 메타
+   description     TEXT,
++  notes           TEXT,
++  updated_by      VARCHAR(255),
+   created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
++  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+ 
+   CONSTRAINT uq_prompt_version_variant UNIQUE (version, variant)
+ );
+ 
+ CREATE INDEX idx_prompt_templates_is_active       ON prompt_templates(is_active);
+ CREATE INDEX idx_prompt_templates_model_provider  ON prompt_templates(model_provider);
++CREATE UNIQUE INDEX uq_prompt_templates_type_version
++  ON prompt_templates(prompt_type, version)
++  WHERE prompt_type IS NOT NULL;
++CREATE INDEX idx_prompt_templates_prompt_type ON prompt_templates(prompt_type);
++
++CREATE TRIGGER set_prompt_templates_updated_at
++  BEFORE UPDATE ON prompt_templates
++  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+ 
+ -- FK: analyses → prompt_templates (테이블 생성 순서 이슈 해결)
+ ALTER TABLE analyses
+   ADD CONSTRAINT fk_analyses_prompt_template
+   FOREIGN KEY (prompt_template_id) REFERENCES prompt_templates(id);
+ 
+ -- =============================================================================
+ -- token_usages — AI 호출 비용 추적 (analyses 1:N)
+ -- =============================================================================
+ 

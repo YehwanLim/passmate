@@ -259,55 +259,61 @@ html {
 /* ── Editorial Report: Mini Navigator ── */
 .report-nav {
   position: fixed;
-  top: 50%;
-  left: max(calc((100vw - 1800px) / 2), 24px);
+  top: 46vh;
+  left: clamp(24px, calc((100vw - 1180px) / 2 - 92px), 132px);
   transform: translateY(-50%);
-  width: 120px;
+  width: 132px;
   z-index: 40;
   pointer-events: auto;
 }
 
-@media (max-width: 1680px) {
+@media (max-width: 1279px) {
   .report-nav {
     display: none !important;
   }
 }
 
+.report-nav-list {
+  display: grid;
+  gap: 2px;
+}
+
 .report-nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 0;
+  gap: 6px;
+  padding: 4px 0;
   font-size: 12px;
-  line-height: 1.4;
-  color: rgba(180, 180, 180, 0.4);
-  transition: color 0.25s ease;
+  line-height: 1.45;
+  color: rgba(161, 161, 170, 0.42);
+  transition: color 0.25s ease, transform 0.25s ease;
   cursor: pointer;
   text-decoration: none;
   position: relative;
 }
 
-.report-nav-item::before {
-  content: '';
-  display: block;
-  width: 2px;
-  height: 14px;
-  border-radius: 1px;
-  background: rgba(180, 180, 180, 0.1);
-  flex-shrink: 0;
-  transition: background 0.3s ease, height 0.3s ease;
+.report-nav-item:hover {
+  color: rgba(212, 212, 216, 0.72);
 }
 
-.report-nav-item:hover { color: rgba(200, 200, 200, 0.7); }
+.report-nav-index {
+  width: 20px;
+  color: currentColor;
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
 
 .report-nav-item.active {
-  color: #E5E5E5;
-  font-weight: 500;
+  color: rgba(187, 247, 208, 0.78);
+  font-weight: 600;
+  transform: translateX(2px);
 }
 
-.report-nav-item.active::before {
-  background: #4ADE80;
-  height: 18px;
+@media (min-width: 1280px) {
+  #section-line-analysis {
+    padding-left: 190px;
+  }
 }
 
 /* ── Annotation Highlight: Highlighter Pen Effect ── */
@@ -530,24 +536,46 @@ html {
   border-bottom: none;
 }
 
-/* Focused state: highlight border and make it prominent */
+/* Focused state: glass outline */
 .commentary-item.focused {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  --commentary-focus-accent: rgba(255, 255, 255, 0.22);
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.035));
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   padding: 4px 12px;
   margin: 4px -12px;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 24px rgba(0, 0, 0, 0.20);
+}
+.commentary-item.focused::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--commentary-focus-accent), transparent);
 }
 .commentary-item.praise.focused {
-  border-left: 3px solid #4ADE80;
+  --commentary-focus-accent: rgba(187, 247, 208, 0.34);
 }
 .commentary-item.improvement.focused {
-  border-left: 3px solid #FBBF24;
+  --commentary-focus-accent: rgba(253, 230, 138, 0.32);
 }
 .commentary-item.focused .commentary-num {
-  background: rgba(200, 200, 200, 0.2);
   color: #fff;
+}
+.commentary-item.praise.focused .commentary-num {
+  background: rgba(187, 247, 208, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(187, 247, 208, 0.24);
+}
+.commentary-item.improvement.focused .commentary-num {
+  background: rgba(253, 230, 138, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(253, 230, 138, 0.22);
 }
 .commentary-item.focused .commentary-preview {
   color: #fff;
@@ -789,4 +817,40 @@ html {
 .commentary-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* ── Report access lock card ── */
+.report-lock-card {
+  position: relative;
+  isolation: isolate;
+  background: rgba(26, 26, 28, 0.88);
+  box-shadow:
+    0 28px 100px -52px rgba(255, 255, 255, 0.42),
+    0 20px 64px -42px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+.report-lock-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.report-lock-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.report-lock-card::after {
+  position: absolute;
+  content: "";
+  inset: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: calc(1.35rem - 1px);
+  pointer-events: none;
+  z-index: 1;
 }

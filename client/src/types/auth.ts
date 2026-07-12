@@ -22,7 +22,7 @@ export interface AuthState {
   /** 로그인 여부 */
   isAuthenticated: boolean;
   /** Google OAuth 로그인 실행 */
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (options?: { redirectTo?: string }) => Promise<void>;
   /** 로그아웃 */
   signOut: () => Promise<void>;
 }

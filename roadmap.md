@@ -129,10 +129,9 @@ _목표: 유저 결제 동선 완성 및 트래픽 분석 세팅_
     - Umami 잔여 스크립트 제거(404 에러 해소), SIGNED_IN 중복 이벤트 방지 가드 추가, 개발 콘솔 로그 가시화(console.debug → log) 적용
     - Vercel CLI로 GA4 측정 ID 환경변수 등록 및 pnpm lockfile 동기화 후 재배포 완료 (https://passmate-gamma.vercel.app)
 - **[2026-07-07]** Admin Dashboard 및 관련 기능(로그인, 사용자, 분석 이력, AI 사용량, 에러 로그, 설정) 전체 구현 완료
-    - **어드민 인증 및 가드**: Supabase DB `users.role` 기반 가드(`AdminGuard.tsx`) 및 이메일/비밀번호/Google 로그인 대응 로그인창(`AdminLoginPage.tsx`) 구현
-    - **메인 대시보드**: 6종 KPI 요약 카드, 7일 가입/분석 트렌드 그래프, 마스킹 처리된 최근 분석 활동 피드 조립 완료
-    - **Users 관리**: 가입 회원 리스트(검색/정렬/페이지네이션) 및 상세 페이지(누적 AI 비용, 분석 이력, 피드백 등) 연동
-    - **Resume Analysis**: 분석 건별 상태/모델 필터 및 탭 기반 결과 분석창(Prompt, Response JSON, 입력 본문) 구현
-    - **AI Usage & Logs**: 리소스 소모량 및 비용 시각화 대시보드, 시스템 실패 이벤트 분류 테이블(500, TIMEOUT, API) 구축
-    - **Settings**: 서비스 활성/점검 모드 제어, 공지 등록, Feature Flag 토글, 쿠폰 관리 시스템 구현
+    - 어드민 인증 및 가드: Supabase DB `users.role` 기반 가드(`AdminGuard.tsx`) 및 이메일/비밀번호/Google 로그인 대응 로그인창(`AdminLoginPage.tsx`) 구현
+    - 메인 대시보드: 6종 KPI 요약 카드, 7일 가입/분석 트렌드 그래프, 마스킹 처리된 최근 분석 활동 피드 조립 완료
+    - Resume Analysis: 분석 건별 상태/모델 필터 및 탭 기반 결과 분석창(Prompt, Response JSON, 입력 본문) 구현
+    - AI Usage & Logs: 리소스 소모량 및 비용 시각화 대시보드, 시스템 실패 이벤트 분류 테이블(500, TIMEOUT, API) 구축
+    - Settings: 서비스 활성/점검 모드 제어, 공지 등록, Feature Flag 토글, 쿠폰 관리 시스템 구현
 

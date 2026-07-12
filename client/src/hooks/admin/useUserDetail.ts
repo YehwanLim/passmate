@@ -87,7 +87,7 @@ export function useUserDetail(userId: string): UseUserDetailResult {
           // 1. 기본 프로필
           supabase
             .from("users")
-            .select("id, email, name, profile_image, provider, role, created_at, updated_at")
+            .select("id, email, name, avatar_url, role, created_at, updated_at")
             .eq("id", userId)
             .single(),
 
@@ -167,7 +167,14 @@ export function useUserDetail(userId: string): UseUserDetailResult {
       if (cancelled) return;
 
       const detail: UserDetail = {
-        ...profile,
+        id: profile.id,
+        email: profile.email,
+        name: profile.name,
+        profile_image: profile.avatar_url ?? null,
+        provider: null,
+        role: profile.role ?? "user",
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
         analysis_count: analysisCount ?? 0,
         project_count: projectCount ?? 0,
         feedback_count: feedbackCount ?? 0,

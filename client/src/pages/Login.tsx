@@ -40,20 +40,25 @@ export default function Login() {
   const { isAuthenticated, isLoading: authLoading, signInWithGoogle } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const redirectPath = getSafeRedirectPath();
 
   // 이미 로그인된 사용자는 메인으로 리다이렉트
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate("/");
+      navigate(redirectPath);
     }
-  }, [authLoading, isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, navigate, redirectPath]);
 
   const handleGoogleLogin = async () => {
     if (isSigningIn) return; // 중복 클릭 방지
     setError(null);
     setIsSigningIn(true);
     try {
-      await signInWithGoogle();
+      await signInWithGoogle({
+        redirectTo: `${window.location.origin}/login?redirect=${encodeURIComponent(
+          redirectPath,
+        )}`,
+      });
       // signInWithOAuth는 페이지를 Google로 리다이렉트하므로
       // 이 이후 코드는 실행되지 않습니다.
     } catch (err) {
@@ -199,4 +204,13 @@ export default function Login() {
       </main>
     </div>
   );
+}
+
+function getSafeRedirectPath() {
+  const redirect = new URLSearchParams(window.location.search).get("redirect");
+  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
+    return "/";
+  }
+
+  return redirect;
 }

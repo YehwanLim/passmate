@@ -3,11 +3,14 @@ import {
   Users,
   FileText,
   Bot,
+  BrainCircuit,
+  MessageSquareCode,
   BarChart3,
   CreditCard,
   MessageSquare,
   ScrollText,
   Settings,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -63,6 +66,24 @@ const NAV_GROUPS: AdminNavGroup[] = [
         label: "AI Usage",
         icon: Bot,
         href: "/admin/ai-usage",
+      },
+      {
+        key: "ai-models",
+        label: "AI Models",
+        icon: BrainCircuit,
+        href: "/admin/ai-models",
+      },
+      {
+        key: "ai-settings",
+        label: "AI Settings",
+        icon: SlidersHorizontal,
+        href: "/admin/ai-settings",
+      },
+      {
+        key: "prompts",
+        label: "Prompts",
+        icon: MessageSquareCode,
+        href: "/admin/prompts",
       },
       {
         key: "payments",
@@ -153,7 +174,7 @@ export function AdminSidebar() {
               <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             )}
             <SidebarMenu>
-              {group.items.map((item) => {
+              {group.items.map(item => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
                 return (
@@ -183,7 +204,7 @@ export function AdminSidebar() {
       {/* ── 푸터: Settings ── */}
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
-          {FOOTER_ITEMS.items.map((item) => {
+          {FOOTER_ITEMS.items.map(item => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (

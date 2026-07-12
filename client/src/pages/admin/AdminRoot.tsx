@@ -1,4 +1,5 @@
 import { Route, Switch } from "wouter";
+import type { ReactNode } from "react";
 import { AdminLayout } from "@/components/admin/layout/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import AdminLoginPage from "./login/AdminLoginPage";
@@ -10,12 +11,32 @@ import DashboardPage from "./dashboard/DashboardPage";
 import UsersPage from "./users/UsersPage";
 import ResumeAnalysisPage from "./resume-analysis/ResumeAnalysisPage";
 import AiUsagePage from "./ai-usage/AiUsagePage";
+import AiModelsPage from "./ai-models/AiModelsPage";
+import AiSettingsPage from "./ai-settings/AiSettingsPage";
+import PromptDetailPage from "./prompts/PromptDetailPage";
+import PromptsPage from "./prompts/PromptsPage";
 import AnalyticsPage from "./analytics/AnalyticsPage";
 import PaymentsPage from "./payments/PaymentsPage";
 import FeedbackPage from "./feedback/FeedbackPage";
 import LogsPage from "./logs/LogsPage";
 import SettingsPage from "./settings/SettingsPage";
 import NotFound from "@/pages/NotFound";
+
+const PROMPT_DETAIL_ROUTES = [
+  "/admin/prompts/resume-analysis",
+  "/admin/prompts/cover-letter",
+  "/admin/prompts/summary",
+  "/admin/prompts/feedback",
+  "/admin/prompts/interview-questions",
+];
+
+function GuardedAdminPage({ children }: { children: ReactNode }) {
+  return (
+    <AdminGuard>
+      <AdminLayout>{children}</AdminLayout>
+    </AdminGuard>
+  );
+}
 
 /**
  * AdminRoot
@@ -39,6 +60,16 @@ export default function AdminRoot() {
     <Switch>
       {/* ── 관리자 로그인 (가드 없음) ── */}
       <Route path="/admin/login" component={AdminLoginPage} />
+
+      {PROMPT_DETAIL_ROUTES.map(path => (
+        <Route key={path} path={path}>
+          {() => (
+            <GuardedAdminPage>
+              <PromptDetailPage />
+            </GuardedAdminPage>
+          )}
+        </Route>
+      ))}
 
       {/* ── 관리자 대시보드 (/admin) ── */}
       <Route path="/admin">
@@ -64,10 +95,23 @@ export default function AdminRoot() {
                 <Route path="/admin/users" component={UsersPage} />
 
                 {/* /admin/resume-analysis/:id 는 /admin/resume-analysis 보다 먼저 매칭되어야 합니다 */}
-                <Route path="/admin/resume-analysis/:id" component={AnalysisDetailPage} />
-                <Route path="/admin/resume-analysis" component={ResumeAnalysisPage} />
+                <Route
+                  path="/admin/resume-analysis/:id"
+                  component={AnalysisDetailPage}
+                />
+                <Route
+                  path="/admin/resume-analysis"
+                  component={ResumeAnalysisPage}
+                />
 
                 <Route path="/admin/ai-usage" component={AiUsagePage} />
+                <Route path="/admin/ai-models" component={AiModelsPage} />
+                <Route path="/admin/ai-settings" component={AiSettingsPage} />
+                <Route
+                  path="/admin/prompts/:type"
+                  component={PromptDetailPage}
+                />
+                <Route path="/admin/prompts" component={PromptsPage} />
                 <Route path="/admin/analytics" component={AnalyticsPage} />
                 <Route path="/admin/payments" component={PaymentsPage} />
                 <Route path="/admin/feedback" component={FeedbackPage} />
