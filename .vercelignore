@@ -1,0 +1,10 @@
+# Test and local diagnostic endpoints should not become Vercel functions.
+api/**/*.test.js
+api/_test-*.js
+api/test-db.js
+api/test.js
+api/analyze.js.bak
+
+# Internal working notes are not deployment artifacts.
+.superpowers/
+docs/superpowers/
