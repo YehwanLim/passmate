@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/Logo";
@@ -191,13 +191,19 @@ export default function Login() {
           {/* 하단 안내 */}
           <p className="text-center text-[12px] text-gray-600 mt-5 leading-relaxed">
             로그인 시{" "}
-            <span className="text-gray-400 underline underline-offset-2 cursor-pointer">
+            <Link
+              href="/terms"
+              className="text-gray-400 underline underline-offset-2 transition-colors hover:text-white"
+            >
               이용약관
-            </span>{" "}
+            </Link>{" "}
             및{" "}
-            <span className="text-gray-400 underline underline-offset-2 cursor-pointer">
+            <Link
+              href="/privacy"
+              className="text-gray-400 underline underline-offset-2 transition-colors hover:text-white"
+            >
               개인정보 처리방침
-            </span>
+            </Link>
             에 동의하는 것으로 간주합니다.
           </p>
         </motion.div>

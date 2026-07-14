@@ -11,30 +11,21 @@ import ReportResult from "./pages/ReportResult";
 import MyProjects from "./pages/MyProjects";
 import MyAnalyses from "./pages/MyAnalyses";
 import Login from "./pages/Login";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import AdminRoot from "./pages/admin/AdminRoot";
-
-const ADMIN_EXPLICIT_ROUTES = [
-  "/admin/resume-analysis/:id",
-  "/admin/prompts/resume-analysis",
-  "/admin/prompts/cover-letter",
-  "/admin/prompts/summary",
-  "/admin/prompts/feedback",
-  "/admin/prompts/interview-questions",
-];
 
 function Router() {
   return (
     <Switch>
       {/* ── Admin routes (자체 레이아웃 + 권한 가드 포함) ── */}
-      {ADMIN_EXPLICIT_ROUTES.map(path => (
-        <Route key={path} path={path} component={AdminRoot} />
-      ))}
-      <Route path={"/admin"} component={AdminRoot} />
-      <Route path={"/admin/:rest*"} component={AdminRoot} />
+      <Route path={"/admin/*?"} component={AdminRoot} />
 
       {/* ── User-facing routes ── */}
       <Route path={"/"} component={Home} />
       <Route path={"/login"} component={Login} />
+      <Route path={"/terms"} component={Terms} />
+      <Route path={"/privacy"} component={Privacy} />
       <Route path={"/analyze"} component={Analyze} />
       <Route path={"/report-new"} component={ReportResult} />
       <Route path={"/my"} component={MyProjects} />

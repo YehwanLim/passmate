@@ -1,16 +1,16 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   motion,
+  useMotionTemplate,
   useMotionValue,
   useSpring,
   useTransform,
-  animate,
 } from "framer-motion";
 
 /**
- * SubtleBackground — Premium Light Orb v3
+ * SubtleBackground
  *
- * 확실하게 눈에 띄는 빛 + 마우스 근처 유기적 애니메이션
+ * A quiet field that responds to the cursor without drawing a cursor object.
  */
 export default function SubtleBackground() {
   const mouseX = useMotionValue(
@@ -19,47 +19,80 @@ export default function SubtleBackground() {
   const mouseY = useMotionValue(
     typeof window !== "undefined" ? window.innerHeight / 2 : 540
   );
-
-  // Velocity tracking
   const velocity = useMotionValue(0);
   const lastPos = useRef({ x: 0, y: 0, t: 0 });
 
-  // Primary orb — 거의 즉시 따라옴
-  const springConfig = { damping: 25, stiffness: 500, mass: 0.3 };
-  const springX = useSpring(mouseX, springConfig);
-  const springY = useSpring(mouseY, springConfig);
-
-  // Secondary orb — 약간의 지연
-  const lagX = useSpring(mouseX, { damping: 30, stiffness: 300, mass: 0.5 });
-  const lagY = useSpring(mouseY, { damping: 30, stiffness: 300, mass: 0.5 });
-
-  // Tertiary — 부드러운 잔상
-  const trailX = useSpring(mouseX, { damping: 40, stiffness: 150, mass: 0.8 });
-  const trailY = useSpring(mouseY, { damping: 40, stiffness: 150, mass: 0.8 });
-
+  const fieldX = useSpring(mouseX, { damping: 55, stiffness: 80, mass: 1.4 });
+  const fieldY = useSpring(mouseY, { damping: 55, stiffness: 80, mass: 1.4 });
+  const sweepX = useSpring(mouseX, { damping: 42, stiffness: 95, mass: 1 });
+  const sweepY = useSpring(mouseY, { damping: 42, stiffness: 95, mass: 1 });
   const smoothVelocity = useSpring(velocity, {
-    damping: 50,
-    stiffness: 120,
-    mass: 0.5,
+    damping: 60,
+    stiffness: 90,
+    mass: 0.7,
   });
 
-  // Dynamic intensity
-  const dynamicScale = useTransform(smoothVelocity, [0, 2000], [1.0, 1.25]);
-  const dynamicOpacity = useTransform(smoothVelocity, [0, 2000], [0.55, 0.85]);
+  const fieldXPct = useTransform(fieldX, (value) =>
+    typeof window === "undefined"
+      ? "50%"
+      : `${Math.round((value / window.innerWidth) * 100)}%`
+  );
+  const fieldYPct = useTransform(fieldY, (value) =>
+    typeof window === "undefined"
+      ? "32%"
+      : `${Math.round((value / window.innerHeight) * 72)}%`
+  );
+  const sweepXPct = useTransform(sweepX, (value) =>
+    typeof window === "undefined"
+      ? "50%"
+      : `${Math.round((value / window.innerWidth) * 100)}%`
+  );
+  const sweepYPct = useTransform(sweepY, (value) =>
+    typeof window === "undefined"
+      ? "48%"
+      : `${Math.round((value / window.innerHeight) * 100)}%`
+  );
+  const fieldOpacity = useTransform(smoothVelocity, [0, 2500], [0.74, 0.94]);
+  const bloomOpacity = useTransform(smoothVelocity, [0, 2500], [0.62, 0.84]);
+  const particleOpacity = useTransform(smoothVelocity, [0, 2500], [0.12, 0.2]);
+  const driftX = useTransform(fieldX, (value) =>
+    typeof window === "undefined"
+      ? "50%"
+      : `${48 + ((value / window.innerWidth) - 0.5) * 10}%`
+  );
+  const bloomX = useTransform(fieldX, (value) =>
+    typeof window === "undefined"
+      ? "50%"
+      : `${50 + ((value / window.innerWidth) - 0.5) * 14}%`
+  );
+  const bloomY = useTransform(fieldY, (value) =>
+    typeof window === "undefined"
+      ? "22%"
+      : `${22 + ((value / window.innerHeight) - 0.5) * 10}%`
+  );
+
+  const responsiveField = useMotionTemplate`
+    radial-gradient(ellipse 62% 40% at ${fieldXPct} ${fieldYPct}, rgba(145,183,255,0.18) 0%, rgba(34,211,238,0.085) 34%, transparent 70%),
+    radial-gradient(ellipse 48% 32% at ${sweepXPct} ${sweepYPct}, rgba(124,58,237,0.14) 0%, rgba(99,102,241,0.055) 44%, transparent 74%),
+    radial-gradient(ellipse 46% 40% at 12% 48%, rgba(34,211,238,0.075) 0%, rgba(59,130,246,0.034) 42%, transparent 76%),
+    radial-gradient(ellipse 44% 38% at 88% 44%, rgba(124,58,237,0.09) 0%, rgba(96,165,250,0.03) 46%, transparent 78%),
+    linear-gradient(180deg, rgba(255,255,255,0.018) 0%, transparent 38%)
+  `;
+
+  const bloomBand = useMotionTemplate`
+    radial-gradient(ellipse 72% 34% at ${bloomX} ${bloomY}, rgba(34,211,238,0.16) 0%, rgba(96,165,250,0.105) 28%, rgba(124,58,237,0.14) 54%, transparent 78%)
+  `;
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       const now = performance.now();
       const prev = lastPos.current;
-      const dt = now - prev.t;
+      const dt = Math.max(now - prev.t, 1);
+      const dx = e.clientX - prev.x;
+      const dy = e.clientY - prev.y;
+      const speed = Math.sqrt(dx * dx + dy * dy) / (dt / 16);
 
-      if (dt > 0) {
-        const dx = e.clientX - prev.x;
-        const dy = e.clientY - prev.y;
-        const speed = Math.sqrt(dx * dx + dy * dy) / (dt / 16);
-        velocity.set(Math.min(speed * 40, 3000));
-      }
-
+      velocity.set(Math.min(speed * 18, 2600));
       lastPos.current = { x: e.clientX, y: e.clientY, t: now };
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
@@ -77,216 +110,82 @@ export default function SubtleBackground() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [handleMouseMove]);
 
-  // Velocity decay
   useEffect(() => {
-    const decay = setInterval(() => {
+    const decay = window.setInterval(() => {
       const current = velocity.get();
-      if (current > 5) velocity.set(current * 0.9);
-      else if (current > 0) velocity.set(0);
-    }, 40);
-    return () => clearInterval(decay);
+      velocity.set(current > 4 ? current * 0.88 : 0);
+    }, 50);
+
+    return () => window.clearInterval(decay);
   }, [velocity]);
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[100] overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden="true"
     >
-      {/* ═══════════════════════════════════════════════
-          1. PRIMARY LIGHT ORB — 가장 밝고 선명한 핵심 빛
-          ═══════════════════════════════════════════════ */}
       <motion.div
-        className="absolute rounded-full"
+        className="responsive-aurora-field absolute inset-0"
         style={{
-          width: 320,
-          height: 320,
-          x: springX,
-          y: springY,
-          translateX: "-50%",
-          translateY: "-50%",
-          scale: dynamicScale,
-          opacity: dynamicOpacity,
-          background: [
-            "radial-gradient(",
-            "circle,",
-            "rgba(255,255,255,0.50) 0%,",
-            "rgba(200,195,255,0.45) 8%,",
-            "rgba(165,160,255,0.35) 18%,",
-            "rgba(120,119,198,0.25) 32%,",
-            "rgba(96,165,250,0.14) 50%,",
-            "rgba(59,130,246,0.05) 70%,",
-            "transparent 90%",
-            ")",
-          ].join(" "),
-          mixBlendMode: "screen",
-          willChange: "transform, opacity",
+          opacity: fieldOpacity,
+          background: responsiveField,
         }}
       />
 
-      {/* ═══════════════════════════════════════════════
-          2. SECONDARY GLOW — 느리게 따라오는 큰 후광
-          ═══════════════════════════════════════════════ */}
       <motion.div
-        className="absolute rounded-full"
+        className="aurora-bloom-band absolute inset-x-[-12%] top-[-18%] h-[58vh] blur-2xl"
         style={{
-          width: 550,
-          height: 550,
-          x: lagX,
-          y: lagY,
-          translateX: "-50%",
-          translateY: "-50%",
+          opacity: bloomOpacity,
+          background: bloomBand,
+          transform: "translateZ(0)",
+        }}
+        animate={{ scaleY: [0.92, 1.05, 0.92], opacity: [0.58, 0.78, 0.58] }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.div
+        className="interactive-light-sweep absolute inset-0 opacity-[0.13]"
+        style={{
           background:
-            "radial-gradient(circle, rgba(120,119,198,0.20) 0%, rgba(96,165,250,0.10) 30%, rgba(59,130,246,0.04) 55%, transparent 75%)",
-          filter: "blur(15px)",
-          mixBlendMode: "screen",
-          willChange: "transform",
+            "linear-gradient(112deg, transparent 0%, transparent 36%, rgba(255,255,255,0.035) 47%, rgba(34,211,238,0.042) 52%, rgba(124,58,237,0.026) 57%, transparent 67%, transparent 100%)",
+          backgroundSize: "240% 240%",
+          backgroundPositionX: driftX,
+          backgroundPositionY: "50%",
         }}
+        animate={{ opacity: [0.13, 0.22, 0.13] }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* ═══════════════════════════════════════════════
-          3. TERTIARY TRAIL — 가장 느린 잔상 (빛의 꼬리)
-          ═══════════════════════════════════════════════ */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          width: 800,
-          height: 800,
-          x: trailX,
-          y: trailY,
-          translateX: "-50%",
-          translateY: "-50%",
-          background:
-            "radial-gradient(circle, rgba(99,102,241,0.10) 0%, rgba(96,165,250,0.05) 40%, transparent 70%)",
-          filter: "blur(60px)",
-          mixBlendMode: "screen",
-          willChange: "transform",
-        }}
-      />
-
-      {/* ═══════════════════════════════════════════════
-          4. AMBIENT BREATHING ORBS — 마우스 근처 유기적 애니메이션
-          ═══════════════════════════════════════════════ */}
-
-      {/* Breathing orb A — 시계방향 공전 */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          width: 250,
-          height: 250,
-          x: springX,
-          y: springY,
-          translateX: "-50%",
-          translateY: "-50%",
-          background:
-            "radial-gradient(circle, rgba(165,160,255,0.20) 0%, rgba(120,119,198,0.08) 50%, transparent 75%)",
-          filter: "blur(25px)",
-          mixBlendMode: "screen",
-        }}
-        animate={{
-          offsetDistance: "100%",
-          x: [80, -60, -80, 60, 80],
-          y: [-60, -80, 60, 80, -60],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* Breathing orb B — 반시계방향 공전 */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          width: 200,
-          height: 200,
-          x: springX,
-          y: springY,
-          translateX: "-50%",
-          translateY: "-50%",
-          background:
-            "radial-gradient(circle, rgba(96,165,250,0.18) 0%, rgba(59,130,246,0.06) 50%, transparent 75%)",
-          filter: "blur(20px)",
-          mixBlendMode: "screen",
-        }}
-        animate={{
-          x: [-70, 80, 70, -80, -70],
-          y: [50, 70, -50, -70, 50],
-          scale: [0.8, 1.1, 0.9, 1.05, 0.8],
-          opacity: [0.6, 1, 0.7, 0.9, 0.6],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* Breathing orb C — 작은 액센트 */}
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          width: 150,
-          height: 150,
-          x: springX,
-          y: springY,
-          translateX: "-50%",
-          translateY: "-50%",
-          background:
-            "radial-gradient(circle, rgba(192,180,255,0.22) 0%, transparent 70%)",
-          filter: "blur(15px)",
-          mixBlendMode: "screen",
-        }}
-        animate={{
-          x: [40, -50, 30, -40, 40],
-          y: [30, 50, -40, -30, 30],
-          scale: [1, 0.7, 1.15, 0.85, 1],
-          opacity: [0.8, 0.5, 1, 0.6, 0.8],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* ═══════════════════════════════════════════════
-          5. AMBIENT AURORA — 고정 레이어
-          ═══════════════════════════════════════════════ */}
-
-      {/* 우상단 Aurora */}
       <div
-        className="absolute"
+        className="quiet-gradient-mesh absolute inset-0 opacity-[0.018]"
         style={{
-          top: "-12%",
-          right: "-10%",
-          width: 900,
-          height: 900,
-          background:
-            "radial-gradient(circle, rgba(99,102,241,0.14) 0%, rgba(120,119,198,0.05) 40%, transparent 65%)",
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+          maskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,0.78), rgba(0,0,0,0.18) 72%, transparent)",
         }}
       />
 
-      {/* 좌하단 Aurora */}
-      <div
-        className="absolute"
+      <motion.div
+        className="particle-field absolute inset-0"
         style={{
-          bottom: "0%",
-          left: "-12%",
-          width: 700,
-          height: 700,
-          background:
-            "radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(96,165,250,0.03) 45%, transparent 65%)",
+          opacity: particleOpacity,
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.42) 1px, transparent 1px), radial-gradient(rgba(125,148,255,0.28) 1px, transparent 1px)",
+          backgroundPosition: "0 0, 34px 28px",
+          backgroundSize: "86px 86px, 132px 132px",
+          maskImage:
+            "radial-gradient(ellipse 70% 46% at 50% 34%, black 0%, rgba(0,0,0,0.42) 50%, transparent 78%)",
         }}
+        animate={{ backgroundPosition: ["0 0, 34px 28px", "24px 18px, 12px 46px"] }}
+        transition={{ duration: 22, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
       />
 
-      {/* ═══════════════════════════════════════════════
-          6. FILM GRAIN
-          ═══════════════════════════════════════════════ */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.022]"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
           backgroundRepeat: "repeat",
           backgroundSize: "256px 256px",
           mixBlendMode: "overlay",

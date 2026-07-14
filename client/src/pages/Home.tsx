@@ -37,6 +37,45 @@ export const HOME_NAV_ITEMS = [
   { label: "내 지원서", type: "route", target: "/my" },
 ] as const;
 
+const RESUME_READING_STEPS = [
+  {
+    label: "01",
+    title: "먼저, 어떤 사람으로 기억되는지 봅니다",
+    body: "문장을 고치기 전에 지원자가 어떤 인상으로 남는지부터 정리합니다.",
+    sampleLabel: "첫인상",
+    sample:
+      "데이터를 근거로 문제를 찾고 실행하는 사람으로 읽힙니다. 다만 자동차 서비스와 연결되는 장면은 아직 약합니다.",
+    note: "이 한 줄이 리포트의 기준점이 됩니다.",
+  },
+  {
+    label: "02",
+    title: "경험이 회사 기준과 만나는지 봅니다",
+    body: "좋은 경험인지보다, 지원 회사가 찾는 기준과 어디에서 맞물리는지 확인합니다.",
+    sampleLabel: "회사 맥락",
+    sample:
+      "3,000건의 행동 데이터 분석은 강점입니다. 이 경험이 현대자동차의 커넥티드 서비스 개선과 어떻게 이어지는지 보강하면 더 선명해집니다.",
+    note: "경험과 회사 사이의 빈칸을 찾습니다.",
+  },
+  {
+    label: "03",
+    title: "문장마다 근거가 충분한지 봅니다",
+    body: "성과를 말하는 문장에 판단 과정, 수치, 본인 역할이 함께 있는지 봅니다.",
+    sampleLabel: "문장 피드백",
+    sample:
+      "‘개인화가 부족했다’는 결론은 좋지만, 어떤 고객군에서 어떤 행동이 보였는지 한 줄 더 필요합니다.",
+    note: "고쳐야 할 문장을 바로 짚습니다.",
+  },
+  {
+    label: "04",
+    title: "면접에서 방어 가능한지 봅니다",
+    body: "자소서에 쓴 경험이 꼬리 질문으로 이어졌을 때 흔들리지 않는지 확인합니다.",
+    sampleLabel: "예상 질문",
+    sample:
+      "왜 클릭 패턴과 체류 시간을 가장 중요한 지표로 봤나요? 다른 지표는 검토하지 않았나요?",
+    note: "서류 이후의 질문까지 미리 봅니다.",
+  },
+] as const;
+
 /**
  * PassMate – Premium Dark SaaS Landing Page
  *
@@ -180,6 +219,8 @@ function TypeWriter({
 
 export default function Home() {
   const [, navigate] = useLocation();
+  const [activeReadingStep, setActiveReadingStep] = useState(0);
+  const readingStep = RESUME_READING_STEPS[activeReadingStep];
 
   const handleNavClick = useCallback((target: string, type: string) => {
     if (type === "section") {
@@ -331,7 +372,7 @@ export default function Home() {
             }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            매끄러운 AI 자소서,{" "}
+            매끈하기만 한 자소서,{" "}
             <br className="hidden md:inline" />
             면접관 눈에는 다 똑같아 보입니다.
           </motion.h2>
@@ -349,13 +390,13 @@ export default function Home() {
           >
             글솜씨보다 중요한 건 &lsquo;직무에 대한 고민&rsquo;과
             &lsquo;해결 능력&rsquo;입니다. 이 회사에 꼭 필요한 인재로 보일 수
-            있도록, 실무자의 기준으로 합격 로직을 재설계해야 합니다.
+            있도록, 실무자의 기준으로 읽히는 방향을 다시 잡아야 합니다.
           </motion.p>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
-          STEP 2-B: How it Works — 6-Card Feature Grid
+          STEP 2-B: How PassMate Reads
           ══════════════════════════════════════════════════ */}
       <section id="service-intro" className="relative py-28 md:py-36 border-t border-white/[0.04]">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
@@ -365,69 +406,135 @@ export default function Home() {
               핵심 분석 기능
             </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              현직자 기준으로 설계된 6가지 분석 엔진
+              PassMate는 자소서를 이렇게 읽습니다
             </h2>
             <p className="text-gray-500 font-light text-[15px] leading-[1.8] max-w-xl mx-auto">
-              단순 첨삭이 아닌, 합격을 위한 전략적 인사이트를 제공합니다.
+              점수를 매기기보다, 면접관이 실제로 판단하는 흐름에 맞춰 읽습니다.
+              첫인상부터 문장 근거, 회사 맥락, 면접 질문까지 이어서 봅니다.
             </p>
           </ScrollReveal>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              {
-                icon: Target,
-                title: "직무 적합도 (JD Fit) 매칭",
-                desc: "채용 공고(JD) 요구 역량과 자소서 비교, 합격 기준 대비 Fit 점수 도출.",
-              },
-              {
-                icon: BarChart3,
-                title: "종합 점수 및 합격 예측",
-                desc: "현직자 평가 로직 기반 완성도 수치화, 항목별 밸런스 진단.",
-              },
-              {
-                icon: Zap,
-                title: "나만의 킬러 소재 발굴",
-                desc: "수많은 경험 중 실무진의 눈길을 사로잡을 강력한 무기 추출.",
-              },
-              {
-                icon: CheckCircle2,
-                title: "경험 팩트 체크",
-                desc: "모호하고 추상적인 표현 필터링, 구체적인 성과와 과정의 논리성 검증.",
-              },
-              {
-                icon: Shield,
-                title: "객관적 강점·약점 분석",
-                desc: "진짜 역량(강점) 파악 및 논리가 비약되는 치명적 결함(약점) 진단.",
-              },
-              {
-                icon: MessageCircle,
-                title: "자소서 맞춤형 예상 질문",
-                desc: "이력서 바탕의 예상 꼬리 질문 리스트 및 실전 방어 가이드 제공.",
-              },
-            ].map(({ icon: Icon, title, desc }, i) => (
-              <ScrollReveal key={title} delay={i * 0.07}>
-                <motion.div
-                  className="group relative bg-[#0A0A0A] border border-white/[0.08] rounded-2xl p-7 h-full backdrop-blur-sm transition-colors duration-500 hover:border-white/[0.16]"
-                  whileHover={{ y: -2 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  {/* Hover glow overlay */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/[0.03] via-transparent to-purple-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                  <div className="relative">
-                    <div className="w-10 h-10 bg-white/[0.04] rounded-xl flex items-center justify-center mb-5 group-hover:bg-white/[0.07] transition-colors duration-300">
-                      <Icon className="w-[18px] h-[18px] text-gray-500 group-hover:text-white transition-colors duration-300" />
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-stretch">
+            <div className="space-y-0 border-t border-white/[0.06]">
+              {RESUME_READING_STEPS.map((step, index) => {
+                const active = index === activeReadingStep;
+                return (
+                  <button
+                    key={step.label}
+                    type="button"
+                    className={`group w-full border-b border-white/[0.06] py-5 text-left transition-colors ${
+                      active ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                    onClick={() => setActiveReadingStep(index)}
+                  >
+                    <div className="grid grid-cols-[42px_1fr] gap-4">
+                      <span
+                        className={`text-[12px] font-semibold tracking-[0.18em] ${
+                          active ? "text-emerald-300/80" : "text-zinc-700"
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                      <div>
+                        <h3 className="text-[17px] font-semibold leading-[1.45] tracking-tight">
+                          {step.title}
+                        </h3>
+                        <p
+                          className={`mt-2 text-[14px] font-light leading-[1.75] ${
+                            active ? "text-zinc-300" : "text-zinc-600"
+                          }`}
+                        >
+                          {step.body}
+                        </p>
+                      </div>
                     </div>
-                    <h3 className="text-[15px] font-semibold text-white mb-2.5 tracking-[-0.01em]">
-                      {title}
-                    </h3>
-                    <p className="text-[13px] text-gray-500 font-light leading-[1.8]">
-                      {desc}
+                  </button>
+                );
+              })}
+
+              <div className="reading-flow-track mt-7 grid grid-cols-4 gap-2">
+                {RESUME_READING_STEPS.map((step, index) => {
+                  const active = index === activeReadingStep;
+                  return (
+                    <button
+                      key={`${step.label}-track`}
+                      type="button"
+                      aria-label={`${step.label} ${step.sampleLabel}`}
+                      onClick={() => setActiveReadingStep(index)}
+                      className="group text-left"
+                    >
+                      <span
+                        className={`block h-1 transition-colors ${
+                          active ? "bg-emerald-300/80" : "bg-white/[0.08] group-hover:bg-white/[0.18]"
+                        }`}
+                      />
+                      <span
+                        className={`mt-3 block text-[11px] font-medium tracking-[0.08em] ${
+                          active ? "text-white" : "text-zinc-600 group-hover:text-zinc-400"
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <motion.div
+              key={readingStep.label}
+              initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="reading-stage-panel relative min-h-[420px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0A0A0A] p-6 md:p-9"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_48%_at_50%_0%,rgba(16,185,129,0.09),transparent_70%)]" />
+              <div className="relative flex h-full flex-col">
+                <div className="mb-9 flex items-start justify-between gap-5 border-b border-white/[0.06] pb-6">
+                  <div>
+                    <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-600">
+                      리포트에는 이렇게 남습니다
                     </p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[12px] font-semibold tracking-[0.18em] text-emerald-300/70">
+                        {readingStep.label}
+                      </span>
+                      <span className="text-[13px] text-zinc-500">
+                        {readingStep.sampleLabel}
+                      </span>
+                    </div>
                   </div>
-                </motion.div>
-              </ScrollReveal>
-            ))}
+                  <div className="hidden text-right text-[12px] leading-[1.7] text-zinc-600 sm:block">
+                    클릭해서 단계별로 보기
+                  </div>
+                </div>
+
+                <blockquote className="text-[22px] md:text-[28px] font-semibold leading-[1.55] tracking-tight text-white">
+                  “{readingStep.sample}”
+                </blockquote>
+                <p className="mt-7 max-w-xl text-[14px] leading-[1.8] text-zinc-500">
+                  {readingStep.note}
+                </p>
+
+                <div className="mt-auto pt-10">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      "표현보다 판단 기준",
+                      "경험보다 연결 맥락",
+                      "첨삭보다 다음 질문",
+                      "전체 수정보다 우선순위",
+                    ].map((item) => (
+                      <div
+                        key={item}
+                        className="border-t border-white/[0.06] pt-3 text-[13px] text-zinc-500"
+                      >
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -494,8 +601,8 @@ export default function Home() {
               자소서가 합격 리포트로 변하는 과정
             </h2>
             <p className="text-gray-500 font-light text-[15px] leading-[1.8] max-w-lg mx-auto">
-              현직 PM의 합격 로직을 학습한 AI가 당신의 자소서를
-              분석합니다.
+              지원 직무와 회사 맥락을 기준으로 자소서의 강점과 빈틈을
+              정리합니다.
             </p>
           </ScrollReveal>
 
@@ -549,12 +656,12 @@ export default function Home() {
                     <Cpu className="w-6 h-6 text-blue-400" />
                   </div>
                   <h3 className="text-lg font-semibold mb-2">
-                    AI 분석 엔진
+                    맥락 정리
                   </h3>
                   <p className="text-[13px] text-gray-500 font-light leading-[1.7]">
-                    합격 로직 + 현직자 데이터
+                    지원 직무와 회사 기준을
                     <br />
-                    기반 다차원 분석
+                    함께 대조합니다
                   </p>
                   <div className="mt-5 flex items-center justify-center gap-1.5">
                     {[0, 1, 2, 3].map((i) => (
@@ -603,12 +710,12 @@ export default function Home() {
                   리포트 생성
                 </h3>
                 <p className="text-[13px] text-gray-500 font-light leading-[1.7]">
-                  종합 점수, 강점/약점,
+                  첫인상, 강점/약점,
                   <br />
-                  예상 질문 3건 포함
+                  문장 피드백과 예상 질문 포함
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-                  {["점수 82점", "강점 3건", "예상 질문"].map(
+                  {["첫인상", "강점/약점", "예상 질문"].map(
                     (chip) => (
                       <span
                         key={chip}
@@ -640,8 +747,8 @@ export default function Home() {
               합격하는 자소서는 구조부터 다릅니다.
             </h2>
             <p className="text-gray-500 font-light text-[15px] max-w-xl mx-auto leading-[1.8]">
-              추상적인 표현에서 구체적인 데이터와 STAR 기법으로
-              개선된 실제 사례
+              추상적인 표현을 구체적인 데이터와 의사결정 과정으로
+              바꿔낸 실제 사례
             </p>
           </ScrollReveal>
 
@@ -676,32 +783,13 @@ export default function Home() {
                     개선 후
                   </span>
                 </div>
-                <div className="space-y-2.5 text-[14px] text-gray-400 leading-[1.9] font-light">
-                  <p>
-                    <span className="text-white font-medium">
-                      S:
-                    </span>{" "}
-                    사용자 이탈률 35% 증가 상황
-                  </p>
-                  <p>
-                    <span className="text-white font-medium">
-                      T:
-                    </span>{" "}
-                    3주 내 개선안 도출
-                  </p>
-                  <p>
-                    <span className="text-white font-medium">
-                      A:
-                    </span>{" "}
-                    A/B 테스트 3회 진행, 데이터 분석
-                  </p>
-                  <p>
-                    <span className="text-white font-medium">
-                      R:
-                    </span>{" "}
-                    이탈률 18% 감소, 월 매출 12% 증가
-                  </p>
-                </div>
+                <p className="text-gray-400 text-[14px] leading-[1.9] font-light">
+                  &ldquo;신규 사용자의 온보딩 이탈률이 35%까지 높아진 원인을 찾기 위해
+                  클릭 로그 3,000건을 세그먼트별로 분석했습니다. 핵심 기능을
+                  처음 접하는 시점에서 이탈이 집중된다는 점을 확인했고, 개발팀과
+                  함께 첫 화면 안내 문구와 추천 흐름을 A/B 테스트했습니다. 그 결과
+                  이탈률을 18%로 낮추고, 일간 활성 사용자 수를 20% 늘렸습니다.&rdquo;
+                </p>
               </div>
             </ScrollReveal>
           </div>
