@@ -3,7 +3,10 @@ import {
   buildEditorialKeywords,
   buildHiringMemoryItems,
   compressPersonaForHero,
+  limitReportText,
   splitPersonaForHeroLines,
+  splitMentorComment,
+  tokenizeCommentKeywords,
 } from "./reportFirstImpression"
 
 describe("report first impression editorial helpers", () => {
@@ -42,5 +45,42 @@ describe("report first impression editorial helpers", () => {
       { mark: "△", text: "산업 전문성이 더 드러나면 좋겠다" },
     ])
     expect(items.map((item) => item.text).join(" ")).not.toMatch(/점수|백분위|랭킹|등급/)
+  })
+
+  it("limits legacy summary copy without breaking a word", () => {
+    expect(limitReportText("시장 데이터를 사업 기회로 연결하고 실행까지 이끄는 기획형 지원자입니다", 28))
+      .toBe("시장 데이터를 사업 기회로 연결하고…")
+  })
+
+  it("keeps the first complete word when no earlier boundary exists", () => {
+    expect(limitReportText("매우긴단어입니다 식량 산업을 분석합니다", 12)).toBe("매우긴단어입니다…")
+  })
+
+  it("splits paragraph and legacy comments into three editorial blocks", () => {
+    expect(splitMentorComment("첫 인상입니다.\n\n보완점입니다.\n\n면접 준비입니다.").map((item) => item.title))
+      .toEqual(["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"])
+    expect(splitMentorComment("첫 문장입니다. 둘째 문장입니다. 셋째 문장입니다.")).toHaveLength(3)
+  })
+
+  it("keeps long legacy comments complete while distributing sentences into editorial blocks", () => {
+    const comment = "첫 문장입니다. 둘째 문장입니다. 셋째 문장입니다. 넷째 문장입니다."
+    const blocks = splitMentorComment(comment)
+
+    expect(blocks.map((block) => block.text).join(" ")).toBe(comment)
+    expect(blocks.map((block) => block.title)).toEqual(["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"])
+  })
+
+  it("marks only matching editorial keywords for inline emphasis", () => {
+    expect(tokenizeCommentKeywords("식량사업의 시장분석 경험이 보입니다.", ["식량사업", "시장분석"])
+      .filter((token) => token.highlighted)
+      .map((token) => token.text)).toEqual(["식량사업", "시장분석"])
+  })
+
+  it("highlights each supplied keyword once and preserves the original text", () => {
+    const text = "식량사업을 분석하고 식량사업의 가능성을 확인했습니다."
+    const tokens = tokenizeCommentKeywords(text, ["식량사업", "", "식량사업"])
+
+    expect(tokens.map((token) => token.text).join("")).toBe(text)
+    expect(tokens.filter((token) => token.highlighted).map((token) => token.text)).toEqual(["식량사업"])
   })
 })

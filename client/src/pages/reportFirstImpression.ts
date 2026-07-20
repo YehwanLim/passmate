@@ -15,6 +15,17 @@ export type HiringMemoryItem = {
 
 const MIN_KEYWORDS = 4
 const MAX_KEYWORDS = 6
+const MENTOR_COMMENT_TITLES = ["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"]
+
+export type MentorCommentBlock = {
+  title: string
+  text: string
+}
+
+export type CommentKeywordToken = {
+  text: string
+  highlighted: boolean
+}
 
 export function compressPersonaForHero(persona: string): string {
   const trimmed = persona.trim()
@@ -78,4 +89,83 @@ export function buildHiringMemoryItems({ strengths, gaps }: MemoryInput): Hiring
     : "지원 직무와의 연결이 더 선명하면 좋겠다"
 
   return [...positiveItems, { mark: "△", text: cautionText }]
+}
+
+export function limitReportText(text: string, maxLength: number): string {
+  const normalized = text.replace(/\s+/g, " ").trim()
+  if (normalized.length <= maxLength) return normalized
+
+  const shortened = normalized.slice(0, maxLength - 1)
+  const boundary = shortened.lastIndexOf(" ")
+  const beforeBoundary = shortened.slice(0, boundary)
+  const previousBoundary = beforeBoundary.lastIndexOf(" ")
+  const textAtBoundary = boundary > Math.floor(maxLength / 2)
+    ? previousBoundary > 0 ? shortened.slice(0, previousBoundary) : beforeBoundary
+    : shortened
+
+  return `${textAtBoundary.trimEnd()}…`
+}
+
+function splitIntoSentences(comment: string): string[] {
+  return comment.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((sentence) => sentence.trim()).filter(Boolean) ?? []
+}
+
+function createCommentBlocks(parts: string[]): MentorCommentBlock[] {
+  return parts.filter(Boolean).slice(0, MENTOR_COMMENT_TITLES.length).map((text, index) => ({
+    title: MENTOR_COMMENT_TITLES[index],
+    text,
+  }))
+}
+
+export function splitMentorComment(comment: string): MentorCommentBlock[] {
+  const paragraphs = comment.split(/\n\s*\n+/).map((paragraph) => paragraph.trim()).filter(Boolean)
+  if (paragraphs.length >= MENTOR_COMMENT_TITLES.length) {
+    return createCommentBlocks([
+      paragraphs[0],
+      paragraphs[1],
+      paragraphs.slice(2).join("\n\n"),
+    ])
+  }
+
+  const sentences = splitIntoSentences(comment.replace(/\s+/g, " ").trim())
+  if (sentences.length <= MENTOR_COMMENT_TITLES.length) return createCommentBlocks(sentences)
+
+  const perBlock = Math.floor(sentences.length / MENTOR_COMMENT_TITLES.length)
+  return createCommentBlocks([
+    sentences.slice(0, perBlock).join(" "),
+    sentences.slice(perBlock, perBlock * 2).join(" "),
+    sentences.slice(perBlock * 2).join(" "),
+  ])
+}
+
+export function tokenizeCommentKeywords(text: string, keywords: string[]): CommentKeywordToken[] {
+  const normalizedKeywords = Array.from(new Set(keywords.map((keyword) => keyword.trim()).filter(Boolean)))
+    .sort((left, right) => right.length - left.length)
+  const selections: Array<{ start: number; end: number }> = []
+
+  for (const keyword of normalizedKeywords) {
+    let start = text.indexOf(keyword)
+    while (start !== -1) {
+      const end = start + keyword.length
+      const overlaps = selections.some((selection) => start < selection.end && end > selection.start)
+      if (!overlaps) {
+        selections.push({ start, end })
+        break
+      }
+      start = text.indexOf(keyword, start + 1)
+    }
+  }
+
+  const sortedSelections = selections.sort((left, right) => left.start - right.start)
+  const tokens: CommentKeywordToken[] = []
+  let cursor = 0
+
+  for (const selection of sortedSelections) {
+    if (selection.start > cursor) tokens.push({ text: text.slice(cursor, selection.start), highlighted: false })
+    tokens.push({ text: text.slice(selection.start, selection.end), highlighted: true })
+    cursor = selection.end
+  }
+
+  if (cursor < text.length) tokens.push({ text: text.slice(cursor), highlighted: false })
+  return tokens
 }
