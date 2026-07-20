@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { MASTER_SYSTEM_PROMPT } from "../../../shared/prompts/reportPrompt.js";
 
 const serverPrompt = readFileSync(new URL("../../../server/prompts/reportPrompt.ts", import.meta.url), "utf8");
 const serverAnalyze = readFileSync(new URL("../../../server/api/analyze.ts", import.meta.url), "utf8");
@@ -30,7 +31,11 @@ describe("report prompt single source", () => {
     expect(sharedPrompt).toContain("공백 포함 28자 이내");
     expect(sharedPrompt).toContain("공백 포함 42자 이내");
     expect(sharedPrompt).toContain("정확히 세 문단");
-    expect(sharedPrompt).toContain("빈 줄(\\n\\n)");
+    expect(sharedPrompt).toContain("빈 줄(\\\\n\\\\n)");
     expect(sharedPrompt).toContain("각 문단은 1~2문장");
+  });
+
+  it("keeps the pmComment paragraph separator as a JSON escape at runtime", () => {
+    expect(MASTER_SYSTEM_PROMPT).toContain("빈 줄(\\n\\n)");
   });
 });
