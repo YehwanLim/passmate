@@ -27,5 +27,10 @@ describe("report prompt single source", () => {
     expect(sharedPrompt).toContain("인정 → 왜 좋은지 → 무엇이 조금 부족한지 → 어떻게 보완하면 더 좋아지는지");
     expect(sharedPrompt).toContain("서로 다른 관점");
     expect(sharedPrompt).toContain("feedbackCards의 original 필드");
+    expect(sharedPrompt).toContain("공백 포함 28자 이내");
+    expect(sharedPrompt).toContain("공백 포함 42자 이내");
+    expect(sharedPrompt).toContain("정확히 세 문단");
+    expect(sharedPrompt).toContain("빈 줄(\\n\\n)");
+    expect(sharedPrompt).toContain("각 문단은 1~2문장");
   });
 });
