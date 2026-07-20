@@ -6,6 +6,20 @@ const serverPrompt = readFileSync(new URL("../../../server/prompts/reportPrompt.
 const serverAnalyze = readFileSync(new URL("../../../server/api/analyze.ts", import.meta.url), "utf8");
 const apiAnalyze = readFileSync(new URL("../../../api/analyze.js", import.meta.url), "utf8");
 const sharedPrompt = readFileSync(new URL("../../../shared/prompts/reportPrompt.js", import.meta.url), "utf8");
+const outputMarker = "# [출력: JSON만, 마크다운 코드 블록 없이]";
+const constraintsMarker = "# [제약 조건]";
+
+function extractOutputJsonExample(prompt: string) {
+  const outputStart = prompt.indexOf(outputMarker);
+  const jsonStart = prompt.indexOf("{", outputStart + outputMarker.length);
+  const jsonEnd = prompt.indexOf(constraintsMarker, jsonStart);
+
+  if (outputStart === -1 || jsonStart === -1 || jsonEnd === -1) {
+    throw new Error("MASTER_SYSTEM_PROMPT output JSON example is missing");
+  }
+
+  return prompt.slice(jsonStart, jsonEnd).trim();
+}
 
 describe("report prompt single source", () => {
   it("keeps the prompt body in the shared prompt module only", () => {
@@ -37,5 +51,18 @@ describe("report prompt single source", () => {
 
   it("keeps the pmComment paragraph separator as a JSON escape at runtime", () => {
     expect(MASTER_SYSTEM_PROMPT).toContain("빈 줄(\\n\\n)");
+  });
+
+  it("keeps the runtime JSON example valid and restores pmComment paragraphs", () => {
+    const outputExample = extractOutputJsonExample(MASTER_SYSTEM_PROMPT);
+
+    expect(MASTER_SYSTEM_PROMPT).toContain("빈 줄(\\n\\n)");
+    expect(outputExample).toContain('"pmComment"');
+    expect(outputExample).toContain("\\n\\n");
+
+    expect(outputExample).toMatch(/"pmComment": "[^"\r\n]*\\n\\n[^"\r\n]*"/);
+
+    const parsed = JSON.parse(outputExample) as { pmComment: string };
+    expect(parsed.pmComment).toContain("\n\n");
   });
 });
