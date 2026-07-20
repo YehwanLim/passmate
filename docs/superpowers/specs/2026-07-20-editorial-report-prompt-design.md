@@ -1,38 +1,38 @@
-# Editorial Report Prompt Design
+# 에디토리얼 리포트 프롬프트 설계
 
-## Goal
+## 목표
 
-Keep the existing `MASTER_SYSTEM_PROMPT` JSON contract intact while changing the report from a checklist-style evaluation into an editorial interpretation of the applicant's experiences.
+기존 `MASTER_SYSTEM_PROMPT`의 JSON 계약은 그대로 유지하면서, 체크리스트식 평가 리포트를 지원자의 경험을 읽고 해석하는 에디토리얼 리포트로 바꾼다.
 
-## Single Source
+## 단일 원본
 
-`shared/prompts/reportPrompt.js` remains the only prompt body. The local development route consumes it through the existing TypeScript compatibility export, and the serverless route imports it directly.
+`shared/prompts/reportPrompt.js`를 프롬프트 본문의 유일한 원본으로 유지한다. 로컬 개발 경로는 기존 TypeScript 호환 내보내기를 통해, 서버리스 경로는 직접 가져와 같은 프롬프트를 사용한다.
 
-## Core Writing Model
+## 핵심 작성 모델
 
-1. Find one recurring pattern across the applicant's experiences before drafting sections.
-2. Explain that pattern through concrete behaviors, decisions, evidence, and transitions between experiences.
-3. Give each report section a distinct lens so the report does not restate the same conclusion with different adjectives.
-4. Prefer interpretation over scoring, generic labels, or personality judgments.
+1. 모든 섹션을 작성하기 전에 지원자의 경험 전체에서 반복되는 하나의 패턴을 찾는다.
+2. 그 패턴을 구체적인 행동, 판단, 근거, 경험 사이의 전환을 통해 설명한다.
+3. 리포트의 각 섹션은 서로 다른 관점을 제공해, 같은 결론을 형용사만 바꿔 반복하지 않는다.
+4. 점수, 일반적인 역량 라벨, 성격 판단보다 맥락 있는 해석을 우선한다.
 
-## Section Rules
+## 섹션별 규칙
 
-- `summaryOneLiner` and `persona` use a short "domain + action + distinctive trait" structure. Generic labels such as "challenging", "high-growth", "global mindset", or "strong execution" are prohibited.
-- `hashtags` prioritize industry, project, role, and technology. Only one or two abstract capability tags may appear.
-- `strengths` explain the evidence that creates the impression rather than listing competencies.
-- `gaps` begin by recognizing what already works, describe the missing link, and offer a concrete way to make the existing strength clearer.
-- `subtitleDiagnosis` retains literary or story-led wording when it is clear, readable, and connected to the role. Suggestions refine clarity rather than mechanically inserting a role title.
-- `feedbackCards` follow: recognition -> reason it works -> missing element -> practical refinement. They avoid dismissive phrasing.
-- `detailedAnalysis` contains at least three distinct lenses from rationale, logical structure, company-side reading, cross-experience connection, differentiation, likely interview question, and improvement direction.
-- `pmComment` uses the same editorial interpretation: it names the applicant's through-line, identifies the most consequential missing evidence, and recommends a focused revision.
+- `summaryOneLiner`와 `persona`는 짧은 "도메인 + 행동 + 특징" 구조로 작성한다. "도전적", "성장 가능성", "글로벌 마인드", "실행력이 뛰어남" 같은 일반 표현은 사용하지 않는다.
+- `hashtags`는 산업, 프로젝트, 직무, 기술을 우선한다. 추상 역량 태그는 한두 개까지만 허용한다.
+- `strengths`는 역량을 나열하지 않고, 왜 그런 인상을 주는지 근거를 설명한다.
+- `gaps`는 이미 잘 작동하는 부분을 먼저 인정하고, 빠진 연결고리와 기존 강점을 더 선명하게 만드는 보완 방법을 제안한다.
+- `subtitleDiagnosis`는 문학적이거나 이야기 중심인 표현도 명확하고 읽기 쉬우며 직무와 연결되면 유지한다. 직무명을 기계적으로 넣기보다 의미를 더 또렷하게 만드는 방향을 제안한다.
+- `feedbackCards`는 인정 -> 좋은 이유 -> 아쉬운 연결고리 -> 실질적인 보완 순서로 작성한다. 단정적으로 부정하는 표현은 피한다.
+- `detailedAnalysis`는 인상을 주는 이유, 논리 구조, 회사 관점의 해석, 경험 간 연결, 차별점, 예상 면접 질문, 개선 방향 중 서로 다른 세 가지 이상을 담는다.
+- `pmComment`도 같은 해석적 어조를 따른다. 지원자의 관통 패턴, 가장 중요한 누락 근거, 집중할 수정 방향을 짚는다.
 
-## Guardrails
+## 보호 규칙
 
-- JSON keys, types, cardinality constraints, language rules, highlighting requirements, and context-irrelevant response remain unchanged.
-- Avoid repeated stock evaluations: logical, strong execution, high growth potential, passionate, suitable.
-- Do not use the same adjective or verdict as the principal explanation across sections.
-- Metaphor and storytelling remain when they are clear, readable, and connected to the target role.
+- JSON 키, 자료형, 개수 제약, 언어 규칙, 하이라이팅 제약, 문맥 이탈 응답은 바꾸지 않는다.
+- "논리적", "실행력이 뛰어남", "성장 가능성이 높음", "열정적", "적합함" 같은 판에 박힌 평가는 반복하지 않는다.
+- 같은 형용사나 판정을 여러 섹션의 주된 설명으로 사용하지 않는다.
+- 비유와 스토리텔링은 메시지가 명확하고 읽기 쉬우며 지원 직무와 연결되면 유지한다.
 
-## Verification
+## 검증
 
-Add a prompt contract test that confirms the source remains singular and that the canonical prompt contains the editorial pattern, section-specific rules, and anti-repetition guardrail. Run the focused prompt test and the existing report persistence/identity tests.
+프롬프트 계약 테스트에 단일 원본 여부와 해석 중심 원칙, 섹션별 작성 규칙, 반복 방지 규칙을 추가한다. 이후 프롬프트 단위 테스트와 기존 리포트 저장 및 사용자 식별 테스트를 함께 실행한다.
