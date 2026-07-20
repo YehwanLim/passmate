@@ -19,7 +19,7 @@ import {
     buildEditorialKeywords,
     buildHiringMemoryItems,
     getHeroIdentity,
-    limitReportText,
+    getHeroSummary,
     splitPersonaForHeroLines,
     splitMentorComment,
     tokenizeCommentKeywords,
@@ -345,8 +345,8 @@ export default function PassMateReport() {
     )
     const heroPersonaLines = useMemo(() => splitPersonaForHeroLines(heroPersona), [heroPersona])
     const heroSummary = useMemo(
-        () => limitReportText(reportData.firstImpression.summaryOneLiner, 42),
-        [reportData.firstImpression.summaryOneLiner]
+        () => getHeroSummary(reportData.firstImpression.summaryOneLiner, reportData.firstImpression.hashtags),
+        [reportData.firstImpression.hashtags, reportData.firstImpression.summaryOneLiner]
     )
     const editorialKeywords = useMemo(
         () => buildEditorialKeywords({

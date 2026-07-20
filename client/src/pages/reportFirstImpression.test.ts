@@ -4,6 +4,7 @@ import {
   buildHiringMemoryItems,
   compressPersonaForHero,
   getHeroIdentity,
+  getHeroSummary,
   limitReportText,
   splitPersonaForHeroLines,
   splitMentorComment,
@@ -24,6 +25,13 @@ describe("report first impression editorial helpers", () => {
       "KOTRA 인턴 경험에서 식량 수출입에 대한 흥미를 발견하고, AI 스타트업에서의 신사업 발굴 경험으로 거시적 분석력을 키운 지원자",
       ["#식량사업", "#시장분석", "#사업기획"],
     )).toBe("식량사업 분석형 사업기획자")
+  })
+
+  it("replaces a truncated legacy summary with a complete domain narrative", () => {
+    expect(getHeroSummary(
+      "국제 경험과 비즈니스 통찰력을 바탕으로 식량 산업 변화를 분석하고 새로운 사업 기회로 연결하려는 지원자입니다.",
+      ["#식량산업", "#신사업개발"],
+    )).toBe("식량산업의 성장 기회를 사업으로 연결하려는 지원자")
   })
 
   it("splits compressed persona copy into balanced hero lines", () => {

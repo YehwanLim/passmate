@@ -54,11 +54,27 @@ export function getHeroIdentity(persona: string, hashtags: string[]): string {
   const keywords = Array.from(new Set(hashtags.map((hashtag) => hashtag.replace(/^#/, "").trim()).filter(Boolean)))
   const domain = keywords[0]
   const roleKeyword = keywords.find((keyword) => /PM|기획|영업|마케팅|개발|디자인/.test(keyword))
-  const role = roleKeyword === "사업기획" ? "사업기획자" : roleKeyword
-  const action = keywords.some((keyword) => /분석|리서치|데이터/.test(keyword)) ? "분석형" : "실행형"
+  const role = roleKeyword === "사업기획"
+    ? "사업기획자"
+    : roleKeyword === "신사업개발"
+      ? "사업개발자"
+      : roleKeyword
+  const action = keywords.some((keyword) => /신사업|기회발굴/.test(keyword))
+    ? "기회발굴형"
+    : keywords.some((keyword) => /분석|리서치|데이터/.test(keyword))
+      ? "분석형"
+      : "실행형"
 
   if (domain && role) return `${domain} ${action} ${role}`
   return limitReportText(compressed, 28)
+}
+
+export function getHeroSummary(summary: string, hashtags: string[]): string {
+  const normalized = summary.replace(/\s+/g, " ").trim()
+  if (normalized.length <= 42) return normalized
+
+  const domain = hashtags.map((hashtag) => hashtag.replace(/^#/, "").trim()).find(Boolean)
+  return domain ? `${domain}의 성장 기회를 사업으로 연결하려는 지원자` : limitReportText(normalized, 42)
 }
 
 export function splitPersonaForHeroLines(persona: string): string[] {
