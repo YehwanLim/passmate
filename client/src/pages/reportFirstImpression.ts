@@ -51,14 +51,14 @@ export function getHeroIdentity(persona: string, hashtags: string[]): string {
   const compressed = compressPersonaForHero(persona)
   if (compressed.length <= 28) return compressed
 
-  const keywords = Array.from(new Set(
-    hashtags
-      .map((hashtag) => hashtag.replace(/^#/, "").trim())
-      .filter(Boolean)
-      .slice(0, 3),
-  ))
+  const keywords = Array.from(new Set(hashtags.map((hashtag) => hashtag.replace(/^#/, "").trim()).filter(Boolean)))
+  const domain = keywords[0]
+  const roleKeyword = keywords.find((keyword) => /PM|기획|영업|마케팅|개발|디자인/.test(keyword))
+  const role = roleKeyword === "사업기획" ? "사업기획자" : roleKeyword
+  const action = keywords.some((keyword) => /분석|리서치|데이터/.test(keyword)) ? "분석형" : "실행형"
 
-  return keywords.length >= 2 ? keywords.join(" · ") : limitReportText(compressed, 28)
+  if (domain && role) return `${domain} ${action} ${role}`
+  return limitReportText(compressed, 28)
 }
 
 export function splitPersonaForHeroLines(persona: string): string[] {
