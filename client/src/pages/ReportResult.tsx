@@ -13,13 +13,23 @@ import {
 import FeedbackSection from "../components/FeedbackSection"
 import { FreeAnalysisNotice, ReportAccessGate } from "../components/report/ReportAccessGate"
 import { useAuth } from "../contexts/AuthContext"
+import { supabase } from "../lib/supabase"
 import { REPORT_NAV_SECTIONS } from "./reportNavigation"
 import {
     buildEditorialKeywords,
     buildHiringMemoryItems,
     compressPersonaForHero,
+    limitReportText,
     splitPersonaForHeroLines,
+    splitMentorComment,
+    tokenizeCommentKeywords,
 } from "./reportFirstImpression"
+
+const MENTOR_COMMENT_STYLES = [
+    { title: "읽힌 인상", titleClassName: "text-indigo-200", borderClassName: "border-indigo-300/20" },
+    { title: "더 선명해질 지점", titleClassName: "text-amber-200", borderClassName: "border-amber-300/20" },
+    { title: "면접에서 준비할 것", titleClassName: "text-emerald-200", borderClassName: "border-emerald-300/20" },
+]
 
 const FALLBACK_DATA: ReportData = {
     companyInsight: {
@@ -88,6 +98,19 @@ const FALLBACK_DATA: ReportData = {
     pmComment: "데이터를 다루는 스킬과 실행력은 뛰어납니다. 다만, 이 역량이 현대자동차라는 '모빌리티 플랫폼'에서 어떻게 발휘될지에 대한 고민이 10% 부족합니다. 지원 동기 부분을 모빌리티 특화 인사이트로 조금만 더 뾰족하게 다듬어 보세요."
 }
 
+function getFallbackDisplayName(user: { name?: string | null; email?: string | null } | null) {
+    const authName = user?.name?.trim()
+    if (authName) return authName
+
+    const emailName = user?.email?.split("@")[0]?.trim()
+    if (emailName) return emailName
+
+    const storedName = sessionStorage.getItem('passmate_user')?.trim()
+    if (storedName) return storedName
+
+    return "지원자"
+}
+
 // =============================================================================
 // MINI NAVIGATOR
 // =============================================================================
@@ -126,13 +149,18 @@ export default function PassMateReport() {
     // ── query parameter에서 mock 여부 판단 ──
     const searchParams = new URLSearchParams(window.location.search)
     const useMock = searchParams.get('mock') === 'true' || searchParams.get('dummy') === 'true'
+    const requestedAnalysisId = searchParams.get('analysisId') || null
 
     // ── sessionStorage에서 회사명/직무명 복원 (통합 구조 우선) ──
     const storedAnalysis = loadAnalysisFromStorage()
-    const targetCompany = storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "네이버 웹툰"
-    const userName = sessionStorage.getItem('passmate_user') || "김민지"
-    const analysisId = storedAnalysis?.analysis_id || null
-    const analysisKey = analysisId || storedAnalysis?.created_at || "mock-report"
+    const [targetCompany, setTargetCompany] = useState(
+        () => storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "네이버 웹툰"
+    )
+    const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(
+        () => requestedAnalysisId || storedAnalysis?.analysis_id || null
+    )
+    const analysisKey = activeAnalysisId || storedAnalysis?.created_at || "mock-report"
+    const [displayName, setDisplayName] = useState(() => getFallbackDisplayName(user))
 
     const [reportData, setReportData] = useState<ReportData>(() => {
         // mock 모드: 무조건 FALLBACK_DATA 사용
@@ -163,6 +191,81 @@ export default function PassMateReport() {
     const [showOverview, setShowOverview] = useState(true)
     const [showSubtitle, setShowSubtitle] = useState(true)
     const [showNextAnalysisNotice, setShowNextAnalysisNotice] = useState(false)
+
+    useEffect(() => {
+        if (useMock || !requestedAnalysisId) return
+
+        let cancelled = false
+
+        const loadPersistedReport = async () => {
+            try {
+                const response = await fetch(`/api/analysis/${encodeURIComponent(requestedAnalysisId)}`)
+                const payload = await response.json()
+
+                if (cancelled) return
+
+                if (!response.ok) {
+                    throw new Error(payload?.message || payload?.error || "분석 리포트를 불러오지 못했습니다.")
+                }
+
+                if (
+                    !payload?.ai_response_json ||
+                    !Array.isArray(payload.ai_response_json.questionTabs)
+                ) {
+                    throw new Error("저장된 분석 리포트 형식이 올바르지 않습니다.")
+                }
+
+                setReportData(payload.ai_response_json as unknown as ReportData)
+                setActiveAnalysisId(payload.id ?? requestedAnalysisId)
+                if (payload.company_name) {
+                    setTargetCompany(payload.company_name)
+                    sessionStorage.setItem('passmate_company', payload.company_name)
+                }
+            } catch (error) {
+                if (cancelled) return
+                console.warn("[ReportResult] 저장된 분석 리포트 조회 실패:", error)
+                setToastMessage({
+                    type: 'error',
+                    text: error instanceof Error ? error.message : "분석 리포트를 불러오지 못했습니다.",
+                })
+            }
+        }
+
+        loadPersistedReport()
+
+        return () => {
+            cancelled = true
+        }
+    }, [requestedAnalysisId, useMock])
+
+    useEffect(() => {
+        let cancelled = false
+
+        const fallbackName = getFallbackDisplayName(user)
+        setDisplayName(fallbackName)
+
+        if (!user?.id) return
+
+        supabase
+            .from("users")
+            .select("name")
+            .eq("id", user.id)
+            .maybeSingle()
+            .then(({ data, error }) => {
+                if (cancelled) return
+                if (error) {
+                    console.warn("[ReportResult] users.name 조회 실패:", error.message)
+                    return
+                }
+
+                const profileName = data?.name?.trim()
+                if (profileName) setDisplayName(profileName)
+            })
+
+        return () => {
+            cancelled = true
+        }
+    }, [user])
 
     const isLockedFromSection = (sectionIndex: number) =>
         isReportSectionLocked({
@@ -210,25 +313,6 @@ export default function PassMateReport() {
         }
     }, [toastMessage])
 
-    const handleApiTest = async () => {
-        if (useMock) {
-            setToastMessage({ type: 'success', text: "샘플 모드입니다 (API 호출 생략)" })
-            return
-        }
-        try {
-            setToastMessage({ type: 'success', text: UI_LABELS.API_TEST_SENDING })
-            const res = await fetch('/api/test-gemini')
-            const data = await res.json()
-            if (data.ok) {
-                setToastMessage({ type: 'success', text: UI_LABELS.API_TEST_SUCCESS })
-            } else {
-                setToastMessage({ type: 'error', text: UI_LABELS.API_TEST_FAILED + data.error })
-            }
-        } catch (e: any) {
-            setToastMessage({ type: 'error', text: UI_LABELS.API_TEST_NETWORK_ERROR })
-        }
-    }
-
     const handleTabChange = (index: number) => {
         setActiveTab(index)
         setShowOverview(true)
@@ -255,8 +339,15 @@ export default function PassMateReport() {
 
     const taskProgress = Math.round((completedTasks.length / reportData.actionPlan.length) * 100)
     const currentTab = reportData.questionTabs[activeTab]
-    const heroPersona = useMemo(() => compressPersonaForHero(reportData.firstImpression.persona), [reportData.firstImpression.persona])
+    const heroPersona = useMemo(
+        () => limitReportText(compressPersonaForHero(reportData.firstImpression.persona), 28),
+        [reportData.firstImpression.persona]
+    )
     const heroPersonaLines = useMemo(() => splitPersonaForHeroLines(heroPersona), [heroPersona])
+    const heroSummary = useMemo(
+        () => limitReportText(reportData.firstImpression.summaryOneLiner, 42),
+        [reportData.firstImpression.summaryOneLiner]
+    )
     const editorialKeywords = useMemo(
         () => buildEditorialKeywords({
             hashtags: reportData.firstImpression.hashtags,
@@ -271,6 +362,24 @@ export default function PassMateReport() {
         }),
         [reportData.gaps, reportData.strengths]
     )
+    const mentorCommentBlocks = useMemo(
+        () => splitMentorComment(reportData.pmComment),
+        [reportData.pmComment]
+    )
+    const renderMentorCommentText = useCallback((text: string) => {
+        let hasHighlightedKeyword = false
+
+        return tokenizeCommentKeywords(text, editorialKeywords).map((token, index) => {
+            const shouldHighlight = token.highlighted && !hasHighlightedKeyword
+            if (shouldHighlight) hasHighlightedKeyword = true
+
+            return (
+                <span key={`${token.text}-${index}`} className={shouldHighlight ? "text-indigo-200 font-semibold" : undefined}>
+                    {token.text}
+                </span>
+            )
+        })
+    }, [editorialKeywords])
 
     // 원문 텍스트 위치 기준으로 번호 재배정 (위에서부터 1, 2, 3...)
     const cardDisplayNumbers = useMemo(() => {
@@ -343,9 +452,6 @@ export default function PassMateReport() {
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                         <span>{UI_LABELS.BACK}</span>
                     </button>
-                    <button onClick={handleApiTest} className="text-[11px] text-zinc-600 px-3 py-1.5 rounded-lg border border-zinc-800 hover:border-zinc-600 hover:text-zinc-400 transition-all">
-                        {UI_LABELS.API_TEST}
-                    </button>
                 </div>
             </div>
 
@@ -375,7 +481,7 @@ export default function PassMateReport() {
                         </div>
 
                         <div className="relative min-w-0 py-14 text-center sm:py-16 md:py-20">
-                            <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{userName}님은</p>
+                            <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{displayName}님은</p>
                             <h1 className="mx-auto max-w-3xl text-[2.35rem] sm:text-[3.6rem] md:text-[4.7rem] font-semibold leading-[1.02] tracking-tight text-white">
                                 {heroPersonaLines.map((line) => (
                                     <span key={line} className="block">
@@ -384,7 +490,7 @@ export default function PassMateReport() {
                                 ))}
                             </h1>
                             <p className="mx-auto mt-7 max-w-2xl text-[16px] sm:text-xl leading-[1.75] text-zinc-300 text-balance">
-                                {reportData.firstImpression.summaryOneLiner}
+                                {heroSummary}
                             </p>
                         </div>
 
@@ -418,9 +524,19 @@ export default function PassMateReport() {
 
                             <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 md:col-span-2">
                                 <p className="mb-3 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">현직자 한 줄 코멘트</p>
-                                <blockquote className="max-w-3xl text-sm leading-[1.7] text-zinc-300">
-                                    “{reportData.pmComment}”
-                                </blockquote>
+                                <div className="grid gap-4 md:grid-cols-3">
+                                    {mentorCommentBlocks.map((block, index) => {
+                                        const style = MENTOR_COMMENT_STYLES[index]
+                                        if (!style) return null
+
+                                        return (
+                                            <blockquote key={block.title} className={`min-w-0 border-l pl-3 ${style.borderClassName}`}>
+                                                <p className={`mb-1.5 text-xs font-semibold ${style.titleClassName}`}>{style.title}</p>
+                                                <p className="text-sm leading-[1.7] text-zinc-300">{renderMentorCommentText(block.text)}</p>
+                                            </blockquote>
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -572,7 +688,7 @@ export default function PassMateReport() {
                         <div className="doc-header mb-6">
                             <span>{targetCompany}</span>
                             <span className="separator">·</span>
-                            <span>{userName}</span>
+                            <span>{displayName}</span>
                         </div>
 
                         {/* Section Navigator Tabs */}
@@ -916,8 +1032,18 @@ export default function PassMateReport() {
                                 <span className="text-sm font-medium text-white">Mentor Hansi</span>
                                 <span className="text-xs text-zinc-600">{UI_LABELS.JUST_NOW}</span>
                             </div>
-                            <div className="border-l-2 border-indigo-400/20 pl-5">
-                                <p className="text-[17px] text-zinc-200 leading-[1.8] font-normal">{reportData.pmComment}</p>
+                            <div className="space-y-7 border-l-2 border-indigo-400/20 pl-5">
+                                {mentorCommentBlocks.map((block, index) => {
+                                    const style = MENTOR_COMMENT_STYLES[index]
+                                    if (!style) return null
+
+                                    return (
+                                        <section key={block.title} className="min-w-0">
+                                            <p className={`mb-2 text-sm font-semibold ${style.titleClassName}`}>{style.title}</p>
+                                            <p className="text-[17px] text-zinc-200 leading-[1.8] font-normal">{renderMentorCommentText(block.text)}</p>
+                                        </section>
+                                    )
+                                })}
                             </div>
                         </div>
                     </div>
@@ -926,7 +1052,7 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* FEEDBACK SECTION */}
                 {/* ================================================================= */}
-                <FeedbackSection analysisId={analysisId} />
+                <FeedbackSection analysisId={activeAnalysisId} />
 
                 {/* ================================================================= */}
                 {/* PREMIUM UPSELL */}
