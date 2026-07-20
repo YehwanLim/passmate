@@ -47,6 +47,20 @@ export function compressPersonaForHero(persona: string): string {
     .trim()
 }
 
+export function getHeroIdentity(persona: string, hashtags: string[]): string {
+  const compressed = compressPersonaForHero(persona)
+  if (compressed.length <= 28) return compressed
+
+  const keywords = Array.from(new Set(
+    hashtags
+      .map((hashtag) => hashtag.replace(/^#/, "").trim())
+      .filter(Boolean)
+      .slice(0, 3),
+  ))
+
+  return keywords.length >= 2 ? keywords.join(" · ") : limitReportText(compressed, 28)
+}
+
 export function splitPersonaForHeroLines(persona: string): string[] {
   const words = persona.trim().split(/\s+/).filter(Boolean)
   if (words.length <= 2) return [persona.trim()]

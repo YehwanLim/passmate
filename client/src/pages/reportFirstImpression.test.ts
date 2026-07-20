@@ -3,6 +3,7 @@ import {
   buildEditorialKeywords,
   buildHiringMemoryItems,
   compressPersonaForHero,
+  getHeroIdentity,
   limitReportText,
   splitPersonaForHeroLines,
   splitMentorComment,
@@ -16,6 +17,13 @@ describe("report first impression editorial helpers", () => {
 
   it("keeps concise persona copy unchanged", () => {
     expect(compressPersonaForHero("문제 해결형 기획자")).toBe("문제 해결형 기획자")
+  })
+
+  it("uses concrete editorial keywords instead of truncating a legacy persona", () => {
+    expect(getHeroIdentity(
+      "KOTRA 인턴 경험에서 식량 수출입에 대한 흥미를 발견하고, AI 스타트업에서의 신사업 발굴 경험으로 거시적 분석력을 키운 지원자",
+      ["#식량사업", "#시장분석", "#사업기획"],
+    )).toBe("식량사업 · 시장분석 · 사업기획")
   })
 
   it("splits compressed persona copy into balanced hero lines", () => {

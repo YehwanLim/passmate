@@ -18,7 +18,7 @@ import { REPORT_NAV_SECTIONS } from "./reportNavigation"
 import {
     buildEditorialKeywords,
     buildHiringMemoryItems,
-    compressPersonaForHero,
+    getHeroIdentity,
     limitReportText,
     splitPersonaForHeroLines,
     splitMentorComment,
@@ -340,8 +340,8 @@ export default function PassMateReport() {
     const taskProgress = Math.round((completedTasks.length / reportData.actionPlan.length) * 100)
     const currentTab = reportData.questionTabs[activeTab]
     const heroPersona = useMemo(
-        () => limitReportText(compressPersonaForHero(reportData.firstImpression.persona), 28),
-        [reportData.firstImpression.persona]
+        () => getHeroIdentity(reportData.firstImpression.persona, reportData.firstImpression.hashtags),
+        [reportData.firstImpression.hashtags, reportData.firstImpression.persona]
     )
     const heroPersonaLines = useMemo(() => splitPersonaForHeroLines(heroPersona), [heroPersona])
     const heroSummary = useMemo(
