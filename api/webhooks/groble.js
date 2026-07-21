@@ -29,12 +29,14 @@ function createCorrelationId(event) {
 
 function createSafeDiagnostic({ body, code, event }) {
   const data = isRecord(body?.data) ? body.data : null;
+  const dataObject = isRecord(data?.object) ? data.object : null;
 
   return {
     code,
     correlationId: createCorrelationId(event),
     eventKeys: isRecord(body) ? Object.keys(body).sort().slice(0, 20) : [],
     dataKeys: data ? Object.keys(data).sort().slice(0, 30) : [],
+    dataObjectKeys: dataObject ? Object.keys(dataObject).sort().slice(0, 40) : [],
     paymentIdHash: event ? hashIdentifier(event.providerPaymentId) : undefined,
     purchaseIntentIdHash: event ? hashIdentifier(event.purchaseIntentId) : undefined,
   };
