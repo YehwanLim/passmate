@@ -22,7 +22,7 @@
 
 ## File Structure
 
-- `prisma/schema.prisma`: 이용권, 설정, 결제, 분석 예약 모델과 User 관계를 정의한다.
+- `prisma/schema.prisma`: 이용권, 설정, 결제, 구매 준비, 분석 예약 모델과 User 관계를 정의한다.
 - `prisma/migrations/20260721_add_analysis_entitlements/migration.sql`: 운영 DB에 적용할 테이블, 제약, 함수 및 RLS 정책을 생성한다.
 - `lib/auth.js`: Bearer 토큰을 Supabase Auth에 검증해 서버용 사용자 ID를 반환한다.
 - `lib/analysis-entitlements.js`: 설정 조회, 잔여 횟수 계산, 예약/확정/취소, 프리미엄 지급을 Prisma transaction으로 제공한다.
@@ -79,7 +79,7 @@ Expected: FAIL because the entitlement module and Prisma models do not exist.
 
 - [ ] **Step 3: Add database types and migration**
 
-Add Prisma models named `EntitlementSetting`, `AnalysisEntitlement`, `AnalysisReservation`, and `PaymentEntitlement`. Add a unique constraint on `PaymentEntitlement.providerPaymentId`, a unique `userId` on `AnalysisEntitlement`, and User relations. Seed the singleton settings record with `premiumEnabled = false`, `premiumCreditsPerPurchase = 3`, and the supplied Groble URL. The SQL migration must use `INSERT ... ON CONFLICT DO NOTHING` for the singleton setting and indexes for `user_id`, `status`, and `provider_payment_id`.
+Add Prisma models named `EntitlementSetting`, `AnalysisEntitlement`, `AnalysisReservation`, `PurchaseIntent`, and `PaymentEntitlement`. Add a unique constraint on `PaymentEntitlement.providerPaymentId`, a unique `userId` on `AnalysisEntitlement`, and User relations. `PurchaseIntent` owns the authenticated `userId` that a future Groble event must resolve before granting credits. Seed the singleton settings record with `premiumEnabled = false`, `premiumCreditsPerPurchase = 3`, and the supplied Groble URL. The SQL migration must use `INSERT ... ON CONFLICT DO NOTHING` for the singleton setting and indexes for `user_id`, `status`, and `provider_payment_id`.
 
 - [ ] **Step 4: Implement the transactional domain functions**
 
