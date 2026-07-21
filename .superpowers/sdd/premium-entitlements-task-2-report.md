@@ -129,3 +129,27 @@ vite.config.ts(439,24): error TS18046: 'data' is of type 'unknown'.
 
 The Vite error is in the existing `/api/test-gemini` handler, not the Task 2
 middleware. These files were intentionally left unchanged.
+
+## Review Remediation
+
+- Added `api/entitlements/purchase-intents.js` as the Vercel production entry
+  point. It directly re-exports the shared entitlement handler, so the
+  purchase route cannot diverge from `/api/entitlements`.
+- Purchase intent creation now reads `premiumEnabled` with the Groble checkout
+  URL. When sales are disabled, it returns `403`
+  `{ error: "PREMIUM_SALES_DISABLED" }` before creating an intent or returning
+  a checkout URL.
+- Vite forwards every request mounted under `/api/entitlements` to the shared
+  handler. The handler recognizes only the summary and purchase-intent paths,
+  allowing unsupported methods and subpaths to return its JSON `405` response.
+- No Groble correlation parameter was added because its provider payload
+  contract remains unknown. Purchase intent creation still grants no credits.
+
+### Review Tests
+
+```sh
+pnpm exec vitest run api/entitlements.test.js
+```
+
+The focused suite covers the disabled-sales gate, absence of an intent write,
+production-entry delegation, and the unsupported-subpath `405` response.

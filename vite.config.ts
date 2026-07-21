@@ -161,13 +161,8 @@ function vitePluginApi(): Plugin {
     name: "dev-api-server",
     configureServer(server: ViteDevServer) {
       // /api/entitlements and /api/entitlements/purchase-intents
-      server.middlewares.use("/api/entitlements", (req, res, next) => {
+      server.middlewares.use("/api/entitlements", (req, res) => {
         const requestUrl = new URL(req.url ?? "/", "http://localhost");
-        const isSummaryRequest = req.method === "GET" && requestUrl.pathname === "/";
-        const isPurchaseIntentRequest =
-          req.method === "POST" && requestUrl.pathname === "/purchase-intents";
-
-        if (!isSummaryRequest && !isPurchaseIntentRequest) return next();
 
         let body = "";
         req.on("data", (chunk) => {

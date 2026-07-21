@@ -33,6 +33,7 @@ vi.mock("../lib/prisma.js", () => ({
 }));
 
 const { default: entitlementsHandler } = await import("./entitlements.js");
+const { default: purchaseIntentsHandler } = await import("./entitlements/purchase-intents.js");
 const { default: adminEntitlementsHandler } = await import("./admin/entitlements.js");
 
 function createResponse() {
@@ -127,6 +128,11 @@ describe("entitlement APIs", () => {
   });
 
   it("creates a pending purchase intent owned by the verified token user", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      groblePaymentUrl: "https://payments.groble.example/checkout",
+      premiumEnabled: true,
+    });
+
     const response = await invokeEntitlements({
       body: { userId: "22222222-2222-4222-8222-222222222222" },
       method: "POST",
@@ -144,6 +150,28 @@ describe("entitlement APIs", () => {
         userId: mocks.authenticatedUser.id,
       },
     });
+  });
+
+  it("rejects a purchase intent when premium sales are disabled", async () => {
+    const response = await invokeEntitlements({
+      method: "POST",
+      path: "/api/entitlements/purchase-intents",
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.body).toEqual({ error: "PREMIUM_SALES_DISABLED" });
+    expect(mocks.prisma.purchaseIntent.create).not.toHaveBeenCalled();
+  });
+
+  it("delegates the Vercel purchase-intent entry to the entitlement handler", () => {
+    expect(purchaseIntentsHandler).toBe(entitlementsHandler);
+  });
+
+  it("returns the documented JSON 405 for unsupported entitlement subpaths", async () => {
+    const response = await invokeEntitlements({ path: "/api/entitlements/unknown" });
+
+    expect(response.statusCode).toBe(405);
+    expect(response.body).toEqual({ error: "Method Not Allowed" });
   });
 
   it("rejects a non-admin attempt to enable premium", async () => {
