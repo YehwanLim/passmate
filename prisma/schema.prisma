@@ -29,8 +29,111 @@ model User {
   analyses   Analysis[]
   feedbacks  Feedback[]
   apiKey     UserApiKey?
+  analysisEntitlement AnalysisEntitlement?
+  analysisReservations AnalysisReservation[]
+  purchaseIntents PurchaseIntent[]
+  paymentEntitlements PaymentEntitlement[]
 
   @@map("users")
+}
+
+// =============================================================================
+// Analysis entitlements — account-level analysis credits and payment audit data
+// =============================================================================
+enum AnalysisReservationStatus {
+  PENDING
+  CONSUMED
+  CANCELLED
+
+  @@map("analysis_reservation_status")
+}
+
+enum AnalysisReservationSource {
+  FREE
+  PREMIUM
+
+  @@map("analysis_reservation_source")
+}
+
+enum PurchaseIntentStatus {
+  PENDING
+  PAID
+  CANCELLED
+
+  @@map("purchase_intent_status")
+}
+
+model EntitlementSetting {
+  id                        String  @id @default("singleton") @db.VarChar(32)
+  premiumEnabled            Boolean @default(false) @map("premium_enabled")
+  premiumCreditsPerPurchase Int     @default(3) @map("premium_credits_per_purchase")
+  groblePaymentUrl          String  @map("groble_payment_url") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("entitlement_settings")
+}
+
+model AnalysisEntitlement {
+  id                      String @id @default(uuid()) @db.Uuid
+  userId                  String @unique @map("user_id") @db.Uuid
+  premiumCreditsGranted   Int    @default(0) @map("premium_credits_granted")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("analysis_entitlements")
+}
+
+model AnalysisReservation {
+  id     String                    @id @default(uuid()) @db.Uuid
+  userId String                    @map("user_id") @db.Uuid
+  source AnalysisReservationSource
+  status AnalysisReservationStatus @default(PENDING)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  finalizedAt DateTime? @map("finalized_at") @db.Timestamptz
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("analysis_reservations")
+}
+
+model PurchaseIntent {
+  id     String               @id @default(uuid()) @db.Uuid
+  userId String               @map("user_id") @db.Uuid
+  status PurchaseIntentStatus @default(PENDING)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("purchase_intents")
+}
+
+model PaymentEntitlement {
+  id                String @id @default(uuid()) @db.Uuid
+  userId            String @map("user_id") @db.Uuid
+  providerPaymentId String @unique @map("provider_payment_id") @db.VarChar(255)
+  creditsGranted    Int    @map("credits_granted")
+  rawEvent          Json   @map("raw_event")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("payment_entitlements")
 }
 
 // =============================================================================
