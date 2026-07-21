@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import {
   readAiModelSettings,
   writeAiModelSettings,
-} from "../lib/ai-model-settings.js";
+} from "../../lib/ai-model-settings.js";
 
 dotenv.config();
 
@@ -15,8 +15,8 @@ const PROVIDERS = [
   },
   {
     providerKey: "openai",
-    provider: "OpenAI",
-    envKey: "OPENAI_API_KEY",
+    provider: "ChatGPT / OpenAI",
+    envKeys: ["OPENAI_API_KEY", "OPEN_API_KEY"],
     baseUrl: "https://api.openai.com/v1",
   },
   {
@@ -46,6 +46,15 @@ const OPENAI_RECOMMENDED_MODELS = [
   "gpt-5.6-luna",
 ];
 
+function getEnvValue(envKeyOrKeys) {
+  const envKeys = Array.isArray(envKeyOrKeys) ? envKeyOrKeys : [envKeyOrKeys];
+  return envKeys.map((envKey) => process.env[envKey]).find(Boolean);
+}
+
+function getOpenAiApiKey() {
+  return getEnvValue(["OPENAI_API_KEY", "OPEN_API_KEY"]);
+}
+
 function maskKey(value) {
   if (!value) return "Not configured";
   if (value.length <= 12) return `${value.slice(0, 3)}****`;
@@ -54,9 +63,10 @@ function maskKey(value) {
 
 function getProviderConfig() {
   return PROVIDERS.map((provider) => {
-    const apiKey = process.env[provider.envKey];
+    const apiKey = getEnvValue(provider.envKeys ?? provider.envKey);
     return {
       ...provider,
+      envKey: Array.isArray(provider.envKeys) ? provider.envKeys[0] : provider.envKey,
       hasApiKey: Boolean(apiKey),
       apiKeyMasked: maskKey(apiKey),
     };
@@ -76,12 +86,12 @@ function getConfiguredModels() {
       });
     });
   }
-  if (process.env.OPENAI_API_KEY) {
+  if (getOpenAiApiKey()) {
     const uniqueModelNames = Array.from(new Set(OPENAI_RECOMMENDED_MODELS));
     uniqueModelNames.forEach((modelName) => {
       models.push({
         providerKey: "openai",
-        provider: "OpenAI",
+        provider: "ChatGPT / OpenAI",
         modelName,
         baseUrl: "https://api.openai.com/v1",
         source: "server_config",
@@ -89,6 +99,17 @@ function getConfiguredModels() {
     });
   }
   return models;
+}
+
+function normalizeProviderKey(providerKey) {
+  const value = String(providerKey ?? "").toLowerCase();
+  if (value === "google") return "gemini";
+  if (value === "chatgpt") return "openai";
+  return value;
+}
+
+function getModelKey(providerKey, modelName) {
+  return `${normalizeProviderKey(providerKey)}:${modelName}`;
 }
 
 export function filterRecommendedModels(models) {
@@ -102,6 +123,20 @@ export function filterRecommendedModels(models) {
     const allowedModels = allowedByProvider.get(providerKey);
     return allowedModels?.has(model.modelName);
   });
+}
+
+function uniqueModels(models) {
+  const byKey = new Map();
+  models.forEach((model) => {
+    if (!model?.providerKey || !model?.modelName) return;
+    const providerKey = normalizeProviderKey(model.providerKey);
+    const modelName = String(model.modelName);
+    byKey.set(getModelKey(providerKey, modelName), {
+      providerKey,
+      modelName,
+    });
+  });
+  return Array.from(byKey.values());
 }
 
 async function listGeminiModels() {
@@ -135,7 +170,7 @@ async function listGeminiModels() {
 }
 
 async function listOpenAiModels() {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = getOpenAiApiKey();
   if (!apiKey) return [];
 
   const response = await fetch("https://api.openai.com/v1/models", {
@@ -153,7 +188,7 @@ async function listOpenAiModels() {
     .filter((modelName) => /^gpt-|^o\d|^chatgpt-/i.test(modelName))
     .map((modelName) => ({
       providerKey: "openai",
-      provider: "OpenAI",
+      provider: "ChatGPT / OpenAI",
       modelName,
       displayName: modelName,
       description: "",
@@ -206,9 +241,9 @@ function getOpenAiResponseText(data) {
 }
 
 async function testOpenAi(modelName) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = getOpenAiApiKey();
   if (!apiKey) {
-    return { status: "failed", responseTimeMs: 0, message: "OPENAI_API_KEY is not configured." };
+    return { status: "failed", responseTimeMs: 0, message: "OPENAI_API_KEY or OPEN_API_KEY is not configured." };
   }
 
   const startedAt = Date.now();
@@ -244,6 +279,49 @@ async function testOpenAi(modelName) {
   };
 }
 
+async function testModelConnection(providerKey, modelName) {
+  const normalizedProvider = normalizeProviderKey(providerKey);
+  if (normalizedProvider === "gemini") {
+    return testGemini(modelName);
+  }
+  if (normalizedProvider === "openai") {
+    return testOpenAi(modelName);
+  }
+
+  const provider = getProviderConfig().find((item) => item.providerKey === normalizedProvider);
+  return {
+    status: provider?.hasApiKey ? "success" : "failed",
+    responseTimeMs: 0,
+    message: provider?.hasApiKey
+      ? "API key is configured. Live test adapter is not implemented for this provider yet."
+      : "API key is not configured.",
+  };
+}
+
+async function getLiveModelStatuses(models) {
+  const checkedAt = new Date().toISOString();
+  const candidates = uniqueModels(filterRecommendedModels(models));
+  const results = await Promise.allSettled(
+    candidates.map(async (model) => ({
+      ...model,
+      ...(await testModelConnection(model.providerKey, model.modelName)),
+      checkedAt,
+    }))
+  );
+
+  return results.map((result, index) => {
+    if (result.status === "fulfilled") return result.value;
+    const model = candidates[index];
+    return {
+      ...model,
+      status: "failed",
+      responseTimeMs: 0,
+      message: result.reason?.message ?? "Live connection test failed.",
+      checkedAt,
+    };
+  });
+}
+
 async function listAvailableModels() {
   const results = await Promise.allSettled([listGeminiModels(), listOpenAiModels()]);
   return results.flatMap((result) => {
@@ -256,11 +334,17 @@ async function listAvailableModels() {
 export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
+      const configuredModels = getConfiguredModels();
+      const availableModels = await listAvailableModels();
       return res.status(200).json({
         providers: getProviderConfig(),
         settings: readAiModelSettings(),
-        configuredModels: getConfiguredModels(),
-        availableModels: await listAvailableModels(),
+        configuredModels,
+        availableModels,
+        liveStatuses: await getLiveModelStatuses([
+          ...configuredModels,
+          ...availableModels,
+        ]),
       });
     }
 
@@ -284,21 +368,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "providerKey and modelName are required." });
       }
 
-      if (providerKey === "gemini" || providerKey === "google") {
-        return res.status(200).json(await testGemini(modelName));
-      }
-      if (providerKey === "openai") {
-        return res.status(200).json(await testOpenAi(modelName));
-      }
-
-      const provider = getProviderConfig().find((item) => item.providerKey === providerKey);
-      return res.status(200).json({
-        status: provider?.hasApiKey ? "success" : "failed",
-        responseTimeMs: 0,
-        message: provider?.hasApiKey
-          ? "API key is configured. Live test adapter is not implemented for this provider yet."
-          : "API key is not configured.",
-      });
+      return res.status(200).json(await testModelConnection(providerKey, modelName));
     }
 
     return res.status(405).json({ error: "Method Not Allowed" });

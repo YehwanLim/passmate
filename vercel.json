@@ -1,6 +1,7 @@
 {
   "outputDirectory": "dist/public",
   "rewrites": [
+    { "source": "/api/entitlements/purchase-intents", "destination": "/api/entitlements?purchaseIntent=1" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

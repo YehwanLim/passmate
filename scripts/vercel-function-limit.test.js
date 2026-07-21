@@ -8,7 +8,7 @@ function collectFunctionFiles(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {
-      return entry.name === "lib" ? [] : collectFunctionFiles(path);
+      return collectFunctionFiles(path);
     }
     return entry.name.endsWith(".js") && !entry.name.endsWith(".test.js")
       ? [relative(API_ROOT, path)]
@@ -20,6 +20,6 @@ describe("Vercel Hobby serverless function limit", () => {
   it("keeps deployed API files within the 12-function Hobby limit", () => {
     const apiFiles = collectFunctionFiles(API_ROOT);
 
-    expect(apiFiles).toHaveLength(12);
+    expect(apiFiles).toHaveLength(11);
   });
 });

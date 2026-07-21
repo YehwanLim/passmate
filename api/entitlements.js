@@ -9,8 +9,11 @@ function isEntitlementsPath(url) {
   return pathname === "/" || pathname === "/api/entitlements";
 }
 
-function isPurchaseIntentPath(url) {
-  const pathname = new URL(url ?? "/", "http://localhost").pathname;
+function isPurchaseIntentPath(req) {
+  if (req.query?.purchaseIntent === "1") {
+    return true;
+  }
+  const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
   return pathname === "/purchase-intents" || pathname === "/api/entitlements/purchase-intents";
 }
 
@@ -77,7 +80,7 @@ export default async function handler(req, res) {
       return getEntitlements(req, res, user);
     }
 
-    if (req.method === "POST" && isPurchaseIntentPath(req.url)) {
+    if (req.method === "POST" && isPurchaseIntentPath(req)) {
       return createPurchaseIntent(req, res, user);
     }
 

@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { getActiveModel } from "./lib/ai-model-settings.js";
+import { getActiveModel } from "../lib/ai-model-settings.js";
 import { MASTER_SYSTEM_PROMPT } from "../shared/prompts/reportPrompt.js";
 
 dotenv.config();
@@ -35,6 +35,7 @@ async function callGeminiOnce(userPrompt, apiKey, modelName) {
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 55000);
+  const startedAt = Date.now();
 
   const apiRes = await fetch(url, {
     method: "POST",
@@ -48,6 +49,7 @@ async function callGeminiOnce(userPrompt, apiKey, modelName) {
   });
 
   clearTimeout(timeout);
+  const responseTimeMs = Date.now() - startedAt;
 
   if (!apiRes.ok) {
     const errorText = await apiRes.text();
@@ -58,6 +60,7 @@ async function callGeminiOnce(userPrompt, apiKey, modelName) {
 
   const data = await apiRes.json();
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const usage = data.usageMetadata ?? {};
 
   if (!rawText) {
     throw new Error("Gemini 응답이 비어 있습니다.");
@@ -68,7 +71,19 @@ async function callGeminiOnce(userPrompt, apiKey, modelName) {
     throw new Error("Gemini 응답 JSON 파싱 실패");
   }
 
-  return parsed;
+  return {
+    parsed,
+    responseTimeMs,
+    httpStatus: apiRes.status,
+    tokenUsage: {
+      promptTokens: Number(usage.promptTokenCount ?? 0),
+      completionTokens: Number(usage.candidatesTokenCount ?? 0),
+      totalTokens: Number(
+        usage.totalTokenCount ??
+          (Number(usage.promptTokenCount ?? 0) + Number(usage.candidatesTokenCount ?? 0))
+      ),
+    },
+  };
 }
 
 function getOpenAiResponseText(data) {
@@ -83,6 +98,7 @@ function getOpenAiResponseText(data) {
 async function callOpenAiOnce(userPrompt, apiKey, modelName) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 55000);
+  const startedAt = Date.now();
 
   const apiRes = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -98,6 +114,7 @@ async function callOpenAiOnce(userPrompt, apiKey, modelName) {
   });
 
   clearTimeout(timeout);
+  const responseTimeMs = Date.now() - startedAt;
 
   if (!apiRes.ok) {
     const errorText = await apiRes.text();
@@ -108,6 +125,7 @@ async function callOpenAiOnce(userPrompt, apiKey, modelName) {
 
   const data = await apiRes.json();
   const rawText = getOpenAiResponseText(data);
+  const usage = data.usage ?? {};
 
   if (!rawText) {
     throw new Error("OpenAI 응답이 비어 있습니다.");
@@ -118,14 +136,26 @@ async function callOpenAiOnce(userPrompt, apiKey, modelName) {
     throw new Error("OpenAI 응답 JSON 파싱 실패");
   }
 
-  return parsed;
+  return {
+    parsed,
+    responseTimeMs,
+    httpStatus: apiRes.status,
+    tokenUsage: {
+      promptTokens: Number(usage.input_tokens ?? 0),
+      completionTokens: Number(usage.output_tokens ?? 0),
+      totalTokens: Number(
+        usage.total_tokens ??
+          (Number(usage.input_tokens ?? 0) + Number(usage.output_tokens ?? 0))
+      ),
+    },
+  };
 }
 
 function getActiveApiKey(activeModel) {
   if (activeModel.providerKey === "openai") {
     return {
-      apiKey: process.env.OPENAI_API_KEY,
-      envKey: "OPENAI_API_KEY",
+      apiKey: process.env.OPENAI_API_KEY || process.env.OPEN_API_KEY,
+      envKey: "OPENAI_API_KEY 또는 OPEN_API_KEY",
     };
   }
 
@@ -175,7 +205,8 @@ async function analyzeCoverLetter(input) {
         await sleep(delay);
       }
 
-      const parsed = await callActiveModelOnce(userPrompt, activeModel, apiKey);
+      const modelResult = await callActiveModelOnce(userPrompt, activeModel, apiKey);
+      const parsed = modelResult.parsed;
 
       // 문맥 이탈 감지: AI가 CONTEXT_IRRELEVANT 에러 반환한 경우
       if (parsed.error === "CONTEXT_IRRELEVANT") {
@@ -193,7 +224,16 @@ async function analyzeCoverLetter(input) {
       }
 
       console.log(`[analyze] ✅ ${activeModel.providerKey}/${activeModel.modelName} 응답 파싱 성공 (시도 ${attempt + 1})`);
-      return parsed;
+      return {
+        ...parsed,
+        analysisMeta: {
+          modelProvider: activeModel.providerKey,
+          modelName: activeModel.modelName,
+          responseTimeMs: modelResult.responseTimeMs,
+          httpStatus: modelResult.httpStatus,
+          tokenUsage: modelResult.tokenUsage,
+        },
+      };
     } catch (error) {
       lastError = error;
       console.error(`[analyze] 시도 ${attempt + 1} 실패:`, error.message);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getActiveModel } from "../../../api/lib/ai-model-settings.js";
+import { getActiveModel } from "../../../lib/ai-model-settings.js";
 
 describe("getActiveModel", () => {
   it("returns the configured provider and model together", () => {
