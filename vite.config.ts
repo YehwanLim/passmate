@@ -160,6 +160,62 @@ function vitePluginApi(): Plugin {
   return {
     name: "dev-api-server",
     configureServer(server: ViteDevServer) {
+      // /api/webhooks/groble — provider test sends must reach the Vercel handler locally too.
+      server.middlewares.use("/api/webhooks/groble", (req, res, next) => {
+        if (req.method !== "POST") return next();
+
+        const requestUrl = new URL(req.url ?? "/", "http://localhost");
+        if (requestUrl.pathname !== "/") return next();
+
+        let rawBody = "";
+        req.on("data", (chunk) => {
+          rawBody += chunk.toString();
+        });
+
+        req.on("end", async () => {
+          try {
+            let body: unknown = null;
+            try {
+              body = rawBody ? JSON.parse(rawBody) : null;
+            } catch {
+              // Let the webhook handler return its documented malformed-payload response.
+            }
+
+            const handlerUrl = pathToFileURL(
+              path.join(PROJECT_ROOT, "api", "webhooks", "groble.js"),
+            ).href;
+            const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+            const response = {
+              status(code: number) {
+                res.statusCode = code;
+                return this;
+              },
+              json(payload: unknown) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(payload));
+              },
+              end() {
+                res.end();
+              },
+            };
+
+            await handler(
+              {
+                body,
+                headers: req.headers,
+                method: req.method,
+                url: requestUrl.pathname,
+              },
+              response,
+            );
+          } catch (error) {
+            console.error("[api/webhooks/groble] failed:", error);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Unable to process Groble webhook" }));
+          }
+        });
+      });
+
       // /api/entitlements and /api/entitlements/purchase-intents
       server.middlewares.use("/api/entitlements", (req, res) => {
         const requestUrl = new URL(req.url ?? "/", "http://localhost");
