@@ -36,6 +36,7 @@ function createSafeDiagnostic({ body, code, event }) {
   return {
     code,
     correlationId: createCorrelationId(event),
+    eventType: typeof body?.type === "string" ? body.type : undefined,
     eventKeys: isRecord(body) ? Object.keys(body).sort().slice(0, 20) : [],
     dataKeys: data ? Object.keys(data).sort().slice(0, 30) : [],
     dataObjectKeys: dataObject ? Object.keys(dataObject).sort().slice(0, 40) : [],

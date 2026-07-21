@@ -116,6 +116,7 @@ describe("Groble webhook", () => {
         },
       },
       event: "일반결제 완료",
+      type: "payment.completed",
     };
 
     await expect(parseGroblePaidEvent(payload, {})).resolves.toBeNull();
@@ -131,6 +132,7 @@ describe("Groble webhook", () => {
         dataKeys: ["object"],
         buyerKeys: ["email", "name"],
         dataObjectKeys: ["buyer", "payment"],
+        eventType: "payment.completed",
         paymentKeys: ["id", "status"],
       }),
     );
