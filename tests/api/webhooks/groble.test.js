@@ -109,9 +109,11 @@ describe("Groble webhook", () => {
 
   it("does not infer a paid event from plausible unknown Groble fields", async () => {
     const payload = {
+      data: {
+        paymentId: "groble-100",
+        purchaseIntentId: "11111111-1111-4111-8111-111111111111",
+      },
       event: "일반결제 완료",
-      paymentId: "groble-100",
-      purchaseIntentId: "11111111-1111-4111-8111-111111111111",
     };
 
     await expect(parseGroblePaidEvent(payload, {})).resolves.toBeNull();
@@ -121,6 +123,10 @@ describe("Groble webhook", () => {
     });
 
     expect(response.statusCode).toBe(204);
+    expect(mocks.logger).toHaveBeenCalledWith(
+      "[api/webhooks/groble] ignored event",
+      expect.objectContaining({ dataKeys: ["paymentId", "purchaseIntentId"] }),
+    );
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
     expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
   });
