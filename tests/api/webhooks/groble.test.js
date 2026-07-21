@@ -111,8 +111,8 @@ describe("Groble webhook", () => {
     const payload = {
       data: {
         object: {
-          paymentId: "groble-100",
-          purchaseIntentId: "11111111-1111-4111-8111-111111111111",
+          buyer: { email: "buyer@example.com", name: "Buyer" },
+          payment: { id: "groble-100", status: "paid" },
         },
       },
       event: "일반결제 완료",
@@ -129,7 +129,9 @@ describe("Groble webhook", () => {
       "[api/webhooks/groble] ignored event",
       expect.objectContaining({
         dataKeys: ["object"],
-        dataObjectKeys: ["paymentId", "purchaseIntentId"],
+        buyerKeys: ["email", "name"],
+        dataObjectKeys: ["buyer", "payment"],
+        paymentKeys: ["id", "status"],
       }),
     );
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
