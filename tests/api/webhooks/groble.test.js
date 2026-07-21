@@ -12,15 +12,15 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../../lib/analysis-entitlements.js", () => ({
+vi.mock("../../../lib/analysis-entitlements.js", () => ({
   grantGroblePurchase: mocks.grantGroblePurchase,
 }));
 
-vi.mock("../../lib/prisma.js", () => ({
+vi.mock("../../../lib/prisma.js", () => ({
   default: mocks.prisma,
 }));
 
-const { createGrobleWebhookHandler, parseGroblePaidEvent } = await import("./groble.js");
+const { createGrobleWebhookHandler, parseGroblePaidEvent } = await import("../../../api/webhooks/groble.js");
 
 function createResponse() {
   return {

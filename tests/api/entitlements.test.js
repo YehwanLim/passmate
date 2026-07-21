@@ -20,21 +20,21 @@ const mocks = vi.hoisted(() => ({
   transaction: {},
 }));
 
-vi.mock("../lib/analysis-entitlements.js", () => ({
+vi.mock("../../lib/analysis-entitlements.js", () => ({
   getEntitlementSummary: mocks.getEntitlementSummary,
 }));
 
-vi.mock("../lib/auth.js", () => ({
+vi.mock("../../lib/auth.js", () => ({
   requireAuthenticatedUser: mocks.requireAuthenticatedUser,
 }));
 
-vi.mock("../lib/prisma.js", () => ({
+vi.mock("../../lib/prisma.js", () => ({
   default: mocks.prisma,
 }));
 
-const { default: entitlementsHandler } = await import("./entitlements.js");
-const { default: purchaseIntentsHandler } = await import("./entitlements/purchase-intents.js");
-const { default: adminEntitlementsHandler } = await import("./admin/entitlements.js");
+const { default: entitlementsHandler } = await import("../../api/entitlements.js");
+const { default: purchaseIntentsHandler } = await import("../../api/entitlements/purchase-intents.js");
+const { default: adminEntitlementsHandler } = await import("../../api/admin/entitlements.js");
 
 function createResponse() {
   return {

@@ -3,7 +3,7 @@
 // node --env-file=.env api/_test-my-apis.js
 // =============================================================================
 
-import prisma from "../lib/prisma.js";
+import prisma from "../../lib/prisma.js";
 
 // ── extractSummary (projects.js와 동일 로직) ──
 function extractSummary(aiResponseJson) {

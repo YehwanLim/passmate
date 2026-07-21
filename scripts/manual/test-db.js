@@ -3,7 +3,7 @@
 // GET /api/test-db → User, Project, Analysis + TokenUsage 생성 & 조회
 // =============================================================================
 
-import prisma from "../lib/prisma.js";
+import prisma from "../../lib/prisma.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
