@@ -14,6 +14,7 @@ import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 // =============================================================================
 
 const PROJECT_ROOT = import.meta.dirname;
+const IS_VITEST = process.env.VITEST === "true";
 const LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
 const MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024; // 1MB per log file
 const TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6); // Trim to 60% to avoid constant re-trimming
@@ -159,6 +160,96 @@ function vitePluginApi(): Plugin {
   return {
     name: "dev-api-server",
     configureServer(server: ViteDevServer) {
+      // /api/entitlements and /api/entitlements/purchase-intents
+      server.middlewares.use("/api/entitlements", (req, res, next) => {
+        const requestUrl = new URL(req.url ?? "/", "http://localhost");
+        const isSummaryRequest = req.method === "GET" && requestUrl.pathname === "/";
+        const isPurchaseIntentRequest =
+          req.method === "POST" && requestUrl.pathname === "/purchase-intents";
+
+        if (!isSummaryRequest && !isPurchaseIntentRequest) return next();
+
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk.toString();
+        });
+
+        req.on("end", async () => {
+          try {
+            const handlerUrl = pathToFileURL(
+              path.join(PROJECT_ROOT, "api", "entitlements.js")
+            ).href;
+            const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+            const request = {
+              body: body ? JSON.parse(body) : undefined,
+              headers: req.headers,
+              method: req.method,
+              url: requestUrl.pathname,
+            };
+            const response = {
+              status(code: number) {
+                res.statusCode = code;
+                return this;
+              },
+              json(payload: unknown) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(payload));
+              },
+            };
+
+            await handler(request, response);
+          } catch (e: any) {
+            console.error("[api/entitlements] failed:", e);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+          }
+        });
+      });
+
+      // /api/admin/entitlements
+      server.middlewares.use("/api/admin/entitlements", (req, res, next) => {
+        if (req.method !== "GET" && req.method !== "PATCH") return next();
+
+        const requestUrl = new URL(req.url ?? "/", "http://localhost");
+        if (requestUrl.pathname !== "/") return next();
+
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk.toString();
+        });
+
+        req.on("end", async () => {
+          try {
+            const handlerUrl = pathToFileURL(
+              path.join(PROJECT_ROOT, "api", "admin", "entitlements.js")
+            ).href;
+            const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+            const request = {
+              body: body ? JSON.parse(body) : undefined,
+              headers: req.headers,
+              method: req.method,
+              url: requestUrl.pathname,
+            };
+            const response = {
+              status(code: number) {
+                res.statusCode = code;
+                return this;
+              },
+              json(payload: unknown) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(payload));
+              },
+            };
+
+            await handler(request, response);
+          } catch (e: any) {
+            console.error("[api/admin/entitlements] failed:", e);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+          }
+        });
+      });
+
       // /api/admin/ai-models — 관리자 AI 모델 현황
       server.middlewares.use("/api/admin/ai-models", (req, res, next) => {
         if (req.method !== "GET" && req.method !== "POST") return next();
@@ -289,7 +380,7 @@ export default defineConfig({
     },
   },
   envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
+  root: IS_VITEST ? PROJECT_ROOT : path.resolve(import.meta.dirname, "client"),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
