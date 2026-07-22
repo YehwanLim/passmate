@@ -16,6 +16,7 @@ export type HiringMemoryItem = {
 const MIN_KEYWORDS = 4
 const MAX_KEYWORDS = 6
 const MENTOR_COMMENT_TITLES = ["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"]
+const BLAND_PERSONA_PATTERN = /^(분석가이자\s*기획자|기획자이자\s*분석가|분석형\s*기획자|전략형\s*기획자|실행형\s*기획자)$/
 
 export type MentorCommentBlock = {
   title: string
@@ -25,6 +26,11 @@ export type MentorCommentBlock = {
 export type CommentKeywordToken = {
   text: string
   highlighted: boolean
+}
+
+export type HighlightedTextSegment = {
+  text: string
+  kind: "text" | "bold"
 }
 
 export function compressPersonaForHero(persona: string): string {
@@ -47,18 +53,54 @@ export function compressPersonaForHero(persona: string): string {
     .trim()
 }
 
+function normalizeHashtagKeywords(hashtags: string[]): string[] {
+  return Array.from(new Set(hashtags.map((hashtag) => hashtag.replace(/^#/, "").trim()).filter(Boolean)))
+}
+
+function getDisplayRole(keyword?: string): string | undefined {
+  if (!keyword) return undefined
+  if (keyword === "마케팅") return "마케터"
+  if (keyword === "사업기획") return "사업기획자"
+  if (keyword === "신사업개발") return "사업개발자"
+  return keyword
+}
+
+function buildCharacterIdentity(keywords: string[]): string | undefined {
+  const domain = keywords.find((keyword) => !/PM|기획|영업|마케팅|개발|디자인|분석|리서치|데이터|시장신호/.test(keyword))
+    ?? keywords[0]
+  const role = getDisplayRole(keywords.find((keyword) => /PM|기획|영업|마케팅|개발|디자인/.test(keyword)))
+
+  if (!domain || !role) return undefined
+
+  if (keywords.some((keyword) => /시장신호|시장\s*신호/.test(keyword))) {
+    return `${domain} 시장 신호를 읽는 ${role}`
+  }
+
+  if (keywords.some((keyword) => /고객|유저|사용자/.test(keyword))) {
+    return `${domain} 고객 반응을 읽는 ${role}`
+  }
+
+  if (keywords.some((keyword) => /분석|리서치|데이터/.test(keyword))) {
+    return `${domain} 데이터를 기회로 읽는 ${role}`
+  }
+
+  return `${domain}의 힌트를 줍는 ${role}`
+}
+
 export function getHeroIdentity(persona: string, hashtags: string[]): string {
   const compressed = compressPersonaForHero(persona)
+  const keywords = normalizeHashtagKeywords(hashtags)
+
+  if (BLAND_PERSONA_PATTERN.test(compressed.replace(/\s+/g, " ").trim())) {
+    const characterIdentity = buildCharacterIdentity(keywords)
+    if (characterIdentity) return characterIdentity
+  }
+
   if (compressed.length <= 28) return compressed
 
-  const keywords = Array.from(new Set(hashtags.map((hashtag) => hashtag.replace(/^#/, "").trim()).filter(Boolean)))
   const domain = keywords[0]
   const roleKeyword = keywords.find((keyword) => /PM|기획|영업|마케팅|개발|디자인/.test(keyword))
-  const role = roleKeyword === "사업기획"
-    ? "사업기획자"
-    : roleKeyword === "신사업개발"
-      ? "사업개발자"
-      : roleKeyword
+  const role = getDisplayRole(roleKeyword)
   const action = keywords.some((keyword) => /신사업|기회발굴/.test(keyword))
     ? "기회발굴형"
     : keywords.some((keyword) => /분석|리서치|데이터/.test(keyword))
@@ -77,12 +119,37 @@ export function getHeroSummary(summary: string, hashtags: string[]): string {
   return domain ? `${domain}의 성장 기회를 사업으로 연결하려는 지원자` : limitReportText(normalized, 42)
 }
 
+export function emphasizeHeroSummaryCopy(summary: string): string {
+  const trimmed = summary.trim()
+  if (!trimmed || trimmed.includes("**")) return summary
+
+  const patterns = [
+    /(성과를 만드는\s+[^\s.!?。]+(?:\s+[^\s.!?。]+){0,2})$/,
+    /(전략(?:으로|에)\s*(?:연결|엮어)[^.!?。]{0,18})$/,
+    /((?:기획형|전략형|분석형|실행형)\s*(?:마케터|기획자|지원자))$/,
+    /([^\s.!?。]{2,12}(?:마케터|기획자))$/,
+  ]
+
+  for (const pattern of patterns) {
+    const match = trimmed.match(pattern)
+    if (match?.[1] && match.index !== undefined && match.index > 0) {
+      return `${trimmed.slice(0, match.index)}**${match[1]}**`
+    }
+  }
+
+  return summary
+}
+
 export function splitPersonaForHeroLines(persona: string): string[] {
   const words = persona.trim().split(/\s+/).filter(Boolean)
   if (words.length <= 2) return [persona.trim()]
 
-  const midpoint = Math.ceil(words.length / 2)
-  return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")]
+  if (words.length >= 4) {
+    const splitIndex = Math.floor(words.length / 2)
+    return [words.slice(0, splitIndex).join(" "), words.slice(splitIndex).join(" ")]
+  }
+
+  return [words.slice(0, 2).join(" "), words.slice(2).join(" ")]
 }
 
 export function buildEditorialKeywords({ hashtags, talentKeywords }: KeywordInput): string[] {
@@ -198,4 +265,141 @@ export function tokenizeCommentKeywords(text: string, keywords: string[]): Comme
 
   if (cursor < text.length) tokens.push({ text: text.slice(cursor), highlighted: false })
   return tokens
+}
+
+export function parseHighlightedText(text: string): HighlightedTextSegment[] {
+  const sanitizedText = text
+    .replace(/<span\b[^>]*>/gi, "")
+    .replace(/<\/span>/gi, "")
+    .replace(/<[^>]*>/g, "")
+  const plainParts: string[] = []
+  const boldSelections: Array<{ start: number; end: number }> = []
+  let cursor = 0
+
+  const shouldPreserveExplicitBold = (value: string) => {
+    const normalized = value.trim()
+    if (!normalized) return false
+
+    return true
+  }
+
+  const appendPlain = (value: string) => {
+    if (!value) return
+    plainParts.push(value)
+  }
+
+  const getPlainLength = () => plainParts.reduce((sum, part) => sum + part.length, 0)
+
+  while (cursor < sanitizedText.length) {
+    if (sanitizedText.startsWith("**", cursor)) {
+      const contentStart = cursor + 2
+      const contentEnd = sanitizedText.indexOf("**", contentStart)
+      if (contentEnd !== -1) {
+        const boldText = sanitizedText.slice(contentStart, contentEnd)
+        const start = getPlainLength()
+        appendPlain(boldText)
+        const end = getPlainLength()
+        if (shouldPreserveExplicitBold(boldText)) {
+          boldSelections.push({ start, end })
+        }
+        cursor = contentEnd + 2
+        continue
+      }
+    }
+
+    const nextBold = sanitizedText.indexOf("**", cursor + 1)
+    const nextMarker = nextBold !== -1 ? nextBold : sanitizedText.length
+    appendPlain(sanitizedText.slice(cursor, nextMarker))
+    cursor = nextMarker
+  }
+
+  const plainText = plainParts.join("")
+  const emphasisRanges = boldSelections
+    .map((selection) => expandSelectionToSentence(plainText, selection))
+    .sort((left, right) => left.start - right.start)
+    .reduce<Array<{ start: number; end: number }>>((ranges, range) => {
+      if (range.start === range.end) return ranges
+      const previous = ranges[ranges.length - 1]
+      if (previous && range.start <= previous.end) {
+        previous.end = Math.max(previous.end, range.end)
+        return ranges
+      }
+      ranges.push(range)
+      return ranges
+    }, [])
+
+  const segments: HighlightedTextSegment[] = []
+  const pushText = (value: string, kind: HighlightedTextSegment["kind"] = "text") => {
+    if (!value) return
+    const last = segments[segments.length - 1]
+    if (last?.kind === kind) {
+      last.text += value
+      return
+    }
+    segments.push({ text: value, kind })
+  }
+
+  let segmentCursor = 0
+  for (const range of emphasisRanges) {
+    if (range.start > segmentCursor) pushText(plainText.slice(segmentCursor, range.start))
+    pushText(plainText.slice(range.start, range.end), "bold")
+    segmentCursor = range.end
+  }
+
+  if (segmentCursor < plainText.length) pushText(plainText.slice(segmentCursor))
+
+  return segments
+}
+
+export function limitSectionHighlights(texts: string[]): HighlightedTextSegment[][] {
+  const parsedSections = texts.map((text) => parseHighlightedText(text))
+  const sentenceCount = parsedSections.reduce(
+    (total, segments) => total + getSentenceRanges(segments.map((segment) => segment.text).join("")).length,
+    0,
+  )
+  let remainingHighlights = Math.floor(sentenceCount * 0.2)
+
+  return parsedSections.map((segments) => segments.map((segment) => {
+    if (segment.kind !== "bold") return segment
+    if (remainingHighlights <= 0) return { ...segment, kind: "text" as const }
+
+    remainingHighlights -= 1
+    return segment
+  }))
+}
+
+function expandSelectionToSentence(text: string, selection: { start: number; end: number }) {
+  const matchingSentences = getSentenceRanges(text)
+    .filter((sentence) => sentence.start < selection.end && sentence.end > selection.start)
+
+  // A legacy response can wrap a whole paragraph in **...**. Keep its concluding sentence only.
+  return matchingSentences[matchingSentences.length - 1] ?? trimRangeWhitespace(text, selection)
+}
+
+function getSentenceRanges(text: string) {
+  const ranges: Array<{ start: number; end: number }> = []
+  let start = 0
+
+  for (let index = 0; index < text.length; index += 1) {
+    if (!/[.!?。]/.test(text[index])) continue
+
+    const range = trimRangeWhitespace(text, { start, end: index + 1 })
+    if (range.start < range.end) ranges.push(range)
+    start = index + 1
+  }
+
+  const trailingRange = trimRangeWhitespace(text, { start, end: text.length })
+  if (trailingRange.start < trailingRange.end) ranges.push(trailingRange)
+
+  return ranges
+}
+
+function trimRangeWhitespace(text: string, range: { start: number; end: number }) {
+  let start = range.start
+  let end = range.end
+
+  while (start < end && /\s/.test(text[start])) start += 1
+  while (end > start && /\s/.test(text[end - 1])) end -= 1
+
+  return { start, end }
 }

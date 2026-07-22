@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { MOCK_ADMIN_ANALYSIS_ROWS } from "./mockResumeAnalysis";
 
 // ============================================================
 // 타입
@@ -8,8 +8,7 @@ import { supabase } from "@/lib/supabase";
 export type AnalysisStatus = "ALL" | "PENDING" | "SUCCESS" | "FAILED";
 export type AnalysisSortField =
   | "created_at"
-  | "response_time_ms"
-  | "ai_score";
+  | "response_time_ms";
 export type SortDir = "asc" | "desc";
 
 export interface AnalysisRow {
@@ -18,7 +17,6 @@ export interface AnalysisRow {
   error_code: string | null;
   model_name: string | null;
   model_provider: string | null;
-  ai_score: number | null;
   response_time_ms: number | null;
   total_chars: number | null;
   created_at: string;
@@ -31,6 +29,51 @@ export interface AnalysisRow {
   project_title: string | null;
   project_company: string | null;
   project_job_keyword: string | null;
+}
+
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+export function normalizeAnalysisRow(r: any): AnalysisRow {
+  const user = firstRelation(r.users);
+  const project = firstRelation(r.projects);
+
+  return {
+    id: r.id,
+    status: r.status,
+    error_code: r.error_code ?? null,
+    model_name: r.model_name ?? null,
+    model_provider: r.model_provider ?? null,
+    response_time_ms: r.response_time_ms ?? null,
+    total_chars: r.total_chars ?? null,
+    created_at: r.created_at,
+    total_tokens: (r.token_usages ?? []).reduce(
+      (s: number, t: any) => s + (t.total_tokens ?? 0),
+      0
+    ),
+    total_cost: (r.token_usages ?? []).reduce(
+      (s: number, t: any) => s + (t.cost ?? 0),
+      0
+    ),
+    user_email: user?.email ?? null,
+    user_name: user?.name ?? null,
+    project_title: project?.title ?? null,
+    project_company: project?.company ?? null,
+    project_job_keyword: project?.job_keyword ?? null,
+  };
+}
+
+function shouldIncludeMockRows() {
+  return import.meta.env.VITE_HIDE_ADMIN_MOCKS !== "true";
+}
+
+function withMockRows(rows: AnalysisRow[]) {
+  if (!shouldIncludeMockRows()) return rows;
+  const existingIds = new Set(rows.map((row) => row.id));
+  const missingMockRows = MOCK_ADMIN_ANALYSIS_ROWS.filter((row) => !existingIds.has(row.id));
+  return [...missingMockRows, ...rows];
 }
 
 export interface UseAnalysesDataParams {
@@ -66,116 +109,58 @@ export function useAnalysesData({
   useEffect(() => {
     let cancelled = false;
 
-    const fetch = async () => {
+    const fetchAnalyses = async () => {
       setIsLoading(true);
       setError(null);
 
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      const params = new URLSearchParams({
+        search,
+        status,
+        model,
+        sortField,
+        sortDir,
+        page: String(page),
+        pageSize: String(pageSize),
+      });
 
-      let query = supabase
-        .from("analyses")
-        .select(
-          `
-          id,
-          status,
-          error_code,
-          model_name,
-          model_provider,
-          ai_score,
-          response_time_ms,
-          total_chars,
-          created_at,
-          users(email, name),
-          projects(title, company, job_keyword),
-          token_usages(total_tokens, cost)
-        `,
-          { count: "exact" }
-        );
+      try {
+        const response = await window.fetch(`/api/admin/resume-analysis?${params.toString()}`);
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.includes("application/json")) {
+          throw new Error("관리자 분석 API가 JSON 대신 HTML을 반환했습니다. API가 동작하는 5173 dev 서버 또는 배포 환경에서 열어주세요.");
+        }
+        const payload = await response.json();
 
-      // 상태 필터
-      if (status !== "ALL") {
-        query = query.eq("status", status);
+        if (cancelled) return;
+
+        if (!response.ok) {
+          throw new Error(payload?.message || payload?.error || "분석 목록을 불러오지 못했습니다.");
+        }
+
+        const processed = (payload.rows ?? []) as AnalysisRow[];
+        const shouldShowOnlyMockRows =
+          processed.length === 0 &&
+          !search.trim() &&
+          status === "ALL" &&
+          model === "ALL";
+        const rowsWithMocks = shouldShowOnlyMockRows
+          ? withMockRows([])
+          : withMockRows(processed);
+
+        setRows(rowsWithMocks);
+        setTotal((payload.total ?? processed.length) + (rowsWithMocks.length - processed.length));
+      } catch (qErr) {
+        if (cancelled) return;
+        const fallbackRows = shouldIncludeMockRows() ? MOCK_ADMIN_ANALYSIS_ROWS : [];
+        setRows(fallbackRows);
+        setTotal(fallbackRows.length);
+        setError(`${qErr instanceof Error ? qErr.message : "분석 목록 조회 실패"} · 목업 데이터를 표시합니다.`);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-
-      // 모델 필터
-      if (model !== "ALL") {
-        query = query.eq("model_name", model);
-      }
-
-      // 이메일 검색: users 테이블 필터는 클라이언트에서 처리
-      // Supabase에서 embedded 테이블 필터는 제한적이므로
-      // 검색 시 ilike 적용 (email은 analyses 테이블에 없어서 사용자 입력으로 별도 처리)
-      // → 실제로는 ilike 필터를 users.email 기준으로 하면 좋지만,
-      //   Supabase JS SDK에서 embedded 컬럼 필터는 지원되지 않음
-      //   대안: 검색어가 있을 때는 서버측 RPC를 사용하거나
-      //         전체를 가져와서 클라이언트 필터링 (현재 페이지 범위 내)
-      // 현재 구현: search가 있을 때 model_provider 무시하고 전체 쿼리 후 클라이언트 필터
-
-      // 정렬
-      if (sortField === "created_at" || sortField === "response_time_ms" || sortField === "ai_score") {
-        query = query.order(sortField, {
-          ascending: sortDir === "asc",
-          nullsFirst: false,
-        });
-      }
-
-      query = query.range(from, to);
-
-      const { data, count, error: qErr } = await query;
-
-      if (cancelled) return;
-      if (qErr) {
-        setError(qErr.message);
-        setIsLoading(false);
-        return;
-      }
-
-      const rawRows = (data ?? []) as any[];
-
-      // 집계 + 검색 필터 (email 클라이언트 필터)
-      let processed: AnalysisRow[] = rawRows.map((r) => ({
-        id: r.id,
-        status: r.status,
-        error_code: r.error_code ?? null,
-        model_name: r.model_name ?? null,
-        model_provider: r.model_provider ?? null,
-        ai_score: r.ai_score ?? null,
-        response_time_ms: r.response_time_ms ?? null,
-        total_chars: r.total_chars ?? null,
-        created_at: r.created_at,
-        total_tokens: (r.token_usages ?? []).reduce(
-          (s: number, t: any) => s + (t.total_tokens ?? 0),
-          0
-        ),
-        total_cost: (r.token_usages ?? []).reduce(
-          (s: number, t: any) => s + (t.cost ?? 0),
-          0
-        ),
-        user_email: (r.users as any)?.email ?? null,
-        user_name: (r.users as any)?.name ?? null,
-        project_title: (r.projects as any)?.title ?? null,
-        project_company: (r.projects as any)?.company ?? null,
-        project_job_keyword: (r.projects as any)?.job_keyword ?? null,
-      }));
-
-      // 클라이언트 이메일 검색 (embedded 필터 한계 대응)
-      if (search.trim()) {
-        const term = search.trim().toLowerCase();
-        processed = processed.filter(
-          (r) =>
-            r.user_email?.toLowerCase().includes(term) ||
-            r.user_name?.toLowerCase().includes(term) ||
-            r.project_title?.toLowerCase().includes(term)
-        );
-      }
-
-      setRows(processed);
-      setTotal(count ?? 0);
-      setIsLoading(false);
     };
 
-    fetch();
+    fetchAnalyses();
     return () => {
       cancelled = true;
     };
@@ -193,15 +178,16 @@ export function useAvailableModels() {
   const [models, setModels] = useState<string[]>([]);
 
   useEffect(() => {
-    supabase
-      .from("analyses")
-      .select("model_name")
-      .not("model_name", "is", null)
-      .limit(200)
-      .then(({ data }) => {
-        const unique = Array.from(new Set((data ?? []).map((r: any) => r.model_name as string))).sort();
-        setModels(unique);
-      });
+    window.fetch("/api/admin/resume-analysis?page=1&pageSize=1")
+      .then((response) => {
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.includes("application/json")) {
+          throw new Error("관리자 분석 API가 JSON 대신 HTML을 반환했습니다.");
+        }
+        return response.json();
+      })
+      .then((payload) => setModels(payload.models ?? []))
+      .catch(() => setModels([]));
   }, []);
 
   return models;

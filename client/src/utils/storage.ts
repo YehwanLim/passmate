@@ -104,6 +104,7 @@ export function saveAnalysisToStorage(params: {
   jobKeyword: string;
   aiScore?: number | null;
   projectId?: string;
+  analysisId?: string;
 }): void {
   if (!isBrowser()) return;
 
@@ -118,6 +119,7 @@ export function saveAnalysisToStorage(params: {
     jobKeyword: params.jobKeyword,
     created_at: new Date().toISOString(),
     project_id: params.projectId ?? null,
+    analysis_id: params.analysisId,
   };
 
   const envelope: StoredAnalysisEnvelope = {

@@ -20,6 +20,7 @@ import {
   X,
   Target,
   MessageCircle,
+  Menu,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
@@ -220,9 +221,12 @@ function TypeWriter({
 export default function Home() {
   const [, navigate] = useLocation();
   const [activeReadingStep, setActiveReadingStep] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const readingStep = RESUME_READING_STEPS[activeReadingStep];
 
   const handleNavClick = useCallback((target: string, type: string) => {
+    setIsMobileMenuOpen(false);
+
     if (type === "section") {
       document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
       return;
@@ -257,7 +261,7 @@ export default function Home() {
           GNB
           ══════════════════════════════════════════════════ */}
       <motion.nav
-        className="sticky top-0 z-50 bg-[#050505]/70 backdrop-blur-2xl border-b border-white/[0.06]"
+        className="sticky top-0 z-50 bg-[#050505]/35 backdrop-blur-2xl border-b border-white/[0.045]"
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
@@ -270,11 +274,11 @@ export default function Home() {
             <Logo className="w-5 h-5" textClassName="text-lg font-bold text-white" />
           </div>
 
-          <div className="hidden md:flex items-center gap-7">
+          <div className="hidden sm:flex items-center gap-4 md:gap-7">
             {HOME_NAV_ITEMS.map(({ label, type, target }) => (
               <button
                 key={label}
-                className="relative flex items-center text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200 cursor-pointer"
+                className="landing-nav-link"
                 onClick={() => handleNavClick(target, type)}
               >
                 {label}
@@ -284,8 +288,46 @@ export default function Home() {
 
           <div className="flex items-center gap-2">
             <AuthButton />
+            <button
+              type="button"
+              className="mobile-nav-toggle sm:hidden"
+              aria-label="모바일 메뉴 열기"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-landing-nav"
+              onClick={() => setIsMobileMenuOpen((open) => !open)}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Menu className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
           </div>
         </div>
+
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              id="mobile-landing-nav"
+              className="mobile-nav-panel sm:hidden"
+              initial={{ opacity: 0, y: -8, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {HOME_NAV_ITEMS.map(({ label, type, target }) => (
+                <button
+                  key={label}
+                  type="button"
+                  className="mobile-nav-link"
+                  onClick={() => handleNavClick(target, type)}
+                >
+                  {label}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
       {/* ══════════════════════════════════════════════════
@@ -338,10 +380,10 @@ export default function Home() {
             }}
           >
             <button
-              className="group inline-flex items-center gap-2 bg-white text-[#000] h-12 px-7 rounded-[10px] text-[14px] font-medium transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] hover:bg-gray-100 active:scale-[0.98]"
+              className="landing-primary-cta group"
               onClick={() => navigate("/analyze")}
             >
-              1회 무료로 진단 받기
+              <span className="relative z-10">1회 무료로 진단 받기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </button>
           </motion.div>

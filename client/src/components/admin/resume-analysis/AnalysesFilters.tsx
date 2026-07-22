@@ -36,7 +36,6 @@ const STATUS_OPTIONS: { value: AnalysisStatus; label: string }[] = [
 const SORT_OPTIONS: { value: AnalysisSortField; label: string }[] = [
   { value: "created_at", label: "분석 일시" },
   { value: "response_time_ms", label: "응답시간" },
-  { value: "ai_score", label: "AI 점수" },
 ];
 
 export function AnalysesFilters({

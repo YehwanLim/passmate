@@ -1,5 +1,4 @@
 import { Route, Switch } from "wouter";
-import type { ReactNode } from "react";
 import { AdminLayout } from "@/components/admin/layout/AdminLayout";
 import { AdminGuard } from "@/components/admin/AdminGuard";
 import AdminLoginPage from "./login/AdminLoginPage";
@@ -30,14 +29,6 @@ const PROMPT_DETAIL_ROUTES = [
   "/admin/prompts/interview-questions",
 ];
 
-function GuardedAdminPage({ children }: { children: ReactNode }) {
-  return (
-    <AdminGuard>
-      <AdminLayout>{children}</AdminLayout>
-    </AdminGuard>
-  );
-}
-
 /**
  * AdminRoot
  *
@@ -61,35 +52,14 @@ export default function AdminRoot() {
       {/* ── 관리자 로그인 (가드 없음) ── */}
       <Route path="/admin/login" component={AdminLoginPage} />
 
-      {PROMPT_DETAIL_ROUTES.map(path => (
-        <Route key={path} path={path}>
-          {() => (
-            <GuardedAdminPage>
-              <PromptDetailPage />
-            </GuardedAdminPage>
-          )}
-        </Route>
-      ))}
-
-      {/* ── 관리자 대시보드 (/admin) ── */}
-      <Route path="/admin">
+      {/* ── 관리자 페이지 전체 (/admin 및 하위 경로) ── */}
+      <Route path="/admin/*?">
         {() => (
           <AdminGuard>
             <AdminLayout>
               <Switch>
                 <Route path="/admin" component={DashboardPage} />
-              </Switch>
-            </AdminLayout>
-          </AdminGuard>
-        )}
-      </Route>
 
-      {/* ── 관리자 서브 페이지 (/admin/:rest*) ── */}
-      <Route path="/admin/:rest*">
-        {() => (
-          <AdminGuard>
-            <AdminLayout>
-              <Switch>
                 {/* /admin/users/:id 는 /admin/users 보다 먼저 매칭되어야 합니다 */}
                 <Route path="/admin/users/:id" component={UserDetailPage} />
                 <Route path="/admin/users" component={UsersPage} />
@@ -107,6 +77,13 @@ export default function AdminRoot() {
                 <Route path="/admin/ai-usage" component={AiUsagePage} />
                 <Route path="/admin/ai-models" component={AiModelsPage} />
                 <Route path="/admin/ai-settings" component={AiSettingsPage} />
+                {PROMPT_DETAIL_ROUTES.map(path => (
+                  <Route
+                    key={path}
+                    path={path}
+                    component={PromptDetailPage}
+                  />
+                ))}
                 <Route
                   path="/admin/prompts/:type"
                   component={PromptDetailPage}

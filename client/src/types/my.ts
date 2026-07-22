@@ -17,6 +17,8 @@ export interface ProjectSummary {
   created_at: string;
   /** 해당 프로젝트의 분석 건수 (_count.analyses) */
   analysis_count: number;
+  /** 최신 analysis id (리포트 재열람용) */
+  latest_analysis_id?: string | null;
   /** 최신 analysis 기준 글자 수 (없으면 0) */
   total_chars: number | null;
   /** 최신 analysis의 ai_response_json.summary (없으면 null) */

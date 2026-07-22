@@ -54,7 +54,7 @@ export default function AuthButton() {
       <button
         id="header-login-btn"
         onClick={() => navigate("/login")}
-        className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
+        className="header-action-link text-[13px] font-medium h-8 px-3 rounded-md"
       >
         로그인
       </button>
@@ -71,8 +71,9 @@ export default function AuthButton() {
       <button
         id="header-profile-btn"
         onClick={() => setDropdownOpen((prev) => !prev)}
-        className="flex items-center gap-2 h-8 px-2 pr-2.5 rounded-md hover:bg-white/10 transition-colors duration-200"
+        className="header-action-link flex items-center gap-2 h-8 px-2 pr-2.5 rounded-md"
         aria-label="사용자 메뉴"
+        aria-expanded={dropdownOpen}
       >
         {/* 아바타 */}
         <div className="w-6 h-6 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
@@ -90,7 +91,7 @@ export default function AuthButton() {
           )}
         </div>
         {/* 이름 */}
-        <span className="text-[13px] text-gray-300 font-medium hidden sm:block max-w-[100px] truncate">
+        <span className="text-[13px] font-medium hidden sm:block max-w-[100px] truncate">
           {displayName}
         </span>
         <ChevronDown

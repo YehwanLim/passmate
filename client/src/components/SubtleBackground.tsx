@@ -21,15 +21,18 @@ export default function SubtleBackground() {
   );
   const velocity = useMotionValue(0);
   const lastPos = useRef({ x: 0, y: 0, t: 0 });
+  const pendingMouseRef = useRef({ x: 0, y: 0 });
+  const animationFrameRef = useRef<number | null>(null);
+  const velocityFrameRef = useRef<number | null>(null);
 
-  const fieldX = useSpring(mouseX, { damping: 55, stiffness: 80, mass: 1.4 });
-  const fieldY = useSpring(mouseY, { damping: 55, stiffness: 80, mass: 1.4 });
-  const sweepX = useSpring(mouseX, { damping: 42, stiffness: 95, mass: 1 });
-  const sweepY = useSpring(mouseY, { damping: 42, stiffness: 95, mass: 1 });
+  const fieldX = useSpring(mouseX, { damping: 34, stiffness: 190, mass: 0.72 });
+  const fieldY = useSpring(mouseY, { damping: 34, stiffness: 190, mass: 0.72 });
+  const sweepX = useSpring(mouseX, { damping: 28, stiffness: 220, mass: 0.62 });
+  const sweepY = useSpring(mouseY, { damping: 28, stiffness: 220, mass: 0.62 });
   const smoothVelocity = useSpring(velocity, {
-    damping: 60,
-    stiffness: 90,
-    mass: 0.7,
+    damping: 42,
+    stiffness: 130,
+    mass: 0.58,
   });
 
   const fieldXPct = useTransform(fieldX, (value) =>
@@ -52,9 +55,9 @@ export default function SubtleBackground() {
       ? "48%"
       : `${Math.round((value / window.innerHeight) * 100)}%`
   );
-  const fieldOpacity = useTransform(smoothVelocity, [0, 2500], [0.74, 0.94]);
-  const bloomOpacity = useTransform(smoothVelocity, [0, 2500], [0.62, 0.84]);
-  const particleOpacity = useTransform(smoothVelocity, [0, 2500], [0.12, 0.2]);
+  const fieldOpacity = useTransform(smoothVelocity, [0, 2500], [0.78, 0.94]);
+  const bloomOpacity = useTransform(smoothVelocity, [0, 2500], [0.5, 0.72]);
+  const particleOpacity = useTransform(smoothVelocity, [0, 2500], [0.11, 0.18]);
   const driftX = useTransform(fieldX, (value) =>
     typeof window === "undefined"
       ? "50%"
@@ -72,32 +75,65 @@ export default function SubtleBackground() {
   );
 
   const responsiveField = useMotionTemplate`
-    radial-gradient(ellipse 62% 40% at ${fieldXPct} ${fieldYPct}, rgba(145,183,255,0.18) 0%, rgba(34,211,238,0.085) 34%, transparent 70%),
-    radial-gradient(ellipse 48% 32% at ${sweepXPct} ${sweepYPct}, rgba(124,58,237,0.14) 0%, rgba(99,102,241,0.055) 44%, transparent 74%),
-    radial-gradient(ellipse 46% 40% at 12% 48%, rgba(34,211,238,0.075) 0%, rgba(59,130,246,0.034) 42%, transparent 76%),
-    radial-gradient(ellipse 44% 38% at 88% 44%, rgba(124,58,237,0.09) 0%, rgba(96,165,250,0.03) 46%, transparent 78%),
+    radial-gradient(circle 26vmax at ${fieldXPct} ${fieldYPct}, rgba(145,183,255,0.22) 0%, rgba(34,211,238,0.12) 34%, transparent 66%),
+    radial-gradient(circle 18vmax at ${sweepXPct} ${sweepYPct}, rgba(124,58,237,0.16) 0%, rgba(99,102,241,0.07) 44%, transparent 70%),
+    radial-gradient(ellipse 50% 42% at 12% 48%, rgba(34,211,238,0.09) 0%, rgba(59,130,246,0.044) 42%, transparent 76%),
+    radial-gradient(ellipse 48% 40% at 88% 44%, rgba(124,58,237,0.11) 0%, rgba(96,165,250,0.04) 46%, transparent 78%),
     linear-gradient(180deg, rgba(255,255,255,0.018) 0%, transparent 38%)
   `;
 
   const bloomBand = useMotionTemplate`
-    radial-gradient(ellipse 72% 34% at ${bloomX} ${bloomY}, rgba(34,211,238,0.16) 0%, rgba(96,165,250,0.105) 28%, rgba(124,58,237,0.14) 54%, transparent 78%)
+    radial-gradient(ellipse 54% 30% at ${bloomX} ${bloomY}, rgba(34,211,238,0.14) 0%, rgba(96,165,250,0.105) 30%, rgba(124,58,237,0.115) 56%, transparent 76%)
   `;
+
+  const flushMousePosition = useCallback(() => {
+    animationFrameRef.current = null;
+    const next = pendingMouseRef.current;
+    const now = performance.now();
+    const prev = lastPos.current;
+    const dt = Math.max(now - prev.t, 1);
+    const dx = next.x - prev.x;
+    const dy = next.y - prev.y;
+    const speed = Math.sqrt(dx * dx + dy * dy) / (dt / 16);
+
+    velocity.set(Math.min(speed * 20, 2800));
+    lastPos.current = { x: next.x, y: next.y, t: now };
+    mouseX.set(next.x);
+    mouseY.set(next.y);
+  }, [mouseX, mouseY, velocity]);
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      const now = performance.now();
-      const prev = lastPos.current;
-      const dt = Math.max(now - prev.t, 1);
-      const dx = e.clientX - prev.x;
-      const dy = e.clientY - prev.y;
-      const speed = Math.sqrt(dx * dx + dy * dy) / (dt / 16);
-
-      velocity.set(Math.min(speed * 18, 2600));
-      lastPos.current = { x: e.clientX, y: e.clientY, t: now };
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
+      pendingMouseRef.current = { x: e.clientX, y: e.clientY };
+      if (animationFrameRef.current === null) {
+        animationFrameRef.current = requestAnimationFrame(flushMousePosition);
+      }
     },
-    [mouseX, mouseY, velocity]
+    [flushMousePosition]
+  );
+
+  const decayVelocity = useCallback(() => {
+    const current = velocity.get();
+    velocity.set(current > 3 ? current * 0.92 : 0);
+    velocityFrameRef.current = requestAnimationFrame(decayVelocity);
+  }, [velocity]);
+
+  useEffect(() => {
+    velocityFrameRef.current = requestAnimationFrame(decayVelocity);
+    return () => {
+      if (velocityFrameRef.current !== null) {
+        cancelAnimationFrame(velocityFrameRef.current);
+      }
+    };
+  }, [decayVelocity]);
+
+  useEffect(
+    () => () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    },
+    []
   );
 
   useEffect(() => {
@@ -106,24 +142,27 @@ export default function SubtleBackground() {
       y: window.innerHeight / 2,
       t: performance.now(),
     };
+    pendingMouseRef.current = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    };
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [handleMouseMove]);
-
-  useEffect(() => {
-    const decay = window.setInterval(() => {
-      const current = velocity.get();
-      velocity.set(current > 4 ? current * 0.88 : 0);
-    }, 50);
-
-    return () => window.clearInterval(decay);
-  }, [velocity]);
 
   return (
     <div
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden="true"
     >
+      <div
+        className="ambient-page-gradient absolute inset-0 opacity-[0.34]"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% 8%, rgba(59,130,246,0.085) 0%, transparent 58%), radial-gradient(ellipse 70% 42% at 74% 32%, rgba(124,58,237,0.055) 0%, transparent 62%), radial-gradient(ellipse 58% 38% at 22% 48%, rgba(34,211,238,0.045) 0%, transparent 66%)",
+        }}
+      />
+
       <motion.div
         className="responsive-aurora-field absolute inset-0"
         style={{
@@ -133,7 +172,7 @@ export default function SubtleBackground() {
       />
 
       <motion.div
-        className="aurora-bloom-band absolute inset-x-[-12%] top-[-18%] h-[58vh] blur-2xl"
+        className="aurora-bloom-band absolute inset-x-[-12%] top-[-18%] h-[58vh] blur-xl"
         style={{
           opacity: bloomOpacity,
           background: bloomBand,

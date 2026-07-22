@@ -54,6 +54,15 @@ export default async function handler(req, res) {
         status: true,
         totalChars: true,        // → API: total_chars
         createdAt: true,         // → API: created_at
+        projectId: true,
+        userId: true,
+        project: {
+          select: {
+            company: true,
+            jobKeyword: true,
+            title: true,
+          },
+        },
       },
     });
 
@@ -75,6 +84,11 @@ export default async function handler(req, res) {
       status: analysis.status,
       total_chars: analysis.totalChars ?? 0,
       created_at: analysis.createdAt,
+      project_id: analysis.projectId,
+      user_id: analysis.userId,
+      company_name: analysis.project?.company ?? null,
+      job_role: analysis.project?.jobKeyword ?? null,
+      project_title: analysis.project?.title ?? null,
     };
 
     return res.status(200).json(result);

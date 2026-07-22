@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react"
 import { useLocation } from "wouter"
 import { Check, ChevronDown, ArrowRight, FileText, Sparkles, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X, MessageSquareText, Type, ListChecks } from "lucide-react"
 import type { ReportData } from "../types/report"
@@ -11,6 +11,7 @@ import {
     shouldShowNextAnalysisNotice,
 } from "../utils/reportAccess"
 import FeedbackSection from "../components/FeedbackSection"
+import AuthButton from "../components/AuthButton"
 import { FreeAnalysisNotice, ReportAccessGate } from "../components/report/ReportAccessGate"
 import { useAuth } from "../contexts/AuthContext"
 import { supabase } from "../lib/supabase"
@@ -20,16 +21,49 @@ import {
     buildHiringMemoryItems,
     getHeroIdentity,
     getHeroSummary,
+    limitSectionHighlights,
+    parseHighlightedText,
     splitPersonaForHeroLines,
     splitMentorComment,
-    tokenizeCommentKeywords,
 } from "./reportFirstImpression"
 
 const MENTOR_COMMENT_STYLES = [
-    { title: "읽힌 인상", titleClassName: "text-indigo-200", borderClassName: "border-indigo-300/20" },
-    { title: "더 선명해질 지점", titleClassName: "text-amber-200", borderClassName: "border-amber-300/20" },
-    { title: "면접에서 준비할 것", titleClassName: "text-emerald-200", borderClassName: "border-emerald-300/20" },
+    { title: "첫인상", numberClassName: "text-[#A7A8FF]" },
+    { title: "보완하면 좋을 점", numberClassName: "text-[#D9B94B]" },
+    { title: "면접 체크포인트", numberClassName: "text-[#69D5B1]" },
 ]
+
+type HighlightTone = "strength" | "gap" | "interview"
+
+const HIGHLIGHT_UNDERLINE_STYLES: Record<HighlightTone, CSSProperties> = {
+    strength: {
+        backgroundImage: "linear-gradient(to top, rgba(105, 211, 177, 0.22) 0 4px, transparent 4px)",
+        backgroundPosition: "0 100%",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "100% 100%",
+        borderRadius: "2px",
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+    },
+    gap: {
+        backgroundImage: "linear-gradient(to top, rgba(217, 185, 75, 0.22) 0 4px, transparent 4px)",
+        backgroundPosition: "0 100%",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "100% 100%",
+        borderRadius: "2px",
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+    },
+    interview: {
+        backgroundImage: "linear-gradient(to top, rgba(123, 184, 255, 0.2) 0 4px, transparent 4px)",
+        backgroundPosition: "0 100%",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "100% 100%",
+        borderRadius: "2px",
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+    },
+}
 
 const FALLBACK_DATA: ReportData = {
     companyInsight: {
@@ -362,24 +396,46 @@ export default function PassMateReport() {
         }),
         [reportData.gaps, reportData.strengths]
     )
+    const strengthHighlights = useMemo(
+        () => limitSectionHighlights(reportData.strengths),
+        [reportData.strengths]
+    )
+    const gapHighlights = useMemo(
+        () => limitSectionHighlights(reportData.gaps),
+        [reportData.gaps]
+    )
     const mentorCommentBlocks = useMemo(
         () => splitMentorComment(reportData.pmComment),
         [reportData.pmComment]
     )
-    const renderMentorCommentText = useCallback((text: string) => {
-        let hasHighlightedKeyword = false
+    const renderTextSegments = useCallback((
+        segments: ReturnType<typeof parseHighlightedText>,
+        tone: HighlightTone = "interview",
+        emphasize = true
+    ) => {
+        return segments.map((segment, index) => {
+            if (emphasize && segment.kind === "bold") {
+                return (
+                    <strong
+                        key={`${segment.text}-${index}`}
+                        className="rounded-[2px] font-semibold text-inherit"
+                        style={HIGHLIGHT_UNDERLINE_STYLES[tone]}
+                    >
+                        {segment.text}
+                    </strong>
+                )
+            }
 
-        return tokenizeCommentKeywords(text, editorialKeywords).map((token, index) => {
-            const shouldHighlight = token.highlighted && !hasHighlightedKeyword
-            if (shouldHighlight) hasHighlightedKeyword = true
-
-            return (
-                <span key={`${token.text}-${index}`} className={shouldHighlight ? "text-indigo-200 font-semibold" : undefined}>
-                    {token.text}
-                </span>
-            )
+            return <span key={`${segment.text}-${index}`}>{segment.text}</span>
         })
-    }, [editorialKeywords])
+    }, [])
+    const renderRichText = useCallback(
+        (text: string, tone: HighlightTone = "interview") => renderTextSegments(parseHighlightedText(text), tone, false),
+        [renderTextSegments]
+    )
+    const renderCleanText = useCallback((text: string) => {
+        return renderTextSegments(parseHighlightedText(text), "interview", false)
+    }, [renderTextSegments])
 
     // 원문 텍스트 위치 기준으로 번호 재배정 (위에서부터 1, 2, 3...)
     const cardDisplayNumbers = useMemo(() => {
@@ -452,6 +508,15 @@ export default function PassMateReport() {
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                         <span>{UI_LABELS.BACK}</span>
                     </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
+                            onClick={() => navigate("/my")}
+                        >
+                            내 지원서
+                        </button>
+                        <AuthButton />
+                    </div>
                 </div>
             </div>
 
@@ -470,7 +535,7 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 {/* ACT 1: FIRST IMPRESSION */}
                 {/* ================================================================= */}
-                <header id="section-first-impression" className="pt-8 pb-24 section-divider">
+                <header id="section-first-impression" className="pt-8 pb-[6.5rem] section-divider">
                     <div className="relative min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0B0B0E] px-5 py-5 sm:px-8 sm:py-7 md:px-10 md:py-9">
                         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.09),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent_48%)]" />
                         <div className="pointer-events-none absolute inset-px rounded-[15px] border border-white/[0.035]" />
@@ -480,59 +545,66 @@ export default function PassMateReport() {
                             <span className="min-w-0 break-words sm:text-right">First Read · {targetCompany}</span>
                         </div>
 
-                        <div className="relative min-w-0 py-14 text-center sm:py-16 md:py-20">
+                        <div className="relative min-w-0 py-12 text-center sm:py-14 md:py-[4.25rem]">
                             <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{displayName}님은</p>
-                            <h1 className="mx-auto max-w-3xl text-[2.35rem] sm:text-[3.6rem] md:text-[4.7rem] font-semibold leading-[1.02] tracking-tight text-white">
+                            <h1 className="mx-auto max-w-3xl text-[2.08rem] sm:text-[3.15rem] md:text-[4.05rem] font-semibold leading-[1.04] tracking-tight text-white">
                                 {heroPersonaLines.map((line) => (
                                     <span key={line} className="block">
                                         {line}
                                     </span>
                                 ))}
                             </h1>
-                            <p className="mx-auto mt-7 max-w-2xl text-[16px] sm:text-xl leading-[1.75] text-zinc-300 text-balance">
-                                {heroSummary}
+                            <p className="mx-auto mt-6 max-w-2xl text-[16px] sm:text-[19px] leading-[1.8] text-zinc-300 text-balance">
+                                {renderCleanText(heroSummary)}
                             </p>
                         </div>
 
-                        <div className="relative flex min-w-0 flex-wrap justify-center gap-2 pb-7">
+                        <div className="relative flex min-w-0 flex-wrap justify-center gap-2.5 pb-8">
                             {editorialKeywords.map((keyword) => (
-                                <span key={keyword} className="max-w-full rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-zinc-400">
+                                <span key={keyword} className="max-w-full rounded-full border border-white/[0.12] bg-white/[0.045] px-3.5 py-2 text-xs font-semibold text-zinc-300 transition-colors duration-200 hover:border-cyan-300/25 hover:bg-cyan-300/[0.07] hover:text-zinc-100">
                                     {keyword}
                                 </span>
                             ))}
                         </div>
 
-                        <div className="relative grid items-start gap-4 md:grid-cols-2">
-                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+                        <div className="relative grid items-start gap-5 md:grid-cols-2">
+                            <div className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
                                 <p className="mb-3 text-sm font-semibold text-white">채용담당자가 기억할 모습</p>
-                                <ul className="space-y-2.5">
+                                <ul className="space-y-3">
                                     {hiringMemoryItems.map((item) => (
-                                        <li key={`${item.mark}-${item.text}`} className="grid grid-cols-[18px_1fr] gap-2.5 text-sm leading-[1.55] text-zinc-300">
-                                            <span className="font-semibold text-zinc-100">{item.mark}</span>
-                                            <span>{item.text}</span>
+                                        <li key={`${item.mark}-${item.text}`} className="grid grid-cols-[22px_1fr] gap-2.5 text-sm leading-[1.68] text-zinc-300">
+                                            <span className={`mt-0.5 inline-flex size-[18px] items-center justify-center rounded-full border ${item.mark === "✓" ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-200" : "border-amber-300/30 bg-amber-400/10 text-amber-200"}`}>
+                                                {item.mark === "✓" ? <Check className="size-3" /> : <AlertTriangle className="size-3" />}
+                                            </span>
+                                            <span className="pt-px">{item.text}</span>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
 
-                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+                            <div className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
                                 <p className="mb-3 text-sm font-semibold text-white">{UI_LABELS.APPLICANT_PROFILE}</p>
-                                <p className="text-sm leading-[1.7] text-zinc-400">
-                                    {reportData.firstImpression.persona}라는 인상이 먼저 남습니다. 경험의 흐름은 문제를 발견하고 근거를 모아 실행으로 옮기는 방향으로 읽힙니다.
+                                <p className="text-sm leading-[1.82] text-zinc-400">
+                                    {heroPersona}라는 인상이 먼저 남습니다. 경험의 흐름은 문제를 발견하고 근거를 모아 실행으로 옮기는 방향으로 읽힙니다.
                                 </p>
                             </div>
 
                             <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 md:col-span-2">
-                                <p className="mb-3 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">현직자 한 줄 코멘트</p>
-                                <div className="grid gap-4 md:grid-cols-3">
+                                <p className="mb-4 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">현직자 코멘트</p>
+                                <div className="grid gap-5 md:grid-cols-3">
                                     {mentorCommentBlocks.map((block, index) => {
                                         const style = MENTOR_COMMENT_STYLES[index]
                                         if (!style) return null
 
                                         return (
-                                            <blockquote key={block.title} className={`min-w-0 border-l pl-3 ${style.borderClassName}`}>
-                                                <p className={`mb-1.5 text-xs font-semibold ${style.titleClassName}`}>{style.title}</p>
-                                                <p className="text-sm leading-[1.7] text-zinc-300">{renderMentorCommentText(block.text)}</p>
+                                            <blockquote key={block.title} className="min-w-0">
+                                                <div className="mb-4 flex items-center gap-3">
+                                                    <span className={`text-[32px] font-extrabold leading-none tracking-[0.08em] opacity-60 ${style.numberClassName}`}>{String(index + 1).padStart(2, "0")}</span>
+                                                    <p className="text-[15px] font-bold text-zinc-100">
+                                                        {style.title}
+                                                    </p>
+                                                </div>
+                                                <p className="text-sm leading-[1.82] text-zinc-300">{renderCleanText(block.text)}</p>
                                             </blockquote>
                                         )
                                     })}
@@ -548,7 +620,7 @@ export default function PassMateReport() {
                 <section id="section-company-insight" className="py-24 section-divider">
                     <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.COMPANY_ANALYSIS}</h2>
                     <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.HIRING_CRITERIA(targetCompany)}</h3>
-                    <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.75]">{reportData.companyInsight.summary}</p>
+                    <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.75]">{renderRichText(reportData.companyInsight.summary)}</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Talent Keywords */}
@@ -567,7 +639,7 @@ export default function PassMateReport() {
                             <ul className="space-y-3">
                                 {reportData.companyInsight.hiringSignals.map((s, i) => (
                                     <li key={i} className="text-[15px] text-zinc-200 leading-[1.7] flex items-start gap-2.5">
-                                        <Check className="w-4 h-4 text-emerald-400/50 mt-0.5 shrink-0" />{s}
+                                        <Check className="w-4 h-4 text-emerald-400/50 mt-0.5 shrink-0" />{renderRichText(s)}
                                     </li>
                                 ))}
                             </ul>
@@ -579,7 +651,7 @@ export default function PassMateReport() {
                             <ul className="space-y-3">
                                 {reportData.companyInsight.rejectionTriggers.map((r, i) => (
                                     <li key={i} className="text-[15px] text-zinc-400 leading-[1.7] flex items-start gap-2.5">
-                                        <X className="w-4 h-4 text-rose-400/35 mt-0.5 shrink-0" />{r}
+                                        <X className="w-4 h-4 text-rose-400/35 mt-0.5 shrink-0" />{renderRichText(r)}
                                     </li>
                                 ))}
                             </ul>
@@ -591,7 +663,7 @@ export default function PassMateReport() {
                             <ul className="space-y-3">
                                 {reportData.companyInsight.cultureSignals.map((c, i) => (
                                     <li key={i} className="text-[15px] text-zinc-400 leading-[1.7] flex items-start gap-2.5">
-                                        <div className="w-[5px] h-[5px] rounded-full bg-zinc-600 mt-[9px] shrink-0"></div>{c}
+                                        <div className="w-[5px] h-[5px] rounded-full bg-zinc-600 mt-[9px] shrink-0"></div>{renderRichText(c)}
                                     </li>
                                 ))}
                             </ul>
@@ -616,7 +688,7 @@ export default function PassMateReport() {
                             <div className="space-y-5">
                                 {reportData.strengths.map((s, i) => (
                                     <div key={i} className="pl-0 py-0">
-                                        <p className="text-[16px] text-zinc-100 leading-[1.8] font-normal">{s}</p>
+                                        <p className="text-[16px] text-zinc-100 leading-[1.8] font-normal">{renderTextSegments(strengthHighlights[i], "strength")}</p>
                                     </div>
                                 ))}
                             </div>
@@ -626,7 +698,7 @@ export default function PassMateReport() {
                             <div className="space-y-5">
                                 {reportData.gaps.map((g, i) => (
                                     <div key={i} className="pl-0 py-0">
-                                        <p className="text-[16px] text-zinc-300 leading-[1.8] font-normal">{g}</p>
+                                        <p className="text-[16px] text-zinc-300 leading-[1.8] font-normal">{renderTextSegments(gapHighlights[i], "gap")}</p>
                                     </div>
                                 ))}
                             </div>
@@ -639,21 +711,21 @@ export default function PassMateReport() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-7">
                             <div>
                                 <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_CURRENT}</span>
-                                <p className="text-base text-zinc-400 leading-[1.7] mt-1">{reportData.positioning.current}</p>
+                                <p className="text-base text-zinc-400 leading-[1.7] mt-1">{renderRichText(reportData.positioning.current)}</p>
                             </div>
                             <div>
                                 <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_TARGET}</span>
-                                <p className="text-[17px] text-white font-bold leading-[1.7] mt-1">{reportData.positioning.target}</p>
+                                <p className="text-[17px] text-white font-bold leading-[1.7] mt-1">{renderRichText(reportData.positioning.target)}</p>
                             </div>
                         </div>
                         <div className="border-t border-white/[0.04] pt-6 space-y-7">
                             <div>
                                 <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_GAP}</span>
-                                <p className="text-base text-amber-300 font-semibold leading-[1.7] mt-1">{reportData.positioning.gap}</p>
+                                <p className="text-base text-amber-300 font-semibold leading-[1.7] mt-1">{renderRichText(reportData.positioning.gap)}</p>
                             </div>
                             <div>
                                 <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_STRATEGY}</span>
-                                <p className="text-[15px] text-zinc-300 leading-[1.7] mt-1">{reportData.positioning.strategy}</p>
+                                <p className="text-[15px] text-zinc-300 leading-[1.7] mt-1">{renderRichText(reportData.positioning.strategy)}</p>
                             </div>
                         </div>
                     </div>
@@ -794,7 +866,7 @@ export default function PassMateReport() {
                             </button>
                             {showOverview && (
                                 <div className="pt-4 mt-4 border-t border-white/[0.04]">
-                                    <p className="text-[14px] text-zinc-300 leading-[1.8]">{currentTab.overview}</p>
+                                    <p className="text-[14px] text-zinc-300 leading-[1.8]">{renderRichText(currentTab.overview)}</p>
                                 </div>
                             )}
                         </div>
@@ -810,17 +882,17 @@ export default function PassMateReport() {
                                 <div className="pt-4 mt-4 border-t border-white/[0.04]">
                                     {currentTab.subtitleDiagnosis.exists ? (
                                         <div className="space-y-0">
-                                            <p className="commentary-body-text mb-4">{currentTab.subtitleDiagnosis.feedback}</p>
-                                            
+                                            <p className="commentary-body-text mb-4">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
+
                                             <p className="commentary-label">소제목 수정 제안</p>
-                                            <p className="commentary-headline mb-0">{currentTab.subtitleDiagnosis.suggestion}</p>
+                                            <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-0">
-                                            <p className="commentary-body-text mb-4">{currentTab.subtitleDiagnosis.feedback}</p>
-                                            
+                                            <p className="commentary-body-text mb-4">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
+
                                             <p className="commentary-label" style={{ marginTop: '0' }}>소제목 수정 제안</p>
-                                            <p className="commentary-headline mb-0">{currentTab.subtitleDiagnosis.suggestion}</p>
+                                            <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
                                         </div>
                                     )}
                                 </div>
@@ -852,14 +924,14 @@ export default function PassMateReport() {
                                             </div>
 
                                             {/* Detailed Analysis */}
-                                            <p className="commentary-body-text mb-4">{card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint)}</p>
+                                            <p className="commentary-body-text mb-4">{renderRichText(card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint))}</p>
 
                                             {/* Interview perspective */}
                                             {card.interviewLink && (
                                                 <>
                                                     <p className="commentary-label">예상 면접 질문</p>
-                                                    <p className="commentary-headline">"{card.interviewLink.question}"</p>
-                                                    <p className="commentary-meta mb-4">{UI_LABELS.QUESTION_INTENT}: {card.interviewLink.intent}</p>
+                                                    <p className="commentary-headline">"{renderRichText(card.interviewLink.question)}"</p>
+                                                    <p className="commentary-meta mb-4">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
                                                 </>
                                             )}
 
@@ -867,7 +939,7 @@ export default function PassMateReport() {
                                             {card.type === 'improvement' && card.suggestion && (
                                                 <>
                                                     <p className="commentary-label">개선한 문장</p>
-                                                    <p className="commentary-headline">{card.suggestion}</p>
+                                                    <p className="commentary-headline">{renderRichText(card.suggestion)}</p>
                                                 </>
                                             )}
                                         </div>
@@ -898,21 +970,21 @@ export default function PassMateReport() {
                                             {/* Trigger */}
                                             <button className="commentary-trigger" onClick={() => handleAccordionToggle(realIdx)}>
                                                 <span className="commentary-num">{displayNum}</span>
-                                                <span className="commentary-preview flex-1 min-w-0">{previewText}</span>
+                                                <span className="commentary-preview flex-1 min-w-0">{renderRichText(previewText)}</span>
                                                 <ChevronDown className="commentary-chevron" />
                                             </button>
 
                                             {/* Body */}
                                             <div className="commentary-body pt-2">
                                                 {/* Detailed Analysis */}
-                                                <p className="commentary-body-text mb-4">{card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint)}</p>
+                                                <p className="commentary-body-text mb-4">{renderRichText(card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint))}</p>
 
                                                 {/* Interview perspective */}
                                                 {card.interviewLink && (
                                                     <>
                                                         <p className="commentary-label">예상 면접 질문</p>
-                                                        <p className="commentary-headline">"{card.interviewLink.question}"</p>
-                                                        <p className="commentary-meta mt-1">{UI_LABELS.QUESTION_INTENT}: {card.interviewLink.intent}</p>
+                                                        <p className="commentary-headline">"{renderRichText(card.interviewLink.question)}"</p>
+                                                        <p className="commentary-meta mt-1">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
                                                     </>
                                                 )}
 
@@ -920,7 +992,7 @@ export default function PassMateReport() {
                                                 {card.type === 'improvement' && card.suggestion && (
                                                     <>
                                                         <p className="commentary-label">개선한 문장</p>
-                                                        <p className="commentary-headline">{card.suggestion}</p>
+                                                        <p className="commentary-headline">{renderRichText(card.suggestion)}</p>
                                                     </>
                                                 )}
                                             </div>
@@ -958,7 +1030,7 @@ export default function PassMateReport() {
                                 <button onClick={() => setOpenQuestionIndex(openQuestionIndex === index ? null : index)}
                                     className="w-full py-6 flex items-start gap-5 text-left group">
                                     <span className="text-xs uppercase tracking-[0.12em] text-zinc-500 mt-1 min-w-[50px] font-medium">Q{index + 1}</span>
-                                    <span className="flex-1 text-[17px] text-zinc-300 group-hover:text-white transition-colors leading-[1.6]">{item.question}</span>
+                                    <span className="flex-1 text-[17px] text-zinc-300 group-hover:text-white transition-colors leading-[1.6]">{renderRichText(item.question)}</span>
                                     <ChevronDown className={`w-5 h-5 text-zinc-600 transition-transform mt-0.5 ${openQuestionIndex === index ? "rotate-180" : ""}`} />
                                 </button>
                                 {openQuestionIndex === index && (
@@ -969,14 +1041,14 @@ export default function PassMateReport() {
                                                 <ul className="space-y-2">
                                                     {item.followUps.map((fu, fi) => (
                                                         <li key={fi} className="text-[15px] text-zinc-500 leading-[1.7] flex items-start gap-2.5">
-                                                            <ArrowRight className="w-3 h-3 text-amber-300/35 mt-1.5 shrink-0" />{fu}
+                                                            <ArrowRight className="w-3 h-3 text-amber-300/35 mt-1.5 shrink-0" />{renderRichText(fu)}
                                                         </li>
                                                     ))}
                                                 </ul>
                                             </div>
                                         )}
                                         <p className="text-xs uppercase tracking-[0.12em] text-zinc-500 mb-3 font-medium">{UI_LABELS.MODEL_ANSWER}</p>
-                                        <p className="text-[15px] text-zinc-400 leading-[1.8]">{item.modelAnswer}</p>
+                                        <p className="text-[15px] text-zinc-400 leading-[1.8]">{renderRichText(item.modelAnswer)}</p>
                                     </div>
                                 )}
                             </div>
@@ -1007,9 +1079,9 @@ export default function PassMateReport() {
                                         {isComplete && <Check className="w-3 h-3 text-white" />}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <span className={`text-base transition-colors leading-[1.6] block mb-1.5 ${isComplete ? "line-through text-zinc-600" : "text-zinc-200 group-hover:text-white"}`}>{task.title}</span>
-                                        <p className={`text-[15px] transition-colors leading-[1.7] ${isComplete ? "text-zinc-700" : "text-zinc-500"}`}>{task.description}</p>
-                                        <p className={`text-sm mt-2.5 transition-colors ${isComplete ? "text-zinc-700" : "text-emerald-400/50"}`}>{UI_LABELS.EXPECTED_IMPACT}: {task.expectedImpact}</p>
+                                        <span className={`text-base transition-colors leading-[1.6] block mb-1.5 ${isComplete ? "line-through text-zinc-600" : "text-zinc-200 group-hover:text-white"}`}>{renderRichText(task.title)}</span>
+                                        <p className={`text-[15px] transition-colors leading-[1.7] ${isComplete ? "text-zinc-700" : "text-zinc-500"}`}>{renderRichText(task.description)}</p>
+                                        <p className={`text-sm mt-2.5 transition-colors ${isComplete ? "text-zinc-700" : "text-zinc-500"}`}>{UI_LABELS.EXPECTED_IMPACT}: {renderRichText(task.expectedImpact)}</p>
                                     </div>
                                 </button>
                             )
@@ -1023,29 +1095,28 @@ export default function PassMateReport() {
                 <section id="section-pm-comment" className="pt-24 pb-20 section-divider">
                     <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.PM_VERDICT}</h2>
                     <h3 className="text-xl sm:text-2xl font-medium text-white mb-10 tracking-tight">{UI_LABELS.PM_VERDICT_TITLE}</h3>
-                    <div className="flex items-start gap-5">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-indigo-400 text-xs font-bold tracking-tight">H</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-3">
-                                <span className="text-sm font-medium text-white">Mentor Hansi</span>
-                                <span className="text-xs text-zinc-600">{UI_LABELS.JUST_NOW}</span>
-                            </div>
-                            <div className="space-y-7 border-l-2 border-indigo-400/20 pl-5">
-                                {mentorCommentBlocks.map((block, index) => {
-                                    const style = MENTOR_COMMENT_STYLES[index]
-                                    if (!style) return null
-
-                                    return (
-                                        <section key={block.title} className="min-w-0">
-                                            <p className={`mb-2 text-sm font-semibold ${style.titleClassName}`}>{style.title}</p>
-                                            <p className="text-[17px] text-zinc-200 leading-[1.8] font-normal">{renderMentorCommentText(block.text)}</p>
-                                        </section>
-                                    )
-                                })}
-                            </div>
-                        </div>
+                    <div className="mentor-comment-thread relative">
+                        {mentorCommentBlocks.map((block, index) => (
+                            <article
+                                key={block.title}
+                                className="relative grid grid-cols-[2.5rem_minmax(0,1fr)] gap-4 pb-8 last:pb-0 sm:grid-cols-[2.75rem_minmax(0,1fr)] sm:gap-5"
+                            >
+                                {index < mentorCommentBlocks.length - 1 && (
+                                    <span aria-hidden="true" className="absolute left-5 top-12 bottom-0 w-px bg-white/[0.06] sm:left-[22px]" />
+                                )}
+                                <div className="relative z-10 flex size-10 items-center justify-center rounded-full border border-indigo-500/20 bg-indigo-500/10 sm:size-11">
+                                    <span className="text-xs font-bold tracking-tight text-indigo-400">H</span>
+                                </div>
+                                <div className="min-w-0 pt-0.5">
+                                    <div className="mb-3 flex items-center gap-3">
+                                        <span className="text-sm font-medium text-white">Mentor Hansi</span>
+                                        <span className="text-xs text-zinc-600">{UI_LABELS.JUST_NOW}</span>
+                                    </div>
+                                    <h4 className="mb-3 text-[18px] font-semibold tracking-tight text-zinc-100">{block.title}</h4>
+                                    <p className="text-[17px] font-normal leading-[1.8] text-zinc-200">{renderCleanText(block.text)}</p>
+                                </div>
+                            </article>
+                        ))}
                     </div>
                 </section>
 

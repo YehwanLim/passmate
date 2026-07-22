@@ -32,7 +32,9 @@ async function startServer() {
       res.json(result);
     } catch (error: any) {
       console.error("Analyze error:", error);
-      res.status(500).json({ error: error.message || "Internal server error" });
+      const { getAnalyzeApiErrorResponse } = await import("./api/analyze.js");
+      const errorResponse = getAnalyzeApiErrorResponse(error);
+      res.status(errorResponse.status).json(errorResponse.body);
     }
   });
 

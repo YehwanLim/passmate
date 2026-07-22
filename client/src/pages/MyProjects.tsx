@@ -11,6 +11,7 @@ import SubtleBackground from "@/components/SubtleBackground";
 import Logo from "@/components/Logo";
 import AuthButton from "@/components/AuthButton";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { loadAnalysisFromStorage, saveAnalysisToStorage } from "@/utils/storage";
 
 
 // =============================================================================
@@ -36,14 +37,60 @@ const MOCK_PROJECTS: ProjectSummary[] = [
 // =============================================================================
 export default function MyProjects() {
   const [, navigate] = useLocation();
-  const { isLoading: authLoading } = useRequireAuth(); // 미인증 시 /login 리다이렉트
+  const { user, isLoading: authLoading } = useRequireAuth(); // 미인증 시 /login 리다이렉트
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading || !user?.id) return;
+
+    const syncLatestLocalAnalysis = async () => {
+      const latest = loadAnalysisFromStorage();
+      if (!latest || latest.project_id || !latest.questions?.length) return;
+
+      const questions = latest.questions.map((question) => ({
+        question: question.question_text,
+        answer: question.input_text,
+      }));
+
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user,
+          result: latest.ai_response_json,
+          questions,
+          company: latest.company,
+          jobKeyword: latest.jobKeyword,
+        }),
+      });
+
+      let payload: any = null;
+      try {
+        payload = await response.json();
+      } catch {
+        /* ignore */
+      }
+
+      if (!response.ok) {
+        throw new Error(payload?.message || payload?.error || "최근 분석 결과 동기화 실패");
+      }
+
+      saveAnalysisToStorage({
+        result: latest.ai_response_json,
+        questions,
+        company: latest.company,
+        jobKeyword: latest.jobKeyword,
+        aiScore: latest.ai_score,
+        projectId: payload?.project_id,
+        analysisId: payload?.analysis_id,
+      });
+    };
+
     const fetchProjects = async () => {
       try {
-        const response = await fetch("/api/projects");
+        await syncLatestLocalAnalysis();
+        const response = await fetch(`/api/projects?userId=${encodeURIComponent(user.id)}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data: ProjectSummary[] = await response.json();
         setProjects(data);
@@ -57,7 +104,7 @@ export default function MyProjects() {
     };
 
     fetchProjects();
-  }, []);
+  }, [authLoading, user?.id]);
 
   /** Project 삭제 핸들러 */
   const handleDelete = async (projectId: string) => {
@@ -168,6 +215,8 @@ export default function MyProjects() {
                     }
                     if (project.id === "mock-proj-1") {
                       navigate("/report-new?mock=true");
+                    } else if (project.latest_analysis_id) {
+                      navigate(`/report-new?analysisId=${encodeURIComponent(project.latest_analysis_id)}`);
                     } else {
                       navigate("/report-new");
                     }

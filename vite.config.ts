@@ -340,6 +340,125 @@ function vitePluginApi(): Plugin {
         });
       });
 
+      // /api/admin/resume-analysis — 관리자 분석 목록
+      server.middlewares.use("/api/admin/resume-analysis", (req, res, next) => {
+        if (req.method !== "GET") return next();
+
+        const requestUrl = new URL(req.url ?? "", "http://localhost");
+        if (requestUrl.pathname !== "/") return next();
+
+        req.on("end", async () => {
+          try {
+            const handlerUrl = pathToFileURL(
+              path.join(PROJECT_ROOT, "api", "admin", "resume-analysis.js")
+            ).href;
+            const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+            const request = {
+              method: req.method,
+              query: Object.fromEntries(requestUrl.searchParams.entries()),
+            };
+            const response = {
+              status(code: number) {
+                res.statusCode = code;
+                return this;
+              },
+              json(payload: unknown) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(payload));
+              },
+            };
+
+            await handler(request, response);
+          } catch (e: any) {
+            console.error("[api/admin/resume-analysis] 실패:", e);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+          }
+        });
+        req.resume();
+      });
+
+      // /api/projects — 내 지원서 저장/목록
+      server.middlewares.use("/api/projects", (req, res, next) => {
+        if (req.method !== "GET" && req.method !== "POST") return next();
+        const requestUrl = new URL(req.url ?? "", "http://localhost");
+        if (requestUrl.pathname !== "/") return next();
+
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk.toString();
+        });
+
+        req.on("end", async () => {
+          try {
+            const handlerUrl = pathToFileURL(
+              path.join(PROJECT_ROOT, "api", "projects.js")
+            ).href;
+            const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+            const request = {
+              method: req.method,
+              body: body ? JSON.parse(body) : undefined,
+              query: Object.fromEntries(requestUrl.searchParams.entries()),
+            };
+            const response = {
+              status(code: number) {
+                res.statusCode = code;
+                return this;
+              },
+              json(payload: unknown) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(payload));
+              },
+            };
+
+            await handler(request, response);
+          } catch (e: any) {
+            console.error("[api/projects] 실패:", e);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+          }
+        });
+      });
+
+      // /api/analysis/:id — 저장된 분석 리포트 상세
+      server.middlewares.use("/api/analysis", (req, res, next) => {
+        if (req.method !== "GET") return next();
+
+        const requestUrl = new URL(req.url ?? "", "http://localhost");
+        const id = decodeURIComponent(requestUrl.pathname.replace(/^\/+/, ""));
+        if (!id) return next();
+
+        req.on("end", async () => {
+          try {
+            const handlerUrl = pathToFileURL(
+              path.join(PROJECT_ROOT, "api", "analysis", "[id].js")
+            ).href;
+            const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+            const request = {
+              method: req.method,
+              query: { id },
+            };
+            const response = {
+              status(code: number) {
+                res.statusCode = code;
+                return this;
+              },
+              json(payload: unknown) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(payload));
+              },
+            };
+
+            await handler(request, response);
+          } catch (e: any) {
+            console.error("[api/analysis/:id] 실패:", e);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+          }
+        });
+        req.resume();
+      });
+
       // /api/test-gemini — Gemini API 핑 테스트
       server.middlewares.use("/api/test-gemini", async (_req, res, next) => {
         if (_req.method !== "GET") return next();

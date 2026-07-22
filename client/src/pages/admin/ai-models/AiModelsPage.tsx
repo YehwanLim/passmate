@@ -78,6 +78,7 @@ interface AiModel {
   inputPricePerMillion?: number | null;
   outputPricePerMillion?: number | null;
   estimatedCostPerCall?: number | null;
+  connectionMessage?: string | null;
 }
 
 interface CallLog {
@@ -139,10 +140,19 @@ interface AvailableModel extends ConfiguredModel {
   outputTokenLimit?: number | null;
 }
 
+interface LiveModelStatus {
+  providerKey: string;
+  modelName: string;
+  status: "success" | "failed";
+  responseTimeMs: number;
+  message: string;
+  checkedAt: string;
+}
+
 const statusCopy: Record<ModelStatus, string> = {
-  connected: "Connected",
-  error: "Error",
-  disabled: "Disabled",
+  connected: "정상",
+  error: "오류",
+  disabled: "비활성",
 };
 
 const healthCopy: Record<HealthStatus, string> = {
@@ -183,22 +193,22 @@ const RECOMMENDED_MODELS: Record<string, {
     outputPricePerMillion: 10,
   },
   "gpt-5.4-nano": {
-    label: "OpenAI 최저가",
-    reason: "런칭 전 실제 호출 흐름과 리포트 품질을 최소 비용으로 확인할 때 사용",
+    label: "최저가",
+    reason: "런칭 전 실제 호출 흐름과 리포트 품질을 가장 낮은 비용으로 확인할 때 사용",
     rank: 4,
     inputPricePerMillion: 0.2,
     outputPricePerMillion: 1.25,
   },
   "gpt-5.4-mini": {
-    label: "OpenAI 저가",
-    reason: "nano보다 조금 더 나은 품질을 저렴하게 비교할 때 사용",
+    label: "저가",
+    reason: "최저가 모델보다 조금 더 나은 품질을 비교할 때 사용",
     rank: 5,
     inputPricePerMillion: 0.75,
     outputPricePerMillion: 4.5,
   },
   "gpt-5.6-luna": {
-    label: "OpenAI 품질 비교",
-    reason: "OpenAI 계열에서 품질 기준선을 보고 싶을 때 사용",
+    label: "품질 비교",
+    reason: "비용은 오르지만 최신 계열의 품질 기준선을 보고 싶을 때 사용",
     rank: 6,
     inputPricePerMillion: 1,
     outputPricePerMillion: 6,
@@ -265,8 +275,8 @@ function getModelKey(provider: string | null | undefined, modelName: string | nu
   return `${normalizeProvider(provider)}:${modelName ?? "unknown"}`;
 }
 
-function getHealth(avgResponseTimeMs: number, errorRate: number, hasApiKey: boolean): HealthStatus {
-  if (!hasApiKey || errorRate >= 10) return "error";
+function getHealth(avgResponseTimeMs: number, errorRate: number, hasApiKey: boolean, liveStatus?: LiveModelStatus): HealthStatus {
+  if (!hasApiKey || liveStatus?.status === "failed" || errorRate >= 10) return "error";
   if (avgResponseTimeMs >= 1500 || errorRate >= 3) return "slow";
   return "healthy";
 }
@@ -283,6 +293,10 @@ async function loadAiModelsData(): Promise<AiModelsData> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const configResponse = await fetch("/api/admin/ai-models");
+  const contentType = configResponse.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("AI 모델 API가 JSON 대신 HTML을 반환했습니다. /admin/ai-models는 API 미들웨어가 동작하는 dev 서버(예: 5173) 또는 배포 환경에서 열어주세요.");
+  }
   const configPayload = await configResponse.json();
   if (!configResponse.ok) {
     throw new Error(configPayload?.message || configPayload?.error || "AI 모델 설정을 불러오지 못했습니다.");
@@ -407,11 +421,17 @@ async function loadAiModelsData(): Promise<AiModelsData> {
     availableByKey.set(getModelKey(model.providerKey, model.modelName), model);
   });
 
+  const liveStatusByKey = new Map<string, LiveModelStatus>();
+  (configPayload.liveStatuses ?? []).forEach((status: LiveModelStatus) => {
+    liveStatusByKey.set(getModelKey(status.providerKey, status.modelName), status);
+  });
+
   const models: AiModel[] = Array.from(modelKeys).map((key) => {
     const [providerKey, modelNameFromKey] = key.split(":");
     const template = templateByKey.get(key);
     const configuredModel = configuredByKey.get(key);
     const availableModel = availableByKey.get(key);
+    const liveStatus = liveStatusByKey.get(key);
     const config = providerConfigs.get(providerKey);
     const stat = stats.get(key);
     const calls = stat?.calls ?? 0;
@@ -419,10 +439,12 @@ async function loadAiModelsData(): Promise<AiModelsData> {
       ? Math.round(stat.latencySum / stat.latencyCount)
       : 0;
     const errorRate = calls ? ((calls - (stat?.successes ?? 0)) / calls) * 100 : 0;
-    const enabled = Boolean(template?.is_active || template?.is_default || configuredModel || availableModel || calls > 0);
-    const health = getHealth(avgResponseTimeMs, errorRate, Boolean(config?.hasApiKey));
-
     const modelName = template?.model_name ?? configuredModel?.modelName ?? availableModel?.modelName ?? modelNameFromKey;
+    const liveResponseTimeMs = liveStatus?.responseTimeMs ?? null;
+    const effectiveResponseTimeMs = liveResponseTimeMs || avgResponseTimeMs;
+    const enabled = Boolean(config?.hasApiKey && (template?.is_active || template?.is_default || configuredModel || availableModel || calls > 0));
+    const health = getHealth(effectiveResponseTimeMs, errorRate, Boolean(config?.hasApiKey), liveStatus);
+
     const recommendation = RECOMMENDED_MODELS[modelName];
 
     return {
@@ -432,8 +454,8 @@ async function loadAiModelsData(): Promise<AiModelsData> {
       modelName,
       status: getStatus(enabled, health),
       health,
-      lastChecked: stat?.latest ?? template?.created_at ?? null,
-      avgResponseTimeMs,
+      lastChecked: liveStatus?.checkedAt ?? stat?.latest ?? template?.created_at ?? null,
+      avgResponseTimeMs: effectiveResponseTimeMs,
       totalRequests: calls,
       errorRate,
       estimatedCost: stat?.cost ?? 0,
@@ -458,16 +480,20 @@ async function loadAiModelsData(): Promise<AiModelsData> {
         recommendation?.inputPricePerMillion,
         recommendation?.outputPricePerMillion
       ),
+      connectionMessage: liveStatus?.message ?? null,
     };
   });
 
+  const connectedModels = models.filter((model) => model.status === "connected");
   const defaultModel =
+    connectedModels.find((model) => model.isDefault) ??
+    connectedModels.find((model) => model.isActive) ??
+    connectedModels[0] ??
     models.find((model) => model.isDefault) ??
-    models.find((model) => model.isActive) ??
     models[0] ??
     null;
   const fallbackModel =
-    models.find((model) => model.id !== defaultModel?.id && model.enabled && model.status === "connected") ??
+    connectedModels.find((model) => model.id !== defaultModel?.id) ??
     models.find((model) => model.id !== defaultModel?.id && model.enabled) ??
     null;
 
@@ -488,7 +514,7 @@ async function loadAiModelsData(): Promise<AiModelsData> {
 
   return {
     summary: {
-      connectedModels: models.filter((model) => model.status === "connected").length,
+      connectedModels: connectedModels.length,
       totalModels: models.length,
       defaultModelId: defaultModel?.id ?? null,
       defaultModelName: defaultModel?.modelName ?? null,
@@ -554,7 +580,7 @@ export default function AiModelsPage() {
   const fallbackModel = models.find((model) => model.id === fallbackModelId) ?? null;
 
   const enabledModels = useMemo(
-    () => models.filter((model) => model.enabled),
+    () => models.filter((model) => model.enabled && model.status === "connected"),
     [models]
   );
 
@@ -918,6 +944,7 @@ export default function AiModelsPage() {
                       ? `Input $${selectedModel.inputPricePerMillion}/1M · Output $${selectedModel.outputPricePerMillion}/1M`
                       : "–"],
                     ["API Key", selectedModel.apiKeyMasked],
+                    ["Live Check", selectedModel.connectionMessage ?? "아직 live check 결과가 없습니다."],
                     ["Base URL", selectedModel.baseUrl || "–"],
                     ["Max Tokens", selectedModel.maxTokens?.toLocaleString("ko-KR") ?? "–"],
                     ["Temperature", selectedModel.temperature?.toString() ?? "–"],
@@ -928,7 +955,9 @@ export default function AiModelsPage() {
                       <span
                         className={cn(
                           "font-medium",
-                          label === "Recommendation" ? "whitespace-normal leading-relaxed" : "truncate"
+                          label === "Recommendation" || label === "Live Check"
+                            ? "whitespace-normal leading-relaxed"
+                            : "truncate"
                         )}
                       >
                         {value}

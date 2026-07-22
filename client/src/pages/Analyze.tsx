@@ -7,6 +7,12 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   ArrowLeft,
   Plus,
   Trash2,
@@ -20,14 +26,18 @@ import {
   FileText,
   X,
   AlertTriangle,
+  History,
+  CalendarDays,
+  BriefcaseBusiness,
 } from "lucide-react";
 import Logo from "@/components/Logo";
+import AuthButton from "@/components/AuthButton";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { sanitizeText } from "@/utils/sanitize";
 import { checkDuplicateQuestions } from "@/utils/textSimilarity";
-import { saveDraft, loadDraft, saveAnalysisToStorage, clearAnalysisResult } from "@/utils/storage";
+import { saveAnalysisToStorage, clearAnalysisResult } from "@/utils/storage";
 import { UI_LABELS } from "@/constants/labels";
 import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
 import {
@@ -36,6 +46,8 @@ import {
   trackAnalysisComplete,
   trackAnalysisFailed,
 } from "@/lib/analytics";
+import { useAuth } from "@/contexts/AuthContext";
+import type { ProjectSummary } from "@/types/my";
 
 
 /**
@@ -61,6 +73,14 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
     message?: unknown;
     error?: unknown;
   };
+
+  const rawMessage = [message, error]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ");
+
+  if (/Google API Error 503|UNAVAILABLE|high demand|과부하/i.test(rawMessage)) {
+    return UI_LABELS.MODEL_OVERLOADED_ERROR;
+  }
 
   if (typeof message === "string" && message.trim()) {
     return message;
@@ -94,22 +114,62 @@ const LOADING_STEPS = {
   },
 } as const;
 
-/* ── 더미 데이터 ── */
-const JOB_ROLE_PRESETS = [
-  "서비스 PM",
-  "프론트엔드 개발",
-  "백엔드 개발",
-  "데이터 분석",
-  "마케팅",
-  "UX/UI 디자인",
-  "인사(HR)",
-  "영업/세일즈",
-];
+export const JOB_ROLE_CATEGORIES = [
+  {
+    name: "기획·PM",
+    roles: ["서비스 기획", "제품/상품 기획", "사업 기획", "UX 기획", "프로젝트 매니저"],
+  },
+  {
+    name: "마케팅·브랜딩",
+    roles: ["브랜드 마케팅", "디지털 마케팅", "퍼포먼스 마케팅", "콘텐츠 마케팅", "CRM 마케팅"],
+  },
+  {
+    name: "경영·사업",
+    roles: ["경영전략", "사업전략", "신사업", "사업개발", "해외사업"],
+  },
+  {
+    name: "재무·회계",
+    roles: ["재무", "회계", "세무", "IR", "자금", "FP&A"],
+  },
+  {
+    name: "구매·SCM",
+    roles: ["구매", "전략구매", "SCM", "물류", "생산관리"],
+  },
+  {
+    name: "인사·총무",
+    roles: ["인사(HR)", "채용", "조직문화", "교육", "총무"],
+  },
+  {
+    name: "영업·고객",
+    roles: ["국내영업", "해외영업", "B2B 영업", "고객관리", "고객지원(CS)"],
+  },
+  {
+    name: "데이터·IT",
+    roles: ["데이터 분석", "데이터 사이언스", "프론트엔드 개발", "백엔드 개발", "AI/ML 엔지니어"],
+  },
+  {
+    name: "디자인·콘텐츠",
+    roles: ["UX/UI 디자인", "프로덕트 디자인", "그래픽 디자인", "콘텐츠 기획", "영상 콘텐츠"],
+  },
+] as const;
+
+const PRESET_JOB_ROLES = JOB_ROLE_CATEGORIES.flatMap((category) => category.roles);
+
+export function isPresetJobRole(jobRole: string) {
+  return PRESET_JOB_ROLES.some((role) => role === jobRole);
+}
 
 interface QuestionItem {
   id: string;
   question: string;
   answer: string;
+}
+
+interface SavedAnalysisDetail {
+  question_text: string;
+  input_text: string;
+  company_name: string | null;
+  job_role: string | null;
 }
 
 function createEmptyQuestion(): QuestionItem {
@@ -118,6 +178,53 @@ function createEmptyQuestion(): QuestionItem {
     question: "",
     answer: "",
   };
+}
+
+function splitSavedQuestionSections(text: string): Map<number, string> {
+  const marker = /(?:^|\n{2,})\[문항\s*(\d+)\]\s*/g;
+  const matches = Array.from(text.matchAll(marker));
+
+  return new Map(
+    matches.map((match, index) => [
+      Number(match[1]),
+      text
+        .slice(
+          (match.index ?? 0) + match[0].length,
+          matches[index + 1]?.index ?? text.length
+        )
+        .trim(),
+    ])
+  );
+}
+
+export function parseSavedQuestions(questionText: string, inputText: string) {
+  const savedQuestions = splitSavedQuestionSections(questionText);
+  const savedAnswers = splitSavedQuestionSections(inputText);
+  const indexes = Array.from(
+    new Set([...Array.from(savedQuestions.keys()), ...Array.from(savedAnswers.keys())])
+  ).sort((a, b) => a - b);
+
+  if (indexes.length === 0) {
+    const question = questionText.trim();
+    const answer = inputText.trim();
+    return question || answer ? [{ question: question || "문항 1", answer }] : [];
+  }
+
+  return indexes.map((index) => ({
+    question: savedQuestions.get(index) || `문항 ${index}`,
+    answer: savedAnswers.get(index) || "",
+  }));
+}
+
+function formatSavedDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "작성일 미상";
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
 }
 
 /* ──────────────────────────────────────────
@@ -245,24 +352,41 @@ function JobRoleSelector({
   const isCustomActive = selected === "__custom__";
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {JOB_ROLE_PRESETS.map((role) => {
-        const isActive = selected === role;
-        return (
-          <button
-            key={role}
-            type="button"
-            onClick={() => onSelect(isActive ? null : role)}
-            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
-              isActive
-                ? "bg-gradient-to-r from-blue-500/20 to-cyan-400/20 border-blue-400/40 text-cyan-300 shadow-sm shadow-blue-500/10"
-                : "border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:border-white/[0.18] hover:bg-white/[0.07] hover:text-zinc-200"
-            }`}
+    <div className="space-y-5">
+      <Accordion type="multiple" className="space-y-2">
+        {JOB_ROLE_CATEGORIES.map((category) => (
+          <AccordionItem
+            key={category.name}
+            value={category.name}
+            className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4"
           >
-            {role}
-          </button>
-        );
-      })}
+            <AccordionTrigger className="py-3 text-zinc-300 hover:no-underline">
+              {category.name}
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {category.roles.map((role) => {
+                  const isActive = selected === role;
+                  return (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => onSelect(isActive ? null : role)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-500/20 to-cyan-400/20 border-blue-400/40 text-cyan-300 shadow-sm shadow-blue-500/10"
+                          : "border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:border-white/[0.18] hover:bg-white/[0.07] hover:text-zinc-200"
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  );
+                })}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
 
       {/* 직접 입력 태그 */}
       {isCustomActive ? (
@@ -386,6 +510,7 @@ function QuestionCard({
 ────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
   const [company, setCompany] = useState("");
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [customJob, setCustomJob] = useState("");
@@ -396,21 +521,12 @@ export default function Analyze() {
   const [loadingStep, setLoadingStep] = useState(0);
   const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
-  const [draftRestored, setDraftRestored] = useState(false);
-
-  // ── 로컬 스토리지 초안 복원 ──
-  useEffect(() => {
-    if (questions.length !== 1 || questions[0].answer) return;
-    const draft = loadDraft();
-    if (draft) {
-      setQuestions(draft.questions as QuestionItem[]);
-      if (draft.company) setCompany(draft.company);
-      if (draft.selectedJob) setSelectedJob(draft.selectedJob);
-      if (draft.customJob) setCustomJob(draft.customJob);
-      setDraftRestored(true);
-      setTimeout(() => setDraftRestored(false), 4000);
-    }
-  }, []);
+  const [isResumePickerOpen, setIsResumePickerOpen] = useState(false);
+  const [previousResumes, setPreviousResumes] = useState<ProjectSummary[]>([]);
+  const [isPreviousResumesLoading, setIsPreviousResumesLoading] = useState(false);
+  const [previousResumeError, setPreviousResumeError] = useState<string | null>(null);
+  const [isApplyingPreviousResume, setIsApplyingPreviousResume] = useState<string | null>(null);
+  const [resumeLoaded, setResumeLoaded] = useState(false);
 
   // ── Status Step 로딩 타이머 ──
   useEffect(() => {
@@ -468,6 +584,61 @@ export default function Analyze() {
     setQuestions((prev) => [...prev, createEmptyQuestion()]);
   }, [questions.length]);
 
+  const openPreviousResumePicker = async () => {
+    if (!user?.id) return;
+
+    setIsResumePickerOpen(true);
+    setIsPreviousResumesLoading(true);
+    setPreviousResumeError(null);
+
+    try {
+      const response = await fetch(`/api/projects?userId=${encodeURIComponent(user.id)}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const projects: ProjectSummary[] = await response.json();
+      setPreviousResumes(projects.filter((project) => project.latest_analysis_id));
+    } catch (error) {
+      console.error("[Analyze] 이전 지원서 목록 조회 실패:", error);
+      setPreviousResumeError("저장된 지원서를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsPreviousResumesLoading(false);
+    }
+  };
+
+  const applyPreviousResume = async (analysisId: string) => {
+    setIsApplyingPreviousResume(analysisId);
+    setPreviousResumeError(null);
+
+    try {
+      const response = await fetch(`/api/analysis/${encodeURIComponent(analysisId)}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const analysis: SavedAnalysisDetail = await response.json();
+      const restoredQuestions = parseSavedQuestions(analysis.question_text, analysis.input_text)
+        .slice(0, MAX_QUESTIONS)
+        .map((question) => ({ ...question, id: crypto.randomUUID() }));
+
+      if (restoredQuestions.length === 0) {
+        throw new Error("저장된 문항을 찾을 수 없습니다.");
+      }
+
+      const savedJob = analysis.job_role?.trim() || "";
+      const isSavedPresetJob = isPresetJobRole(savedJob);
+      setCompany(analysis.company_name?.trim() || "");
+      setQuestions(restoredQuestions);
+      setSelectedJob(isSavedPresetJob ? savedJob : savedJob ? "__custom__" : null);
+      setCustomJob(isSavedPresetJob ? "" : savedJob);
+      setIsResumePickerOpen(false);
+      setResumeLoaded(true);
+      setTimeout(() => setResumeLoaded(false), 4000);
+    } catch (error) {
+      console.error("[Analyze] 이전 지원서 불러오기 실패:", error);
+      setPreviousResumeError("지원서 내용을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsApplyingPreviousResume(null);
+    }
+  };
+
   // ── 분석 제출 (모든 예외 처리 포함) ──
   const executeSubmit = async () => {
     setIsLoading(true);
@@ -486,9 +657,6 @@ export default function Analyze() {
     // GA4: 자소서 입력 완료 + 분석 시작 이벤트
     trackResumeUpload("text", totalChars);
     trackAnalysisStart("cover_letter", totalChars);
-
-    // 로컬 스토리지 초안 백업
-    saveDraft({ company, selectedJob, customJob, questions });
 
     // 타임아웃 설정 (120초 - AI 분석이 길어질 수 있으므로 여유롭게 설정)
     const controller = new AbortController();
@@ -561,12 +729,50 @@ export default function Analyze() {
         return;
       }
 
+      let savedProjectId: string | undefined;
+      let savedAnalysisId: string | undefined;
+
+      if (user?.id && user.email) {
+        try {
+          const saveResponse = await fetch("/api/projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user,
+              result: data,
+              analysisMeta: data.analysisMeta,
+              questions: structuredQuestions,
+              company: company.trim(),
+              jobKeyword: jobLabel,
+            }),
+          });
+
+          let savePayload: any = null;
+          try {
+            savePayload = await saveResponse.json();
+          } catch {
+            /* ignore */
+          }
+
+          if (!saveResponse.ok) {
+            throw new Error(savePayload?.message || savePayload?.error || "분석 결과 저장 실패");
+          }
+
+          savedProjectId = savePayload?.project_id;
+          savedAnalysisId = savePayload?.analysis_id;
+        } catch (saveError) {
+          console.warn("[Analyze] DB 저장 실패 — 로컬 결과는 유지합니다:", saveError);
+        }
+      }
+
       // 분석 결과 저장 (localStorage + sessionStorage 통합)
       saveAnalysisToStorage({
         result: data,
         questions: structuredQuestions,
         company: company.trim(),
         jobKeyword: jobLabel,
+        projectId: savedProjectId,
+        analysisId: savedAnalysisId,
       });
 
       // GA4: 분석 성공 이벤트
@@ -666,14 +872,9 @@ export default function Analyze() {
               className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
               onClick={() => navigate("/my")}
             >
-              My
+              내 지원서
             </button>
-            <button
-              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-              onClick={() => navigate("/login?redirect=/analyze")}
-            >
-              로그인
-            </button>
+            <AuthButton />
           </div>
         </div>
       </motion.nav>
@@ -694,6 +895,17 @@ export default function Analyze() {
             <p className="text-zinc-500 text-base md:text-lg leading-relaxed max-w-xl mx-auto">
               문항별 자기소개서를 입력하면, AI가 항목별로 분석해 드립니다.
             </p>
+            {user?.id && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={openPreviousResumePicker}
+                className="mt-6 h-10 border-white/[0.1] bg-white/[0.02] px-4 text-sm font-medium text-zinc-300 hover:border-cyan-400/30 hover:bg-cyan-400/[0.06] hover:text-cyan-200"
+              >
+                <History className="mr-2 h-4 w-4" />
+                이전 지원서 불러오기
+              </Button>
+            )}
           </motion.div>
 
           {/* ── 목표 회사 및 직무 정보 ── */}
@@ -950,6 +1162,105 @@ export default function Analyze() {
         )}
       </AnimatePresence>
 
+      {/* ════════ PREVIOUS RESUME PICKER ════════ */}
+      <AnimatePresence>
+        {isResumePickerOpen && (
+          <motion.div
+            className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsResumePickerOpen(false)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="previous-resume-title"
+              className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/[0.1] bg-[#141414] shadow-2xl"
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.18 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between border-b border-white/[0.08] px-6 py-5">
+                <div>
+                  <p className="mb-1 text-xs font-medium tracking-wide text-cyan-300">저장된 지원서</p>
+                  <h2 id="previous-resume-title" className="text-lg font-semibold text-white">
+                    이전 지원서 불러오기
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsResumePickerOpen(false)}
+                  className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-white/[0.07] hover:text-white"
+                  aria-label="이전 지원서 목록 닫기"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="max-h-[min(60vh,520px)] overflow-y-auto p-4">
+                {isPreviousResumesLoading ? (
+                  <div className="flex min-h-40 items-center justify-center gap-3 text-sm text-zinc-500">
+                    <Loader2 className="h-4 w-4 animate-spin text-cyan-400" />
+                    저장된 지원서를 불러오는 중이에요
+                  </div>
+                ) : previousResumeError ? (
+                  <div className="px-3 py-8 text-center text-sm leading-relaxed text-zinc-400">
+                    {previousResumeError}
+                  </div>
+                ) : previousResumes.length === 0 ? (
+                  <div className="px-3 py-8 text-center text-sm leading-relaxed text-zinc-500">
+                    아직 불러올 이전 지원서가 없어요.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {previousResumes.map((project) => {
+                      const analysisId = project.latest_analysis_id!;
+                      const isApplying = isApplyingPreviousResume === analysisId;
+
+                      return (
+                        <button
+                          key={project.id}
+                          type="button"
+                          disabled={Boolean(isApplyingPreviousResume)}
+                          onClick={() => applyPreviousResume(analysisId)}
+                          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5 text-left transition-colors hover:border-cyan-400/25 hover:bg-cyan-400/[0.05] disabled:cursor-wait disabled:opacity-60"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-zinc-100">
+                                {project.title}
+                              </p>
+                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-zinc-500">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <BriefcaseBusiness className="h-3.5 w-3.5" />
+                                  {project.job_role || "직무 미지정"}
+                                </span>
+                                <span className="inline-flex items-center gap-1.5">
+                                  <CalendarDays className="h-3.5 w-3.5" />
+                                  {formatSavedDate(project.created_at)}
+                                </span>
+                              </div>
+                            </div>
+                            {isApplying ? (
+                              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-cyan-400" />
+                            ) : (
+                              <span className="shrink-0 text-xs font-medium text-cyan-300">불러오기</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ════════ ERROR MODAL ════════ */}
       <AnimatePresence>
         {errorModal && (
@@ -1029,9 +1340,9 @@ export default function Analyze() {
         )}
       </AnimatePresence>
 
-      {/* ════════ DRAFT RESTORED TOAST ════════ */}
+      {/* ════════ PREVIOUS RESUME LOADED TOAST ════════ */}
       <AnimatePresence>
-        {draftRestored && (
+        {resumeLoaded && (
           <motion.div
             className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]"
             initial={{ opacity: 0, y: 10 }}
@@ -1039,7 +1350,7 @@ export default function Analyze() {
             exit={{ opacity: 0, y: 10 }}
           >
             <div className="px-5 py-3 rounded-xl border border-cyan-500/20 bg-zinc-900/95 backdrop-blur-xl shadow-2xl shadow-black/40 text-sm font-medium text-cyan-400">
-              {UI_LABELS.DRAFT_RESTORED}
+              이전 지원서를 불러왔어요.
             </div>
           </motion.div>
         )}

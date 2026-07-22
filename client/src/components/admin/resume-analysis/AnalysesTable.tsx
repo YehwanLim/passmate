@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   Table,
   TableBody,
@@ -86,11 +86,12 @@ interface AnalysesTableProps {
  * - 응답시간 (md 이상)
  * - 토큰 (lg 이상)
  * - 비용 (lg 이상)
- * - 점수 (xl 이상)
  * - 일시 (md 이상)
  * - 상세 링크
  */
 export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
+  const [, navigate] = useLocation();
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className="rounded-lg border overflow-hidden">
@@ -104,7 +105,6 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
               <TableHead className="hidden md:table-cell w-[80px] text-right">응답시간</TableHead>
               <TableHead className="hidden lg:table-cell w-[70px] text-right">토큰</TableHead>
               <TableHead className="hidden lg:table-cell w-[80px] text-right">비용</TableHead>
-              <TableHead className="hidden xl:table-cell w-[60px] text-right">점수</TableHead>
               <TableHead className="hidden md:table-cell w-[100px] text-right">일시</TableHead>
               <TableHead className="w-[36px]" />
             </TableRow>
@@ -115,7 +115,7 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={10}
+                  colSpan={9}
                   className="h-32 text-center text-sm text-muted-foreground"
                 >
                   조건에 맞는 분석이 없습니다.
@@ -126,6 +126,7 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
                 <TableRow
                   key={r.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => navigate(`/admin/resume-analysis/${r.id}`)}
                 >
                   {/* 상태 */}
                   <TableCell>
@@ -137,7 +138,10 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
 
                   {/* 사용자 */}
                   <TableCell>
-                    <Link href={`/admin/resume-analysis/${r.id}`}>
+                    <Link
+                      href={`/admin/resume-analysis/${r.id}`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <div className="min-w-0">
                         {r.user_name && (
                           <p className="text-xs font-medium truncate leading-tight">
@@ -152,8 +156,12 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
                   </TableCell>
 
                   {/* 프로젝트 */}
-                  <TableCell className="hidden sm:table-cell">
-                    <Link href={`/admin/resume-analysis/${r.id}`}>
+                  <TableCell className="hidden sm:table-cell p-0">
+                    <Link
+                      href={`/admin/resume-analysis/${r.id}`}
+                      className="block px-4 py-3"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <div className="min-w-0 max-w-[180px]">
                         <p className="text-sm font-medium truncate hover:underline">
                           {r.project_title ?? "–"}
@@ -229,25 +237,6 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
                     </span>
                   </TableCell>
 
-                  {/* AI 점수 */}
-                  <TableCell className="hidden xl:table-cell text-right">
-                    {r.ai_score != null ? (
-                      <span
-                        className={`text-sm font-semibold tabular-nums ${
-                          r.ai_score >= 80
-                            ? "text-emerald-600"
-                            : r.ai_score >= 60
-                            ? "text-amber-600"
-                            : "text-destructive"
-                        }`}
-                      >
-                        {r.ai_score.toFixed(0)}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">–</span>
-                    )}
-                  </TableCell>
-
                   {/* 일시 */}
                   <TableCell className="hidden md:table-cell text-right text-xs text-muted-foreground whitespace-nowrap">
                     {fmtDate(r.created_at)}
@@ -255,7 +244,12 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
 
                   {/* 상세 */}
                   <TableCell>
-                    <Link href={`/admin/resume-analysis/${r.id}`}>
+                    <Link
+                      href={`/admin/resume-analysis/${r.id}`}
+                      className="inline-flex rounded-md p-1 hover:bg-muted"
+                      onClick={(event) => event.stopPropagation()}
+                      aria-label="분석 상세 보기"
+                    >
                       <ChevronRight className="size-4 text-muted-foreground" />
                     </Link>
                   </TableCell>

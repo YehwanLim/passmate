@@ -213,7 +213,7 @@ export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
             <div className="flex justify-center">
               <button
                 onClick={handleReasonSubmit}
-                disabled={!selectedReason || state === "submitting"}
+                disabled={!selectedReason}
                 className={`
                   inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium
                   transition-all duration-200

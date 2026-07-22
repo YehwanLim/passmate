@@ -7,10 +7,8 @@ describe("admin routing", () => {
   it("routes resume analysis detail URLs through the top-level app router", () => {
     const app = read("client/src/App.tsx");
 
-    expect(app).toContain('"/admin/resume-analysis/:id"');
-    expect(app).toContain(
-      "<Route key={path} path={path} component={AdminRoot} />"
-    );
+    expect(app).toContain('path={"/admin/*?"}');
+    expect(app).toContain("component={AdminRoot}");
   });
 
   it("routes resume analysis detail URLs inside AdminRoot before the list route", () => {
@@ -18,9 +16,14 @@ describe("admin routing", () => {
 
     const detailIndex = adminRoot.indexOf('path="/admin/resume-analysis/:id"');
     const listIndex = adminRoot.indexOf('path="/admin/resume-analysis"');
+    const adminCatchAllIndex = adminRoot.indexOf('path="/admin/*?"');
+    const dashboardRouteIndex = adminRoot.indexOf('path="/admin"');
 
     expect(detailIndex).toBeGreaterThan(-1);
     expect(listIndex).toBeGreaterThan(-1);
+    expect(adminCatchAllIndex).toBeGreaterThan(-1);
+    expect(dashboardRouteIndex).toBeGreaterThan(-1);
+    expect(adminCatchAllIndex).toBeLessThan(dashboardRouteIndex);
     expect(detailIndex).toBeLessThan(listIndex);
   });
 

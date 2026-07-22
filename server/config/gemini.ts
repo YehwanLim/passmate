@@ -14,7 +14,7 @@ export const GEMINI_MODEL = "gemini-2.5-flash-lite";
 /** Gemini API 버전 */
 export const GEMINI_API_VERSION = "v1beta";
 
-function getActiveGeminiModel(): string {
+export function getActiveGeminiModel(): string {
   try {
     const settingsPath = path.join(process.cwd(), "data", "ai-model-settings.json");
     const settings = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));

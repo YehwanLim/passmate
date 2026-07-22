@@ -3,9 +3,12 @@ import {
   buildEditorialKeywords,
   buildHiringMemoryItems,
   compressPersonaForHero,
+  emphasizeHeroSummaryCopy,
   getHeroIdentity,
   getHeroSummary,
+  limitSectionHighlights,
   limitReportText,
+  parseHighlightedText,
   splitPersonaForHeroLines,
   splitMentorComment,
   tokenizeCommentKeywords,
@@ -27,6 +30,13 @@ describe("report first impression editorial helpers", () => {
     )).toBe("식량사업 분석형 사업기획자")
   })
 
+  it("rewrites bland role-label personas into a more specific character identity", () => {
+    expect(getHeroIdentity(
+      "분석가이자 기획자",
+      ["#디스플레이", "#시장신호", "#마케팅"],
+    )).toBe("디스플레이 시장 신호를 읽는 마케터")
+  })
+
   it("replaces a truncated legacy summary with a complete domain narrative", () => {
     expect(getHeroSummary(
       "국제 경험과 비즈니스 통찰력을 바탕으로 식량 산업 변화를 분석하고 새로운 사업 기회로 연결하려는 지원자입니다.",
@@ -34,9 +44,23 @@ describe("report first impression editorial helpers", () => {
     )).toBe("식량산업의 성장 기회를 사업으로 연결하려는 지원자")
   })
 
+  it("emphasizes the core expression in the hero summary copy", () => {
+    expect(emphasizeHeroSummaryCopy("시장 변화를 읽고 전략으로 엮어 성과를 만드는 기획형 마케터"))
+      .toBe("시장 변화를 읽고 전략으로 엮어 **성과를 만드는 기획형 마케터**")
+    expect(emphasizeHeroSummaryCopy("시장 변화를 읽고 전략으로 연결하는 전략형 기획자"))
+      .toBe("시장 변화를 읽고 **전략으로 연결하는 전략형 기획자**")
+  })
+
   it("splits compressed persona copy into balanced hero lines", () => {
     expect(splitPersonaForHeroLines("데이터 기반 실행형 PM")).toEqual(["데이터 기반", "실행형 PM"])
     expect(splitPersonaForHeroLines("문제 해결형 기획자")).toEqual(["문제 해결형", "기획자"])
+  })
+
+  it("keeps long character personas in two readable lines without orphaning a short phrase", () => {
+    expect(splitPersonaForHeroLines("AI스타트업 데이터를 기회로 읽는 마케터"))
+      .toEqual(["AI스타트업 데이터를", "기회로 읽는 마케터"])
+    expect(splitPersonaForHeroLines("디스플레이 시장 신호를 읽는 마케터"))
+      .toEqual(["디스플레이 시장", "신호를 읽는 마케터"])
   })
 
   it("builds four to six deduplicated badge keywords without hashtag marks", () => {
@@ -98,5 +122,107 @@ describe("report first impression editorial helpers", () => {
 
     expect(tokens.map((token) => token.text).join("")).toBe(text)
     expect(tokens.filter((token) => token.highlighted).map((token) => token.text)).toEqual(["식량사업"])
+  })
+
+  it("expands legacy keyword emphasis to the full sentence and strips span markup", () => {
+    const segments = parseHighlightedText(
+      '<span class="text-emerald-400 font-semibold">LG디스플레이</span>에서 **분석력**과 **150% 목표 달성**을 보여줍니다.',
+    )
+
+    expect(segments).toEqual([
+      { text: "LG디스플레이에서 분석력과 150% 목표 달성을 보여줍니다.", kind: "bold" },
+    ])
+  })
+
+  it("expands standalone numeric achievement emphasis to the sentence", () => {
+    const segments = parseHighlightedText("성과는 **150% 목표 달성**입니다.")
+
+    expect(segments).toEqual([
+      { text: "성과는 150% 목표 달성입니다.", kind: "bold" },
+    ])
+  })
+
+  it("preserves full-sentence bold emphasis", () => {
+    const segments = parseHighlightedText(
+      "정량 성과를 더 구체화해야 합니다. **이 보완은 지원자의 경험을 단순 나열이 아닌 의미 있는 성과로 읽히게 만듭니다.**",
+    )
+
+    expect(segments).toEqual([
+      { text: "정량 성과를 더 구체화해야 합니다. ", kind: "text" },
+      { text: "이 보완은 지원자의 경험을 단순 나열이 아닌 의미 있는 성과로 읽히게 만듭니다.", kind: "bold" },
+    ])
+  })
+
+  it("reduces a full-paragraph marker to its concluding sentence", () => {
+    const segments = parseHighlightedText(
+      "**시장 기회를 발견했습니다. 이를 사업 전략으로 정리했습니다. 이 경험은 마케팅 직무에서 강점이 됩니다.**",
+    )
+
+    expect(segments).toEqual([
+      { text: "시장 기회를 발견했습니다. 이를 사업 전략으로 정리했습니다. ", kind: "text" },
+      { text: "이 경험은 마케팅 직무에서 강점이 됩니다.", kind: "bold" },
+    ])
+  })
+
+  it("keeps at most twenty percent of a long section emphasized", () => {
+    const sections = limitSectionHighlights([
+      "**첫 결론입니다.** 근거입니다. **추가 결론입니다.**",
+      "**두 번째 근거입니다.** 다음 설명입니다.",
+      "**세 번째 근거입니다.** 마무리입니다.",
+    ])
+
+    expect(sections.flat().filter((segment) => segment.kind === "bold").map((segment) => segment.text))
+      .toEqual(["첫 결론입니다."])
+  })
+
+  it("does not force emphasis into a section shorter than five sentences", () => {
+    const sections = limitSectionHighlights([
+      "**첫 문장입니다.** **둘째 문장입니다.**",
+      "**셋째 문장입니다.** **넷째 문장입니다.**",
+    ])
+
+    expect(sections.flat().some((segment) => segment.kind === "bold")).toBe(false)
+  })
+
+  it("expands keyword emphasis to its containing sentence", () => {
+    const segments = parseHighlightedText("첫 문장입니다. 지원자는 **분석력**을 보여줍니다. 다음 문장입니다.")
+
+    expect(segments).toEqual([
+      { text: "첫 문장입니다. ", kind: "text" },
+      { text: "지원자는 분석력을 보여줍니다.", kind: "bold" },
+      { text: " 다음 문장입니다.", kind: "text" },
+    ])
+  })
+
+  it("does not auto-highlight plain key expressions without explicit emphasis", () => {
+    const segments = parseHighlightedText("지원자는 분석력과 전략적 사고, 문제 해결 능력, 실행력, 협업 능력을 보여줍니다.")
+
+    expect(segments).toEqual([
+      { text: "지원자는 분석력과 전략적 사고, 문제 해결 능력, 실행력, 협업 능력을 보여줍니다.", kind: "text" },
+    ])
+  })
+
+  it("does not auto-highlight roles and metrics without explicit emphasis", () => {
+    const segments = parseHighlightedText("LG디스플레이 상품기획 직무에서 150% 목표 달성을 설명합니다.")
+
+    expect(segments).toEqual([
+      { text: "LG디스플레이 상품기획 직무에서 150% 목표 달성을 설명합니다.", kind: "text" },
+    ])
+  })
+
+  it("strips unsupported html tags from report text", () => {
+    const segments = parseHighlightedText('<img src=x onerror=alert(1)>**실행력**')
+
+    expect(segments).toEqual([
+      { text: "실행력", kind: "bold" },
+    ])
+  })
+
+  it("removes arbitrary span classes wherever report text is rendered", () => {
+    const segments = parseHighlightedText('<span class="text-emerald-400 font-semibold">LG디스플레이</span>의 <span style="color:red">마케팅 직무</span> 질문입니다.')
+
+    expect(segments.map((segment) => segment.text).join("")).toBe("LG디스플레이의 마케팅 직무 질문입니다.")
+    expect(segments.map((segment) => segment.text).join("")).not.toContain("span class")
+    expect(segments.map((segment) => segment.text).join("")).not.toContain("<span")
   })
 })

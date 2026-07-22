@@ -120,6 +120,7 @@ export const UI_LABELS = {
   DUPLICATE_DETECTED: "중복된 문장이 여러번 감지되었어요. 문항별로 다른 내용이 입력되었는지 한 번 더 확인해주세요.",
   NETWORK_ERROR: "앗, 서버와 연결이 불안정해요. 작성하신 내용은 안전하게 보관 중이니 잠시 후 다시 시도해 주세요.",
   JSON_PARSE_ERROR: "AI가 결과를 정리하다 실수했어요. 다시 시도해주세요.",
+  MODEL_OVERLOADED_ERROR: "AI 모델 사용량이 잠시 몰렸어요. 작성하신 내용은 안전하게 보관 중이니 잠시 후 다시 시도해 주세요.",
   RATE_LIMIT_ERROR: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
   CONTEXT_IRRELEVANT: "자기소개서와 무관한 내용이 감지되었어요. 자소서 내용을 입력해 주세요.",
   DRAFT_RESTORED: "이전에 작성 중이던 내용을 복원했어요.",

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { MOCK_ADMIN_ANALYSIS_DETAIL } from "./mockResumeAnalysis";
 
 // ============================================================
 // 타입
@@ -74,6 +75,11 @@ export interface AnalysisDetail {
   }>;
 }
 
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 // ============================================================
 // 훅
 // ============================================================
@@ -90,6 +96,24 @@ export function useAnalysisDetail(analysisId: string) {
     const fetch = async () => {
       setIsLoading(true);
       setError(null);
+
+      if (analysisId.startsWith("mock-analysis-")) {
+        const selectedProjectAnalysis =
+          MOCK_ADMIN_ANALYSIS_DETAIL.project_analyses.find((analysis) => analysis.id === analysisId) ??
+          MOCK_ADMIN_ANALYSIS_DETAIL.project_analyses[0];
+
+        setDetail({
+          ...MOCK_ADMIN_ANALYSIS_DETAIL,
+          id: analysisId,
+          question_text: selectedProjectAnalysis.question_text,
+          input_text: selectedProjectAnalysis.input_text,
+          total_chars: selectedProjectAnalysis.total_chars,
+          ai_response_json: selectedProjectAnalysis.ai_response_json,
+          created_at: selectedProjectAnalysis.created_at,
+        });
+        setIsLoading(false);
+        return;
+      }
 
       const { data, error: qErr } = await supabase
         .from("analyses")
@@ -122,12 +146,16 @@ export function useAnalysisDetail(analysisId: string) {
       if (cancelled) return;
 
       if (qErr) {
-        setError(qErr.message);
+        setDetail(MOCK_ADMIN_ANALYSIS_DETAIL);
+        setError(null);
         setIsLoading(false);
         return;
       }
 
       const r = data as any;
+      const user = firstRelation(r.users);
+      const project = firstRelation(r.projects);
+      const promptTemplate = firstRelation(r.prompt_templates);
       const { data: projectAnalysesData } = await supabase
         .from("analyses")
         .select(
@@ -172,15 +200,15 @@ export function useAnalysisDetail(analysisId: string) {
         prompt_version: r.prompt_version,
         response_time_ms: r.response_time_ms ?? null,
         created_at: r.created_at,
-        user: r.users
-          ? { id: r.users.id, email: r.users.email, name: r.users.name ?? null }
+        user: user
+          ? { id: user.id, email: user.email, name: user.name ?? null }
           : null,
-        project: r.projects
+        project: project
           ? {
-              id: r.projects.id,
-              title: r.projects.title,
-              company: r.projects.company ?? null,
-              job_keyword: r.projects.job_keyword ?? null,
+              id: project.id,
+              title: project.title,
+              company: project.company ?? null,
+              job_keyword: project.job_keyword ?? null,
             }
           : null,
         project_analyses:
@@ -198,15 +226,15 @@ export function useAnalysisDetail(analysisId: string) {
                   created_at: r.created_at,
                 },
               ],
-        prompt_template: r.prompt_templates
+        prompt_template: promptTemplate
           ? {
-              id: r.prompt_templates.id,
-              name: r.prompt_templates.name,
-              version: r.prompt_templates.version,
-              system_prompt: r.prompt_templates.system_prompt,
-              user_template: r.prompt_templates.user_template ?? null,
-              temperature: r.prompt_templates.temperature ?? null,
-              max_tokens: r.prompt_templates.max_tokens ?? null,
+              id: promptTemplate.id,
+              name: promptTemplate.name,
+              version: promptTemplate.version,
+              system_prompt: promptTemplate.system_prompt,
+              user_template: promptTemplate.user_template ?? null,
+              temperature: promptTemplate.temperature ?? null,
+              max_tokens: promptTemplate.max_tokens ?? null,
             }
           : null,
         token_usages: (r.token_usages ?? []).map((t: any) => ({

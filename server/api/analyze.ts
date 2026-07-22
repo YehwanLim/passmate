@@ -1,7 +1,7 @@
 // No SDK imports needed; using raw fetch
 import dotenv from "dotenv";
 import { MASTER_SYSTEM_PROMPT } from "../prompts/reportPrompt";
-import { getGeminiUrl } from "../config/gemini";
+import { getActiveGeminiModel, getGeminiUrl } from "../config/gemini";
 
 dotenv.config();
 
@@ -26,6 +26,7 @@ interface AnalyzeRequest {
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 3000; // 첫 재시도 3초, 이후 지수 백오프
+const MODEL_OVERLOADED_MESSAGE = "AI 모델 사용량이 잠시 몰렸어요. 작성하신 내용은 안전하게 보관 중이니 잠시 후 다시 시도해 주세요.";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,6 +38,7 @@ function sleep(ms: number) {
  */
 async function callGeminiOnce(userPrompt: string): Promise<any> {
   const url = getGeminiUrl(GEMINI_API_KEY!);
+  const startedAt = Date.now();
 
   const apiRes = await fetch(url, {
     method: "POST",
@@ -47,6 +49,7 @@ async function callGeminiOnce(userPrompt: string): Promise<any> {
       ]
     })
   });
+  const responseTimeMs = Date.now() - startedAt;
 
   if (!apiRes.ok) {
     const errorText = await apiRes.text();
@@ -63,6 +66,7 @@ async function callGeminiOnce(userPrompt: string): Promise<any> {
 
   const data = await apiRes.json();
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const usage = data.usageMetadata ?? {};
 
   if (!rawText) {
     throw new Error("Gemini 응답이 비어 있습니다.");
@@ -73,7 +77,19 @@ async function callGeminiOnce(userPrompt: string): Promise<any> {
     throw new Error("Gemini 응답 JSON 파싱 실패");
   }
 
-  return parsed;
+  return {
+    parsed,
+    responseTimeMs,
+    httpStatus: apiRes.status,
+    tokenUsage: {
+      promptTokens: Number(usage.promptTokenCount ?? 0),
+      completionTokens: Number(usage.candidatesTokenCount ?? 0),
+      totalTokens: Number(
+        usage.totalTokenCount ??
+          (Number(usage.promptTokenCount ?? 0) + Number(usage.candidatesTokenCount ?? 0))
+      ),
+    },
+  };
 }
 
 /**
@@ -84,6 +100,32 @@ function isRetryable(error: any): boolean {
   if (error?.isBillingIssue) return false;
   const code = error?.statusCode;
   return code === 503 || code === 429 || code === 500;
+}
+
+function isModelOverloadedError(error: any): boolean {
+  const message = String(error?.message || "");
+  return error?.statusCode === 503 || /Google API Error 503|UNAVAILABLE|high demand/i.test(message);
+}
+
+export function getAnalyzeApiErrorResponse(error: any) {
+  if (error?.name === "AbortError") {
+    return {
+      status: 504,
+      body: { error: "TIMEOUT", message: "분석 시간이 초과되었습니다. 다시 시도해 주세요." },
+    };
+  }
+
+  if (isModelOverloadedError(error)) {
+    return {
+      status: 503,
+      body: { error: "MODEL_OVERLOADED", message: MODEL_OVERLOADED_MESSAGE },
+    };
+  }
+
+  return {
+    status: 500,
+    body: { error: error?.message || "Internal server error" },
+  };
 }
 
 // Gemini API call (메인 진입점)
@@ -114,7 +156,8 @@ export async function analyzeCoverLetter(input: AnalyzeRequest | string) {
         await sleep(delay);
       }
 
-      const parsed = await callGeminiOnce(userPrompt);
+      const modelResult = await callGeminiOnce(userPrompt);
+      const parsed = modelResult.parsed;
 
       // questionTabs에 원본 질문/답변 주입 (서버 소스 오브 트루스)
       if (parsed.questionTabs) {
@@ -127,7 +170,16 @@ export async function analyzeCoverLetter(input: AnalyzeRequest | string) {
       }
 
       console.log(`[analyze] ✅ Gemini 응답 파싱 성공 (시도 ${attempt + 1})`);
-      return parsed;
+      return {
+        ...parsed,
+        analysisMeta: {
+          modelProvider: "gemini",
+          modelName: getActiveGeminiModel(),
+          responseTimeMs: modelResult.responseTimeMs,
+          httpStatus: modelResult.httpStatus,
+          tokenUsage: modelResult.tokenUsage,
+        },
+      };
     } catch (error: any) {
       lastError = error;
       console.error(`[analyze] 시도 ${attempt + 1} 실패:`, error.message);

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { ClipboardPaste, Crosshair, FileBarChart, Lock, ArrowRight } from "lucide-react";
 
 /* ─────────────────────────────────────────────────────────
@@ -38,14 +38,14 @@ const steps = [
   },
 ];
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: {},
   visible: {
     transition: { staggerChildren: 0.15, delayChildren: 0.2 },
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 32 },
   visible: {
     opacity: 1,

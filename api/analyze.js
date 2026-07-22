@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { getActiveModel } from "../lib/ai-model-settings.js";
+import { getModelCallSequence } from "../lib/ai-model-settings.js";
 import { MASTER_SYSTEM_PROMPT } from "../shared/prompts/reportPrompt.js";
 
 dotenv.config();
@@ -19,8 +19,9 @@ function sanitizeInput(text) {
     .trim();
 }
 
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 3000;
+const FALLBACK_RETRY_DELAY_MS = 3000;
+const MODEL_CALL_TIMEOUT_MS = 25000;
+const MODEL_OVERLOADED_MESSAGE = "AI 모델 사용량이 잠시 몰렸어요. 작성하신 내용은 안전하게 보관 중이니 잠시 후 다시 시도해 주세요.";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,11 +31,41 @@ function isRetryableStatus(status) {
   return status === 503 || status === 429 || status === 500;
 }
 
+function isRetryableModelError(error) {
+  return error?.name === "AbortError" || isRetryableStatus(error?.statusCode);
+}
+
+function isModelOverloadedError(error) {
+  const message = String(error?.message || "");
+  return error?.statusCode === 503 || /Google API Error 503|UNAVAILABLE|high demand/i.test(message);
+}
+
+export function getAnalyzeApiErrorResponse(error) {
+  if (error?.name === "AbortError") {
+    return {
+      status: 504,
+      body: { error: "TIMEOUT", message: "분석 시간이 초과되었습니다. 다시 시도해 주세요." },
+    };
+  }
+
+  if (isModelOverloadedError(error)) {
+    return {
+      status: 503,
+      body: { error: "MODEL_OVERLOADED", message: MODEL_OVERLOADED_MESSAGE },
+    };
+  }
+
+  return {
+    status: 500,
+    body: { error: error?.message || "Internal server error" },
+  };
+}
+
 async function callGeminiOnce(userPrompt, apiKey, modelName) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 55000);
+  const timeout = setTimeout(() => controller.abort(), MODEL_CALL_TIMEOUT_MS);
   const startedAt = Date.now();
 
   const apiRes = await fetch(url, {
@@ -97,7 +128,7 @@ function getOpenAiResponseText(data) {
 
 async function callOpenAiOnce(userPrompt, apiKey, modelName) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 55000);
+  const timeout = setTimeout(() => controller.abort(), MODEL_CALL_TIMEOUT_MS);
   const startedAt = Date.now();
 
   const apiRes = await fetch("https://api.openai.com/v1/responses", {
@@ -186,22 +217,23 @@ async function analyzeCoverLetter(input) {
     request = input;
   }
 
-  const activeModel = getActiveModel();
-  const { apiKey, envKey } = getActiveApiKey(activeModel);
-
-  if (!apiKey) {
-    console.error(`[analyze] ❌ ${envKey} not set`);
-    throw new Error(`${envKey}가 설정되지 않았습니다. 서버 환경변수를 확인해주세요.`);
-  }
-
   const userPrompt = buildUserPrompt(request);
+  const modelCandidates = getModelCallSequence();
 
   let lastError = null;
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt < modelCandidates.length; attempt++) {
+    const activeModel = modelCandidates[attempt];
+    const { apiKey, envKey } = getActiveApiKey(activeModel);
+
+    if (!apiKey) {
+      console.error(`[analyze] ❌ ${envKey} not set`);
+      throw new Error(`${envKey}가 설정되지 않았습니다. 서버 환경변수를 확인해주세요.`);
+    }
+
     try {
       if (attempt > 0) {
-        const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-        console.log(`[analyze] ⏳ 재시도 ${attempt}/${MAX_RETRIES} (${delay}ms 후)...`);
+        const delay = FALLBACK_RETRY_DELAY_MS;
+        console.log(`[analyze] ⏳ fallback 모델 재시도 ${attempt + 1}/${modelCandidates.length}: ${activeModel.providerKey}/${activeModel.modelName} (${delay}ms 후)...`);
         await sleep(delay);
       }
 
@@ -236,9 +268,9 @@ async function analyzeCoverLetter(input) {
       };
     } catch (error) {
       lastError = error;
-      console.error(`[analyze] 시도 ${attempt + 1} 실패:`, error.message);
+      console.error(`[analyze] ${activeModel.providerKey}/${activeModel.modelName} 시도 실패:`, error.message);
 
-      if (!isRetryableStatus(error.statusCode)) {
+      if (!isRetryableModelError(error)) {
         break;
       }
     }
@@ -453,12 +485,7 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
   } catch (error) {
     console.error('API Error:', error);
-    
-    // AbortError (타임아웃)
-    if (error.name === 'AbortError') {
-      return res.status(504).json({ error: 'TIMEOUT', message: '분석 시간이 초과되었습니다. 다시 시도해 주세요.' });
-    }
-    
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    const errorResponse = getAnalyzeApiErrorResponse(error);
+    return res.status(errorResponse.status).json(errorResponse.body);
   }
 }
