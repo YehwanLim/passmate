@@ -111,3 +111,4 @@ temp/
 /generated/prisma
 .vercel
 .env*
+.worktrees/
