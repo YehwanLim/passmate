@@ -272,24 +272,31 @@ function JobRoleSelector({
   const isCustomActive = selected === "__custom__";
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {JOB_ROLE_PRESETS.map((role) => {
-        const isActive = selected === role;
-        return (
-          <button
-            key={role}
-            type="button"
-            onClick={() => onSelect(isActive ? null : role)}
-            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
-              isActive
-                ? "bg-gradient-to-r from-blue-500/20 to-cyan-400/20 border-blue-400/40 text-cyan-300 shadow-sm shadow-blue-500/10"
-                : "border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:border-white/[0.18] hover:bg-white/[0.07] hover:text-zinc-200"
-            }`}
-          >
-            {role}
-          </button>
-        );
-      })}
+    <div className="space-y-5">
+      {JOB_ROLE_CATEGORIES.map((category) => (
+        <div key={category.name} className="space-y-2">
+          <p className="text-xs font-medium text-zinc-500">{category.name}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {category.roles.map((role) => {
+              const isActive = selected === role;
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => onSelect(isActive ? null : role)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
+                    isActive
+                      ? "bg-gradient-to-r from-blue-500/20 to-cyan-400/20 border-blue-400/40 text-cyan-300 shadow-sm shadow-blue-500/10"
+                      : "border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:border-white/[0.18] hover:bg-white/[0.07] hover:text-zinc-200"
+                  }`}
+                >
+                  {role}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
 
       {/* 직접 입력 태그 */}
       {isCustomActive ? (

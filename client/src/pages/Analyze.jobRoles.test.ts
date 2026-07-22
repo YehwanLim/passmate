@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { JOB_ROLE_CATEGORIES } from "./Analyze";
 
@@ -28,5 +29,16 @@ describe("JOB_ROLE_CATEGORIES", () => {
     );
     expect(roles).not.toContain("서비스 PM");
     expect(new Set(roles).size).toBe(roles.length);
+  });
+
+  it("renders every category before the shared custom input control", () => {
+    const source = readFileSync(new URL("./Analyze.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain("JOB_ROLE_CATEGORIES.map((category) => (");
+    expect(source).toContain("{category.name}");
+    expect(source).toContain("category.roles.map((role) => {");
+    expect(source.indexOf("JOB_ROLE_CATEGORIES.map((category) => (")).toBeLessThan(
+      source.indexOf("{/* 직접 입력 태그 */}")
+    );
   });
 });
