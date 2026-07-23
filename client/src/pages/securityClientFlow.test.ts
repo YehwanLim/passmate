@@ -11,9 +11,11 @@ const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.ur
 const supabaseSource = readFileSync(new URL("../lib/supabase.ts", import.meta.url), "utf8");
 
 describe("authenticated client flow", () => {
-  it("submits analysis once with auth, a random idempotency key, and the persisted response id", () => {
+  it("uses the same idempotency key for a retry of unchanged analysis input and navigates with the persisted response id", () => {
     expect(analyzeSource).toContain('import { getAuthorizationHeader } from "@/lib/apiAuth"');
-    expect(analyzeSource).toContain('"Idempotency-Key": crypto.randomUUID()');
+    expect(analyzeSource).toContain("const analysisRequestRef = useRef");
+    expect(analyzeSource).toContain("const requestFingerprint = JSON.stringify(requestPayload)");
+    expect(analyzeSource).toContain('"Idempotency-Key": idempotencyKey');
     expect(analyzeSource).toContain("data.report.questionTabs");
     expect(analyzeSource).toContain('navigate(`/report-new?analysisId=${encodeURIComponent(data.analysis_id)}`)');
     expect(analyzeSource).not.toMatch(/fetch\("\/api\/projects",\s*\{\s*method:\s*"POST"/);

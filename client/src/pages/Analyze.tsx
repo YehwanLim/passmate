@@ -73,6 +73,12 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
   if (error === "CONTEXT_IRRELEVANT") return UI_LABELS.CONTEXT_IRRELEVANT;
   if (error === "ANALYSIS_DISABLED")
     return "분석 기능이 일시적으로 중단되었습니다. 잠시 후 다시 시도해 주세요.";
+  if (
+    error === "ANALYSIS_PERSISTENCE_PENDING" ||
+    error === "ANALYSIS_IN_PROGRESS"
+  ) {
+    return "분석 결과를 안전하게 저장하고 있어요. 잠시 후 같은 내용으로 다시 시도해 주세요.";
+  }
   if (error === "AUTHENTICATION_REQUIRED")
     return "로그인 후 분석을 시작할 수 있어요.";
   return UI_LABELS.ANALYSIS_FAILED;
@@ -558,6 +564,10 @@ export default function Analyze() {
     string | null
   >(null);
   const [resumeLoaded, setResumeLoaded] = useState(false);
+  const analysisRequestRef = useRef<{
+    fingerprint: string;
+    idempotencyKey: string;
+  } | null>(null);
 
   // ── Status Step 로딩 타이머 ──
   useEffect(() => {
@@ -706,6 +716,21 @@ export default function Analyze() {
       question: sanitizeText(q.question.trim()) || `문항 ${i + 1}`,
       answer: sanitizeText(q.answer),
     }));
+    const requestPayload = {
+      questions: structuredQuestions,
+      company: sanitizeText(company.trim()) || undefined,
+      jobKeyword: sanitizeText(jobLabel) || undefined,
+    };
+    const requestFingerprint = JSON.stringify(requestPayload);
+    const previousRequest = analysisRequestRef.current;
+    const idempotencyKey =
+      previousRequest?.fingerprint === requestFingerprint
+        ? previousRequest.idempotencyKey
+        : crypto.randomUUID();
+    analysisRequestRef.current = {
+      fingerprint: requestFingerprint,
+      idempotencyKey,
+    };
 
     // GA4: 자소서 입력 완료 + 분석 시작 이벤트
     trackResumeUpload("text", totalChars);
@@ -722,14 +747,10 @@ export default function Analyze() {
         headers: {
           "Content-Type": "application/json",
           ...authorization,
-          "Idempotency-Key": crypto.randomUUID(),
+          "Idempotency-Key": idempotencyKey,
         },
         signal: controller.signal,
-        body: JSON.stringify({
-          questions: structuredQuestions,
-          company: sanitizeText(company.trim()) || undefined,
-          jobKeyword: sanitizeText(jobLabel) || undefined,
-        }),
+        body: JSON.stringify(requestPayload),
       });
 
       clearTimeout(timeoutId);
@@ -799,6 +820,7 @@ export default function Analyze() {
         Math.round(performance.now() - analysisStartTime)
       );
 
+      analysisRequestRef.current = null;
       navigate(
         `/report-new?analysisId=${encodeURIComponent(data.analysis_id)}`
       );

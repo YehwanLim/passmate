@@ -333,9 +333,6 @@ function idempotencyResult(existing, hash) {
   if (existing.status === "PENDING" || existing.status === "CALLING") {
     throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
   }
-  if (existing.status === "PERSISTENCE_PENDING") {
-    throw new ApiError("ANALYSIS_PERSISTENCE_PENDING", 409);
-  }
   if (existing.status === "FAILED") throw new ApiError("ANALYSIS_RETRY_WITH_NEW_KEY", 409);
   if (existing.status === "SUCCEEDED" && existing.analysis) {
     return {
@@ -367,13 +364,15 @@ async function findExistingRequest(tx, userId, idempotencyKey) {
       reservationId: true,
       analysisId: true,
       idempotencyKey: true,
+      providerMetadata: true,
+      providerResult: true,
       analysis: { select: { id: true, projectId: true, aiResponseJson: true } },
     },
   });
 }
 
 function isExpiredPendingRequest(existing, now = new Date()) {
-  if (existing?.status !== "PENDING" || !existing.expiresAt) return false;
+  if (!['PENDING', 'CALLING'].includes(existing?.status) || !existing.expiresAt) return false;
   const expiry = new Date(existing.expiresAt);
   return Number.isFinite(expiry.getTime()) && expiry.getTime() <= now.getTime();
 }
@@ -386,7 +385,7 @@ async function expirePendingRequest({ db, existing, requestId, userId }) {
     if (!isExpiredPendingRequest(current)) return current;
     const now = new Date();
     const claimed = await tx.analysisRequest.updateMany({
-      where: { id: current.id, status: "PENDING", expiresAt: { lte: now } },
+      where: { id: current.id, status: { in: ["PENDING", "CALLING"] }, expiresAt: { lte: now } },
       data: { status: "FAILED" },
     });
     if (claimed.count !== 1) {
@@ -421,12 +420,14 @@ async function expirePendingRequest({ db, existing, requestId, userId }) {
 async function expireStaleRequestsForUser({ db, requestId, userId }) {
   if (!db.analysisRequest?.findMany) return;
   const expired = await db.analysisRequest.findMany({
-    where: { userId, status: "PENDING", expiresAt: { lte: new Date() } },
+    where: { userId, status: { in: ["PENDING", "CALLING"] }, expiresAt: { lte: new Date() } },
     select: {
       analysisId: true,
       expiresAt: true,
       id: true,
       idempotencyKey: true,
+      providerMetadata: true,
+      providerResult: true,
       requestHash: true,
       reservationId: true,
       status: true,
@@ -485,12 +486,25 @@ async function beginProviderCall({ db, requestId }) {
   if (claimed.count !== 1) throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
 }
 
-async function markProviderCompleted({ db, requestId }) {
+async function stageProviderResult({ db, metadata, report, requestId }) {
   const claimed = await db.$transaction((tx) => tx.analysisRequest.updateMany({
     where: { id: requestId, status: "CALLING" },
-    data: { status: "PERSISTENCE_PENDING" },
+    data: {
+      status: "PERSISTENCE_PENDING",
+      providerMetadata: metadata,
+      providerResult: report,
+    },
   }));
   if (claimed.count !== 1) throw new ApiError("ANALYSIS_PERSISTENCE_PENDING", 409);
+}
+
+function allocationFromExisting(existing) {
+  return {
+    analysis: { id: existing.analysisId },
+    analysisRequest: { id: existing.id },
+    project: { id: existing.analysis?.projectId },
+    reservation: { reservationId: existing.reservationId },
+  };
 }
 
 async function finalizeAnalysis({ db, allocation, finalize, metadata, report, userId }) {
@@ -591,6 +605,32 @@ export function createAnalyzeHandler({
         requestId,
         userId: applicationUser.id,
       });
+      if (existing && existing.requestHash !== hash) {
+        throw new ApiError("IDEMPOTENCY_KEY_REUSED", 409);
+      }
+      if (existing?.status === "PERSISTENCE_PENDING") {
+        if (!existing.analysis || !isRecord(existing.providerResult) || !isRecord(existing.providerMetadata)) {
+          return sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
+        }
+        try {
+          await finalizeAnalysis({
+            allocation: allocationFromExisting(existing),
+            db,
+            finalize: finalizeReservation,
+            metadata: modelMetadata(existing.providerMetadata),
+            report: existing.providerResult,
+            userId: applicationUser.id,
+          });
+          return sendJson(res, 200, analysisResponse({
+            analysisId: existing.analysis.id,
+            projectId: existing.analysis.projectId,
+            report: existing.providerResult,
+            requestId,
+          }), requestId);
+        } catch {
+          return sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
+        }
+      }
       const stored = idempotencyResult(existing, hash);
       if (stored) {
         return sendJson(res, 200, analysisResponse({ ...stored, requestId }), requestId);
@@ -653,7 +693,12 @@ export function createAnalyzeHandler({
         const { analysisMeta, ...report } = modelResult;
         const metadata = modelMetadata(analysisMeta);
         providerCompleted = true;
-        await markProviderCompleted({ db, requestId: allocation.analysisRequest.id });
+        await stageProviderResult({
+          db,
+          metadata,
+          report,
+          requestId: allocation.analysisRequest.id,
+        });
         await finalizeAnalysis({
           allocation,
           db,
@@ -669,20 +714,25 @@ export function createAnalyzeHandler({
           requestId,
         }), requestId);
       } catch (error) {
+        if (providerCompleted) {
+          // The provider result is durably staged (or the request remains in
+          // CALLING if the database was unavailable). Never refund this
+          // reservation based on an ambiguous post-provider failure; the same
+          // idempotency key is the recovery handle.
+          return sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
+        }
         const failure = classifyFailure(error);
-        if (!providerCompleted) {
-          try {
-            await failAnalysis({
-              allocation,
-              cancel: cancelReservation,
-              db,
-              failure,
-              requestId,
-              userId: applicationUser.id,
-            });
-          } catch {
-            // The original model failure remains the only client-visible state.
-          }
+        try {
+          await failAnalysis({
+            allocation,
+            cancel: cancelReservation,
+            db,
+            failure,
+            requestId,
+            userId: applicationUser.id,
+          });
+        } catch {
+          // The original model failure remains the only client-visible state.
         }
         return sendError(res, failure.statusCode, failure.code === "CONTEXT_IRRELEVANT" ? failure.code : "ANALYSIS_FAILED", requestId);
       }
