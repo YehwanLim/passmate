@@ -63,7 +63,7 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
     analysisRequest: {
       create: vi.fn(async ({ data }) => ({ id: "request-1", ...data })),
       findMany: vi.fn(async () => (
-        resolvedExistingRequest?.status === "PENDING" && resolvedExistingRequest.expiresAt
+        ["PENDING", "CALLING"].includes(resolvedExistingRequest?.status) && resolvedExistingRequest.expiresAt
           ? [resolvedExistingRequest]
           : []
       )),
@@ -151,7 +151,7 @@ describe("atomic analyze API", () => {
     expect(model).not.toHaveBeenCalled();
   });
 
-  it("expires a stranded pending request and cancels its reservation before rejecting the old key", async () => {
+  it.each(["PENDING", "CALLING"])("expires a stranded %s request and cancels its reservation before rejecting the old key", async (status) => {
     const model = vi.fn();
     const db = createDatabase({
       existingRequest: {
@@ -161,7 +161,7 @@ describe("atomic analyze API", () => {
         idempotencyKey: IDEMPOTENCY_KEY,
         requestHash: requestHash(),
         reservationId: "reservation-1",
-        status: "PENDING",
+        status,
       },
     });
     const handler = createAnalyzeHandler({
@@ -244,6 +244,46 @@ describe("atomic analyze API", () => {
     expect(model).not.toHaveBeenCalled();
     expect(consumeRateLimit).not.toHaveBeenCalled();
     expect(db.entitlementSetting.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("finishes a staged provider result on an idempotent retry without another model call", async () => {
+    const model = vi.fn();
+    const existingRequest = {
+      analysis: { id: "analysis-1", projectId: "project-1" },
+      analysisId: "analysis-1",
+      id: "request-1",
+      providerMetadata: {
+        modelName: "test-model",
+        modelProvider: "test-provider",
+        responseTimeMs: 12,
+        tokenUsage: { completionTokens: 2, promptTokens: 1, totalTokens: 3 },
+      },
+      providerResult: { report: "staged" },
+      requestHash: requestHash(),
+      reservationId: "reservation-1",
+      status: "PERSISTENCE_PENDING",
+    };
+    const db = createDatabase({ existingRequest });
+    const finalizeReservation = vi.fn(async () => undefined);
+    const handler = createAnalyzeHandler({
+      db,
+      finalizeReservation,
+      model,
+      requireUser: activeUser,
+      consumeRateLimit: rateAllowed,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      analysis_id: "analysis-1",
+      project_id: "project-1",
+      report: { report: "staged" },
+    });
+    expect(finalizeReservation).toHaveBeenCalledWith(expect.anything(), "reservation-1", USER_ID);
+    expect(model).not.toHaveBeenCalled();
   });
 
   it("stops before the model when the user has exceeded the analysis rate limit", async () => {
@@ -376,11 +416,11 @@ describe("atomic analyze API", () => {
 
     await handler(request(), res);
 
-    expect(res.statusCode).toBe(500);
-    expect(res.body.error).toBe("ANALYSIS_FAILED");
+    expect(res.statusCode).toBe(503);
+    expect(res.body.error).toBe("ANALYSIS_PERSISTENCE_PENDING");
     expect(cancelReservation).not.toHaveBeenCalled();
     expect(db.analysisRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-      data: { status: "PERSISTENCE_PENDING" },
+      data: expect.objectContaining({ status: "PERSISTENCE_PENDING" }),
       where: { id: "request-1", status: "CALLING" },
     }));
     expect(db.analysisRequest.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({
