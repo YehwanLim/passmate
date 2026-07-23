@@ -73,6 +73,7 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
           : null
       )),
       update: vi.fn(async ({ data, where }) => ({ id: where.id, ...data })),
+      updateMany: vi.fn(async () => ({ count: 1 })),
     },
     analysisReservation: {
       updateMany: vi.fn(async () => ({ count: 1 })),
@@ -335,9 +336,9 @@ describe("atomic analyze API", () => {
 
     expect(res.statusCode).toBe(500);
     expect(res.body).toEqual({ error: "ANALYSIS_FAILED", requestId: expect.any(String) });
-    expect(db.analysis.update).toHaveBeenCalledWith(expect.objectContaining({
+    expect(db.analysis.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ errorCode: "API_ERROR", status: "FAILED" }),
-      where: { id: "analysis-1" },
+      where: { id: "analysis-1", status: "PENDING", userId: USER_ID },
     }));
     expect(cancelReservation).toHaveBeenCalledWith(expect.anything(), "reservation-1", USER_ID);
     expect(finalizeReservation).not.toHaveBeenCalled();
@@ -348,6 +349,43 @@ describe("atomic analyze API", () => {
         targetId: "analysis-1",
         targetType: "analysis",
       }),
+    }));
+  });
+
+  it("does not refund a completed provider call when report persistence fails", async () => {
+    const cancelReservation = vi.fn(async () => undefined);
+    const db = createDatabase();
+    db.tokenUsage.create.mockRejectedValue(new Error("database write unavailable"));
+    const handler = createAnalyzeHandler({
+      cancelReservation,
+      db,
+      model: async () => ({
+        analysisMeta: {
+          modelName: "test-model",
+          modelProvider: "test-provider",
+          responseTimeMs: 12,
+          tokenUsage: { completionTokens: 2, promptTokens: 1, totalTokens: 3 },
+        },
+        report: "complete",
+      }),
+      requireUser: activeUser,
+      reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+      consumeRateLimit: rateAllowed,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe("ANALYSIS_FAILED");
+    expect(cancelReservation).not.toHaveBeenCalled();
+    expect(db.analysisRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: { status: "PERSISTENCE_PENDING" },
+      where: { id: "request-1", status: "CALLING" },
+    }));
+    expect(db.analysisRequest.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({
+      data: { status: "FAILED" },
+      where: { id: "request-1", status: "CALLING" },
     }));
   });
 });

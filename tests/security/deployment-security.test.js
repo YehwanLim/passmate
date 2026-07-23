@@ -39,6 +39,7 @@ describe("beta deployment security configuration", () => {
     expect(viteConfig).not.toContain("manus-debug-collector");
     expect(viteConfig).not.toContain("sessionReplay");
     expect(existsSync(`${root}/client/public/__manus__/debug-collector.js`)).toBe(false);
+    expect(existsSync(`${root}/data/ai-model-settings.json`)).toBe(false);
     expect(expressServer).not.toContain("/api/test-gemini");
     expect(viteConfig).not.toContain("./server/api/analyze");
     expect(expressServer).toContain("../api/analyze.js");
@@ -52,5 +53,13 @@ describe("beta deployment security configuration", () => {
       path: "/api/cron/purge-deleted-users",
       schedule: "0 3 * * *",
     });
+  });
+
+  it("backfills existing OAuth users before client profile writes are removed", () => {
+    const migration = read("prisma/migrations/20260723_backfill_auth_users/migration.sql");
+
+    expect(migration).toContain("INSERT INTO public.users");
+    expect(migration).toContain("FROM auth.users");
+    expect(migration).toContain("ON CONFLICT (id) DO NOTHING");
   });
 });

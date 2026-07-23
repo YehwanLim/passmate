@@ -8,6 +8,7 @@ const reportSource = readFileSync(new URL("./ReportResult.tsx", import.meta.url)
 const feedbackSource = readFileSync(new URL("../components/FeedbackSection.tsx", import.meta.url), "utf8");
 const authSource = readFileSync(new URL("../contexts/AuthContext.tsx", import.meta.url), "utf8");
 const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.url), "utf8");
+const supabaseSource = readFileSync(new URL("../lib/supabase.ts", import.meta.url), "utf8");
 
 describe("authenticated client flow", () => {
   it("submits analysis once with auth, a random idempotency key, and the persisted response id", () => {
@@ -47,6 +48,8 @@ describe("authenticated client flow", () => {
     expect(storageSource).not.toContain("localStorage.setItem(STORAGE_KEYS.LATEST_ANALYSIS");
     expect(storageSource).not.toContain("localStorage.setItem(STORAGE_KEYS.ANONYMOUS_USER_ID");
     expect(storageSource).not.toContain("localStorage.setItem(\n      STORAGE_KEYS.FEEDBACK_PREFIX");
+    expect(supabaseSource).toContain("sole intentional browser-storage exception");
+    expect(supabaseSource).toContain("HttpOnly BFF cookie");
   });
 
   it("does not write resume, report, or API error payloads to the browser console", () => {
