@@ -35,48 +35,58 @@ export default function SubtleBackground() {
     mass: 0.58,
   });
 
-  const fieldXPct = useTransform(fieldX, (value) =>
+  const fieldXPct = useTransform(fieldX, value =>
     typeof window === "undefined"
       ? "50%"
       : `${Math.round((value / window.innerWidth) * 100)}%`
   );
-  const fieldYPct = useTransform(fieldY, (value) =>
+  const fieldYPct = useTransform(fieldY, value =>
     typeof window === "undefined"
       ? "32%"
       : `${Math.round((value / window.innerHeight) * 72)}%`
   );
-  const sweepXPct = useTransform(sweepX, (value) =>
+  const sweepXPct = useTransform(sweepX, value =>
     typeof window === "undefined"
       ? "50%"
       : `${Math.round((value / window.innerWidth) * 100)}%`
   );
-  const sweepYPct = useTransform(sweepY, (value) =>
+  const sweepYPct = useTransform(sweepY, value =>
     typeof window === "undefined"
       ? "48%"
       : `${Math.round((value / window.innerHeight) * 100)}%`
   );
   const fieldOpacity = useTransform(smoothVelocity, [0, 2500], [0.78, 0.94]);
+  const fieldCenterOpacity = useTransform(
+    smoothVelocity,
+    [0, 2500],
+    [0.32, 0.46]
+  );
+  const sweepCenterOpacity = useTransform(
+    smoothVelocity,
+    [0, 2500],
+    [0.23, 0.35]
+  );
   const bloomOpacity = useTransform(smoothVelocity, [0, 2500], [0.5, 0.72]);
   const particleOpacity = useTransform(smoothVelocity, [0, 2500], [0.11, 0.18]);
-  const driftX = useTransform(fieldX, (value) =>
+  const driftX = useTransform(fieldX, value =>
     typeof window === "undefined"
       ? "50%"
-      : `${48 + ((value / window.innerWidth) - 0.5) * 10}%`
+      : `${48 + (value / window.innerWidth - 0.5) * 10}%`
   );
-  const bloomX = useTransform(fieldX, (value) =>
+  const bloomX = useTransform(fieldX, value =>
     typeof window === "undefined"
       ? "50%"
-      : `${50 + ((value / window.innerWidth) - 0.5) * 14}%`
+      : `${50 + (value / window.innerWidth - 0.5) * 14}%`
   );
-  const bloomY = useTransform(fieldY, (value) =>
+  const bloomY = useTransform(fieldY, value =>
     typeof window === "undefined"
       ? "22%"
-      : `${22 + ((value / window.innerHeight) - 0.5) * 10}%`
+      : `${22 + (value / window.innerHeight - 0.5) * 10}%`
   );
 
   const responsiveField = useMotionTemplate`
-    radial-gradient(circle 26vmax at ${fieldXPct} ${fieldYPct}, rgba(145,183,255,0.22) 0%, rgba(34,211,238,0.12) 34%, transparent 66%),
-    radial-gradient(circle 18vmax at ${sweepXPct} ${sweepYPct}, rgba(124,58,237,0.16) 0%, rgba(99,102,241,0.07) 44%, transparent 70%),
+    radial-gradient(circle 26vmax at ${fieldXPct} ${fieldYPct}, rgba(145,183,255,${fieldCenterOpacity}) 0%, rgba(34,211,238,0.16) 22%, rgba(34,211,238,0.10) 38%, transparent 62%),
+    radial-gradient(circle 18vmax at ${sweepXPct} ${sweepYPct}, rgba(124,58,237,${sweepCenterOpacity}) 0%, rgba(99,102,241,0.10) 28%, rgba(99,102,241,0.055) 46%, transparent 62%),
     radial-gradient(ellipse 50% 42% at 12% 48%, rgba(34,211,238,0.09) 0%, rgba(59,130,246,0.044) 42%, transparent 76%),
     radial-gradient(ellipse 48% 40% at 88% 44%, rgba(124,58,237,0.11) 0%, rgba(96,165,250,0.04) 46%, transparent 78%),
     linear-gradient(180deg, rgba(255,255,255,0.018) 0%, transparent 38%)
@@ -217,8 +227,15 @@ export default function SubtleBackground() {
           maskImage:
             "radial-gradient(ellipse 70% 46% at 50% 34%, black 0%, rgba(0,0,0,0.42) 50%, transparent 78%)",
         }}
-        animate={{ backgroundPosition: ["0 0, 34px 28px", "24px 18px, 12px 46px"] }}
-        transition={{ duration: 22, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+        animate={{
+          backgroundPosition: ["0 0, 34px 28px", "24px 18px, 12px 46px"],
+        }}
+        transition={{
+          duration: 22,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut",
+        }}
       />
 
       <div
