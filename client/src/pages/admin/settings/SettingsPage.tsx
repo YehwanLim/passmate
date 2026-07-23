@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { adminApiFetch } from "@/lib/adminApi";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import {
   Card,
@@ -33,7 +34,6 @@ import {
   Megaphone,
   Key,
   Database,
-  Ticket,
   Users,
   Settings,
   ToggleLeft,
@@ -52,7 +52,6 @@ interface SystemSettings {
   betaFeatures: {
     aiDetailedFeedback: boolean;
     rewriteEngineV2: boolean;
-    paymentModule: boolean;
   };
 }
 
@@ -63,27 +62,10 @@ interface NoticeItem {
   createdAt: string;
 }
 
-interface CouponItem {
-  code: string;
-  discountRate: number; // 퍼센트
-  maxUses: number;
-  usedCount: number;
-  expiresAt: string;
-  status: "ACTIVE" | "EXPIRED";
-}
-
 interface AdminUser {
   email: string;
   addedAt: string;
 }
-
-// ============================================================
-// 로컬 스토리지 키
-// ============================================================
-const STORAGE_KEY = "passmate_admin_settings";
-const NOTICES_KEY = "passmate_admin_notices";
-const COUPONS_KEY = "passmate_admin_coupons";
-const ADMINS_KEY = "passmate_admin_list";
 
 const DEFAULT_SETTINGS: SystemSettings = {
   serviceOn: true,
@@ -94,18 +76,12 @@ const DEFAULT_SETTINGS: SystemSettings = {
   betaFeatures: {
     aiDetailedFeedback: true,
     rewriteEngineV2: false,
-    paymentModule: false,
   },
 };
 
 const DEFAULT_NOTICES: NoticeItem[] = [
   { id: "1", title: "[공지] 신규 AI 엔진 적용 완료 및 버그 수정", isPinned: true, createdAt: "2026-07-01" },
-  { id: "2", title: "[안내] 7월 15일 결제 모듈 점검 시간 공지", isPinned: false, createdAt: "2026-07-05" },
-];
-
-const DEFAULT_COUPONS: CouponItem[] = [
-  { code: "PASSMATEFREE", discountRate: 100, maxUses: 500, usedCount: 142, expiresAt: "2026-12-31", status: "ACTIVE" },
-  { code: "BETA50", discountRate: 50, maxUses: 100, usedCount: 100, expiresAt: "2026-06-30", status: "EXPIRED" },
+  { id: "2", title: "[안내] 7월 15일 분석 시스템 점검 시간 공지", isPinned: false, createdAt: "2026-07-05" },
 ];
 
 const DEFAULT_ADMINS: AdminUser[] = [
@@ -116,50 +92,28 @@ export default function SettingsPage() {
   // ── 상태 선언 ──────────────────────────────────────────────
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [notices, setNotices] = useState<NoticeItem[]>(DEFAULT_NOTICES);
-  const [coupons, setCoupons] = useState<CouponItem[]>(DEFAULT_COUPONS);
   const [admins, setAdmins] = useState<AdminUser[]>(DEFAULT_ADMINS);
 
-  // 알림 상태
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [settingsUnavailable, setSettingsUnavailable] = useState(true);
 
   // 공지 추가 폼
   const [newNoticeTitle, setNewNoticeTitle] = useState("");
   const [newNoticePinned, setNewNoticePinned] = useState(false);
 
-  // 쿠폰 추가 폼
-  const [newCouponCode, setNewCouponCode] = useState("");
-  const [newCouponDiscount, setNewCouponDiscount] = useState(20);
-  const [newCouponMax, setNewCouponMax] = useState(100);
-  const [newCouponExpiry, setNewCouponExpiry] = useState("2026-12-31");
-
   // 관리자 추가 폼
   const [newAdminEmail, setNewAdminEmail] = useState("");
 
-  // ── 데이터 로드 ───────────────────────────────────────────
   useEffect(() => {
-    const savedSettings = localStorage.getItem(STORAGE_KEY);
-    if (savedSettings) setSettings(JSON.parse(savedSettings));
-
-    const savedNotices = localStorage.getItem(NOTICES_KEY);
-    if (savedNotices) setNotices(JSON.parse(savedNotices));
-
-    const savedCoupons = localStorage.getItem(COUPONS_KEY);
-    if (savedCoupons) setCoupons(JSON.parse(savedCoupons));
-
-    const savedAdmins = localStorage.getItem(ADMINS_KEY);
-    if (savedAdmins) setAdmins(JSON.parse(savedAdmins));
+    adminApiFetch<{ available: boolean }>("/api/admin/settings")
+      .then((result) => setSettingsUnavailable(!result.available))
+      .catch(() => setSettingsUnavailable(true));
   }, []);
 
-  // ── 저장 제어 ─────────────────────────────────────────────
   const handleSaveGeneral = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    triggerSuccess();
+    setSettingsUnavailable(true);
   };
 
-  const triggerSuccess = () => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
-  };
+  const triggerUnavailable = () => setSettingsUnavailable(true);
 
   // ── 공지 기능 ────────────────────────────────────────────
   const handleAddNotice = () => {
@@ -170,44 +124,15 @@ export default function SettingsPage() {
       isPinned: newNoticePinned,
       createdAt: new Date().toISOString().split("T")[0],
     };
-    const updated = [next, ...notices];
-    setNotices(updated);
-    localStorage.setItem(NOTICES_KEY, JSON.stringify(updated));
+    setNotices([next, ...notices]);
     setNewNoticeTitle("");
     setNewNoticePinned(false);
-    triggerSuccess();
+    triggerUnavailable();
   };
 
   const handleDeleteNotice = (id: string) => {
-    const updated = notices.filter((n) => n.id !== id);
-    setNotices(updated);
-    localStorage.setItem(NOTICES_KEY, JSON.stringify(updated));
-    triggerSuccess();
-  };
-
-  // ── 쿠폰 기능 ────────────────────────────────────────────
-  const handleAddCoupon = () => {
-    if (!newCouponCode.trim()) return;
-    const next: CouponItem = {
-      code: newCouponCode.trim().toUpperCase(),
-      discountRate: newCouponDiscount,
-      maxUses: newCouponMax,
-      usedCount: 0,
-      expiresAt: newCouponExpiry,
-      status: "ACTIVE",
-    };
-    const updated = [next, ...coupons];
-    setCoupons(updated);
-    localStorage.setItem(COUPONS_KEY, JSON.stringify(updated));
-    setNewCouponCode("");
-    triggerSuccess();
-  };
-
-  const handleDeleteCoupon = (code: string) => {
-    const updated = coupons.filter((c) => c.code !== code);
-    setCoupons(updated);
-    localStorage.setItem(COUPONS_KEY, JSON.stringify(updated));
-    triggerSuccess();
+    setNotices(notices.filter((n) => n.id !== id));
+    triggerUnavailable();
   };
 
   // ── 관리자 계정 기능 ───────────────────────────────────────
@@ -217,11 +142,9 @@ export default function SettingsPage() {
       email: newAdminEmail.trim(),
       addedAt: new Date().toISOString().split("T")[0],
     };
-    const updated = [...admins, next];
-    setAdmins(updated);
-    localStorage.setItem(ADMINS_KEY, JSON.stringify(updated));
+    setAdmins([...admins, next]);
     setNewAdminEmail("");
-    triggerSuccess();
+    triggerUnavailable();
   };
 
   const handleDeleteAdmin = (email: string) => {
@@ -229,10 +152,8 @@ export default function SettingsPage() {
       alert("최소 1명 이상의 관리자 계정이 존재해야 합니다.");
       return;
     }
-    const updated = admins.filter((a) => a.email !== email);
-    setAdmins(updated);
-    localStorage.setItem(ADMINS_KEY, JSON.stringify(updated));
-    triggerSuccess();
+    setAdmins(admins.filter((a) => a.email !== email));
+    triggerUnavailable();
   };
 
   return (
@@ -242,18 +163,18 @@ export default function SettingsPage() {
         description="서비스 주요 변수 및 기능 활성화 플래그를 실시간 제어합니다."
       />
 
-      {/* 저장 완료 알림 */}
-      {saveSuccess && (
-        <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-500">
-          <AlertTitle className="text-sm font-semibold">설정이 정상적으로 저장되었습니다.</AlertTitle>
+      {settingsUnavailable && (
+        <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+          <AlertTitle className="text-sm font-semibold">Settings are read-only</AlertTitle>
           <AlertDescription className="text-xs">
-            수정하신 변경 조건이 즉시 서비스 파라미터에 실시간 적용 완료되었습니다.
+            서버 설정 스키마가 아직 배포되지 않아 이 화면의 제어는 unavailable 상태입니다.
           </AlertDescription>
         </Alert>
       )}
 
+      <fieldset disabled className="w-full opacity-60" aria-label="Settings are read-only">
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full lg:w-[650px] mb-4">
+        <TabsList className="grid grid-cols-4 w-full lg:w-[520px] mb-4">
           <TabsTrigger value="general" className="text-xs gap-1.5">
             <Settings className="size-3.5" />
             일반 설정
@@ -265,10 +186,6 @@ export default function SettingsPage() {
           <TabsTrigger value="features" className="text-xs gap-1.5">
             <ToggleLeft className="size-3.5" />
             Feature Flag
-          </TabsTrigger>
-          <TabsTrigger value="coupons" className="text-xs gap-1.5">
-            <Ticket className="size-3.5" />
-            쿠폰 관리
           </TabsTrigger>
           <TabsTrigger value="admins" className="text-xs gap-1.5">
             <Users className="size-3.5" />
@@ -502,23 +419,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/10 transition-colors">
-                <div className="space-y-0.5">
-                  <span className="text-sm font-semibold">결제 모듈 활성화</span>
-                  <p className="text-xs text-muted-foreground">
-                    포인트 결제 PG 모듈 및 결제 유도 창을 활성화합니다. (비활성 시 전면 무료 서비스 유지)
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.betaFeatures.paymentModule}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      betaFeatures: { ...settings.betaFeatures, paymentModule: checked },
-                    })
-                  }
-                />
-              </div>
             </CardContent>
             <CardFooter className="border-t pt-4">
               <Button onClick={handleSaveGeneral} className="gap-1.5 ml-auto text-xs h-9">
@@ -529,104 +429,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* ── 4. 쿠폰 관리 (Coupons) ── */}
-        <TabsContent value="coupons">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">할인 쿠폰 제어</CardTitle>
-              <CardDescription className="text-xs">
-                결제 시 사용자가 입력하여 코인 할인을 받을 수 있는 마케팅 코드를 발급합니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* 쿠폰 생성 폼 */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 border rounded-lg bg-muted/20">
-                <div className="space-y-1">
-                  <Label htmlFor="coupon-code" className="text-xs">쿠폰 코드</Label>
-                  <Input
-                    id="coupon-code"
-                    placeholder="PASSMATE50"
-                    value={newCouponCode}
-                    onChange={(e) => setNewCouponCode(e.target.value)}
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="coupon-discount" className="text-xs">할인율 (%)</Label>
-                  <Input
-                    id="coupon-discount"
-                    type="number"
-                    value={newCouponDiscount}
-                    onChange={(e) => setNewCouponDiscount(Number(e.target.value))}
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="coupon-max" className="text-xs">최대 사용 수</Label>
-                  <Input
-                    id="coupon-max"
-                    type="number"
-                    value={newCouponMax}
-                    onChange={(e) => setNewCouponMax(Number(e.target.value))}
-                    className="h-9"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddCoupon} className="w-full gap-1 text-xs h-9">
-                    <Plus className="size-3.5" />
-                    쿠폰 생성
-                  </Button>
-                </div>
-              </div>
-
-              {/* 쿠폰 목록 */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>쿠폰 코드</TableHead>
-                    <TableHead className="text-right">할인율</TableHead>
-                    <TableHead className="text-right">사용 횟수</TableHead>
-                    <TableHead className="text-right">만료일</TableHead>
-                    <TableHead className="text-center">상태</TableHead>
-                    <TableHead className="w-[50px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {coupons.map((c) => (
-                    <TableRow key={c.code}>
-                      <TableCell className="font-bold font-mono text-xs">{c.code}</TableCell>
-                      <TableCell className="text-right font-mono text-xs">{c.discountRate}%</TableCell>
-                      <TableCell className="text-right font-mono text-xs">
-                        {c.usedCount} / {c.maxUses}
-                      </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">{c.expiresAt}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={c.status === "ACTIVE" ? "default" : "secondary"}
-                          className={c.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : ""}
-                        >
-                          {c.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteCoupon(c.code)}
-                          className="text-muted-foreground hover:text-destructive size-7"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── 5. 관리자 계정 (Admins) ── */}
+        {/* ── 4. 관리자 계정 (Admins) ── */}
         <TabsContent value="admins">
           <Card>
             <CardHeader>
@@ -695,6 +498,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </fieldset>
     </div>
   );
 }

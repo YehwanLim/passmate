@@ -133,17 +133,3 @@ export function trackAnalysisFailed(
     success: false,
   });
 }
-
-/**
- * 결제 성공 시 호출
- * GA4 이벤트: purchase
- *
- * @param value     결제 금액 (원)
- * @param currency  통화 코드 (기본값: "KRW")
- */
-export function trackPurchase(value: number, currency: string = "KRW"): void {
-  sendEvent("purchase", {
-    value,
-    currency,
-  });
-}

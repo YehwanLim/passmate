@@ -2,10 +2,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const homeSource = readFileSync(new URL("./Home.tsx", import.meta.url), "utf8");
-const pricingSource = readFileSync(
-  new URL("../components/PricingSection.tsx", import.meta.url),
-  "utf8"
-);
 const reportShowcaseSource = readFileSync(
   new URL("../components/ReportShowcase.tsx", import.meta.url),
   "utf8"
@@ -38,17 +34,10 @@ describe("home onboarding copy", () => {
     expect(homeSource).not.toContain("분석 엔진");
   });
 
-  it("describes analysis usage without starter/pro feature tiers", () => {
-    expect(pricingSource).toContain("첫 분석 1회 무료");
-    expect(pricingSource).toContain("2회권");
-    expect(pricingSource).toContain("₩9,900");
-    expect(pricingSource).toContain("추가 분석은 2회권으로 이용");
-    expect(pricingSource).not.toContain("Starter");
-    expect(pricingSource).not.toContain("Pro Pass");
-    expect(pricingSource).not.toContain("Starter와 동일한 전체 리포트");
-    expect(pricingSource).not.toContain("Starter 전 기능 포함");
-    expect(pricingSource).not.toContain("JD 맞춤형 딥다이브");
-    expect(pricingSource).not.toContain("킬러 소재 발굴");
+  it("does not expose beta payment or credit purchase calls to action", () => {
+    expect(homeSource).not.toContain("PricingSection");
+    expect(homeSource).not.toContain("₩9,900");
+    expect(homeSource).not.toContain("2회권");
   });
 
   it("renders the report preview natively instead of screenshot images", () => {

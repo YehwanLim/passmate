@@ -4,10 +4,10 @@ import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("./ReportResult.tsx", import.meta.url), "utf8");
 
 describe("ReportResult identity display", () => {
-  it("prefers the saved site profile name before auth fallback names", () => {
-    expect(source).toContain('supabase');
-    expect(source).toContain('.from("users")');
-    expect(source).toContain('.select("name")');
+  it("uses the authenticated profile name without querying public users", () => {
+    expect(source).not.toContain('supabase');
+    expect(source).not.toContain('.from("users")');
+    expect(source).not.toContain('.select("name")');
     expect(source).toContain("getFallbackDisplayName(user)");
     expect(source).toContain("user?.name");
     expect(source).toContain('user?.email?.split("@")[0]');

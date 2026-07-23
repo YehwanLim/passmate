@@ -18,7 +18,7 @@ describe("resume analysis table navigation", () => {
 
   it("loads job keyword and character count for the project summary", () => {
     const hook = read("client/src/hooks/admin/useAnalysesData.ts");
-    const api = read("api/admin/resume-analysis.js");
+    const api = read("lib/admin-handlers/resume-analysis.js");
 
     expect(hook).toContain("/api/admin/resume-analysis?");
     expect(hook).toContain("project_job_keyword");
@@ -27,16 +27,14 @@ describe("resume analysis table navigation", () => {
     expect(api).toContain("prisma.analysis.findMany");
   });
 
-  it("uses My page mock data as an admin fallback when the list is empty", () => {
+  it("fails closed with an empty admin list instead of mock data", () => {
     const hook = read("client/src/hooks/admin/useAnalysesData.ts");
     const detailHook = read("client/src/hooks/admin/useAnalysisDetail.ts");
-    const mock = read("client/src/hooks/admin/mockResumeAnalysis.ts");
 
-    expect(hook).toContain("MOCK_ADMIN_ANALYSIS_ROWS");
-    expect(hook).toContain("VITE_HIDE_ADMIN_MOCKS");
-    expect(hook).toContain("withMockRows(processed)");
-    expect(detailHook).toContain('analysisId.startsWith("mock-analysis-")');
-    expect(mock).toContain("현대자동차 서비스 PM 지원");
+    expect(hook).toContain("setRows([])");
+    expect(hook).not.toContain("MOCK_ADMIN_ANALYSIS_ROWS");
+    expect(hook).not.toContain("mockResumeAnalysis");
+    expect(detailHook).not.toContain('analysisId.startsWith("mock-analysis-")');
   });
 
   it("does not render the unused score column", () => {

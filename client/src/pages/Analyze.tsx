@@ -37,7 +37,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { sanitizeText } from "@/utils/sanitize";
 import { checkDuplicateQuestions } from "@/utils/textSimilarity";
-import { saveAnalysisToStorage, clearAnalysisResult } from "@/utils/storage";
 import { UI_LABELS } from "@/constants/labels";
 import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
 import {
@@ -47,6 +46,7 @@ import {
   trackAnalysisFailed,
 } from "@/lib/analytics";
 import { useAuth } from "@/contexts/AuthContext";
+import { getAuthorizationHeader } from "@/lib/apiAuth";
 import type { ProjectSummary } from "@/types/my";
 
 
@@ -69,27 +69,11 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
     return UI_LABELS.ANALYSIS_FAILED;
   }
 
-  const { message, error } = errorData as {
-    message?: unknown;
-    error?: unknown;
-  };
-
-  const rawMessage = [message, error]
-    .filter((value): value is string => typeof value === "string")
-    .join(" ");
-
-  if (/Google API Error 503|UNAVAILABLE|high demand|과부하/i.test(rawMessage)) {
-    return UI_LABELS.MODEL_OVERLOADED_ERROR;
-  }
-
-  if (typeof message === "string" && message.trim()) {
-    return message;
-  }
-
-  if (typeof error === "string" && error.trim()) {
-    return error;
-  }
-
+  const { error } = errorData as { error?: unknown };
+  if (error === "RATE_LIMITED") return UI_LABELS.RATE_LIMIT_ERROR;
+  if (error === "CONTEXT_IRRELEVANT") return UI_LABELS.CONTEXT_IRRELEVANT;
+  if (error === "ANALYSIS_DISABLED") return "분석 기능이 일시적으로 중단되었습니다. 잠시 후 다시 시도해 주세요.";
+  if (error === "AUTHENTICATION_REQUIRED") return "로그인 후 분석을 시작할 수 있어요.";
   return UI_LABELS.ANALYSIS_FAILED;
 }
 
@@ -510,7 +494,7 @@ function QuestionCard({
 ────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [company, setCompany] = useState("");
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [customJob, setCustomJob] = useState("");
@@ -592,13 +576,12 @@ export default function Analyze() {
     setPreviousResumeError(null);
 
     try {
-      const response = await fetch(`/api/projects?userId=${encodeURIComponent(user.id)}`);
+      const response = await fetch("/api/projects", { headers: await getAuthorizationHeader() });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const projects: ProjectSummary[] = await response.json();
       setPreviousResumes(projects.filter((project) => project.latest_analysis_id));
-    } catch (error) {
-      console.error("[Analyze] 이전 지원서 목록 조회 실패:", error);
+    } catch {
       setPreviousResumeError("저장된 지원서를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
     } finally {
       setIsPreviousResumesLoading(false);
@@ -610,7 +593,9 @@ export default function Analyze() {
     setPreviousResumeError(null);
 
     try {
-      const response = await fetch(`/api/analysis/${encodeURIComponent(analysisId)}`);
+      const response = await fetch(`/api/analysis/${encodeURIComponent(analysisId)}`, {
+        headers: await getAuthorizationHeader(),
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const analysis: SavedAnalysisDetail = await response.json();
@@ -631,8 +616,7 @@ export default function Analyze() {
       setIsResumePickerOpen(false);
       setResumeLoaded(true);
       setTimeout(() => setResumeLoaded(false), 4000);
-    } catch (error) {
-      console.error("[Analyze] 이전 지원서 불러오기 실패:", error);
+    } catch {
       setPreviousResumeError("지원서 내용을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
     } finally {
       setIsApplyingPreviousResume(null);
@@ -663,9 +647,14 @@ export default function Analyze() {
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
     try {
+      const authorization = await getAuthorizationHeader();
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authorization,
+          "Idempotency-Key": crypto.randomUUID(),
+        },
         signal: controller.signal,
         body: JSON.stringify({
           questions: structuredQuestions,
@@ -706,82 +695,24 @@ export default function Analyze() {
       }
 
       // 유효성 검사: 정상적인 리포트 구조인지 확인
-      if (!data || !Array.isArray(data.questionTabs) || data.questionTabs.length === 0) {
-        console.error("❌ API 응답이 올바른 리포트 구조가 아닙니다:", data);
+      if (
+        !data ||
+        typeof data.project_id !== "string" ||
+        typeof data.analysis_id !== "string" ||
+        !data.report ||
+        !Array.isArray(data.report.questionTabs) ||
+        data.report.questionTabs.length === 0
+      ) {
         trackAnalysisFailed("cover_letter", "invalid_response");
         setErrorModal({ title: "분석 오류", message: UI_LABELS.JSON_PARSE_ERROR });
         return;
       }
 
-      // 방어: fallback(더미) 데이터가 정상 응답으로 넘어온 경우 감지
-      const isFallback = data.questionTabs.every(
-        (tab: any) =>
-          (!tab.feedbackCards || tab.feedbackCards.length === 0) &&
-          (tab.overview?.includes("서비스 연결 실패") || tab.overview?.includes("연결할 수 없습니다"))
-      );
-      if (isFallback) {
-        console.error("❌ Fallback(더미) 데이터 감지 — AI 분석이 실패한 것으로 판단");
-        trackAnalysisFailed("cover_letter", "fallback_detected");
-        setErrorModal({
-          title: "분석 실패",
-          message: "AI 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해 주세요."
-        });
-        return;
-      }
-
-      let savedProjectId: string | undefined;
-      let savedAnalysisId: string | undefined;
-
-      if (user?.id && user.email) {
-        try {
-          const saveResponse = await fetch("/api/projects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              user,
-              result: data,
-              analysisMeta: data.analysisMeta,
-              questions: structuredQuestions,
-              company: company.trim(),
-              jobKeyword: jobLabel,
-            }),
-          });
-
-          let savePayload: any = null;
-          try {
-            savePayload = await saveResponse.json();
-          } catch {
-            /* ignore */
-          }
-
-          if (!saveResponse.ok) {
-            throw new Error(savePayload?.message || savePayload?.error || "분석 결과 저장 실패");
-          }
-
-          savedProjectId = savePayload?.project_id;
-          savedAnalysisId = savePayload?.analysis_id;
-        } catch (saveError) {
-          console.warn("[Analyze] DB 저장 실패 — 로컬 결과는 유지합니다:", saveError);
-        }
-      }
-
-      // 분석 결과 저장 (localStorage + sessionStorage 통합)
-      saveAnalysisToStorage({
-        result: data,
-        questions: structuredQuestions,
-        company: company.trim(),
-        jobKeyword: jobLabel,
-        projectId: savedProjectId,
-        analysisId: savedAnalysisId,
-      });
-
       // GA4: 분석 성공 이벤트
       trackAnalysisComplete("cover_letter", Math.round(performance.now() - analysisStartTime));
 
-      navigate("/report-new");
+      navigate(`/report-new?analysisId=${encodeURIComponent(data.analysis_id)}`);
     } catch (error: any) {
-      console.error(error);
-      clearAnalysisResult();
 
       if (error.name === "AbortError") {
         trackAnalysisFailed("cover_letter", "timeout");
@@ -800,6 +731,11 @@ export default function Analyze() {
   };
 
   const handleSubmit = () => {
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      setErrorModal({ title: "로그인 필요", message: "로그인 후 분석을 시작할 수 있어요." });
+      return;
+    }
     if (!canSubmit) return;
 
     // 도배 방지: 유사도 체크 (문항 2개 이상일 때만)

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { getActiveModel, getModelCallSequence } from "../../../lib/ai-model-settings.js";
+import {
+  getActiveModel,
+  getModelCallSequence,
+  readAiModelSettings,
+  writeAiModelSettings,
+} from "../../../lib/ai-model-settings.js";
 
 describe("getActiveModel", () => {
   it("returns the configured provider and model together", () => {
@@ -44,5 +49,32 @@ describe("getActiveModel", () => {
     })).toEqual([
       { providerKey: "gemini", modelName: "gemini-2.5-flash" },
     ]);
+  });
+
+  it("persists the approved model pair through the server database", async () => {
+    const upsert = async ({ create }) => create;
+    const db = { aiModelSetting: { findUnique: async () => null, upsert } };
+
+    await expect(writeAiModelSettings(db, {
+      defaultModel: { providerKey: "openai", modelName: "gpt-5.4-mini" },
+      fallbackModel: { providerKey: "gemini", modelName: "gemini-2.5-flash-lite" },
+    })).resolves.toEqual({
+      defaultModel: { providerKey: "openai", modelName: "gpt-5.4-mini" },
+      fallbackModel: { providerKey: "gemini", modelName: "gemini-2.5-flash-lite" },
+    });
+
+    await expect(readAiModelSettings({
+      aiModelSetting: {
+        findUnique: async () => ({
+          defaultProviderKey: "gemini",
+          defaultModelName: "gemini-2.5-flash",
+          fallbackProviderKey: null,
+          fallbackModelName: null,
+        }),
+      },
+    })).resolves.toEqual({
+      defaultModel: { providerKey: "gemini", modelName: "gemini-2.5-flash" },
+      fallbackModel: null,
+    });
   });
 });

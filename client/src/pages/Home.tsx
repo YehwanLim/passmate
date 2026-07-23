@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import ReportShowcase from "@/components/ReportShowcase";
 import ProcessSection from "@/components/ProcessSection";
-import PricingSection from "@/components/PricingSection";
 import FounderSection from "@/components/FounderSection";
 import SubtleBackground from "@/components/SubtleBackground";
 import Logo from "@/components/Logo";
@@ -78,7 +77,7 @@ const RESUME_READING_STEPS = [
 ] as const;
 
 /**
- * PassMate – Premium Dark SaaS Landing Page
+ * PassMate – Dark SaaS Landing Page
  *
  * Design: Vercel / Stripe inspired pitch-black theme
  * Colors: #000000 bg, white text, subtle blue/purple neon glows
@@ -331,7 +330,7 @@ export default function Home() {
       </motion.nav>
 
       {/* ══════════════════════════════════════════════════
-          HERO  (Step 1 – Premium Centered Hero)
+          HERO  (Step 1 – Centered Hero)
           ══════════════════════════════════════════════════ */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
 
@@ -837,9 +836,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* ── Pricing Section ── */}
-      <PricingSection />
 
       {/* ── Founder + CTA + Footer ── */}
       <FounderSection />

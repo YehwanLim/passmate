@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Shield, AlertCircle, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { adminApiFetch } from "@/lib/adminApi";
 import { getGoogleOAuthOptions } from "@/lib/authOptions";
 import Logo from "@/components/Logo";
-import type { UserRole } from "@/types/admin";
 
 // ============================================================
 // Google 아이콘 SVG
@@ -45,15 +45,11 @@ export default function AdminLoginPage() {
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user?.id) return;
-      const { data } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", session.user.id)
-        .single<{ role: UserRole }>();
-      if (data?.role === "admin") navigate("/admin");
-    });
+    adminApiFetch<{ role: string }>("/api/auth/me")
+      .then((currentUser) => {
+        if (currentUser.role === "admin") navigate("/admin");
+      })
+      .catch(() => undefined);
   }, [authLoading, isAuthenticated, navigate]);
 
   const handleGoogleLogin = async () => {

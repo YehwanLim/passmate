@@ -8,7 +8,8 @@ describe("previous resume loading", () => {
   it("starts with an empty form and provides an explicit way to load a saved resume", () => {
     expect(analyzeSource).not.toContain("const draft = loadDraft()");
     expect(analyzeSource).toContain("이전 지원서 불러오기");
-    expect(analyzeSource).toContain("/api/projects?userId=");
+    expect(analyzeSource).toContain('fetch("/api/projects", { headers: await getAuthorizationHeader() })');
+    expect(analyzeSource).not.toContain("userId=");
     expect(analyzeSource).toContain("/api/analysis/${encodeURIComponent(analysisId)}");
   });
 

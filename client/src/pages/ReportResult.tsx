@@ -1,20 +1,14 @@
 import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react"
 import { useLocation } from "wouter"
-import { Check, ChevronDown, ArrowRight, FileText, Sparkles, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X, MessageSquareText, Type, ListChecks } from "lucide-react"
+import { Check, ChevronDown, ArrowRight, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X, MessageSquareText, Type, ListChecks } from "lucide-react"
 import type { ReportData } from "../types/report"
 import { UI_LABELS } from "../constants/labels"
-import { loadReportData, loadAnalysisFromStorage } from "../utils/storage"
-import {
-    getFreeAnalysisStatus,
-    isReportSectionLocked,
-    markFreeAnalysisUsed,
-    shouldShowNextAnalysisNotice,
-} from "../utils/reportAccess"
+import { isReportSectionLocked } from "../utils/reportAccess"
 import FeedbackSection from "../components/FeedbackSection"
 import AuthButton from "../components/AuthButton"
-import { FreeAnalysisNotice, ReportAccessGate } from "../components/report/ReportAccessGate"
+import { ReportAccessGate } from "../components/report/ReportAccessGate"
 import { useAuth } from "../contexts/AuthContext"
-import { supabase } from "../lib/supabase"
+import { getAuthorizationHeader } from "@/lib/apiAuth"
 import { REPORT_NAV_SECTIONS } from "./reportNavigation"
 import {
     buildEditorialKeywords,
@@ -65,82 +59,12 @@ const HIGHLIGHT_UNDERLINE_STYLES: Record<HighlightTone, CSSProperties> = {
     },
 }
 
-const FALLBACK_DATA: ReportData = {
-    companyInsight: {
-        summary: "글로벌 모빌리티 생태계를 주도하며, 정량적 데이터와 사용자 중심의 모빌리티 감각을 동시에 요구하는 유연한 조직",
-        talentKeywords: ["모빌리티 이해도", "데이터 기반 의사결정", "글로벌 비즈니스 감각", "고객 중심", "빠른 실행력"],
-        hiringSignals: ["단순 수치를 넘어 모빌리티 임팩트로 연결한 경험", "글로벌 시장의 특성을 반영한 기획", "가설 수립부터 검증, 프로덕트 개선까지의 완결성 있는 경험"],
-        rejectionTriggers: ["모빌리티 플랫폼 특성을 이해하지 못한 기계적인 데이터 분석", "고객의 감정적 경험(UX)을 간과한 효율성 중심의 기획", "본인 기여도가 불분명한 팀 프로젝트 나열"],
-        cultureSignals: ["수평적인 소통과 치열한 토론", "빠른 실패와 학습(Fail Fast)", "다양성을 존중하는 열린 조직 문화"]
-    },
-    firstImpression: {
-        summaryOneLiner: "데이터 기반 실행력은 강하지만, 현대자동차 기준 '모빌리티 임팩트 연결'이 부족합니다",
-        persona: "데이터를 통해 인사이트를 도출하고 실행에 옮기는 PM",
-        hashtags: ["#데이터분석", "#가설검증", "#글로벌잠재력"]
-    },
-    strengths: [
-        "A/B 테스트를 통한 이탈률 개선(35% to 18%)은 구체적인 방법론과 정량적 결과를 동시에 보여주는 강력한 사례입니다. 현대자동차의 데이터 드리븐 문화와 잘 맞습니다.",
-        "글로벌 서비스 분석에 대한 주도적인 리서치와 3,000건의 데이터 수집 과정은 글로벌 확장을 지속하는 현대자동차에 긍정적인 신호를 줍니다."
-    ],
-    gaps: [
-        "개선한 지표가 현대자동차의 핵심 비즈니스 모델(차량 연동 서비스, 모빌리티 확장 등)과 어떻게 연결될 수 있는지에 대한 고민이 부족합니다.",
-        "모빌리티 플랫폼만의 특수성(사용자의 주행 경험, 안전성 등)을 고려한 기획이나 분석 경험이 잘 드러나지 않습니다.",
-        "팀 프로젝트에서 본인의 구체적인 역할과 의사결정 과정이 뚜렷하지 않아 협업 및 리더십 역량을 판단하기 어렵습니다."
-    ],
-    positioning: {
-        current: "데이터 툴 활용과 실행력은 검증되었으나, 모빌리티 비즈니스에 대한 이해가 부족한 주니어",
-        target: "데이터 인사이트를 바탕으로 고객 경험을 높이고 모빌리티 비즈니스 가치를 극대화하는 PM",
-        gap: "경험의 나열에서 그치고 있으며, '왜 현대자동차인가'에 대한 전략적 포지셔닝이 부재합니다",
-        strategy: "데이터 분석 경험을 현대자동차의 주요 서비스(커넥티드 카, 차량 데이터 분석 등)와 직접 연결하고, 모빌리티 플랫폼에 대한 깊은 이해를 바탕으로 한 기획 능력을 어필하세요."
-    },
-    questionTabs: [
-        {
-            id: 1, title: "문항 1",
-            prompt: "자신이 주도적으로 문제를 발견하고 해결한 경험에 대해 서술해 주세요. (어떤 문제를 어떻게 해결했는지 구체적으로 작성할 것)",
-            subtitleDiagnosis: { exists: true, original: "3,000건의 데이터로 사용자 맞춤 추천을 개선하다", feedback: "성과는 드러나지만, 추천 개선이 어떤 비즈니스 문제를 해결했는지 목적이 더 명확하면 좋습니다.", suggestion: "서비스 탐색 이탈률 15% 방어를 위한 3,000건의 고객 데이터 분석과 사용성 고도화" },
-            fullAnswer: "3,000건의 데이터로 사용자 맞춤 추천을 개선하다\n\n교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영한 경험이 있습니다. 런칭 초기, 유저들이 메인 화면에서 탐색하다가 이탈하는 비율이 매우 높다는 문제를 발견했습니다. 이를 해결하기 위해 직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다. 유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.\n\n이를 해결하기 위해 로직을 개선하고 A/B 테스트를 진행했습니다. 결과적으로 메인 화면 이탈률을 35%에서 18%로 낮출 수 있었으며, 일간 활성 사용자 수(DAU)도 20% 증가했습니다. 이러한 데이터 기반의 문제 해결 경험을 살려 현대자동차에서도 글로벌 고객들에게 최적화된 모빌리티 경험을 제공하는 데 기여하고 싶습니다.",
-            overview: "데이터를 활용한 문제 해결 과정이 잘 드러나 있으나, 현대자동차의 비즈니스적 맥락과의 연결이 다소 추상적입니다.",
-            feedbackCards: [
-                { type: "praise", original: "직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다.", praisePoint: "구체적인 수치(3,000건)를 통해 지원자의 주도적인 문제 해결 의지와 실행력을 증명한 훌륭한 문장입니다.", detailedAnalysis: "이 문장은 정량적 근거를 통해 실행력을 증명하는 핵심 문장입니다. 다만, 데이터의 수집 기준이나 분석 과정에서의 주요 의사결정 포인트를 한 줄 추가하면 더욱 설득력이 높아집니다." },
-                { type: "praise", original: "메인 화면 이탈률을 35%에서 18%로 낮출 수 있었으며, 일간 활성 사용자 수(DAU)도 20% 증가했습니다.", praisePoint: "A/B 테스트라는 방법론과 명확한 수치적 개선 성과가 잘 결합되어 있습니다.", detailedAnalysis: "해결 방법과 구체적인 개선 수치가 결합되어 지원자의 데이터 기반 문제 해결 역량을 명확히 보여줍니다. 성과를 구체적으로 증명하는 좋은 사례입니다." },
-                { type: "improvement", original: "유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.", feedback: "분석의 깊이가 다소 얕게 느껴집니다.", detailedAnalysis: "클릭 패턴과 체류 시간만으로 '개인화 부족'을 도출한 논리적 비약이 있을 수 있습니다. 좀 더 구체적으로 어떤 세그먼트의 유저가 어떤 행동 양상을 보였는지 상세히 서술하면 분석 역량을 더 돋보이게 할 수 있습니다.", suggestion: "유저 코호트 분석 결과, 신규 가입 후 3일 내 특정 기능만 소비하는 고객군에서 이탈률이 두드러짐을 확인하여 세밀한 개인화 필요성을 도출했습니다." },
-                { type: "improvement", original: "이러한 데이터 기반의 문제 해결 경험을 살려 현대자동차에서도 글로벌 고객들에게 최적화된 모빌리티 경험을 제공하는 데 기여하고 싶습니다.", feedback: "범용적인 포부 문장으로, 현대자동차만의 특화된 메시지가 부재합니다.", detailedAnalysis: "마무리 문장은 '지원 동기'를 최종 확인하는 구간입니다. 현재 문장은 다른 곳에도 그대로 쓸 수 있는 범용 표현입니다. 현대자동차의 특정 서비스나 글로벌 진출 국가 등 구체적인 타겟을 언급해야 면접관에게 강한 인상을 남길 수 있습니다.", suggestion: "이러한 데이터 분석 기반의 역량을 바탕으로, 현대자동차의 커넥티드 서비스에서 국가별 고객 특성을 반영한 개인화를 고도화하여 글로벌 만족도를 극대화하는 PM이 되겠습니다." }
-            ]
-        },
-        {
-            id: 2, title: "문항 2",
-            prompt: "팀 프로젝트나 협업 과정에서 발생한 갈등을 극복하고 성과를 이끌어낸 경험을 설명해 주세요.",
-            subtitleDiagnosis: { exists: false, original: "", feedback: "소제목이 비어있습니다. 전체 내용을 파악할 수 있도록 핵심 성과를 담은 소제목을 추가하세요.", suggestion: "개발팀과의 커뮤니케이션 병목 해결로 스프린트 기간 30% 단축" },
-            fullAnswer: "학교 프로젝트에서 서비스 기획을 맡아 개발팀, 디자인팀과 협업했습니다. 당시 저희 팀은 일정 지연과 소통 부족이라는 문제를 겪고 있었습니다. 저는 기획자로서 이 문제를 해결하기 위해 적극적으로 나섰습니다. 프로젝트를 진행하며 많은 것을 배웠고 좋은 결과를 얻었습니다. 다양한 팀원들과 협업하며 서로의 입장을 이해하는 법을 배웠습니다. 결국 지속적인 회의와 일정 관리를 통해 프로젝트를 기한 내에 마칠 수 있었습니다.",
-            overview: "협업 경험이 추상적으로만 서술되어 있어, 구체적인 본인의 기여도와 문제 해결 방법론을 파악하기 어렵습니다.",
-            feedbackCards: [
-                { type: "improvement", original: "저는 기획자로서 이 문제를 해결하기 위해 적극적으로 나섰습니다.", feedback: "본인의 구체적인 액션이 보이지 않습니다.", detailedAnalysis: "'적극적으로 나섰다'는 표현은 주관적이며 모호합니다. 면접관은 갈등 상황에서 어떤 구체적인 커뮤니케이션 방법론이나 도구를 사용했는지 알고 싶어합니다.", suggestion: "기획자로서 지라(Jira)와 칸반 보드를 도입하여 각 팀의 태스크 진행 상황을 투명하게 공유하는 프로세스를 구축했습니다." },
-                { type: "improvement", original: "프로젝트를 진행하며 많은 것을 배웠고 좋은 결과를 얻었습니다.", feedback: "무엇을 배웠고 어떤 결과인지 특정할 수 없는 표현입니다.", detailedAnalysis: "'많은 것'과 '좋은 결과'는 자소서에서 피해야 할 단어 조합입니다. 구체적으로 어떤 하드/소프트 스킬을 습득했는지, 결과물(산출물 퀄리티 향상, 일정 단축 등)이 무엇인지 명시해야 합니다.", suggestion: "크로스펑셔널 팀 리딩 경험을 통해 애자일 방법론을 체득했으며, 초기 예상보다 2주 앞당겨 베타 버전을 런칭할 수 있었습니다." },
-                { type: "improvement", original: "결국 지속적인 회의와 일정 관리를 통해 프로젝트를 기한 내에 마칠 수 있었습니다.", feedback: "일반적인 대응 방법으로 지원자만의 차별성이 드러나지 않습니다.", detailedAnalysis: "단순히 '회의를 많이 했다'는 것은 효율적인 갈등 해결 방법이 아닙니다. 회의 방식을 어떻게 효율화했는지, 기한을 맞추기 위해 스펙 조율 등 어떤 전략적 의사결정을 내렸는지가 중요합니다.", suggestion: "단순한 회의 횟수 증가가 아닌, 데일리 스탠드업 도입과 핵심 스펙 우선순위 재조정을 통해 디자인-개발 간의 병목 현상을 해결하고 기한 내 런칭을 달성했습니다." }
-            ]
-        }
-    ],
-    interviewQA: [
-        { question: "현대자동차의 모빌리티 서비스를 개선한다면 어떤 데이터를 가장 먼저 볼 것 같나요?", followUps: ["왜 그 데이터가 가장 중요하다고 생각하나요?", "해당 데이터를 수집하기 위해 어떤 기획이 필요할까요?"], modelAnswer: "단순 앱 접속수보다는 '차량 내 서비스 체류 시간'과 '핵심 기능 전환율'을 가장 먼저 확인하겠습니다. 모빌리티 환경에서 고객이 우리 기능을 얼마나 유용하게 쓰는지 판단하는 핵심 지표이기 때문입니다." },
-        { question: "글로벌 고객 타겟팅 시 고려해야 할 지역별 특성은 어떻게 파악할 계획인가요?", followUps: ["현지 조사가 어렵다면 어떻게 데이터를 얻을 건가요?"], modelAnswer: "현지 모빌리티 시장 트렌드와 경쟁사의 동향을 분석하는 동시에, 현대자동차의 현지 서비스 피드백 데이터를 텍스트 마이닝하여 고객들의 주요 페인포인트를 파악하겠습니다." },
-        { question: "개발팀과 기획 스펙으로 충돌할 때, 현대자동차의 빠른 실행 문화에 맞춰 어떻게 조율할 것인가요?", followUps: ["개발팀이 절대 불가능하다고 한다면요?"], modelAnswer: "먼저 '가장 검증하고 싶은 핵심 가설' 하나만 남기고 부가 기능을 과감히 덜어내는 MVP 모델을 제안하겠습니다. 이를 통해 개발 부담을 줄이고 빠른 테스트와 개선이 가능하도록 조율하겠습니다." }
-    ],
-    actionPlan: [
-        { title: "문항 2를 구체적인 STAR 기법으로 전면 재작성", description: "협업 문항에서 '많은 것을 배웠고' 등 추상적 표현을 배제하고, 구체적인 도구(Jira 등) 활용과 의사결정 과정을 서술하세요.", expectedImpact: "팀 프로젝트에서의 리더십과 커뮤니케이션 역량을 명확히 어필할 수 있습니다." },
-        { title: "모빌리티 도메인 지식 어필 문구 추가", description: "문항 1의 마무리 문장에 단순 '글로벌 유저' 대신 '차량 데이터'나 '커넥티드 서비스' 등 도메인 특화 용어를 사용하세요.", expectedImpact: "현대자동차 비즈니스에 대한 높은 이해도를 증명할 수 있습니다." }
-    ],
-    pmComment: "데이터를 다루는 스킬과 실행력은 뛰어납니다. 다만, 이 역량이 현대자동차라는 '모빌리티 플랫폼'에서 어떻게 발휘될지에 대한 고민이 10% 부족합니다. 지원 동기 부분을 모빌리티 특화 인사이트로 조금만 더 뾰족하게 다듬어 보세요."
-}
-
 function getFallbackDisplayName(user: { name?: string | null; email?: string | null } | null) {
     const authName = user?.name?.trim()
     if (authName) return authName
 
     const emailName = user?.email?.split("@")[0]?.trim()
     if (emailName) return emailName
-
-    const storedName = sessionStorage.getItem('passmate_user')?.trim()
-    if (storedName) return storedName
 
     return "지원자"
 }
@@ -172,47 +96,104 @@ function MiniNavigator({ activeSection }: { activeSection: string }) {
     )
 }
 
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
+function AuthenticatedReport() {
+    const { user } = useAuth()
+    const requestedAnalysisId = new URLSearchParams(window.location.search).get("analysisId")
+    const [reportData, setReportData] = useState<ReportData | null>(null)
+    const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(requestedAnalysisId)
+    const [targetCompany, setTargetCompany] = useState("")
+    const [isReportLoading, setIsReportLoading] = useState(true)
+    const [reportError, setReportError] = useState<string | null>(null)
 
-export default function PassMateReport() {
+    useEffect(() => {
+        if (!requestedAnalysisId) {
+            setReportError("분석 리포트를 찾을 수 없습니다.")
+            setIsReportLoading(false)
+            return
+        }
+
+        let cancelled = false
+
+        const loadPersistedReport = async () => {
+            try {
+                setReportData(null)
+                setReportError(null)
+                setIsReportLoading(true)
+                const response = await fetch(`/api/analysis/${encodeURIComponent(requestedAnalysisId)}`, {
+                    headers: await getAuthorizationHeader(),
+                })
+                const payload = await response.json()
+
+                if (cancelled) return
+
+                if (!response.ok) {
+                    throw new Error(payload?.message || payload?.error || "분석 리포트를 불러오지 못했습니다.")
+                }
+
+                if (!payload?.ai_response_json || !Array.isArray(payload.ai_response_json.questionTabs)) {
+                    throw new Error("저장된 분석 리포트 형식이 올바르지 않습니다.")
+                }
+
+                setReportData(payload.ai_response_json as ReportData)
+                setActiveAnalysisId(payload.id ?? requestedAnalysisId)
+                setTargetCompany(payload.company_name ?? "")
+            } catch (error) {
+                if (!cancelled) {
+                    setReportError(error instanceof Error ? error.message : "분석 리포트를 불러오지 못했습니다.")
+                }
+            } finally {
+                if (!cancelled) setIsReportLoading(false)
+            }
+        }
+
+        loadPersistedReport()
+
+        return () => {
+            cancelled = true
+        }
+    }, [requestedAnalysisId])
+
+    if (isReportLoading) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-zinc-400">
+                분석 리포트를 불러오는 중이에요.
+            </main>
+        )
+    }
+
+    if (reportError || !reportData || !activeAnalysisId) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-red-400">
+                {reportError ?? "분석 리포트를 불러오지 못했습니다."}
+            </main>
+        )
+    }
+
+    return (
+        <ReportContent
+            reportData={reportData}
+            activeAnalysisId={activeAnalysisId}
+            targetCompany={targetCompany}
+            displayName={getFallbackDisplayName(user)}
+        />
+    )
+}
+
+type ReportContentProps = {
+    reportData: ReportData
+    activeAnalysisId: string
+    targetCompany: string
+    displayName: string
+}
+
+function ReportContent({
+    reportData,
+    activeAnalysisId,
+    targetCompany,
+    displayName,
+}: ReportContentProps) {
     const [, navigate] = useLocation()
-    const { user, isAuthenticated, isLoading: authLoading } = useAuth()
-
-    // ── query parameter에서 mock 여부 판단 ──
-    const searchParams = new URLSearchParams(window.location.search)
-    const useMock = searchParams.get('mock') === 'true' || searchParams.get('dummy') === 'true'
-    const requestedAnalysisId = searchParams.get('analysisId') || null
-
-    // ── sessionStorage에서 회사명/직무명 복원 (통합 구조 우선) ──
-    const storedAnalysis = loadAnalysisFromStorage()
-    const [targetCompany, setTargetCompany] = useState(
-        () => storedAnalysis?.company || sessionStorage.getItem('passmate_company') || "네이버 웹툰"
-    )
-    const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(
-        () => requestedAnalysisId || storedAnalysis?.analysis_id || null
-    )
-    const analysisKey = activeAnalysisId || storedAnalysis?.created_at || "mock-report"
-    const [displayName, setDisplayName] = useState(() => getFallbackDisplayName(user))
-
-    const [reportData, setReportData] = useState<ReportData>(() => {
-        // mock 모드: 무조건 FALLBACK_DATA 사용
-        if (useMock) {
-            console.log("🔥 mock 모드: FALLBACK_DATA 사용")
-            return FALLBACK_DATA
-        }
-
-        // 일반 모드: 통합 스토리지 유틸리티 사용
-        const data = loadReportData()
-        if (data) {
-            console.log("🔥 분석 결과 복원 성공")
-            return data as unknown as ReportData
-        }
-
-        console.log("🔥 실제 데이터 없음 → FALLBACK_DATA 사용")
-        return FALLBACK_DATA
-    })
+    const { isAuthenticated } = useAuth()
 
     const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
     const [activeTab, setActiveTab] = useState(0)
@@ -224,82 +205,6 @@ export default function PassMateReport() {
     const [activeSection, setActiveSection] = useState(REPORT_NAV_SECTIONS[0].id)
     const [showOverview, setShowOverview] = useState(true)
     const [showSubtitle, setShowSubtitle] = useState(true)
-    const [showNextAnalysisNotice, setShowNextAnalysisNotice] = useState(false)
-
-    useEffect(() => {
-        if (useMock || !requestedAnalysisId) return
-
-        let cancelled = false
-
-        const loadPersistedReport = async () => {
-            try {
-                const response = await fetch(`/api/analysis/${encodeURIComponent(requestedAnalysisId)}`)
-                const payload = await response.json()
-
-                if (cancelled) return
-
-                if (!response.ok) {
-                    throw new Error(payload?.message || payload?.error || "분석 리포트를 불러오지 못했습니다.")
-                }
-
-                if (
-                    !payload?.ai_response_json ||
-                    !Array.isArray(payload.ai_response_json.questionTabs)
-                ) {
-                    throw new Error("저장된 분석 리포트 형식이 올바르지 않습니다.")
-                }
-
-                setReportData(payload.ai_response_json as unknown as ReportData)
-                setActiveAnalysisId(payload.id ?? requestedAnalysisId)
-                if (payload.company_name) {
-                    setTargetCompany(payload.company_name)
-                    sessionStorage.setItem('passmate_company', payload.company_name)
-                }
-            } catch (error) {
-                if (cancelled) return
-                console.warn("[ReportResult] 저장된 분석 리포트 조회 실패:", error)
-                setToastMessage({
-                    type: 'error',
-                    text: error instanceof Error ? error.message : "분석 리포트를 불러오지 못했습니다.",
-                })
-            }
-        }
-
-        loadPersistedReport()
-
-        return () => {
-            cancelled = true
-        }
-    }, [requestedAnalysisId, useMock])
-
-    useEffect(() => {
-        let cancelled = false
-
-        const fallbackName = getFallbackDisplayName(user)
-        setDisplayName(fallbackName)
-
-        if (!user?.id) return
-
-        supabase
-            .from("users")
-            .select("name")
-            .eq("id", user.id)
-            .maybeSingle()
-            .then(({ data, error }) => {
-                if (cancelled) return
-                if (error) {
-                    console.warn("[ReportResult] users.name 조회 실패:", error.message)
-                    return
-                }
-
-                const profileName = data?.name?.trim()
-                if (profileName) setDisplayName(profileName)
-            })
-
-        return () => {
-            cancelled = true
-        }
-    }, [user])
 
     const isLockedFromSection = (sectionIndex: number) =>
         isReportSectionLocked({
@@ -310,17 +215,6 @@ export default function PassMateReport() {
     const handleLoginToUnlock = useCallback(() => {
         navigate(`/login?redirect=${encodeURIComponent("/report-new")}`)
     }, [navigate])
-
-    useEffect(() => {
-        if (authLoading || !user?.id || !analysisKey) {
-            setShowNextAnalysisNotice(false)
-            return
-        }
-
-        const statusBeforeClaim = getFreeAnalysisStatus(user.id, analysisKey)
-        setShowNextAnalysisNotice(shouldShowNextAnalysisNotice(statusBeforeClaim))
-        markFreeAnalysisUsed(user.id, analysisKey)
-    }, [analysisKey, authLoading, user?.id])
 
     // ── Scroll Spy (IntersectionObserver) ──
     useEffect(() => {
@@ -521,16 +415,6 @@ export default function PassMateReport() {
             </div>
 
             <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10 pt-4">
-
-                {/* Mock 모드 안내 배너 */}
-                {useMock && (
-                    <div className="mt-2 mb-4 px-4 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span className="text-xs text-amber-400">현재 더미 데이터(mock)가 표시되고 있습니다. 실제 분석 결과를 보려면 분석 페이지에서 다시 시도하세요.</span>
-                    </div>
-                )}
-
-                <FreeAnalysisNotice show={showNextAnalysisNotice} />
 
                 {/* ================================================================= */}
                 {/* ACT 1: FIRST IMPRESSION */}
@@ -1125,37 +1009,6 @@ export default function PassMateReport() {
                 {/* ================================================================= */}
                 <FeedbackSection analysisId={activeAnalysisId} />
 
-                {/* ================================================================= */}
-                {/* PREMIUM UPSELL */}
-                {/* ================================================================= */}
-                <section className="py-24">
-                    <h2 className="text-xs uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.PREMIUM}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-medium text-white mb-6 tracking-tight">{UI_LABELS.PREMIUM_NEXT_STEPS}</h3>
-                    <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.7]">{UI_LABELS.PREMIUM_DESC}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="group relative bg-white/[0.02] border border-white/[0.04] rounded-xl p-8 hover:border-white/[0.08] transition-all duration-300">
-                            <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center mb-6">
-                                <FileText className="w-5 h-5 text-zinc-400" />
-                            </div>
-                            <h4 className="text-lg font-medium text-white mb-3">{UI_LABELS.PAST_QUESTIONS}</h4>
-                            <p className="text-[15px] text-zinc-500 leading-[1.7] mb-8">{UI_LABELS.PAST_QUESTIONS_DESC}</p>
-                            <button className="text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-2 group/btn">
-                                <span>{UI_LABELS.GO_TO}</span><ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                            </button>
-                        </div>
-                        <div className="group relative bg-white/[0.02] border border-white/[0.04] rounded-xl p-8 hover:border-white/[0.08] transition-all duration-300">
-                            <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center mb-6">
-                                <Sparkles className="w-5 h-5 text-zinc-400" />
-                            </div>
-                            <h4 className="text-lg font-medium text-white mb-3">{UI_LABELS.EXPERT_REVIEW}</h4>
-                            <p className="text-[15px] text-zinc-500 leading-[1.7] mb-8">{UI_LABELS.EXPERT_REVIEW_DESC}</p>
-                            <button className="text-sm text-zinc-400 hover:text-white transition-colors flex items-center gap-2 group/btn">
-                                <span>{UI_LABELS.APPLY_PREMIUM}</span><ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
                 {/* NEXT STEP */}
                 <section className="py-16 mt-10 bg-white/[0.02] rounded-xl border border-white/[0.04] px-6 md:px-10 text-center">
                     <h3 className="text-xl font-medium text-white mb-8">{UI_LABELS.WHATS_NEXT}</h3>
@@ -1195,5 +1048,38 @@ export default function PassMateReport() {
             )}
         </main>
     )
+}
+
+export default function PassMateReport() {
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
+
+    if (authLoading) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-zinc-400">
+                로그인 정보를 확인하는 중이에요.
+            </main>
+        )
+    }
+
+    if (!isAuthenticated) {
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center">
+                <section className="max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8">
+                    <h1 className="text-lg font-semibold text-white">로그인이 필요해요</h1>
+                    <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+                        로그인 후 분석 리포트를 확인할 수 있어요.
+                    </p>
+                    <a
+                        href={`/login?redirect=${encodeURIComponent("/report-new")}`}
+                        className="mt-6 inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-zinc-900"
+                    >
+                        로그인하기
+                    </a>
+                </section>
+            </main>
+        )
+    }
+
+    return <AuthenticatedReport />
 }
 

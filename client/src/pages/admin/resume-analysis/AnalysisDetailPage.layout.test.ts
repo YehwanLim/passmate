@@ -30,16 +30,14 @@ describe("analysis detail split review layout", () => {
     expect(page).toContain('TabsContent value="raw"');
     expect(hook).toContain("project_id");
     expect(hook).toContain("project_analyses");
-    expect(hook).toContain('.eq("project_id", r.project_id)');
+    expect(hook).toContain("/api/admin/analyses/");
+    expect(hook).not.toMatch(/\.from\(\s*["']/);
   });
 
-  it("renders the admin mock detail without calling Supabase", () => {
+  it("uses only persisted server data and has no admin resume mock fallback", () => {
     const hook = read("client/src/hooks/admin/useAnalysisDetail.ts");
-    const mock = read("client/src/hooks/admin/mockResumeAnalysis.ts");
 
-    expect(hook).toContain('analysisId.startsWith("mock-analysis-")');
-    expect(hook).toContain("setDetail({");
-    expect(mock).toContain('id: "mock-analysis-1"');
-    expect(mock).toContain("현대자동차 서비스 PM 지원");
+    expect(hook).not.toContain("mockResumeAnalysis");
+    expect(hook).not.toContain("mock-analysis-");
   });
 });

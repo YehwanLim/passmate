@@ -1,55 +1,45 @@
-// =============================================================================
-// GET /api/projects/[projectId]/analyses — Analysis 리스트 API
-// 경량 응답: ai_response_json, input_text 제외
-// =============================================================================
-
 import prisma from "../../../lib/prisma.js";
+import { ApiError, sendError, sendJson, withApiHandler } from "../../../lib/api-handler.js";
+import { requireActiveApplicationUser } from "../../../lib/auth.js";
 
-export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+export function createProjectAnalysesHandler({
+  db = prisma,
+  requireUser = requireActiveApplicationUser,
+} = {}) {
+  return async function handler(req, res) {
+    return withApiHandler(req, res, async (requestId) => {
+      if (req.method !== "GET") {
+        return sendError(res, 405, "METHOD_NOT_ALLOWED", requestId);
+      }
 
-  try {
-    const { projectId } = req.query;
+      const projectId = req.query?.projectId;
+      if (typeof projectId !== "string" || projectId.length === 0) {
+        throw new ApiError("INVALID_REQUEST", 400);
+      }
 
-    if (!projectId) {
-      return res.status(400).json({ error: "projectId가 필요합니다." });
-    }
+      const { applicationUser } = await requireUser(req, db);
+      const project = await db.project.findFirst({
+        where: { id: projectId, userId: applicationUser.id },
+        select: { id: true },
+      });
+      if (!project) {
+        throw new ApiError("NOT_FOUND", 404);
+      }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Prisma 쿼리: select로 경량 필드만 반환
-    // ❌ aiResponseJson 제외 (무거움)
-    // ❌ inputText 제외 (상세 API에서만 반환)
-    // ─────────────────────────────────────────────────────────────────────
-    const analyses = await prisma.analysis.findMany({
-      where: { projectId },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        questionText: true,    // → API: question_text
-        status: true,
-        createdAt: true,       // → API: created_at
-      },
+      const analyses = await db.analysis.findMany({
+        where: { projectId, userId: applicationUser.id },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, questionText: true, status: true, createdAt: true },
+      });
+
+      return sendJson(res, 200, analyses.map((analysis) => ({
+        id: analysis.id,
+        question_text: analysis.questionText,
+        status: analysis.status,
+        created_at: analysis.createdAt,
+      })), requestId);
     });
-
-    // ─────────────────────────────────────────────────────────────────────
-    // 후처리: camelCase → snake_case 매핑
-    // 데이터 없으면 빈 배열 반환 (404 아님, 정상 상태)
-    // ─────────────────────────────────────────────────────────────────────
-    const result = analyses.map((a) => ({
-      id: a.id,
-      question_text: a.questionText,
-      status: a.status,
-      created_at: a.createdAt,
-    }));
-
-    return res.status(200).json(result);
-  } catch (error) {
-    console.error("❌ [GET /api/projects/[projectId]/analyses] 에러:", error);
-    return res.status(500).json({
-      error: "분석 목록 조회에 실패했습니다.",
-      message: process.env.NODE_ENV !== "production" ? error.message : undefined,
-    });
-  }
+  };
 }
+
+export default createProjectAnalysesHandler();

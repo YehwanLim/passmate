@@ -64,17 +64,6 @@ export const UI_LABELS = {
   PM_VERDICT_TITLE: "실무자 입장에서는 이런 부분이 보였어요",
   JUST_NOW: "방금 전",
 
-  // Premium Upsell
-  PREMIUM: "프리미엄",
-  PREMIUM_NEXT_STEPS: "프리미엄 넥스트 스텝",
-  PREMIUM_DESC: "AI 분석을 넘어, 실제 합격자 데이터와 전문가의 코칭으로 완성도를 높이세요.",
-  PAST_QUESTIONS: "기출 면접 질문",
-  PAST_QUESTIONS_DESC: "수만 건의 데이터를 기반으로 실제 합격자들이 받았던 기출 면접 질문을 확인하세요.",
-  GO_TO: "바로가기",
-  EXPERT_REVIEW: "1:1 전문가 리뷰",
-  EXPERT_REVIEW_DESC: "10년 차 현업 멘토의 밀착 피드백으로 자소서의 완성도를 극대화하세요.",
-  APPLY_PREMIUM: "프리미엄 신청",
-
   // Next Steps
   WHATS_NEXT: "다음 단계",
   EDIT_RESUME: "이 자소서 수정하기",

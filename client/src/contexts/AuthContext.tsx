@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import type { AuthState, UserProfile } from "@/types/auth";
 import { trackLogin, trackSignUp } from "@/lib/analytics";
 import { getGoogleOAuthOptions } from "@/lib/authOptions";
+import { clearPassMateStorage } from "@/utils/storage";
 
 // ============================================================
 // Context
@@ -36,32 +37,6 @@ function sessionToProfile(session: Session): UserProfile {
 }
 
 // ============================================================
-// users 테이블 Upsert
-// 로그인 성공 시 DB에 사용자 정보를 저장/갱신합니다.
-// ============================================================
-
-async function upsertUser(profile: UserProfile): Promise<void> {
-  const { error } = await supabase.from("users").upsert(
-    {
-      id: profile.id,
-      email: profile.email,
-      name: profile.name,
-      avatar_url: profile.profile_image,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "id",     // id 기준 충돌 시 UPDATE
-      ignoreDuplicates: false,
-    }
-  );
-
-  if (error) {
-    // RLS 미설정 등의 이유로 실패해도 로그인 흐름은 막지 않음
-    console.warn("[AuthContext] users upsert 실패:", error.message);
-  }
-}
-
-// ============================================================
 // Provider
 // ============================================================
 
@@ -76,10 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // GA4 중복 이벤트 방지: 세션 ID별로 한 번만 추적
     let trackedSessionId: string | null = null;
 
-    const resolve = (session: import("@supabase/supabase-js").Session | null, source: string) => {
+    const resolve = (session: import("@supabase/supabase-js").Session | null) => {
       if (!mounted || resolved) return;
       resolved = true;
-      console.log("[Auth] resolved from:", source, "| user:", session?.user?.email ?? "none");
       if (session) {
         setUser(sessionToProfile(session));
       } else {
@@ -93,15 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      console.log("[Auth] event:", event, "| user:", session?.user?.email ?? "none");
 
       if (session) {
         const profile = sessionToProfile(session);
         setUser(profile);
-        // 로그인 완료 시 users 테이블 upsert
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          upsertUser(profile);
-        }
         // GA4: 로그인 이벤트 추적 (세션 ID 기준 중복 방지)
         if (event === "SIGNED_IN" && trackedSessionId !== session.user.id) {
           trackedSessionId = session.user.id;
@@ -122,14 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 최초 resolved 처리 (INITIAL_SESSION 또는 SIGNED_IN으로)
-      resolve(session, event);
+      resolve(session);
     });
 
     // 2) getSession() — onAuthStateChange가 늦게 발생할 경우 fallback
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) console.warn("[Auth] getSession error:", error.message);
-      console.log("[Auth] getSession:", session?.user?.email ?? "none");
-      resolve(session, "getSession");
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      resolve(session);
     });
 
     return () => {
@@ -145,17 +112,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       options: getGoogleOAuthOptions(options?.redirectTo ?? `${window.location.origin}/`),
     });
     if (error) {
-      console.error("[AuthContext] Google 로그인 오류:", error.message);
       throw error;
     }
   }, []);
 
   // 로그아웃
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("[AuthContext] 로그아웃 오류:", error.message);
-      throw error;
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+    } finally {
+      clearPassMateStorage();
     }
   }, []);
 

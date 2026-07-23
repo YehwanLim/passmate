@@ -13,6 +13,7 @@ import MyAnalyses from "./pages/MyAnalyses";
 import Login from "./pages/Login";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import AccountDeletion from "./pages/AccountDeletion";
 import AdminRoot from "./pages/admin/AdminRoot";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path={"/login"} component={Login} />
       <Route path={"/terms"} component={Terms} />
       <Route path={"/privacy"} component={Privacy} />
+      <Route path={"/account/deletion"} component={AccountDeletion} />
       <Route path={"/analyze"} component={Analyze} />
       <Route path={"/report-new"} component={ReportResult} />
       <Route path={"/my"} component={MyProjects} />

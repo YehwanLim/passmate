@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { adminApiFetch } from "@/lib/adminApi";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,8 +48,6 @@ interface AiSettings {
 type BooleanSettingKey = {
   [Key in keyof AiSettings]: AiSettings[Key] extends boolean ? Key : never;
 }[keyof AiSettings];
-
-const STORAGE_KEY = "passmate_admin_ai_settings";
 
 const DEFAULT_AI_SETTINGS: AiSettings = {
   temperature: 0.7,
@@ -100,20 +99,12 @@ function ToggleRow({
 
 export default function AiSettingsPage() {
   const [settings, setSettings] = useState<AiSettings>(DEFAULT_AI_SETTINGS);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [settingsUnavailable, setSettingsUnavailable] = useState(true);
 
   useEffect(() => {
-    const savedSettings = localStorage.getItem(STORAGE_KEY);
-    if (!savedSettings) return;
-
-    try {
-      setSettings({
-        ...DEFAULT_AI_SETTINGS,
-        ...JSON.parse(savedSettings),
-      });
-    } catch {
-      setSettings(DEFAULT_AI_SETTINGS);
-    }
+    adminApiFetch<{ available: boolean }>("/api/admin/settings")
+      .then((result) => setSettingsUnavailable(!result.available))
+      .catch(() => setSettingsUnavailable(true));
   }, []);
 
   const updateSetting = <Key extends keyof AiSettings>(
@@ -145,9 +136,7 @@ export default function AiSettingsPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    setSettingsUnavailable(true);
   };
 
   return (
@@ -156,24 +145,25 @@ export default function AiSettingsPage() {
         title="AI Settings"
         description="운영 환경에서 AI 생성 방식, 안전 장치, 응답 형식, 성능 옵션을 설정합니다."
         actions={
-          <Button type="submit" size="sm" className="gap-1.5 text-xs">
+          <Button type="submit" size="sm" className="gap-1.5 text-xs" disabled>
             <Save className="size-3.5" />
             Save Settings
           </Button>
         }
       />
 
-      {saveSuccess && (
-        <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-500">
+      {settingsUnavailable && (
+        <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400">
           <AlertTitle className="text-sm font-semibold">
-            AI 설정이 저장되었습니다.
+            AI settings are read-only
           </AlertTitle>
           <AlertDescription className="text-xs">
-            현재 화면은 Mock 데이터 기반이며 브라우저 로컬 저장소에 반영됩니다.
+            서버 설정 스키마가 아직 배포되지 않아 이 화면의 제어는 unavailable 상태입니다.
           </AlertDescription>
         </Alert>
       )}
 
+      <fieldset disabled className="contents" aria-label="AI settings are read-only">
       <div className="grid gap-5 xl:grid-cols-2">
         <Card className="xl:col-span-2">
           <CardHeader>
@@ -467,6 +457,7 @@ export default function AiSettingsPage() {
           </Button>
         </CardFooter>
       </Card>
+      </fieldset>
     </form>
   );
 }
