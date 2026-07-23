@@ -62,8 +62,13 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
     },
     analysisRequest: {
       create: vi.fn(async ({ data }) => ({ id: "request-1", ...data })),
+      findFirst: vi.fn(async ({ where }) => (
+        where.status.in.includes(resolvedExistingRequest?.status)
+          ? resolvedExistingRequest
+          : null
+      )),
       findMany: vi.fn(async () => (
-        ["PENDING", "CALLING"].includes(resolvedExistingRequest?.status) && resolvedExistingRequest.expiresAt
+        resolvedExistingRequest?.status === "PENDING" && resolvedExistingRequest.expiresAt
           ? [resolvedExistingRequest]
           : []
       )),
@@ -73,7 +78,12 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
           : null
       )),
       update: vi.fn(async ({ data, where }) => ({ id: where.id, ...data })),
-      updateMany: vi.fn(async () => ({ count: 1 })),
+      updateMany: vi.fn(async ({ data }) => {
+        if (resolvedExistingRequest && typeof data?.status === "string") {
+          resolvedExistingRequest.status = data.status;
+        }
+        return { count: 1 };
+      }),
     },
     analysisReservation: {
       updateMany: vi.fn(async () => ({ count: 1 })),
@@ -151,7 +161,7 @@ describe("atomic analyze API", () => {
     expect(model).not.toHaveBeenCalled();
   });
 
-  it.each(["PENDING", "CALLING"])("expires a stranded %s request and cancels its reservation before rejecting the old key", async (status) => {
+  it("expires a stranded pending request and cancels its reservation before rejecting the old key", async () => {
     const model = vi.fn();
     const db = createDatabase({
       existingRequest: {
@@ -161,7 +171,7 @@ describe("atomic analyze API", () => {
         idempotencyKey: IDEMPOTENCY_KEY,
         requestHash: requestHash(),
         reservationId: "reservation-1",
-        status,
+        status: "PENDING",
       },
     });
     const handler = createAnalyzeHandler({
@@ -183,6 +193,64 @@ describe("atomic analyze API", () => {
       where: { id: "reservation-1", status: "PENDING", userId: USER_ID },
     }));
     expect(model).not.toHaveBeenCalled();
+  });
+
+  it("does not auto-refund an expired CALLING request with an ambiguous provider outcome", async () => {
+    const model = vi.fn();
+    const db = createDatabase({
+      existingRequest: {
+        analysisId: "analysis-1",
+        expiresAt: new Date("2026-01-01T00:00:00.000Z"),
+        id: "request-1",
+        requestHash: requestHash(),
+        reservationId: "reservation-1",
+        status: "CALLING",
+      },
+    });
+    const handler = createAnalyzeHandler({
+      db,
+      model,
+      requireUser: activeUser,
+      consumeRateLimit: rateAllowed,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe("ANALYSIS_IN_PROGRESS");
+    expect(db.analysis.updateMany).not.toHaveBeenCalled();
+    expect(db.analysisReservation.updateMany).not.toHaveBeenCalled();
+    expect(model).not.toHaveBeenCalled();
+  });
+
+  it("blocks a refreshed key from re-calling the model while the same input is CALLING", async () => {
+    const model = vi.fn();
+    const consumeRateLimit = vi.fn(async () => ({ allowed: true, retryAfterSeconds: 1 }));
+    const db = createDatabase({
+      existingRequest: {
+        analysisId: "analysis-1",
+        id: "request-1",
+        idempotencyKey: "previous-calling-request-1234",
+        requestHash: requestHash(),
+        reservationId: "reservation-1",
+        status: "CALLING",
+      },
+    });
+    const handler = createAnalyzeHandler({
+      db,
+      model,
+      requireUser: activeUser,
+      consumeRateLimit,
+    });
+    const res = response();
+
+    await handler(request({ headers: { "idempotency-key": "refreshed-analysis-request-1234" } }), res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe("ANALYSIS_IN_PROGRESS");
+    expect(model).not.toHaveBeenCalled();
+    expect(consumeRateLimit).not.toHaveBeenCalled();
   });
 
   it("releases another expired reservation before allowing a new idempotency key", async () => {
@@ -286,6 +354,42 @@ describe("atomic analyze API", () => {
     expect(model).not.toHaveBeenCalled();
   });
 
+  it("recovers a staged result after a refresh supplies a new idempotency key", async () => {
+    const model = vi.fn();
+    const consumeRateLimit = vi.fn(async () => ({ allowed: true, retryAfterSeconds: 1 }));
+    const existingRequest = {
+      analysis: { id: "analysis-1", projectId: "project-1" },
+      analysisId: "analysis-1",
+      id: "request-1",
+      idempotencyKey: "previous-staged-request-1234",
+      providerMetadata: {
+        modelName: "test-model",
+        modelProvider: "test-provider",
+        responseTimeMs: 12,
+        tokenUsage: { completionTokens: 2, promptTokens: 1, totalTokens: 3 },
+      },
+      providerResult: { report: "staged" },
+      requestHash: requestHash(),
+      reservationId: "reservation-1",
+      status: "PERSISTENCE_PENDING",
+    };
+    const handler = createAnalyzeHandler({
+      db: createDatabase({ existingRequest }),
+      finalizeReservation: vi.fn(async () => undefined),
+      model,
+      requireUser: activeUser,
+      consumeRateLimit,
+    });
+    const res = response();
+
+    await handler(request({ headers: { "idempotency-key": "refreshed-analysis-request-1234" } }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ analysis_id: "analysis-1", report: { report: "staged" } });
+    expect(model).not.toHaveBeenCalled();
+    expect(consumeRateLimit).not.toHaveBeenCalled();
+  });
+
   it("stops before the model when the user has exceeded the analysis rate limit", async () => {
     const model = vi.fn();
     const handler = createAnalyzeHandler({
@@ -350,6 +454,10 @@ describe("atomic analyze API", () => {
     expect(db.analysis.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: "SUCCESS" }),
       where: { id: "analysis-1" },
+    }));
+    expect(db.analysisRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ providerMetadata: null, providerResult: null, status: "SUCCEEDED" }),
+      where: { id: "request-1", status: "PERSISTENCE_PENDING" },
     }));
     expect(finalizeReservation).toHaveBeenCalledWith(expect.anything(), "reservation-1", USER_ID);
     expect(cancelReservation).not.toHaveBeenCalled();

@@ -62,4 +62,24 @@ describe("beta deployment security configuration", () => {
     expect(migration).toContain("FROM auth.users");
     expect(migration).toContain("ON CONFLICT (id) DO NOTHING");
   });
+
+  it("stages provider results and repairs incompatible pending rows before release", () => {
+    const migration = read("prisma/migrations/20260723_stage_provider_results/migration.sql");
+
+    expect(migration).toContain("provider_result JSONB");
+    expect(migration).toContain("provider_metadata JSONB");
+    expect(migration).toContain("idx_analysis_requests_user_hash_status");
+    expect(migration).toContain("status = 'PERSISTENCE_PENDING'");
+    expect(migration).toContain("status = 'CONSUMED'");
+    expect(migration).toContain("error_code = 'API_ERROR'");
+    expect(migration).toContain("RECONCILIATION_CONSUMED");
+  });
+
+  it("applies the analysis request status migrations in a fresh-database-safe order", () => {
+    const stateMigration = read("prisma/migrations/20260723_add_analysis_request_processing_states/migration.sql");
+    const primitiveMigration = read("prisma/migrations/20260723_add_security_primitives/migration.sql");
+
+    expect(stateMigration).toContain("IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'analysis_request_status')");
+    expect(primitiveMigration).toContain("'PENDING', 'CALLING', 'PERSISTENCE_PENDING', 'SUCCEEDED', 'FAILED'");
+  });
 });
