@@ -17,6 +17,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     detectSessionInUrl: true,
+    // This is the sole intentional browser-storage exception: Supabase keeps
+    // the OAuth session required for PKCE redirects and refreshes. Resume
+    // text, reports, anonymous IDs, feedback, and app API data never use this
+    // storage. Moving this token to an HttpOnly BFF cookie requires a separate
+    // authentication architecture release.
     persistSession: true,
     autoRefreshToken: true,
     // PKCE 플로우 사용 (기본값) — ?code= 쿼리 파라미터 방식

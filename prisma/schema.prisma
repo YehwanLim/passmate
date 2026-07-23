@@ -22,6 +22,7 @@ model User {
   role      String   @default("user") @db.Text
   deletionRequestedAt DateTime? @map("deletion_requested_at") @db.Timestamptz
   purgeAt             DateTime? @map("purge_at") @db.Timestamptz
+  purgeClaimedAt      DateTime? @map("purge_claimed_at") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -106,6 +107,8 @@ enum PurchaseIntentStatus {
 
 enum AnalysisRequestStatus {
   PENDING
+  CALLING
+  PERSISTENCE_PENDING
   SUCCEEDED
   FAILED
 

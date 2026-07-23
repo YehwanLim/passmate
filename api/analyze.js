@@ -330,7 +330,12 @@ function classifyFailure(error) {
 function idempotencyResult(existing, hash) {
   if (!existing) return null;
   if (existing.requestHash !== hash) throw new ApiError("IDEMPOTENCY_KEY_REUSED", 409);
-  if (existing.status === "PENDING") throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
+  if (existing.status === "PENDING" || existing.status === "CALLING") {
+    throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
+  }
+  if (existing.status === "PERSISTENCE_PENDING") {
+    throw new ApiError("ANALYSIS_PERSISTENCE_PENDING", 409);
+  }
   if (existing.status === "FAILED") throw new ApiError("ANALYSIS_RETRY_WITH_NEW_KEY", 409);
   if (existing.status === "SUCCEEDED" && existing.analysis) {
     return {
@@ -379,6 +384,14 @@ async function expirePendingRequest({ db, existing, requestId, userId }) {
   return db.$transaction(async (tx) => {
     const current = await findExistingRequest(tx, userId, existing.idempotencyKey);
     if (!isExpiredPendingRequest(current)) return current;
+    const now = new Date();
+    const claimed = await tx.analysisRequest.updateMany({
+      where: { id: current.id, status: "PENDING", expiresAt: { lte: now } },
+      data: { status: "FAILED" },
+    });
+    if (claimed.count !== 1) {
+      return findExistingRequest(tx, userId, existing.idempotencyKey);
+    }
 
     if (current.analysisId) {
       await tx.analysis.updateMany({
@@ -386,10 +399,6 @@ async function expirePendingRequest({ db, existing, requestId, userId }) {
         data: { status: "FAILED", errorCode: "API_ERROR", errorMessage: null },
       });
     }
-    await tx.analysisRequest.update({
-      where: { id: current.id },
-      data: { status: "FAILED" },
-    });
     if (current.reservationId) {
       await tx.analysisReservation.updateMany({
         where: { id: current.reservationId, status: "PENDING", userId },
@@ -468,8 +477,31 @@ async function allocateAnalysisRequest({ db, hash, idempotencyKey, request, rese
   });
 }
 
+async function beginProviderCall({ db, requestId }) {
+  const claimed = await db.$transaction((tx) => tx.analysisRequest.updateMany({
+    where: { id: requestId, status: "PENDING" },
+    data: { status: "CALLING" },
+  }));
+  if (claimed.count !== 1) throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
+}
+
+async function markProviderCompleted({ db, requestId }) {
+  const claimed = await db.$transaction((tx) => tx.analysisRequest.updateMany({
+    where: { id: requestId, status: "CALLING" },
+    data: { status: "PERSISTENCE_PENDING" },
+  }));
+  if (claimed.count !== 1) throw new ApiError("ANALYSIS_PERSISTENCE_PENDING", 409);
+}
+
 async function finalizeAnalysis({ db, allocation, finalize, metadata, report, userId }) {
   await db.$transaction(async (tx) => {
+    const claimed = await tx.analysisRequest.updateMany({
+      where: { id: allocation.analysisRequest.id, status: "PERSISTENCE_PENDING" },
+      data: { status: "SUCCEEDED" },
+    });
+    if (claimed.count !== 1) {
+      throw new ModelFailureError("API_ERROR");
+    }
     await tx.analysis.update({
       where: { id: allocation.analysis.id },
       data: {
@@ -498,23 +530,20 @@ async function finalizeAnalysis({ db, allocation, finalize, metadata, report, us
         },
       });
     }
-    await tx.analysisRequest.update({
-      where: { id: allocation.analysisRequest.id },
-      data: { status: "SUCCEEDED" },
-    });
     await finalize(tx, allocation.reservation.reservationId, userId);
   });
 }
 
 async function failAnalysis({ allocation, cancel, db, failure, requestId, userId }) {
   await db.$transaction(async (tx) => {
-    await tx.analysis.update({
-      where: { id: allocation.analysis.id },
-      data: { status: "FAILED", errorCode: failure.code, errorMessage: null },
-    });
-    await tx.analysisRequest.update({
-      where: { id: allocation.analysisRequest.id },
+    const claimed = await tx.analysisRequest.updateMany({
+      where: { id: allocation.analysisRequest.id, status: "CALLING" },
       data: { status: "FAILED" },
+    });
+    if (claimed.count !== 1) return false;
+    await tx.analysis.updateMany({
+      where: { id: allocation.analysis.id, status: "PENDING", userId },
+      data: { status: "FAILED", errorCode: failure.code, errorMessage: null },
     });
     await cancel(tx, allocation.reservation.reservationId, userId);
     await recordAuditEvent({
@@ -525,6 +554,7 @@ async function failAnalysis({ allocation, cancel, db, failure, requestId, userId
       targetId: allocation.analysis.id,
       targetType: "analysis",
     });
+    return true;
   });
 }
 
@@ -612,7 +642,9 @@ export function createAnalyzeHandler({
         }), requestId);
       }
 
+      let providerCompleted = false;
       try {
+        await beginProviderCall({ db, requestId: allocation.analysisRequest.id });
         const modelResult = await model(request, db);
         if (!isRecord(modelResult)) throw new ModelFailureError("PARSE_ERROR");
         if (modelResult.error === "CONTEXT_IRRELEVANT") {
@@ -620,6 +652,8 @@ export function createAnalyzeHandler({
         }
         const { analysisMeta, ...report } = modelResult;
         const metadata = modelMetadata(analysisMeta);
+        providerCompleted = true;
+        await markProviderCompleted({ db, requestId: allocation.analysisRequest.id });
         await finalizeAnalysis({
           allocation,
           db,
@@ -636,17 +670,19 @@ export function createAnalyzeHandler({
         }), requestId);
       } catch (error) {
         const failure = classifyFailure(error);
-        try {
-          await failAnalysis({
-            allocation,
-            cancel: cancelReservation,
-            db,
-            failure,
-            requestId,
-            userId: applicationUser.id,
-          });
-        } catch {
-          // The original model failure remains the only client-visible state.
+        if (!providerCompleted) {
+          try {
+            await failAnalysis({
+              allocation,
+              cancel: cancelReservation,
+              db,
+              failure,
+              requestId,
+              userId: applicationUser.id,
+            });
+          } catch {
+            // The original model failure remains the only client-visible state.
+          }
         }
         return sendError(res, failure.statusCode, failure.code === "CONTEXT_IRRELEVANT" ? failure.code : "ANALYSIS_FAILED", requestId);
       }
