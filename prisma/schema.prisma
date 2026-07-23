@@ -42,6 +42,34 @@ model User {
   @@map("users")
 }
 
+// Security audit events intentionally contain only identifiers and outcomes.
+// They must never contain resume text, AI output, email addresses, or tokens.
+model AuditEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  targetType String   @map("target_type") @db.VarChar(64)
+  targetId   String?  @map("target_id") @db.VarChar(255)
+  outcome    String   @db.VarChar(64)
+  requestId  String   @map("request_id") @db.VarChar(128)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@map("audit_events")
+}
+
+model AiModelSetting {
+  id                      String   @id @default("singleton") @db.VarChar(32)
+  defaultProviderKey      String   @default("gemini") @map("default_provider_key") @db.VarChar(32)
+  defaultModelName        String   @default("gemini-2.5-flash-lite") @map("default_model_name") @db.VarChar(100)
+  fallbackProviderKey     String?  @map("fallback_provider_key") @db.VarChar(32)
+  fallbackModelName       String?  @map("fallback_model_name") @db.VarChar(100)
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("ai_model_settings")
+}
+
 // =============================================================================
 // Analysis entitlements — account-level analysis credits and payment audit data
 // =============================================================================

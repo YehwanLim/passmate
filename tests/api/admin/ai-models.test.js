@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
-import { filterRecommendedModels } from "../../../api/admin/ai-models.js";
+import { filterRecommendedModels } from "../../../lib/admin-handlers/ai-models.js";
 
-const source = readFileSync(new URL("../../../api/admin/ai-models.js", import.meta.url), "utf8");
+const source = readFileSync(new URL("../../../lib/admin-handlers/ai-models.js", import.meta.url), "utf8");
 
 describe("filterRecommendedModels", () => {
   it("keeps only the intended Gemini and OpenAI candidates", () => {
@@ -26,10 +26,12 @@ describe("filterRecommendedModels", () => {
     ]);
   });
 
-  it("adds live provider test status to the admin model payload", () => {
-    expect(source).toContain("async function getLiveModelStatuses");
-    expect(source).toContain("liveStatuses: await getLiveModelStatuses");
-    expect(source).toContain("testModelConnection");
-    expect(source).toContain("uniqueModels(filterRecommendedModels(models))");
+  it("keeps provider calls out of GET and protects model testing with the admin limiter", () => {
+    expect(source).toContain('import { requireAdministrator }');
+    expect(source).toContain("consumeUserRateLimit");
+    expect(source).toContain('if (req.method === "GET")');
+    expect(source).not.toContain("liveStatuses: await getLiveModelStatuses");
+    expect(source).toContain('req.body?.action !== "test-model"');
+    expect(source).toContain("isAllowedModel(providerKey, modelName)");
   });
 });

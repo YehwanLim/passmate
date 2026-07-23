@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { adminApiFetch } from "@/lib/adminApi";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import {
   Card,
@@ -66,13 +67,6 @@ interface AdminUser {
   addedAt: string;
 }
 
-// ============================================================
-// 로컬 스토리지 키
-// ============================================================
-const STORAGE_KEY = "passmate_admin_settings";
-const NOTICES_KEY = "passmate_admin_notices";
-const ADMINS_KEY = "passmate_admin_list";
-
 const DEFAULT_SETTINGS: SystemSettings = {
   serviceOn: true,
   maintenanceMessage: "현재 서비스 점검 중입니다. 잠시 후 다시 이용해 주세요.",
@@ -87,7 +81,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
 
 const DEFAULT_NOTICES: NoticeItem[] = [
   { id: "1", title: "[공지] 신규 AI 엔진 적용 완료 및 버그 수정", isPinned: true, createdAt: "2026-07-01" },
-  { id: "2", title: "[안내] 7월 15일 결제 모듈 점검 시간 공지", isPinned: false, createdAt: "2026-07-05" },
+  { id: "2", title: "[안내] 7월 15일 분석 시스템 점검 시간 공지", isPinned: false, createdAt: "2026-07-05" },
 ];
 
 const DEFAULT_ADMINS: AdminUser[] = [
@@ -100,8 +94,7 @@ export default function SettingsPage() {
   const [notices, setNotices] = useState<NoticeItem[]>(DEFAULT_NOTICES);
   const [admins, setAdmins] = useState<AdminUser[]>(DEFAULT_ADMINS);
 
-  // 알림 상태
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [settingsUnavailable, setSettingsUnavailable] = useState(true);
 
   // 공지 추가 폼
   const [newNoticeTitle, setNewNoticeTitle] = useState("");
@@ -110,28 +103,17 @@ export default function SettingsPage() {
   // 관리자 추가 폼
   const [newAdminEmail, setNewAdminEmail] = useState("");
 
-  // ── 데이터 로드 ───────────────────────────────────────────
   useEffect(() => {
-    const savedSettings = localStorage.getItem(STORAGE_KEY);
-    if (savedSettings) setSettings(JSON.parse(savedSettings));
-
-    const savedNotices = localStorage.getItem(NOTICES_KEY);
-    if (savedNotices) setNotices(JSON.parse(savedNotices));
-
-    const savedAdmins = localStorage.getItem(ADMINS_KEY);
-    if (savedAdmins) setAdmins(JSON.parse(savedAdmins));
+    adminApiFetch<{ available: boolean }>("/api/admin/settings")
+      .then((result) => setSettingsUnavailable(!result.available))
+      .catch(() => setSettingsUnavailable(true));
   }, []);
 
-  // ── 저장 제어 ─────────────────────────────────────────────
   const handleSaveGeneral = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    triggerSuccess();
+    setSettingsUnavailable(true);
   };
 
-  const triggerSuccess = () => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
-  };
+  const triggerUnavailable = () => setSettingsUnavailable(true);
 
   // ── 공지 기능 ────────────────────────────────────────────
   const handleAddNotice = () => {
@@ -142,19 +124,15 @@ export default function SettingsPage() {
       isPinned: newNoticePinned,
       createdAt: new Date().toISOString().split("T")[0],
     };
-    const updated = [next, ...notices];
-    setNotices(updated);
-    localStorage.setItem(NOTICES_KEY, JSON.stringify(updated));
+    setNotices([next, ...notices]);
     setNewNoticeTitle("");
     setNewNoticePinned(false);
-    triggerSuccess();
+    triggerUnavailable();
   };
 
   const handleDeleteNotice = (id: string) => {
-    const updated = notices.filter((n) => n.id !== id);
-    setNotices(updated);
-    localStorage.setItem(NOTICES_KEY, JSON.stringify(updated));
-    triggerSuccess();
+    setNotices(notices.filter((n) => n.id !== id));
+    triggerUnavailable();
   };
 
   // ── 관리자 계정 기능 ───────────────────────────────────────
@@ -164,11 +142,9 @@ export default function SettingsPage() {
       email: newAdminEmail.trim(),
       addedAt: new Date().toISOString().split("T")[0],
     };
-    const updated = [...admins, next];
-    setAdmins(updated);
-    localStorage.setItem(ADMINS_KEY, JSON.stringify(updated));
+    setAdmins([...admins, next]);
     setNewAdminEmail("");
-    triggerSuccess();
+    triggerUnavailable();
   };
 
   const handleDeleteAdmin = (email: string) => {
@@ -176,10 +152,8 @@ export default function SettingsPage() {
       alert("최소 1명 이상의 관리자 계정이 존재해야 합니다.");
       return;
     }
-    const updated = admins.filter((a) => a.email !== email);
-    setAdmins(updated);
-    localStorage.setItem(ADMINS_KEY, JSON.stringify(updated));
-    triggerSuccess();
+    setAdmins(admins.filter((a) => a.email !== email));
+    triggerUnavailable();
   };
 
   return (
@@ -189,18 +163,18 @@ export default function SettingsPage() {
         description="서비스 주요 변수 및 기능 활성화 플래그를 실시간 제어합니다."
       />
 
-      {/* 저장 완료 알림 */}
-      {saveSuccess && (
-        <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-500">
-          <AlertTitle className="text-sm font-semibold">설정이 정상적으로 저장되었습니다.</AlertTitle>
+      {settingsUnavailable && (
+        <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+          <AlertTitle className="text-sm font-semibold">Settings are read-only</AlertTitle>
           <AlertDescription className="text-xs">
-            수정하신 변경 조건이 즉시 서비스 파라미터에 실시간 적용 완료되었습니다.
+            서버 설정 스키마가 아직 배포되지 않아 이 화면의 제어는 unavailable 상태입니다.
           </AlertDescription>
         </Alert>
       )}
 
+      <fieldset disabled className="w-full opacity-60" aria-label="Settings are read-only">
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full lg:w-[560px] mb-4">
+        <TabsList className="grid grid-cols-4 w-full lg:w-[520px] mb-4">
           <TabsTrigger value="general" className="text-xs gap-1.5">
             <Settings className="size-3.5" />
             일반 설정
@@ -405,7 +379,7 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="text-sm font-semibold">기능 플래그 (Feature Flag)</CardTitle>
               <CardDescription className="text-xs">
-                베타 기능의 노출 여부를 배포 전 일부 사용자에게 동적으로 변경합니다.
+                베타 기능의 노출 여부 또는 결제 결합 모듈을 배포 전 일부 권한 차단/허용하도록 동적 변경합니다.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -444,6 +418,7 @@ export default function SettingsPage() {
                   }
                 />
               </div>
+
             </CardContent>
             <CardFooter className="border-t pt-4">
               <Button onClick={handleSaveGeneral} className="gap-1.5 ml-auto text-xs h-9">
@@ -523,6 +498,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </fieldset>
     </div>
   );
 }

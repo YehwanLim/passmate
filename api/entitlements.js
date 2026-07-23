@@ -2,19 +2,9 @@ import { getEntitlementSummary } from "../lib/analysis-entitlements.js";
 import { requireAuthenticatedUser } from "../lib/auth.js";
 import prisma from "../lib/prisma.js";
 
-const SETTINGS_ID = "singleton";
-
 function isEntitlementsPath(url) {
   const pathname = new URL(url ?? "/", "http://localhost").pathname;
   return pathname === "/" || pathname === "/api/entitlements";
-}
-
-function isPurchaseIntentPath(req) {
-  if (req.query?.purchaseIntent === "1") {
-    return true;
-  }
-  const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-  return pathname === "/purchase-intents" || pathname === "/api/entitlements/purchase-intents";
 }
 
 async function getAuthenticatedUser(req, res) {
@@ -27,47 +17,11 @@ async function getAuthenticatedUser(req, res) {
   return user;
 }
 
-async function getEntitlements(req, res, user) {
-  const [summary, settings] = await Promise.all([
-    prisma.$transaction((tx) => getEntitlementSummary(tx, user.id)),
-    prisma.entitlementSetting.findUnique({
-      where: { id: SETTINGS_ID },
-      select: { groblePaymentUrl: true },
-    }),
-  ]);
-
+async function getEntitlements(res, user) {
+  const summary = await prisma.$transaction((tx) => getEntitlementSummary(tx, user.id));
   return res.status(200).json({
     ...summary,
-    groblePaymentUrl: settings?.groblePaymentUrl ?? null,
-  });
-}
-
-async function createPurchaseIntent(req, res, user) {
-  const settings = await prisma.entitlementSetting.findUnique({
-    where: { id: SETTINGS_ID },
-    select: { groblePaymentUrl: true, premiumEnabled: true },
-  });
-
-  if (!settings?.premiumEnabled) {
-    return res.status(403).json({ error: "PREMIUM_SALES_DISABLED" });
-  }
-
-  if (!settings?.groblePaymentUrl) {
-    return res.status(503).json({ error: "Purchases are not configured" });
-  }
-
-  const purchaseIntent = await prisma.purchaseIntent.create({
-    data: {
-      status: "PENDING",
-      userId: user.id,
-    },
-  });
-  const checkoutUrl = new URL(settings.groblePaymentUrl);
-  checkoutUrl.searchParams.set("ref", purchaseIntent.id);
-
-  return res.status(201).json({
-    purchaseIntentId: purchaseIntent.id,
-    checkoutUrl: checkoutUrl.toString(),
+    groblePaymentUrl: null,
   });
 }
 
@@ -79,11 +33,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET" && isEntitlementsPath(req.url)) {
-      return getEntitlements(req, res, user);
-    }
-
-    if (req.method === "POST" && isPurchaseIntentPath(req)) {
-      return createPurchaseIntent(req, res, user);
+      return getEntitlements(res, user);
     }
 
     return res.status(405).json({ error: "Method Not Allowed" });

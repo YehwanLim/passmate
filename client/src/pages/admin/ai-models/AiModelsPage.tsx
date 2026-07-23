@@ -47,7 +47,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
+import { adminApiFetch } from "@/lib/adminApi";
 
 type ModelStatus = "connected" | "error" | "disabled";
 type HealthStatus = "healthy" | "slow" | "error";
@@ -288,64 +288,15 @@ function getStatus(enabled: boolean, health: HealthStatus): ModelStatus {
 }
 
 async function loadAiModelsData(): Promise<AiModelsData> {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
-  const configResponse = await fetch("/api/admin/ai-models");
-  const contentType = configResponse.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) {
-    throw new Error("AI 모델 API가 JSON 대신 HTML을 반환했습니다. /admin/ai-models는 API 미들웨어가 동작하는 dev 서버(예: 5173) 또는 배포 환경에서 열어주세요.");
-  }
-  const configPayload = await configResponse.json();
-  if (!configResponse.ok) {
-    throw new Error(configPayload?.message || configPayload?.error || "AI 모델 설정을 불러오지 못했습니다.");
-  }
-
-  const [
-    templatesRes,
-    usageRes,
-    todayUsageRes,
-    todayAnalysesRes,
-    logsRes,
-  ] = await Promise.all([
-    supabase
-      .from("prompt_templates")
-      .select("model_name, model_provider, max_tokens, temperature, is_active, is_default, created_at")
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("token_usages")
-      .select("model_name, model_provider, total_tokens, cost, latency_ms, is_success, http_status, created_at")
-      .gte("created_at", thirtyDaysAgo)
-      .order("created_at", { ascending: false })
-      .limit(5000),
-    supabase
-      .from("token_usages")
-      .select("model_name, model_provider, total_tokens, cost, latency_ms, is_success, created_at")
-      .gte("created_at", todayStart.toISOString())
-      .order("created_at", { ascending: false })
-      .limit(5000),
-    supabase
-      .from("analyses")
-      .select("status, response_time_ms, model_name, model_provider, created_at")
-      .gte("created_at", todayStart.toISOString()),
-    supabase
-      .from("token_usages")
-      .select("id, model_name, model_provider, total_tokens, cost, latency_ms, is_success, http_status, created_at")
-      .order("created_at", { ascending: false })
-      .limit(50),
+  const [configPayload, usagePayload] = await Promise.all([
+    adminApiFetch<any>("/api/admin/ai-models"),
+    adminApiFetch<any>("/api/admin/usage?view=models"),
   ]);
-
-  const queryError =
-    templatesRes.error ||
-    usageRes.error ||
-    todayUsageRes.error ||
-    todayAnalysesRes.error ||
-    logsRes.error;
-
-  if (queryError) {
-    throw new Error(queryError.message);
-  }
+  const templates = usagePayload.templates ?? [];
+  const usageRows = usagePayload.usageRows ?? [];
+  const todayUsageRows = usagePayload.todayUsageRows ?? [];
+  const todayAnalysesRows = usagePayload.todayAnalysesRows ?? [];
+  const logs = usagePayload.logs ?? [];
 
   const providerConfigs = new Map<string, ProviderConfig>();
   (configPayload.providers ?? []).forEach((provider: ProviderConfig) => {
@@ -355,7 +306,7 @@ async function loadAiModelsData(): Promise<AiModelsData> {
   const templateByKey = new Map<string, any>();
   const modelKeys = new Set<string>();
 
-  (templatesRes.data ?? []).forEach((template: any) => {
+  templates.forEach((template: any) => {
     const key = getModelKey(template.model_provider, template.model_name);
     modelKeys.add(key);
     if (!templateByKey.has(key) || template.is_default || template.is_active) {
@@ -363,7 +314,7 @@ async function loadAiModelsData(): Promise<AiModelsData> {
     }
   });
 
-  (usageRes.data ?? []).forEach((row: any) => {
+  usageRows.forEach((row: any) => {
     modelKeys.add(getModelKey(row.model_provider, row.model_name));
   });
 
@@ -386,7 +337,7 @@ async function loadAiModelsData(): Promise<AiModelsData> {
     latest: string | null;
   }>();
 
-  (usageRes.data ?? []).forEach((row: any) => {
+  usageRows.forEach((row: any) => {
     const key = getModelKey(row.model_provider, row.model_name);
     const current = stats.get(key) ?? {
       calls: 0,
@@ -497,8 +448,6 @@ async function loadAiModelsData(): Promise<AiModelsData> {
     models.find((model) => model.id !== defaultModel?.id && model.enabled) ??
     null;
 
-  const todayUsageRows = todayUsageRes.data ?? [];
-  const todayAnalysesRows = todayAnalysesRes.data ?? [];
   const todaysRequests = todayUsageRows.length || todayAnalysesRows.length;
   const todayCost = todayUsageRows.reduce((sum: number, row: any) => sum + (row.cost ?? 0), 0);
   const latencyValues = [
@@ -526,7 +475,7 @@ async function loadAiModelsData(): Promise<AiModelsData> {
       errorRate: todaysRequests ? (failedRequests / todaysRequests) * 100 : 0,
     },
     models: models.sort((a: any, b: any) => a.recommendationRank - b.recommendationRank || Number(b.isDefault) - Number(a.isDefault) || b.totalRequests - a.totalRequests),
-    logs: (logsRes.data ?? []).map((log: any) => ({
+    logs: logs.map((log: any) => ({
       id: log.id,
       time: log.created_at,
       modelId: getModelKey(log.model_provider, log.model_name),
@@ -590,9 +539,8 @@ export default function AiModelsPage() {
 
     if (!nextDefault) return;
 
-    const response = await fetch("/api/admin/ai-models", {
+    await adminApiFetch("/api/admin/ai-models", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "save-settings",
         defaultModel: {
@@ -608,10 +556,6 @@ export default function AiModelsPage() {
       }),
     });
 
-    const payload = await response.json();
-    if (!response.ok) {
-      throw new Error(payload?.message || payload?.error || "모델 설정 저장에 실패했습니다.");
-    }
     setSaveMessage("모델 설정이 저장되었습니다. 다음 분석 요청부터 기본 모델이 적용됩니다.");
     window.setTimeout(() => setSaveMessage(null), 3000);
   };
@@ -649,20 +593,14 @@ export default function AiModelsPage() {
     setTestResult(null);
 
     try {
-      const response = await fetch("/api/admin/ai-models", {
+      const payload = await adminApiFetch<TestResult>("/api/admin/ai-models", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "test-model",
           providerKey: model.providerKey,
           modelName: model.modelName,
         }),
       });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload?.message || payload?.error || "Connection test failed.");
-      }
-
       setTestResult(payload);
     } catch (e) {
       setTestResult({

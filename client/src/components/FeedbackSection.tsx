@@ -1,17 +1,12 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ThumbsUp, ThumbsDown, Check, Send } from "lucide-react"
 import { UI_LABELS } from "../constants/labels"
-import {
-  getAnonymousUserId,
-  saveFeedbackLocally,
-  loadFeedbackLocally,
-  type StoredFeedback,
-} from "../utils/storage"
+import { getAuthorizationHeader } from "@/lib/apiAuth"
 
 // =============================================================================
 // FeedbackSection — 리포트 만족도 컴포넌트
 // =============================================================================
-// 위치: ReportResult 하단 (PM Comment ↔ Premium Upsell 사이)
+// 위치: ReportResult 하단
 // 상태 흐름: idle → selected → (reason panel) → submitted
 // =============================================================================
 
@@ -29,16 +24,6 @@ export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
   const [selectedReason, setSelectedReason] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // ── 로컬 캐시에서 기존 투표 복원 ──
-  useEffect(() => {
-    if (!analysisId) return
-    const cached = loadFeedbackLocally(analysisId)
-    if (cached) {
-      setSelectedRating(cached.rating)
-      setState("submitted")
-    }
-  }, [analysisId])
-
   // ── analysisId 없으면 UI 숨김 ──
   if (!analysisId) return null
 
@@ -47,15 +32,15 @@ export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
     setState("submitting")
     setErrorMessage(null)
 
-    const userId = getAnonymousUserId()
-
     try {
       const res = await fetch("/api/feedback", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getAuthorizationHeader()),
+        },
         body: JSON.stringify({
           analysisId,
-          userId,
           rating,
           comment: comment || null,
         }),
@@ -65,18 +50,9 @@ export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
         throw new Error(`HTTP ${res.status}`)
       }
 
-      // 로컬 캐싱
-      const feedbackData: StoredFeedback = {
-        rating,
-        comment: comment || undefined,
-        savedAt: new Date().toISOString(),
-      }
-      saveFeedbackLocally(analysisId, feedbackData)
-
       setSelectedRating(rating)
       setState("submitted")
-    } catch (e) {
-      console.error("[FeedbackSection] 전송 실패:", e)
+    } catch {
       setErrorMessage(UI_LABELS.FEEDBACK_ERROR)
       setState("selected")
     }

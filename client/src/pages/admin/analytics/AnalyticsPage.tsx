@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
-import { supabase } from "@/lib/supabase";
+import { adminApiFetch } from "@/lib/adminApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -303,34 +303,21 @@ function useFunnelAnalyticsData(period: PeriodKey) {
     const fetchAnalytics = async () => {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      const periodStart = getPeriodStart(period).toISOString();
-
       try {
-        const [usersRes, projectsRes, analysesRes] = await Promise.all([
-          supabase
-            .from("users")
-            .select("id", { count: "exact", head: true })
-            .gte("created_at", periodStart),
-          supabase
-            .from("projects")
-            .select("user_id")
-            .gte("created_at", periodStart),
-          supabase
-            .from("analyses")
-            .select("user_id, status, response_time_ms, created_at")
-            .gte("created_at", periodStart)
-            .order("created_at", { ascending: true }),
-        ]);
-
-        const queryError = usersRes.error ?? projectsRes.error ?? analysesRes.error;
-        if (queryError) {
-          throw queryError;
-        }
-
-        const projectRows = (projectsRes.data ?? []) as Array<{
+        const source = await adminApiFetch<{
+          signedUpUsers: number;
+          projects: Array<{ user_id: string | null }>;
+          analyses: Array<{
+            user_id: string | null;
+            status: AnalysisStatus;
+            response_time_ms: number | null;
+            created_at: string;
+          }>;
+        }>(`/api/admin/usage?view=funnel&period=${period}`);
+        const projectRows = source.projects as Array<{
           user_id: string | null;
         }>;
-        const analysisRows = (analysesRes.data ?? []) as Array<{
+        const analysisRows = source.analyses as Array<{
           user_id: string | null;
           status: AnalysisStatus;
           response_time_ms: number | null;
@@ -352,7 +339,7 @@ function useFunnelAnalyticsData(period: PeriodKey) {
               successfulDurations.length;
 
         const analytics = buildFunnelAnalytics(period, {
-          signedUpUsers: usersRes.count ?? 0,
+          signedUpUsers: source.signedUpUsers,
           resumeUploadUsers: uniqueCount(projectRows),
           analysisUsers: uniqueCount(analysisRows),
           successUsers: uniqueCount(successRows),

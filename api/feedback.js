@@ -1,113 +1,56 @@
-// =============================================================================
-// POST /api/feedback — 리포트 만족도 피드백 저장
-// Prisma upsert 활용 (analysisId + userId unique constraint)
-// =============================================================================
-
 import prisma from "../lib/prisma.js";
+import { ApiError, sendError, sendJson, withApiHandler } from "../lib/api-handler.js";
+import { requireActiveApplicationUser } from "../lib/auth.js";
 
-export default async function handler(req, res) {
-  // CORS
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
-  try {
-    const { analysisId, userId, rating, comment } = req.body || {};
-
-    // ── 입력 유효성 검증 ──
-    if (!analysisId || typeof analysisId !== "string") {
-      return res.status(400).json({ error: "analysisId가 필요합니다." });
-    }
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({ error: "userId가 필요합니다." });
-    }
-    if (!["THUMBS_UP", "THUMBS_DOWN"].includes(rating)) {
-      return res
-        .status(400)
-        .json({ error: "rating은 THUMBS_UP 또는 THUMBS_DOWN이어야 합니다." });
-    }
-
-    // ── Analysis 존재 여부 확인 ──
-    const analysis = await prisma.analysis.findUnique({
-      where: { id: analysisId },
-      select: { id: true },
-    });
-
-    if (!analysis) {
-      return res
-        .status(404)
-        .json({ error: "해당 분석 데이터를 찾을 수 없습니다." });
-    }
-
-    // ── 익명 유저 자동 생성 (upsert) ──
-    const anonymousEmail = `anonymous-${userId}@passmate.local`;
-
-    await prisma.user.upsert({
-      where: { email: anonymousEmail },
-      update: {}, // 이미 존재하면 변경 없음
-      create: {
-        id: userId,
-        email: anonymousEmail,
-        name: "익명 사용자",
-      },
-    });
-
-    // ── Feedback upsert (동일 analysis + user → 업데이트) ──
-    const feedback = await prisma.feedback.upsert({
-      where: {
-        analysisId_userId: {
-          analysisId: analysisId,
-          userId: userId,
-        },
-      },
-      update: {
-        rating: rating,
-        comment: comment || null,
-      },
-      create: {
-        analysisId: analysisId,
-        userId: userId,
-        rating: rating,
-        comment: comment || null,
-      },
-      select: {
-        id: true,
-        rating: true,
-        comment: true,
-        createdAt: true,
-      },
-    });
-
-    console.log(
-      `[feedback] ✅ ${rating} 저장 완료 (analysis: ${analysisId.slice(0, 8)}...)`
-    );
-
-    return res.status(200).json({
-      id: feedback.id,
-      rating: feedback.rating,
-      comment: feedback.comment,
-      created_at: feedback.createdAt,
-    });
-  } catch (error) {
-    console.error("❌ [POST /api/feedback] 에러:", error);
-
-    // Prisma unique constraint 에러 처리
-    if (error.code === "P2002") {
-      return res.status(409).json({ error: "이미 피드백이 등록되어 있습니다." });
-    }
-
-    return res.status(500).json({
-      error: "피드백 저장에 실패했습니다.",
-      message:
-        process.env.NODE_ENV !== "production" ? error.message : undefined,
-    });
-  }
+function isValidFeedbackBody(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return false;
+  const keys = Object.keys(body);
+  if (!keys.every((key) => ["analysisId", "rating", "comment"].includes(key))) return false;
+  if (typeof body.analysisId !== "string" || body.analysisId.length === 0) return false;
+  if (!["THUMBS_UP", "THUMBS_DOWN"].includes(body.rating)) return false;
+  return body.comment === undefined
+    || body.comment === null
+    || (typeof body.comment === "string" && body.comment.length <= 2000);
 }
+
+export function createFeedbackHandler({
+  db = prisma,
+  requireUser = requireActiveApplicationUser,
+} = {}) {
+  return async function handler(req, res) {
+    return withApiHandler(req, res, async (requestId) => {
+      if (req.method !== "POST") {
+        return sendError(res, 405, "METHOD_NOT_ALLOWED", requestId);
+      }
+      if (!isValidFeedbackBody(req.body)) {
+        throw new ApiError("INVALID_REQUEST", 400);
+      }
+
+      const { applicationUser } = await requireUser(req, db);
+      const { analysisId, rating, comment } = req.body;
+      const analysis = await db.analysis.findFirst({
+        where: { id: analysisId, userId: applicationUser.id },
+        select: { id: true },
+      });
+      if (!analysis) {
+        throw new ApiError("NOT_FOUND", 404);
+      }
+
+      const feedback = await db.feedback.upsert({
+        where: { analysisId_userId: { analysisId, userId: applicationUser.id } },
+        update: { rating, comment: comment ?? null },
+        create: { analysisId, userId: applicationUser.id, rating, comment: comment ?? null },
+        select: { id: true, rating: true, comment: true, createdAt: true },
+      });
+
+      return sendJson(res, 200, {
+        id: feedback.id,
+        rating: feedback.rating,
+        comment: feedback.comment,
+        created_at: feedback.createdAt,
+      }, requestId);
+    });
+  };
+}
+
+export default createFeedbackHandler();

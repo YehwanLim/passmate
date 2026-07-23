@@ -1,64 +1,19 @@
-import express, { type Request, type Response } from "express";
+import express from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import analyzeHandler from "../api/analyze.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-type AnalyzeHandler = (req: Request, res: Response) => Promise<unknown>;
-
-async function handleAnalyze(req: Request, res: Response): Promise<void> {
-  // @ts-expect-error The Vercel handler remains JavaScript outside tsconfig inputs.
-  const analyzeModule = await import("../api/analyze.js");
-  const { default: analyzeHandler } = analyzeModule as { default: AnalyzeHandler };
-  await analyzeHandler(req, res);
-}
 
 async function startServer() {
   const app = express();
   const server = createServer(app);
   app.use(express.json());
 
-  // API Routes
-  app.post("/api/analyze", handleAnalyze);
-  app.options("/api/analyze", handleAnalyze);
-
-  // Gemini API 핑 테스트
-  app.get("/api/test-gemini", async (_req, res) => {
-    try {
-      // Raw fetch mode
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ ok: false, error: "GEMINI_API_KEY가 .env에 설정되지 않았습니다." });
-      }
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
-      const apiRes = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: "안녕 제미나이? 한 줄로 짧게 대답해." }] }]
-        })
-      });
-
-      if (!apiRes.ok) {
-        const errorText = await apiRes.text();
-        if (errorText.includes('credits are depleted') || errorText.includes('billing')) {
-            console.warn("[test-gemini] ⚠️ Billing issue detected. Returning mock success.");
-            return res.json({ ok: true, reply: "API 연결 성공 (빌링 이슈로 인한 샘플 응답)" });
-        }
-        throw new Error(`API Error ${apiRes.status}: ${errorText}`);
-      }
-
-      const data = await apiRes.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "(응답 없음)";
-      console.log("[test-gemini] 응답:", text);
-      res.json({ ok: true, reply: text });
-    } catch (error: any) {
-      console.error("[test-gemini] 실패:", error.message);
-      res.status(500).json({ ok: false, error: error.message });
-    }
-  });
+  // Express and Vercel use the same secure serverless handler.
+  app.all("/api/analyze", (req, res) => analyzeHandler(req, res));
 
   // Serve static files from dist/public in production
   const staticPath =

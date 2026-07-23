@@ -37,7 +37,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { sanitizeText } from "@/utils/sanitize";
 import { checkDuplicateQuestions } from "@/utils/textSimilarity";
-import { saveAnalysisToStorage, clearAnalysisResult } from "@/utils/storage";
 import { UI_LABELS } from "@/constants/labels";
 import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
 import {
@@ -46,10 +45,9 @@ import {
   trackAnalysisComplete,
   trackAnalysisFailed,
 } from "@/lib/analytics";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { getAuthorizationHeader } from "@/lib/apiAuth";
 import type { ProjectSummary } from "@/types/my";
-
 
 /**
  * PassMate - 자소서 분석 페이지 (/analyze)
@@ -70,27 +68,13 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
     return UI_LABELS.ANALYSIS_FAILED;
   }
 
-  const { message, error } = errorData as {
-    message?: unknown;
-    error?: unknown;
-  };
-
-  const rawMessage = [message, error]
-    .filter((value): value is string => typeof value === "string")
-    .join(" ");
-
-  if (/Google API Error 503|UNAVAILABLE|high demand|과부하/i.test(rawMessage)) {
-    return UI_LABELS.MODEL_OVERLOADED_ERROR;
-  }
-
-  if (typeof message === "string" && message.trim()) {
-    return message;
-  }
-
-  if (typeof error === "string" && error.trim()) {
-    return error;
-  }
-
+  const { error } = errorData as { error?: unknown };
+  if (error === "RATE_LIMITED") return UI_LABELS.RATE_LIMIT_ERROR;
+  if (error === "CONTEXT_IRRELEVANT") return UI_LABELS.CONTEXT_IRRELEVANT;
+  if (error === "ANALYSIS_DISABLED")
+    return "분석 기능이 일시적으로 중단되었습니다. 잠시 후 다시 시도해 주세요.";
+  if (error === "AUTHENTICATION_REQUIRED")
+    return "로그인 후 분석을 시작할 수 있어요.";
   return UI_LABELS.ANALYSIS_FAILED;
 }
 
@@ -118,11 +102,23 @@ const LOADING_STEPS = {
 export const JOB_ROLE_CATEGORIES = [
   {
     name: "기획·PM",
-    roles: ["서비스 기획", "제품/상품 기획", "사업 기획", "UX 기획", "프로젝트 매니저"],
+    roles: [
+      "서비스 기획",
+      "제품/상품 기획",
+      "사업 기획",
+      "UX 기획",
+      "프로젝트 매니저",
+    ],
   },
   {
     name: "마케팅·브랜딩",
-    roles: ["브랜드 마케팅", "디지털 마케팅", "퍼포먼스 마케팅", "콘텐츠 마케팅", "CRM 마케팅"],
+    roles: [
+      "브랜드 마케팅",
+      "디지털 마케팅",
+      "퍼포먼스 마케팅",
+      "콘텐츠 마케팅",
+      "CRM 마케팅",
+    ],
   },
   {
     name: "경영·사업",
@@ -146,18 +142,32 @@ export const JOB_ROLE_CATEGORIES = [
   },
   {
     name: "데이터·IT",
-    roles: ["데이터 분석", "데이터 사이언스", "프론트엔드 개발", "백엔드 개발", "AI/ML 엔지니어"],
+    roles: [
+      "데이터 분석",
+      "데이터 사이언스",
+      "프론트엔드 개발",
+      "백엔드 개발",
+      "AI/ML 엔지니어",
+    ],
   },
   {
     name: "디자인·콘텐츠",
-    roles: ["UX/UI 디자인", "프로덕트 디자인", "그래픽 디자인", "콘텐츠 기획", "영상 콘텐츠"],
+    roles: [
+      "UX/UI 디자인",
+      "프로덕트 디자인",
+      "그래픽 디자인",
+      "콘텐츠 기획",
+      "영상 콘텐츠",
+    ],
   },
 ] as const;
 
-const PRESET_JOB_ROLES = JOB_ROLE_CATEGORIES.flatMap((category) => category.roles);
+const PRESET_JOB_ROLES = JOB_ROLE_CATEGORIES.flatMap(
+  category => category.roles
+);
 
 export function isPresetJobRole(jobRole: string) {
-  return PRESET_JOB_ROLES.some((role) => role === jobRole);
+  return PRESET_JOB_ROLES.some(role => role === jobRole);
 }
 
 interface QuestionItem {
@@ -202,16 +212,21 @@ export function parseSavedQuestions(questionText: string, inputText: string) {
   const savedQuestions = splitSavedQuestionSections(questionText);
   const savedAnswers = splitSavedQuestionSections(inputText);
   const indexes = Array.from(
-    new Set([...Array.from(savedQuestions.keys()), ...Array.from(savedAnswers.keys())])
+    new Set([
+      ...Array.from(savedQuestions.keys()),
+      ...Array.from(savedAnswers.keys()),
+    ])
   ).sort((a, b) => a - b);
 
   if (indexes.length === 0) {
     const question = questionText.trim();
     const answer = inputText.trim();
-    return question || answer ? [{ question: question || "문항 1", answer }] : [];
+    return question || answer
+      ? [{ question: question || "문항 1", answer }]
+      : [];
   }
 
-  return indexes.map((index) => ({
+  return indexes.map(index => ({
     question: savedQuestions.get(index) || `문항 ${index}`,
     answer: savedAnswers.get(index) || "",
   }));
@@ -245,17 +260,21 @@ function CompanyCombobox({
   const filtered = useMemo(() => {
     if (!value.trim()) return COMPANY_PRESETS;
     const normalizedQuery = normalizeCompanyName(value);
-    return COMPANY_PRESETS.filter((c) =>
+    return COMPANY_PRESETS.filter(c =>
       normalizeCompanyName(c).includes(normalizedQuery)
     );
   }, [value]);
 
-  const showDropdown = isFocused && (filtered.length > 0 || value.trim() !== "");
+  const showDropdown =
+    isFocused && (filtered.length > 0 || value.trim() !== "");
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
         setIsFocused(false);
       }
     }
@@ -269,7 +288,7 @@ function CompanyCombobox({
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
         <Input
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder="회사명을 검색하거나 직접 입력하세요"
           className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
@@ -296,11 +315,11 @@ function CompanyCombobox({
             className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-white/[0.1] bg-[#141414] backdrop-blur-xl shadow-2xl shadow-black/40 py-1.5"
           >
             {filtered.length > 0 ? (
-              filtered.map((company) => (
+              filtered.map(company => (
                 <li key={company}>
                   <button
                     type="button"
-                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseDown={e => e.preventDefault()}
                     onClick={() => {
                       onChange(company);
                       setIsFocused(false);
@@ -320,7 +339,7 @@ function CompanyCombobox({
               <li>
                 <button
                   type="button"
-                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseDown={e => e.preventDefault()}
                   onClick={() => setIsFocused(false)}
                   className="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06]"
                 >
@@ -355,7 +374,7 @@ function JobRoleSelector({
   return (
     <div className="space-y-5">
       <Accordion type="multiple" className="space-y-2">
-        {JOB_ROLE_CATEGORIES.map((category) => (
+        {JOB_ROLE_CATEGORIES.map(category => (
           <AccordionItem
             key={category.name}
             value={category.name}
@@ -366,7 +385,7 @@ function JobRoleSelector({
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                {category.roles.map((role) => {
+                {category.roles.map(role => {
                   const isActive = selected === role;
                   return (
                     <button
@@ -395,7 +414,7 @@ function JobRoleSelector({
           <input
             autoFocus
             value={customValue}
-            onChange={(e) => onCustomChange(e.target.value)}
+            onChange={e => onCustomChange(e.target.value)}
             placeholder="직접 입력"
             className="w-32 sm:w-40 px-4 py-2 rounded-full text-sm font-medium border border-blue-400/40 bg-gradient-to-r from-blue-500/10 to-cyan-400/10 text-white placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
           />
@@ -479,7 +498,7 @@ function QuestionCard({
         </label>
         <Input
           value={item.question}
-          onChange={(e) => onUpdate(item.id, "question", e.target.value)}
+          onChange={e => onUpdate(item.id, "question", e.target.value)}
           placeholder="예) 지원 동기를 작성해 주세요."
           className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 px-4 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
         />
@@ -492,7 +511,7 @@ function QuestionCard({
         </label>
         <Textarea
           value={item.answer}
-          onChange={(e) => onUpdate(item.id, "answer", e.target.value)}
+          onChange={e => onUpdate(item.id, "answer", e.target.value)}
           placeholder="여기에 답변을 작성해 주세요."
           rows={8}
           className="w-full border-white/[0.08] bg-white/[0.04] text-white rounded-xl p-4 text-[15px] leading-relaxed resize-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-zinc-600"
@@ -511,7 +530,7 @@ function QuestionCard({
 ────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
-  const { user, isLoading: authLoading, isAuthenticated } = useRequireAuth({ redirectPath: "/analyze" });
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [company, setCompany] = useState("");
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [customJob, setCustomJob] = useState("");
@@ -520,22 +539,39 @@ export default function Analyze() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
-  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [errorModal, setErrorModal] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
   const [isResumePickerOpen, setIsResumePickerOpen] = useState(false);
   const [previousResumes, setPreviousResumes] = useState<ProjectSummary[]>([]);
-  const [isPreviousResumesLoading, setIsPreviousResumesLoading] = useState(false);
-  const [previousResumeError, setPreviousResumeError] = useState<string | null>(null);
-  const [isApplyingPreviousResume, setIsApplyingPreviousResume] = useState<string | null>(null);
+  const [isPreviousResumesLoading, setIsPreviousResumesLoading] =
+    useState(false);
+  const [previousResumeError, setPreviousResumeError] = useState<string | null>(
+    null
+  );
+  const [isApplyingPreviousResume, setIsApplyingPreviousResume] = useState<
+    string | null
+  >(null);
   const [resumeLoaded, setResumeLoaded] = useState(false);
 
   // ── Status Step 로딩 타이머 ──
   useEffect(() => {
-    if (!isLoading) { setLoadingStep(0); return; }
+    if (!isLoading) {
+      setLoadingStep(0);
+      return;
+    }
     setLoadingStep(1);
     const t1 = setTimeout(() => setLoadingStep(2), 7000);
     const t2 = setTimeout(() => setLoadingStep(3), 30000);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [isLoading]);
 
   // ── 글자 수 계산 ──
@@ -549,24 +585,24 @@ export default function Analyze() {
   const isOverLimit = totalChars > MAX_TOTAL_CHARS;
   const isBelowMinimum = totalChars < MIN_TOTAL_CHARS;
   const isAtMaxQuestions = questions.length >= MAX_QUESTIONS;
-  const hasContent = questions.some((q) => q.answer.trim().length > 0);
+  const hasContent = questions.some(q => q.answer.trim().length > 0);
   // Hard Block: 200자 미만 OR 6000자 초과 → 버튼 완전 비활성화
   const canSubmit = hasContent && !isBelowMinimum && !isOverLimit && !isLoading;
 
   // ── 문항 CRUD (6000자 Hard Block 포함) ──
   const handleUpdateQuestion = useCallback(
     (id: string, field: "question" | "answer", value: string) => {
-      setQuestions((prev) => {
+      setQuestions(prev => {
         if (field === "answer") {
           const otherChars = prev
-            .filter((q) => q.id !== id)
+            .filter(q => q.id !== id)
             .reduce((sum, q) => sum + q.answer.length, 0);
           if (otherChars + value.length > MAX_TOTAL_CHARS) {
             const allowed = MAX_TOTAL_CHARS - otherChars;
             value = value.slice(0, Math.max(0, allowed));
           }
         }
-        return prev.map((q) => (q.id === id ? { ...q, [field]: value } : q));
+        return prev.map(q => (q.id === id ? { ...q, [field]: value } : q));
       });
     },
     []
@@ -575,14 +611,14 @@ export default function Analyze() {
   const handleDeleteQuestion = useCallback(
     (id: string) => {
       if (questions.length <= 1) return;
-      setQuestions((prev) => prev.filter((q) => q.id !== id));
+      setQuestions(prev => prev.filter(q => q.id !== id));
     },
     [questions.length]
   );
 
   const handleAddQuestion = useCallback(() => {
     if (questions.length >= MAX_QUESTIONS) return;
-    setQuestions((prev) => [...prev, createEmptyQuestion()]);
+    setQuestions(prev => [...prev, createEmptyQuestion()]);
   }, [questions.length]);
 
   const openPreviousResumePicker = async () => {
@@ -593,14 +629,19 @@ export default function Analyze() {
     setPreviousResumeError(null);
 
     try {
-      const response = await fetch(`/api/projects?userId=${encodeURIComponent(user.id)}`);
+      const response = await fetch("/api/projects", {
+        headers: await getAuthorizationHeader(),
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const projects: ProjectSummary[] = await response.json();
-      setPreviousResumes(projects.filter((project) => project.latest_analysis_id));
-    } catch (error) {
-      console.error("[Analyze] 이전 지원서 목록 조회 실패:", error);
-      setPreviousResumeError("저장된 지원서를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setPreviousResumes(
+        projects.filter(project => project.latest_analysis_id)
+      );
+    } catch {
+      setPreviousResumeError(
+        "저장된 지원서를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+      );
     } finally {
       setIsPreviousResumesLoading(false);
     }
@@ -611,13 +652,21 @@ export default function Analyze() {
     setPreviousResumeError(null);
 
     try {
-      const response = await fetch(`/api/analysis/${encodeURIComponent(analysisId)}`);
+      const response = await fetch(
+        `/api/analysis/${encodeURIComponent(analysisId)}`,
+        {
+          headers: await getAuthorizationHeader(),
+        }
+      );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const analysis: SavedAnalysisDetail = await response.json();
-      const restoredQuestions = parseSavedQuestions(analysis.question_text, analysis.input_text)
+      const restoredQuestions = parseSavedQuestions(
+        analysis.question_text,
+        analysis.input_text
+      )
         .slice(0, MAX_QUESTIONS)
-        .map((question) => ({ ...question, id: crypto.randomUUID() }));
+        .map(question => ({ ...question, id: crypto.randomUUID() }));
 
       if (restoredQuestions.length === 0) {
         throw new Error("저장된 문항을 찾을 수 없습니다.");
@@ -627,14 +676,17 @@ export default function Analyze() {
       const isSavedPresetJob = isPresetJobRole(savedJob);
       setCompany(analysis.company_name?.trim() || "");
       setQuestions(restoredQuestions);
-      setSelectedJob(isSavedPresetJob ? savedJob : savedJob ? "__custom__" : null);
+      setSelectedJob(
+        isSavedPresetJob ? savedJob : savedJob ? "__custom__" : null
+      );
       setCustomJob(isSavedPresetJob ? "" : savedJob);
       setIsResumePickerOpen(false);
       setResumeLoaded(true);
       setTimeout(() => setResumeLoaded(false), 4000);
-    } catch (error) {
-      console.error("[Analyze] 이전 지원서 불러오기 실패:", error);
-      setPreviousResumeError("지원서 내용을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } catch {
+      setPreviousResumeError(
+        "지원서 내용을 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+      );
     } finally {
       setIsApplyingPreviousResume(null);
     }
@@ -642,20 +694,12 @@ export default function Analyze() {
 
   // ── 분석 제출 (모든 예외 처리 포함) ──
   const executeSubmit = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/login?redirect=/analyze");
-      return;
-    }
-
     setIsLoading(true);
     // GA4: 분석 시작 시간 기록
     const analysisStartTime = performance.now();
 
     const jobLabel =
-      selectedJob === "__custom__" ? customJob.trim() : selectedJob ?? "";
+      selectedJob === "__custom__" ? customJob.trim() : (selectedJob ?? "");
 
     // XSS Sanitize + 구조화
     const structuredQuestions = questions.map((q, i) => ({
@@ -672,11 +716,13 @@ export default function Analyze() {
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
     try {
+      const authorization = await getAuthorizationHeader();
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          ...authorization,
+          "Idempotency-Key": crypto.randomUUID(),
         },
         signal: controller.signal,
         body: JSON.stringify({
@@ -688,25 +734,30 @@ export default function Analyze() {
 
       clearTimeout(timeoutId);
 
-      if (response.status === 401) {
-        navigate("/login?redirect=/analyze");
-        return;
-      }
-
       // Rate Limit (429)
       if (response.status === 429) {
         trackAnalysisFailed("cover_letter", "rate_limit");
-        setErrorModal({ title: "요청 제한", message: UI_LABELS.RATE_LIMIT_ERROR });
+        setErrorModal({
+          title: "요청 제한",
+          message: UI_LABELS.RATE_LIMIT_ERROR,
+        });
         return;
       }
 
       // 문맥 이탈 / 서버 에러
       if (!response.ok) {
         let errorData;
-        try { errorData = await response.json(); } catch { /* ignore */ }
+        try {
+          errorData = await response.json();
+        } catch {
+          /* ignore */
+        }
         if (errorData?.error === "CONTEXT_IRRELEVANT") {
           trackAnalysisFailed("cover_letter", "context_irrelevant");
-          setErrorModal({ title: "내용 확인 필요", message: UI_LABELS.CONTEXT_IRRELEVANT });
+          setErrorModal({
+            title: "내용 확인 필요",
+            message: UI_LABELS.CONTEXT_IRRELEVANT,
+          });
           return;
         }
         throw new Error(getAnalyzeErrorMessage(errorData));
@@ -718,91 +769,46 @@ export default function Analyze() {
         data = await response.json();
       } catch {
         trackAnalysisFailed("cover_letter", "parse_error");
-        setErrorModal({ title: "파싱 오류", message: UI_LABELS.JSON_PARSE_ERROR });
-        return;
-      }
-
-      // 유효성 검사: 정상적인 리포트 구조인지 확인
-      if (!data || !Array.isArray(data.questionTabs) || data.questionTabs.length === 0) {
-        console.error("❌ API 응답이 올바른 리포트 구조가 아닙니다:", data);
-        trackAnalysisFailed("cover_letter", "invalid_response");
-        setErrorModal({ title: "분석 오류", message: UI_LABELS.JSON_PARSE_ERROR });
-        return;
-      }
-
-      // 방어: fallback(더미) 데이터가 정상 응답으로 넘어온 경우 감지
-      const isFallback = data.questionTabs.every(
-        (tab: any) =>
-          (!tab.feedbackCards || tab.feedbackCards.length === 0) &&
-          (tab.overview?.includes("서비스 연결 실패") || tab.overview?.includes("연결할 수 없습니다"))
-      );
-      if (isFallback) {
-        console.error("❌ Fallback(더미) 데이터 감지 — AI 분석이 실패한 것으로 판단");
-        trackAnalysisFailed("cover_letter", "fallback_detected");
         setErrorModal({
-          title: "분석 실패",
-          message: "AI 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해 주세요."
+          title: "파싱 오류",
+          message: UI_LABELS.JSON_PARSE_ERROR,
         });
         return;
       }
 
-      let savedProjectId: string | undefined;
-      let savedAnalysisId: string | undefined;
-
-      if (user?.id && user.email) {
-        try {
-          const saveResponse = await fetch("/api/projects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              user,
-              result: data,
-              analysisMeta: data.analysisMeta,
-              questions: structuredQuestions,
-              company: company.trim(),
-              jobKeyword: jobLabel,
-            }),
-          });
-
-          let savePayload: any = null;
-          try {
-            savePayload = await saveResponse.json();
-          } catch {
-            /* ignore */
-          }
-
-          if (!saveResponse.ok) {
-            throw new Error(savePayload?.message || savePayload?.error || "분석 결과 저장 실패");
-          }
-
-          savedProjectId = savePayload?.project_id;
-          savedAnalysisId = savePayload?.analysis_id;
-        } catch (saveError) {
-          console.warn("[Analyze] DB 저장 실패 — 로컬 결과는 유지합니다:", saveError);
-        }
+      // 유효성 검사: 정상적인 리포트 구조인지 확인
+      if (
+        !data ||
+        typeof data.project_id !== "string" ||
+        typeof data.analysis_id !== "string" ||
+        !data.report ||
+        !Array.isArray(data.report.questionTabs) ||
+        data.report.questionTabs.length === 0
+      ) {
+        trackAnalysisFailed("cover_letter", "invalid_response");
+        setErrorModal({
+          title: "분석 오류",
+          message: UI_LABELS.JSON_PARSE_ERROR,
+        });
+        return;
       }
 
-      // 분석 결과 저장 (localStorage + sessionStorage 통합)
-      saveAnalysisToStorage({
-        result: data,
-        questions: structuredQuestions,
-        company: company.trim(),
-        jobKeyword: jobLabel,
-        projectId: savedProjectId,
-        analysisId: savedAnalysisId,
-      });
-
       // GA4: 분석 성공 이벤트
-      trackAnalysisComplete("cover_letter", Math.round(performance.now() - analysisStartTime));
+      trackAnalysisComplete(
+        "cover_letter",
+        Math.round(performance.now() - analysisStartTime)
+      );
 
-      navigate("/report-new");
+      navigate(
+        `/report-new?analysisId=${encodeURIComponent(data.analysis_id)}`
+      );
     } catch (error: any) {
-      console.error(error);
-      clearAnalysisResult();
-
       if (error.name === "AbortError") {
         trackAnalysisFailed("cover_letter", "timeout");
-        setErrorModal({ title: "연결 불안정", message: UI_LABELS.NETWORK_ERROR });
+        setErrorModal({
+          title: "연결 불안정",
+          message: UI_LABELS.NETWORK_ERROR,
+        });
       } else {
         trackAnalysisFailed("cover_letter", "server_error");
         setErrorModal({
@@ -817,13 +823,24 @@ export default function Analyze() {
   };
 
   const handleSubmit = () => {
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      setErrorModal({
+        title: "로그인 필요",
+        message: "로그인 후 분석을 시작할 수 있어요.",
+      });
+      return;
+    }
     if (!canSubmit) return;
 
     // 도배 방지: 유사도 체크 (문항 2개 이상일 때만)
-    if (questions.filter((q) => q.answer.trim()).length >= 2) {
-      const duplicate = checkDuplicateQuestions(questions.map((q) => q.answer));
+    if (questions.filter(q => q.answer.trim()).length >= 2) {
+      const duplicate = checkDuplicateQuestions(questions.map(q => q.answer));
       if (duplicate) {
-        setErrorModal({ title: "중복 감지", message: UI_LABELS.DUPLICATE_DETECTED });
+        setErrorModal({
+          title: "중복 감지",
+          message: UI_LABELS.DUPLICATE_DETECTED,
+        });
         return;
       }
     }
@@ -832,7 +849,10 @@ export default function Analyze() {
     if (totalChars >= MIN_TOTAL_CHARS && totalChars < WARN_TOTAL_CHARS) {
       setConfirmModal({
         message: UI_LABELS.CHAR_MINIMUM_WARNING,
-        onConfirm: () => { setConfirmModal(null); executeSubmit(); },
+        onConfirm: () => {
+          setConfirmModal(null);
+          executeSubmit();
+        },
       });
       return;
     }
@@ -858,14 +878,6 @@ export default function Analyze() {
     },
   };
 
-  if (authLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28">
       {/* ════════ GNB ════════ */}
@@ -888,7 +900,10 @@ export default function Analyze() {
               className="flex items-center cursor-pointer"
               onClick={() => navigate("/")}
             >
-              <Logo className="h-6 w-auto" />
+              <Logo
+                className="w-6 h-6"
+                textClassName="text-lg md:text-xl text-white"
+              />
             </div>
           </div>
 
@@ -1046,13 +1061,17 @@ export default function Analyze() {
           {isOverLimit && (
             <div className="flex items-center gap-2 pt-2.5 pb-1">
               <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-              <span className="text-xs text-red-400">{UI_LABELS.CHAR_OVER_LIMIT}</span>
+              <span className="text-xs text-red-400">
+                {UI_LABELS.CHAR_OVER_LIMIT}
+              </span>
             </div>
           )}
           {isBelowMinimum && hasContent && !isOverLimit && (
             <div className="flex items-center gap-2 pt-2.5 pb-1">
               <Info className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
-              <span className="text-xs text-zinc-500">최소 {MIN_TOTAL_CHARS}자 이상 입력해 주세요</span>
+              <span className="text-xs text-zinc-500">
+                최소 {MIN_TOTAL_CHARS}자 이상 입력해 주세요
+              </span>
             </div>
           )}
 
@@ -1094,9 +1113,7 @@ export default function Analyze() {
                   분석 중...
                 </>
               ) : (
-                <>
-                  분석 시작
-                </>
+                <>분석 시작</>
               )}
             </Button>
           </div>
@@ -1120,10 +1137,32 @@ export default function Analyze() {
                 style={{ animationDuration: "3s" }}
                 viewBox="0 0 100 100"
               >
-                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
-                <circle cx="50" cy="50" r="42" fill="none" stroke="url(#loadGrad)" strokeWidth="4" strokeLinecap="round" strokeDasharray="80 200" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.05)"
+                  strokeWidth="4"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke="url(#loadGrad)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray="80 200"
+                />
                 <defs>
-                  <linearGradient id="loadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient
+                    id="loadGrad"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
                     <stop offset="0%" stopColor="#3B82F6" />
                     <stop offset="100%" stopColor="#22D3EE" />
                   </linearGradient>
@@ -1158,7 +1197,7 @@ export default function Analyze() {
 
             {/* 3단계 도트 인디케이터 */}
             <div className="flex items-center gap-3 mb-4">
-              {[1, 2, 3].map((step) => (
+              {[1, 2, 3].map(step => (
                 <div
                   key={step}
                   className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
@@ -1206,12 +1245,17 @@ export default function Analyze() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: 8 }}
               transition={{ duration: 0.18 }}
-              onClick={(event) => event.stopPropagation()}
+              onClick={event => event.stopPropagation()}
             >
               <div className="flex items-start justify-between border-b border-white/[0.08] px-6 py-5">
                 <div>
-                  <p className="mb-1 text-xs font-medium tracking-wide text-cyan-300">저장된 지원서</p>
-                  <h2 id="previous-resume-title" className="text-lg font-semibold text-white">
+                  <p className="mb-1 text-xs font-medium tracking-wide text-cyan-300">
+                    저장된 지원서
+                  </p>
+                  <h2
+                    id="previous-resume-title"
+                    className="text-lg font-semibold text-white"
+                  >
                     이전 지원서 불러오기
                   </h2>
                 </div>
@@ -1241,9 +1285,10 @@ export default function Analyze() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {previousResumes.map((project) => {
+                    {previousResumes.map(project => {
                       const analysisId = project.latest_analysis_id!;
-                      const isApplying = isApplyingPreviousResume === analysisId;
+                      const isApplying =
+                        isApplyingPreviousResume === analysisId;
 
                       return (
                         <button
@@ -1272,7 +1317,9 @@ export default function Analyze() {
                             {isApplying ? (
                               <Loader2 className="h-4 w-4 shrink-0 animate-spin text-cyan-400" />
                             ) : (
-                              <span className="shrink-0 text-xs font-medium text-cyan-300">불러오기</span>
+                              <span className="shrink-0 text-xs font-medium text-cyan-300">
+                                불러오기
+                              </span>
                             )}
                           </div>
                         </button>
@@ -1301,15 +1348,19 @@ export default function Analyze() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
                   <AlertTriangle className="w-5 h-5 text-red-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">{errorModal.title}</h3>
+                <h3 className="text-lg font-semibold text-white">
+                  {errorModal.title}
+                </h3>
               </div>
-              <p className="text-sm text-zinc-400 leading-relaxed mb-6">{errorModal.message}</p>
+              <p className="text-sm text-zinc-400 leading-relaxed mb-6">
+                {errorModal.message}
+              </p>
               <Button
                 onClick={() => setErrorModal(null)}
                 className="w-full bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl h-11 text-sm font-medium transition-colors"
@@ -1336,15 +1387,19 @@ export default function Analyze() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
                   <Info className="w-5 h-5 text-amber-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">내용이 적어요</h3>
+                <h3 className="text-lg font-semibold text-white">
+                  내용이 적어요
+                </h3>
               </div>
-              <p className="text-sm text-zinc-400 leading-relaxed mb-6">{confirmModal.message}</p>
+              <p className="text-sm text-zinc-400 leading-relaxed mb-6">
+                {confirmModal.message}
+              </p>
               <div className="flex gap-3">
                 <Button
                   onClick={() => setConfirmModal(null)}
@@ -1383,4 +1438,3 @@ export default function Analyze() {
     </div>
   );
 }
-

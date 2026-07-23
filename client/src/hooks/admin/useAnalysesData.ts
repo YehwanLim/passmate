@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { MOCK_ADMIN_ANALYSIS_ROWS } from "./mockResumeAnalysis";
+import { adminApiFetch } from "@/lib/adminApi";
 
 // ============================================================
 // 타입
@@ -65,17 +65,6 @@ export function normalizeAnalysisRow(r: any): AnalysisRow {
   };
 }
 
-function shouldIncludeMockRows() {
-  return import.meta.env.VITE_HIDE_ADMIN_MOCKS !== "true";
-}
-
-function withMockRows(rows: AnalysisRow[]) {
-  if (!shouldIncludeMockRows()) return rows;
-  const existingIds = new Set(rows.map((row) => row.id));
-  const missingMockRows = MOCK_ADMIN_ANALYSIS_ROWS.filter((row) => !existingIds.has(row.id));
-  return [...missingMockRows, ...rows];
-}
-
 export interface UseAnalysesDataParams {
   search: string;           // 이메일 검색
   status: AnalysisStatus;
@@ -124,37 +113,20 @@ export function useAnalysesData({
       });
 
       try {
-        const response = await window.fetch(`/api/admin/resume-analysis?${params.toString()}`);
-        const contentType = response.headers.get("content-type") ?? "";
-        if (!contentType.includes("application/json")) {
-          throw new Error("관리자 분석 API가 JSON 대신 HTML을 반환했습니다. API가 동작하는 5173 dev 서버 또는 배포 환경에서 열어주세요.");
-        }
-        const payload = await response.json();
+        const payload = await adminApiFetch<{ rows?: AnalysisRow[]; total?: number }>(
+          `/api/admin/resume-analysis?${params.toString()}`,
+        );
 
         if (cancelled) return;
-
-        if (!response.ok) {
-          throw new Error(payload?.message || payload?.error || "분석 목록을 불러오지 못했습니다.");
-        }
 
         const processed = (payload.rows ?? []) as AnalysisRow[];
-        const shouldShowOnlyMockRows =
-          processed.length === 0 &&
-          !search.trim() &&
-          status === "ALL" &&
-          model === "ALL";
-        const rowsWithMocks = shouldShowOnlyMockRows
-          ? withMockRows([])
-          : withMockRows(processed);
-
-        setRows(rowsWithMocks);
-        setTotal((payload.total ?? processed.length) + (rowsWithMocks.length - processed.length));
+        setRows(processed);
+        setTotal(payload.total ?? processed.length);
       } catch (qErr) {
         if (cancelled) return;
-        const fallbackRows = shouldIncludeMockRows() ? MOCK_ADMIN_ANALYSIS_ROWS : [];
-        setRows(fallbackRows);
-        setTotal(fallbackRows.length);
-        setError(`${qErr instanceof Error ? qErr.message : "분석 목록 조회 실패"} · 목업 데이터를 표시합니다.`);
+        setRows([]);
+        setTotal(0);
+        setError(qErr instanceof Error ? qErr.message : "분석 목록을 불러오지 못했습니다.");
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -178,14 +150,7 @@ export function useAvailableModels() {
   const [models, setModels] = useState<string[]>([]);
 
   useEffect(() => {
-    window.fetch("/api/admin/resume-analysis?page=1&pageSize=1")
-      .then((response) => {
-        const contentType = response.headers.get("content-type") ?? "";
-        if (!contentType.includes("application/json")) {
-          throw new Error("관리자 분석 API가 JSON 대신 HTML을 반환했습니다.");
-        }
-        return response.json();
-      })
+    adminApiFetch<{ models?: string[] }>("/api/admin/resume-analysis?page=1&pageSize=1")
       .then((payload) => setModels(payload.models ?? []))
       .catch(() => setModels([]));
   }, []);

@@ -3,26 +3,23 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
-describe("admin users Supabase schema usage", () => {
-  it("queries the users table with existing profile columns", () => {
+describe("admin users server boundary", () => {
+  it("loads only the list and detail projections from authenticated admin APIs", () => {
     const listHook = read("client/src/hooks/admin/useUsersData.ts");
     const detailHook = read("client/src/hooks/admin/useUserDetail.ts");
 
-    expect(listHook).toContain("avatar_url");
-    expect(listHook).toContain('import { fetchUserCreditSummaries, type CreditSummary } from "@/lib/admin-credits"');
-    expect(listHook).toContain("fetchUserCreditSummaries(rows.map((row) => row.id))");
-    expect(detailHook).toContain("avatar_url");
-    expect(listHook).not.toContain("profile_image,");
-    expect(detailHook).not.toContain("profile_image, provider");
-    expect(listHook).not.toContain("provider,\n          role");
-    expect(detailHook).not.toContain("avatar_url, provider");
+    expect(listHook).toContain("adminApiFetch");
+    expect(listHook).toContain("/api/admin/users?");
+    expect(detailHook).toContain("adminApiFetch");
+    expect(detailHook).toContain("/api/admin/users/");
+    expect(listHook).not.toMatch(/\.from\(\s*["']/);
+    expect(detailHook).not.toMatch(/\.from\(\s*["']/);
   });
 
-  it("upserts users with avatar_url instead of non-existent profile_image/provider columns", () => {
+  it("keeps user-table writes out of the browser authentication context", () => {
     const authContext = read("client/src/contexts/AuthContext.tsx");
 
-    expect(authContext).toContain("avatar_url: profile.profile_image");
-    expect(authContext).not.toContain("profile_image: profile.profile_image");
-    expect(authContext).not.toContain("provider: profile.provider");
+    expect(authContext).not.toContain('.from("users")');
+    expect(authContext).not.toContain(".upsert(");
   });
 });

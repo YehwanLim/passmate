@@ -1,9 +1,8 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { MASTER_SYSTEM_PROMPT } from "../../../shared/prompts/reportPrompt.js";
 
 const serverPrompt = readFileSync(new URL("../../../server/prompts/reportPrompt.ts", import.meta.url), "utf8");
-const serverAnalyze = readFileSync(new URL("../../../server/api/analyze.ts", import.meta.url), "utf8");
 const apiAnalyze = readFileSync(new URL("../../../api/analyze.js", import.meta.url), "utf8");
 const sharedPrompt = readFileSync(new URL("../../../shared/prompts/reportPrompt.js", import.meta.url), "utf8");
 const outputMarker = "# [출력: JSON만, 마크다운 코드 블록 없이]";
@@ -30,9 +29,9 @@ describe("report prompt single source", () => {
     expect(apiAnalyze).not.toContain("const MASTER_SYSTEM_PROMPT = `");
   });
 
-  it("uses the same prompt module from local dev and serverless analysis paths", () => {
-    expect(serverAnalyze).toContain("../prompts/reportPrompt");
+  it("uses the shared prompt from the only supported analysis implementation", () => {
     expect(apiAnalyze).toContain("../shared/prompts/reportPrompt.js");
+    expect(existsSync(new URL("../../../server/api/analyze.ts", import.meta.url))).toBe(false);
   });
 
   it("keeps editorial interpretation rules in the canonical prompt", () => {

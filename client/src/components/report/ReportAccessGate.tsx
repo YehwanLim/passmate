@@ -116,21 +116,3 @@ export function ReportAccessGate({
     </div>
   );
 }
-
-interface FreeAnalysisNoticeProps {
-  show: boolean;
-}
-
-export function FreeAnalysisNotice({ show }: FreeAnalysisNoticeProps) {
-  if (!show) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100"
-    >
-      다음 분석부터는 이용권이 필요합니다.
-    </motion.div>
-  );
-}

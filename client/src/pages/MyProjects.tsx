@@ -11,26 +11,7 @@ import SubtleBackground from "@/components/SubtleBackground";
 import Logo from "@/components/Logo";
 import AuthButton from "@/components/AuthButton";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { loadAnalysisFromStorage, saveAnalysisToStorage } from "@/utils/storage";
-
-
-// =============================================================================
-// Mock Data — API 연동 실패 시 Fallback (최소 유지)
-// =============================================================================
-const MOCK_PROJECTS: ProjectSummary[] = [
-  {
-    id: "mock-proj-1",
-    title: "현대자동차 서비스 PM 지원",
-    company_name: "현대자동차",
-    job_role: "서비스 PM",
-    created_at: "2026-05-05T14:30:00Z",
-    analysis_count: 3,
-    total_chars: 2420,
-    summary:
-      "데이터 기반 실행력은 강하지만, 네이버 웹툰 기준 '콘텐츠 임팩트 연결'이 부족합니다",
-    keywords: ["데이터 기반 분석", "실행력", "문제 해결"],
-  },
-];
+import { getAuthorizationHeader } from "@/lib/apiAuth";
 
 // =============================================================================
 // Page Component
@@ -40,64 +21,21 @@ export default function MyProjects() {
   const { user, isLoading: authLoading } = useRequireAuth(); // 미인증 시 /login 리다이렉트
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading || !user?.id) return;
 
-    const syncLatestLocalAnalysis = async () => {
-      const latest = loadAnalysisFromStorage();
-      if (!latest || latest.project_id || !latest.questions?.length) return;
-
-      const questions = latest.questions.map((question) => ({
-        question: question.question_text,
-        answer: question.input_text,
-      }));
-
-      const response = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user,
-          result: latest.ai_response_json,
-          questions,
-          company: latest.company,
-          jobKeyword: latest.jobKeyword,
-        }),
-      });
-
-      let payload: any = null;
-      try {
-        payload = await response.json();
-      } catch {
-        /* ignore */
-      }
-
-      if (!response.ok) {
-        throw new Error(payload?.message || payload?.error || "최근 분석 결과 동기화 실패");
-      }
-
-      saveAnalysisToStorage({
-        result: latest.ai_response_json,
-        questions,
-        company: latest.company,
-        jobKeyword: latest.jobKeyword,
-        aiScore: latest.ai_score,
-        projectId: payload?.project_id,
-        analysisId: payload?.analysis_id,
-      });
-    };
-
     const fetchProjects = async () => {
       try {
-        await syncLatestLocalAnalysis();
-        const response = await fetch(`/api/projects?userId=${encodeURIComponent(user.id)}`);
+        setLoadError(null);
+        const response = await fetch("/api/projects", { headers: await getAuthorizationHeader() });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data: ProjectSummary[] = await response.json();
         setProjects(data);
-        console.log(`[MyProjects] ✅ API 연동 성공 — ${data.length}개 프로젝트`);
       } catch (e) {
-        console.warn("[MyProjects] ⚠️ API 실패 — Mock 데이터로 대체:", e);
-        setProjects(MOCK_PROJECTS);
+        setProjects([]);
+        setLoadError(e instanceof Error ? e.message : "지원서를 불러오지 못했습니다.");
       } finally {
         setIsLoading(false);
       }
@@ -116,15 +54,15 @@ export default function MyProjects() {
       return;
 
     try {
-      // TODO: API 연동 시 아래 URL을 실제 엔드포인트로 교체
       const response = await fetch(`/api/projects/${projectId}`, {
         method: "DELETE",
+        headers: await getAuthorizationHeader(),
       });
       if (!response.ok) throw new Error("Delete failed");
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
     } catch (e) {
-      console.warn("[MyProjects] 삭제 API 미연동 — UI에서만 제거:", e);
+      setLoadError(e instanceof Error ? e.message : "프로젝트를 삭제하지 못했습니다.");
     }
-    setProjects((prev) => prev.filter((p) => p.id !== projectId));
   };
 
   return (
@@ -183,9 +121,13 @@ export default function MyProjects() {
         {isLoading ? (
           <div className="grid gap-4">
             {[1, 2, 3].map((i) => (
-              <SkeletonCard key={i} variant="project" />
-            ))}
-          </div>
+            <SkeletonCard key={i} variant="project" />
+          ))}
+        </div>
+        ) : loadError ? (
+          <p role="alert" className="py-10 text-center text-sm text-red-400">
+            {loadError}
+          </p>
         ) : projects.length === 0 ? (
           <EmptyState
             title="아직 분석한 지원서가 없어요"
@@ -210,15 +152,10 @@ export default function MyProjects() {
                   project={project}
                   onViewQuestions={() => navigate(`/my/${project.id}`)}
                   onViewReport={() => {
-                    if (project.company_name) {
-                      sessionStorage.setItem('passmate_company', project.company_name);
-                    }
-                    if (project.id === "mock-proj-1") {
-                      navigate("/report-new?mock=true");
-                    } else if (project.latest_analysis_id) {
+                    if (project.latest_analysis_id) {
                       navigate(`/report-new?analysisId=${encodeURIComponent(project.latest_analysis_id)}`);
                     } else {
-                      navigate("/report-new");
+                      setLoadError("저장된 분석 리포트를 찾을 수 없습니다.");
                     }
                   }}
                   onDelete={() => handleDelete(project.id)}

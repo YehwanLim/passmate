@@ -15,7 +15,6 @@ import AiSettingsPage from "./ai-settings/AiSettingsPage";
 import PromptDetailPage from "./prompts/PromptDetailPage";
 import PromptsPage from "./prompts/PromptsPage";
 import AnalyticsPage from "./analytics/AnalyticsPage";
-import PaymentsPage from "./payments/PaymentsPage";
 import FeedbackPage from "./feedback/FeedbackPage";
 import LogsPage from "./logs/LogsPage";
 import SettingsPage from "./settings/SettingsPage";
@@ -90,7 +89,6 @@ export default function AdminRoot() {
                 />
                 <Route path="/admin/prompts" component={PromptsPage} />
                 <Route path="/admin/analytics" component={AnalyticsPage} />
-                <Route path="/admin/payments" component={PaymentsPage} />
                 <Route path="/admin/feedback" component={FeedbackPage} />
                 <Route path="/admin/logs" component={LogsPage} />
                 <Route path="/admin/settings" component={SettingsPage} />
