@@ -2,7 +2,12 @@ import "dotenv/config";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REQUIRED_ENVIRONMENT_VARIABLES = ["DATABASE_URL"];
+const REQUIRED_ENVIRONMENT_VARIABLES = [
+  "DATABASE_URL",
+  "SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "CRON_SECRET",
+];
 
 export function validateRequiredEnvironment(environment = process.env) {
   const missing = REQUIRED_ENVIRONMENT_VARIABLES.filter(
