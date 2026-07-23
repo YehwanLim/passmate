@@ -500,7 +500,7 @@ function vitePluginApi(): Plugin {
 
       // /api/analyze — 자소서 분석
       server.middlewares.use("/api/analyze", (req, res, next) => {
-        if (req.method !== "POST") return next();
+        if (req.method !== "POST" && req.method !== "OPTIONS") return next();
 
         let body = "";
         req.on("data", (chunk) => {
@@ -509,28 +509,40 @@ function vitePluginApi(): Plugin {
 
         req.on("end", async () => {
           try {
-            const payload = JSON.parse(body);
-            
-            // 새 형식(questions[]) 또는 이전 형식(content string) 지원
-            const input = payload.questions 
-              ? payload 
-              : payload.content;
-            
-            if (!input) {
-              res.writeHead(400, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: "questions 또는 content가 필요합니다." }));
-              return;
-            }
-            
-            const { analyzeCoverLetter: analyze } = await import("./server/api/analyze");
-            const result = await analyze(input);
-            
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify(result));
-          } catch (e: any) {
-            console.error("API Error:", e);
+            const handlerUrl = pathToFileURL(
+              path.join(PROJECT_ROOT, "api", "analyze.js"),
+            ).href;
+            const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+            const response = {
+              end() {
+                res.end();
+              },
+              json(payload: unknown) {
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(payload));
+              },
+              setHeader(name: string, value: string) {
+                res.setHeader(name, value);
+              },
+              status(code: number) {
+                res.statusCode = code;
+                return this;
+              },
+            };
+
+            await handler(
+              {
+                body: body ? JSON.parse(body) : undefined,
+                headers: req.headers,
+                method: req.method,
+                url: req.url,
+              },
+              response,
+            );
+          } catch (error: any) {
+            console.error("[api/analyze] failed:", error);
             res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+            res.end(JSON.stringify({ error: error.message || "Internal server error" }));
           }
         });
       });
