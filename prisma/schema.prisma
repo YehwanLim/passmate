@@ -182,6 +182,7 @@ model AnalysisRequest {
 
   @@unique([userId, idempotencyKey], map: "uq_analysis_requests_user_idempotency_key")
   @@index([userId, status])
+  @@index([userId, requestHash, status])
   @@index([expiresAt])
   @@map("analysis_requests")
 }

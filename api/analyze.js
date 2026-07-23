@@ -344,6 +344,19 @@ function idempotencyResult(existing, hash) {
   throw new ApiError("ANALYSIS_RETRY_WITH_NEW_KEY", 409);
 }
 
+const ANALYSIS_REQUEST_SELECT = {
+  requestHash: true,
+  status: true,
+  expiresAt: true,
+  id: true,
+  reservationId: true,
+  analysisId: true,
+  idempotencyKey: true,
+  providerMetadata: true,
+  providerResult: true,
+  analysis: { select: { id: true, projectId: true, aiResponseJson: true } },
+};
+
 function analysisResponse({ analysisId, projectId, report, requestId }) {
   return {
     analysis_id: analysisId,
@@ -356,23 +369,29 @@ function analysisResponse({ analysisId, projectId, report, requestId }) {
 async function findExistingRequest(tx, userId, idempotencyKey) {
   return tx.analysisRequest.findUnique({
     where: { userId_idempotencyKey: { userId, idempotencyKey } },
-    select: {
-      requestHash: true,
-      status: true,
-      expiresAt: true,
-      id: true,
-      reservationId: true,
-      analysisId: true,
-      idempotencyKey: true,
-      providerMetadata: true,
-      providerResult: true,
-      analysis: { select: { id: true, projectId: true, aiResponseJson: true } },
+    select: ANALYSIS_REQUEST_SELECT,
+  });
+}
+
+async function findUnfinishedRequest(tx, userId, hash) {
+  if (!tx.analysisRequest?.findFirst) return null;
+  return tx.analysisRequest.findFirst({
+    where: {
+      userId,
+      requestHash: hash,
+      status: { in: ["PENDING", "CALLING", "PERSISTENCE_PENDING"] },
     },
+    orderBy: { createdAt: "asc" },
+    select: ANALYSIS_REQUEST_SELECT,
   });
 }
 
 function isExpiredPendingRequest(existing, now = new Date()) {
-  if (!['PENDING', 'CALLING'].includes(existing?.status) || !existing.expiresAt) return false;
+  // CALLING has crossed the external-provider boundary. Without a provider
+  // result lookup API, releasing it automatically could buy a second model
+  // invocation after an ambiguous provider success. Operators reconcile that
+  // state through the protected admin route instead.
+  if (existing?.status !== "PENDING" || !existing.expiresAt) return false;
   const expiry = new Date(existing.expiresAt);
   return Number.isFinite(expiry.getTime()) && expiry.getTime() <= now.getTime();
 }
@@ -385,7 +404,7 @@ async function expirePendingRequest({ db, existing, requestId, userId }) {
     if (!isExpiredPendingRequest(current)) return current;
     const now = new Date();
     const claimed = await tx.analysisRequest.updateMany({
-      where: { id: current.id, status: { in: ["PENDING", "CALLING"] }, expiresAt: { lte: now } },
+      where: { id: current.id, status: "PENDING", expiresAt: { lte: now } },
       data: { status: "FAILED" },
     });
     if (claimed.count !== 1) {
@@ -420,18 +439,8 @@ async function expirePendingRequest({ db, existing, requestId, userId }) {
 async function expireStaleRequestsForUser({ db, requestId, userId }) {
   if (!db.analysisRequest?.findMany) return;
   const expired = await db.analysisRequest.findMany({
-    where: { userId, status: { in: ["PENDING", "CALLING"] }, expiresAt: { lte: new Date() } },
-    select: {
-      analysisId: true,
-      expiresAt: true,
-      id: true,
-      idempotencyKey: true,
-      providerMetadata: true,
-      providerResult: true,
-      requestHash: true,
-      reservationId: true,
-      status: true,
-    },
+    where: { userId, status: "PENDING", expiresAt: { lte: new Date() } },
+    select: ANALYSIS_REQUEST_SELECT,
     take: 20,
   });
 
@@ -507,11 +516,36 @@ function allocationFromExisting(existing) {
   };
 }
 
+async function recoverStagedRequest({ db, existing, finalize, userId }) {
+  if (!existing.analysis || !isRecord(existing.providerResult) || !isRecord(existing.providerMetadata)) {
+    return null;
+  }
+  try {
+    await finalizeAnalysis({
+      allocation: allocationFromExisting(existing),
+      db,
+      finalize,
+      metadata: modelMetadata(existing.providerMetadata),
+      report: existing.providerResult,
+      userId,
+    });
+    return {
+      analysisId: existing.analysis.id,
+      projectId: existing.analysis.projectId,
+      report: existing.providerResult,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function finalizeAnalysis({ db, allocation, finalize, metadata, report, userId }) {
   await db.$transaction(async (tx) => {
     const claimed = await tx.analysisRequest.updateMany({
       where: { id: allocation.analysisRequest.id, status: "PERSISTENCE_PENDING" },
-      data: { status: "SUCCEEDED" },
+      // The durable staging copy is needed only until this transaction commits;
+      // keep the report solely on Analysis afterwards to minimise duplicate PII.
+      data: { providerMetadata: null, providerResult: null, status: "SUCCEEDED" },
     });
     if (claimed.count !== 1) {
       throw new ModelFailureError("API_ERROR");
@@ -609,32 +643,36 @@ export function createAnalyzeHandler({
         throw new ApiError("IDEMPOTENCY_KEY_REUSED", 409);
       }
       if (existing?.status === "PERSISTENCE_PENDING") {
-        if (!existing.analysis || !isRecord(existing.providerResult) || !isRecord(existing.providerMetadata)) {
-          return sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
-        }
-        try {
-          await finalizeAnalysis({
-            allocation: allocationFromExisting(existing),
-            db,
-            finalize: finalizeReservation,
-            metadata: modelMetadata(existing.providerMetadata),
-            report: existing.providerResult,
-            userId: applicationUser.id,
-          });
-          return sendJson(res, 200, analysisResponse({
-            analysisId: existing.analysis.id,
-            projectId: existing.analysis.projectId,
-            report: existing.providerResult,
-            requestId,
-          }), requestId);
-        } catch {
-          return sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
-        }
+        const recovered = await recoverStagedRequest({
+          db,
+          existing,
+          finalize: finalizeReservation,
+          userId: applicationUser.id,
+        });
+        return recovered
+          ? sendJson(res, 200, analysisResponse({ ...recovered, requestId }), requestId)
+          : sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
       }
       const stored = idempotencyResult(existing, hash);
       if (stored) {
         return sendJson(res, 200, analysisResponse({ ...stored, requestId }), requestId);
       }
+
+      // A refresh loses the client-held idempotency key. Find unfinished work
+      // by its server-side request hash before reserving another credit.
+      const unfinished = await findUnfinishedRequest(db, applicationUser.id, hash);
+      if (unfinished?.status === "PERSISTENCE_PENDING") {
+        const recovered = await recoverStagedRequest({
+          db,
+          existing: unfinished,
+          finalize: finalizeReservation,
+          userId: applicationUser.id,
+        });
+        return recovered
+          ? sendJson(res, 200, analysisResponse({ ...recovered, requestId }), requestId)
+          : sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
+      }
+      if (unfinished) return sendError(res, 409, "ANALYSIS_IN_PROGRESS", requestId);
 
       const rate = await consumeRateLimit(db, {
         userId: applicationUser.id,

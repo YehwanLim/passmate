@@ -17,7 +17,7 @@ ALTER TABLE public.entitlement_settings
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'analysis_request_status') THEN
-    CREATE TYPE analysis_request_status AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED');
+    CREATE TYPE analysis_request_status AS ENUM ('PENDING', 'CALLING', 'PERSISTENCE_PENDING', 'SUCCEEDED', 'FAILED');
   END IF;
 END
 $$;

@@ -23,6 +23,17 @@ describe("admin catch-all router", () => {
     expect(res.body).toEqual({ id: "user-1" });
   });
 
+  it("dispatches a reconciliation action through the admin-only catch-all route", async () => {
+    const reconcile = vi.fn(async (req, res) => res.status(200).json({ id: req.query.id }));
+    const handler = createAdminRouter({ handlers: { "analysis-reconciliation": reconcile } });
+    const res = response();
+
+    await handler({ method: "POST", query: { route: ["analysis-reconciliation", "request-1"] } }, res);
+
+    expect(reconcile).toHaveBeenCalledWith(expect.objectContaining({ query: expect.objectContaining({ id: "request-1" }) }), res);
+    expect(res.body).toEqual({ id: "request-1" });
+  });
+
   it("does not expose an unknown admin route before authenticating the requester", async () => {
     const requireAdmin = vi.fn(async () => { throw Object.assign(new Error("secret"), { statusCode: 401 }); });
     const handler = createAdminRouter({ handlers: {}, requireAdmin });

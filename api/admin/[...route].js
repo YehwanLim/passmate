@@ -1,4 +1,5 @@
 import aiModelsHandler from "../../lib/admin-handlers/ai-models.js";
+import analysisReconciliationHandler from "../../lib/admin-handlers/analysis-reconciliation.js";
 import analysesHandler from "../../lib/admin-handlers/analyses.js";
 import analysisDetailHandler from "../../lib/admin-handlers/analysis-detail.js";
 import dashboardHandler from "../../lib/admin-handlers/dashboard.js";
@@ -16,6 +17,7 @@ import { handleRequestError, requestIdFor, sendRequestError } from "../../lib/re
 
 const DEFAULT_HANDLERS = {
   "ai-models": aiModelsHandler,
+  "analysis-reconciliation": analysisReconciliationHandler,
   analyses: analysesHandler,
   "analysis-detail": analysisDetailHandler,
   dashboard: dashboardHandler,
@@ -49,6 +51,8 @@ function targetFor(segments, handlers) {
       ? "analysis-detail"
       : resource === "prompts"
         ? "prompt-detail"
+        : resource === "analysis-reconciliation"
+          ? "analysis-reconciliation"
         : null;
   return handlerKey ? { handler: handlers[handlerKey], query: { id } } : null;
 }
