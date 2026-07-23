@@ -166,7 +166,7 @@ model AnalysisRequest {
   status         AnalysisRequestStatus @default(PENDING)
   reservationId  String?               @unique @map("reservation_id") @db.Uuid
   analysisId     String?               @unique @map("analysis_id") @db.Uuid
-  expiresAt      DateTime              @default(dbgenerated("now() + interval '24 hours'")) @map("expires_at") @db.Timestamptz
+  expiresAt      DateTime              @default(dbgenerated("now() + interval '10 minutes'")) @map("expires_at") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz

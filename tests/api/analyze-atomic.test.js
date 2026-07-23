@@ -47,19 +47,35 @@ function requestHash() {
 }
 
 function createDatabase({ existingRequest = null, analysisEnabled = true } = {}) {
+  const resolvedExistingRequest = existingRequest
+    ? { idempotencyKey: IDEMPOTENCY_KEY, ...existingRequest }
+    : null;
   const db = {
     $transaction: async (work) => work(db),
     analysis: {
       create: vi.fn(async ({ data }) => ({ id: "analysis-1", ...data })),
       update: vi.fn(async ({ data, where }) => ({ id: where.id, ...data })),
+      updateMany: vi.fn(async () => ({ count: 1 })),
     },
     auditEvent: {
       create: vi.fn(async ({ data }) => ({ id: "audit-1", ...data })),
     },
     analysisRequest: {
       create: vi.fn(async ({ data }) => ({ id: "request-1", ...data })),
-      findUnique: vi.fn(async () => existingRequest),
+      findMany: vi.fn(async () => (
+        resolvedExistingRequest?.status === "PENDING" && resolvedExistingRequest.expiresAt
+          ? [resolvedExistingRequest]
+          : []
+      )),
+      findUnique: vi.fn(async ({ where }) => (
+        resolvedExistingRequest?.idempotencyKey === where.userId_idempotencyKey.idempotencyKey
+          ? resolvedExistingRequest
+          : null
+      )),
       update: vi.fn(async ({ data, where }) => ({ id: where.id, ...data })),
+    },
+    analysisReservation: {
+      updateMany: vi.fn(async () => ({ count: 1 })),
     },
     entitlementSetting: {
       findUnique: vi.fn(async () => ({ analysisEnabled })),
@@ -132,6 +148,71 @@ describe("atomic analyze API", () => {
     expect(res.statusCode).toBe(409);
     expect(res.body.error).toBe("ANALYSIS_IN_PROGRESS");
     expect(model).not.toHaveBeenCalled();
+  });
+
+  it("expires a stranded pending request and cancels its reservation before rejecting the old key", async () => {
+    const model = vi.fn();
+    const db = createDatabase({
+      existingRequest: {
+        analysisId: "analysis-1",
+        expiresAt: new Date("2026-01-01T00:00:00.000Z"),
+        id: "request-1",
+        idempotencyKey: IDEMPOTENCY_KEY,
+        requestHash: requestHash(),
+        reservationId: "reservation-1",
+        status: "PENDING",
+      },
+    });
+    const handler = createAnalyzeHandler({
+      db,
+      model,
+      requireUser: activeUser,
+      consumeRateLimit: rateAllowed,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe("ANALYSIS_RETRY_WITH_NEW_KEY");
+    expect(db.analysis.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "analysis-1", status: "PENDING", userId: USER_ID },
+    }));
+    expect(db.analysisReservation.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "reservation-1", status: "PENDING", userId: USER_ID },
+    }));
+    expect(model).not.toHaveBeenCalled();
+  });
+
+  it("releases another expired reservation before allowing a new idempotency key", async () => {
+    const db = createDatabase({
+      existingRequest: {
+        analysisId: "stale-analysis",
+        expiresAt: new Date("2026-01-01T00:00:00.000Z"),
+        id: "stale-request",
+        idempotencyKey: "stale-analysis-key-1234",
+        requestHash: requestHash(),
+        reservationId: "stale-reservation",
+        status: "PENDING",
+      },
+    });
+    const model = vi.fn(async () => ({ report: "fresh" }));
+    const handler = createAnalyzeHandler({
+      db,
+      model,
+      requireUser: activeUser,
+      reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+      consumeRateLimit: rateAllowed,
+    });
+    const res = response();
+
+    await handler(request({ headers: { "idempotency-key": "fresh-analysis-request-1234" } }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(db.analysisReservation.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "stale-reservation", status: "PENDING", userId: USER_ID },
+    }));
+    expect(model).toHaveBeenCalledTimes(1);
   });
 
   it("returns a stored report when the matching idempotent request already succeeded", async () => {

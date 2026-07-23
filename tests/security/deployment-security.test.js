@@ -13,6 +13,7 @@ describe("beta deployment security configuration", () => {
     );
 
     expect(headers["Content-Security-Policy"]).toContain("default-src 'self'");
+    expect(headers["Content-Security-Policy"]).not.toContain("img-src 'self' data: https:;");
     expect(headers["Strict-Transport-Security"]).toContain("max-age=");
     expect(headers["X-Content-Type-Options"]).toBe("nosniff");
     expect(headers["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");
