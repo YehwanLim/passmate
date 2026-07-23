@@ -357,9 +357,77 @@ async function findExistingRequest(tx, userId, idempotencyKey) {
     select: {
       requestHash: true,
       status: true,
+      expiresAt: true,
+      id: true,
+      reservationId: true,
+      analysisId: true,
+      idempotencyKey: true,
       analysis: { select: { id: true, projectId: true, aiResponseJson: true } },
     },
   });
+}
+
+function isExpiredPendingRequest(existing, now = new Date()) {
+  if (existing?.status !== "PENDING" || !existing.expiresAt) return false;
+  const expiry = new Date(existing.expiresAt);
+  return Number.isFinite(expiry.getTime()) && expiry.getTime() <= now.getTime();
+}
+
+async function expirePendingRequest({ db, existing, requestId, userId }) {
+  if (!isExpiredPendingRequest(existing)) return existing;
+
+  return db.$transaction(async (tx) => {
+    const current = await findExistingRequest(tx, userId, existing.idempotencyKey);
+    if (!isExpiredPendingRequest(current)) return current;
+
+    if (current.analysisId) {
+      await tx.analysis.updateMany({
+        where: { id: current.analysisId, status: "PENDING", userId },
+        data: { status: "FAILED", errorCode: "API_ERROR", errorMessage: null },
+      });
+    }
+    await tx.analysisRequest.update({
+      where: { id: current.id },
+      data: { status: "FAILED" },
+    });
+    if (current.reservationId) {
+      await tx.analysisReservation.updateMany({
+        where: { id: current.reservationId, status: "PENDING", userId },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
+      });
+    }
+    await recordAuditEvent({
+      actorId: userId,
+      db: tx,
+      outcome: "EXPIRED",
+      requestId,
+      targetId: current.analysisId,
+      targetType: "analysis",
+    });
+
+    return { ...current, status: "FAILED" };
+  });
+}
+
+async function expireStaleRequestsForUser({ db, requestId, userId }) {
+  if (!db.analysisRequest?.findMany) return;
+  const expired = await db.analysisRequest.findMany({
+    where: { userId, status: "PENDING", expiresAt: { lte: new Date() } },
+    select: {
+      analysisId: true,
+      expiresAt: true,
+      id: true,
+      idempotencyKey: true,
+      requestHash: true,
+      reservationId: true,
+      status: true,
+    },
+    take: 20,
+  });
+
+  for (const existing of expired) {
+    await expirePendingRequest({ db, existing, requestId, userId });
+  }
 }
 
 async function allocateAnalysisRequest({ db, hash, idempotencyKey, request, reserve, userId }) {
@@ -485,7 +553,14 @@ export function createAnalyzeHandler({
 
       // A completed request is a read-only replay: do not consume another rate
       // limit slot or allow a kill switch change to hide the original result.
-      const existing = await findExistingRequest(db, applicationUser.id, idempotencyKey);
+      await expireStaleRequestsForUser({ db, requestId, userId: applicationUser.id });
+      let existing = await findExistingRequest(db, applicationUser.id, idempotencyKey);
+      existing = await expirePendingRequest({
+        db,
+        existing,
+        requestId,
+        userId: applicationUser.id,
+      });
       const stored = idempotencyResult(existing, hash);
       if (stored) {
         return sendJson(res, 200, analysisResponse({ ...stored, requestId }), requestId);
