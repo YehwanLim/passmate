@@ -20,6 +20,8 @@ model User {
   name      String?  @db.VarChar(100)
   avatarUrl String?  @map("avatar_url") @db.Text
   role      String   @default("user") @db.Text
+  deletionRequestedAt DateTime? @map("deletion_requested_at") @db.Timestamptz
+  purgeAt             DateTime? @map("purge_at") @db.Timestamptz
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -31,6 +33,7 @@ model User {
   apiKey     UserApiKey?
   analysisEntitlement AnalysisEntitlement?
   analysisReservations AnalysisReservation[]
+  analysisRequests AnalysisRequest[]
   purchaseIntents PurchaseIntent[]
   paymentEntitlements PaymentEntitlement[]
 
@@ -63,8 +66,17 @@ enum PurchaseIntentStatus {
   @@map("purchase_intent_status")
 }
 
+enum AnalysisRequestStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+
+  @@map("analysis_request_status")
+}
+
 model EntitlementSetting {
   id                        String  @id @default("singleton") @db.VarChar(32)
+  analysisEnabled           Boolean @default(true) @map("analysis_enabled")
   premiumEnabled            Boolean @default(false) @map("premium_enabled")
   premiumCreditsPerPurchase Int     @default(3) @map("premium_credits_per_purchase")
   groblePaymentUrl          String  @map("groble_payment_url") @db.Text
@@ -100,10 +112,49 @@ model AnalysisReservation {
   cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisRequest AnalysisRequest?
 
   @@index([userId])
   @@index([status])
   @@map("analysis_reservations")
+}
+
+model AnalysisRequest {
+  id             String                @id @default(uuid()) @db.Uuid
+  userId         String                @map("user_id") @db.Uuid
+  idempotencyKey String                @map("idempotency_key") @db.VarChar(255)
+  requestHash    String                @map("request_hash") @db.Char(64)
+  status         AnalysisRequestStatus @default(PENDING)
+  reservationId  String?               @unique @map("reservation_id") @db.Uuid
+  analysisId     String?               @unique @map("analysis_id") @db.Uuid
+  expiresAt      DateTime              @default(dbgenerated("now() + interval '24 hours'")) @map("expires_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservation AnalysisReservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  analysis    Analysis?             @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, idempotencyKey], map: "uq_analysis_requests_user_idempotency_key")
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("analysis_requests")
+}
+
+model ApiRateLimitBucket {
+  id           String   @id @default(uuid()) @db.Uuid
+  subjectKey   String   @map("subject_key") @db.VarChar(320)
+  route        String   @db.VarChar(100)
+  windowStart  DateTime @map("window_start") @db.Timestamptz
+  requestCount Int      @default(0) @map("request_count")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([subjectKey, route, windowStart], map: "uq_api_rate_limit_buckets_subject_route_window")
+  @@index([windowStart])
+  @@map("api_rate_limit_buckets")
 }
 
 model PurchaseIntent {
@@ -255,6 +306,7 @@ model Analysis {
   promptTemplate PromptTemplate? @relation(fields: [promptTemplateId], references: [id])
   tokenUsages    TokenUsage[]
   feedbacks      Feedback[]
+  analysisRequest AnalysisRequest?
 
   @@index([userId])
   @@index([projectId])
