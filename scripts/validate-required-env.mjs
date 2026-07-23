@@ -7,6 +7,8 @@ const REQUIRED_ENVIRONMENT_VARIABLES = [
   "SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
   "CRON_SECRET",
+  "VITE_SUPABASE_URL",
+  "VITE_SUPABASE_ANON_KEY",
 ];
 
 export function validateRequiredEnvironment(environment = process.env) {
