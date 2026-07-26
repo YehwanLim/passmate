@@ -57,7 +57,9 @@ describe("SocialProofSection", () => {
         company =>
           company.logoSrc.startsWith("/company-logos/") &&
           company.logoSrc.endsWith(".svg") &&
-          company.logoAlt.endsWith("로고")
+          company.logoAlt.endsWith("로고") &&
+          company.logoScale >= 0.9 &&
+          company.logoScale <= 1.2
       )
     ).toBe(true);
   });
