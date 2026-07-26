@@ -20,6 +20,6 @@ describe("Vercel Hobby serverless function limit", () => {
   it("keeps deployed API files within the 12-function Hobby limit", () => {
     const apiFiles = collectFunctionFiles(API_ROOT);
 
-    expect(apiFiles).toHaveLength(11);
+    expect(apiFiles.length).toBeLessThanOrEqual(12);
   });
 });
