@@ -26,11 +26,11 @@ CREATE TABLE IF NOT EXISTS credit_coupons (
 
 CREATE TABLE IF NOT EXISTS admin_credit_grants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   granted_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   credits_granted INTEGER NOT NULL CHECK (credits_granted BETWEEN 1 AND 10000),
   source admin_credit_grant_source NOT NULL,
-  coupon_id UUID REFERENCES credit_coupons(id) ON DELETE SET NULL,
+  coupon_id UUID REFERENCES credit_coupons(id) ON DELETE RESTRICT,
   note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT admin_credit_grants_source_coupon CHECK (

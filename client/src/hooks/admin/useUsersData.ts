@@ -160,6 +160,13 @@ export function useUsersData({
         remaining_credits: null,
       }));
 
+      if (rows.length === 0) {
+        setUsers(rows);
+        setTotal(count ?? 0);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const summaries = await fetchUserCreditSummaries(rows.map((row) => row.id));
 

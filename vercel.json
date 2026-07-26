@@ -1,6 +1,8 @@
 {
   "outputDirectory": "dist/public",
   "rewrites": [
+    { "source": "/api/admin/user-credits", "destination": "/api/admin/credit-management?creditResource=user-credits" },
+    { "source": "/api/admin/credit-coupons", "destination": "/api/admin/credit-management?creditResource=credit-coupons" },
     { "source": "/api/entitlements/purchase-intents", "destination": "/api/entitlements?purchaseIntent=1" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }

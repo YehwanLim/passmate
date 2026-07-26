@@ -26,7 +26,7 @@ vi.mock("../../../lib/analysis-entitlements.js", () => ({
 }));
 vi.mock("../../../lib/prisma.js", () => ({ default: mocks.prisma }));
 
-const { default: handler } = await import("../../../api/admin/user-credits.js");
+const { default: handler } = await import("../../../api/admin/credit-management.js");
 
 function createResponse() {
   return { body: undefined, statusCode: 200, json(payload) { this.body = payload; return this; }, status(statusCode) { this.statusCode = statusCode; return this; } };
@@ -34,7 +34,15 @@ function createResponse() {
 
 async function invokeUserCredits({ body, method = "GET", query, url = "/api/admin/user-credits" } = {}) {
   const response = createResponse();
-  await handler({ body, headers: {}, method, query, url }, response);
+  const requestUrl = new URL(url, "http://localhost");
+  requestUrl.searchParams.set("creditResource", "user-credits");
+  await handler({
+    body,
+    headers: {},
+    method,
+    query,
+    url: `${requestUrl.pathname}${requestUrl.search}`,
+  }, response);
   return response;
 }
 
@@ -101,6 +109,17 @@ describe("admin user credit API", () => {
     expect(response).toMatchObject({ statusCode: 409, body: { error: "COUPON_ALREADY_APPLIED" } });
   });
 
+  it("returns 404 when the coupon does not exist", async () => {
+    mocks.applyCreditCoupon.mockRejectedValue(Object.assign(new Error("missing"), { code: "COUPON_NOT_FOUND" }));
+
+    const response = await invokeUserCredits({
+      method: "POST",
+      body: { action: "applyCoupon", userId: USER_ID, couponId: COUPON_ID },
+    });
+
+    expect(response).toMatchObject({ statusCode: 404, body: { error: "COUPON_NOT_FOUND" } });
+  });
+
   it("returns a bulk summary only when userIds is the sole query selector", async () => {
     const response = await invokeUserCredits({ url: `/api/admin/user-credits?userIds=${USER_ID}` });
     expect(response).toMatchObject({ statusCode: 200, body: { summaries: [{ userId: USER_ID, ...SUMMARY }] } });
@@ -111,5 +130,40 @@ describe("admin user credit API", () => {
     const response = await invokeUserCredits({ url: `/api/admin/user-credits?userIds=${USER_ID},${MISSING_USER_ID}` });
     expect(response).toMatchObject({ statusCode: 404, body: { error: "User Not Found" } });
     expect(mocks.getEntitlementSummaries).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 for a missing detail recipient", async () => {
+    mocks.prisma.user.findUnique.mockResolvedValue(null);
+
+    const response = await invokeUserCredits({
+      url: `/api/admin/user-credits?userId=${MISSING_USER_ID}`,
+    });
+
+    expect(response).toMatchObject({ statusCode: 404, body: { error: "User Not Found" } });
+    expect(mocks.getEntitlementSummary).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 before granting credits to a missing recipient", async () => {
+    mocks.prisma.user.findUnique.mockResolvedValue(null);
+
+    const response = await invokeUserCredits({
+      method: "POST",
+      body: { action: "grant", userId: MISSING_USER_ID, credits: 2 },
+    });
+
+    expect(response).toMatchObject({ statusCode: 404, body: { error: "User Not Found" } });
+    expect(mocks.grantAdminCredits).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 before applying a coupon to a missing recipient", async () => {
+    mocks.prisma.user.findUnique.mockResolvedValue(null);
+
+    const response = await invokeUserCredits({
+      method: "POST",
+      body: { action: "applyCoupon", userId: MISSING_USER_ID, couponId: COUPON_ID },
+    });
+
+    expect(response).toMatchObject({ statusCode: 404, body: { error: "User Not Found" } });
+    expect(mocks.applyCreditCoupon).not.toHaveBeenCalled();
   });
 });

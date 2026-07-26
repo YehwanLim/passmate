@@ -175,9 +175,9 @@ model AdminCreditGrant {
   note             String?                @db.Text
   createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz
 
-  user          User          @relation("AdminCreditGrantRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  user          User          @relation("AdminCreditGrantRecipient", fields: [userId], references: [id], onDelete: Restrict)
   grantedByUser User          @relation("AdminCreditGrantAdministrator", fields: [grantedByUserId], references: [id], onDelete: Restrict)
-  coupon        CreditCoupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  coupon        CreditCoupon? @relation(fields: [couponId], references: [id], onDelete: Restrict)
 
   @@index([userId])
   @@index([grantedByUserId])

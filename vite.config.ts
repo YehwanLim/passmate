@@ -301,7 +301,10 @@ function vitePluginApi(): Plugin {
         });
       });
 
-      function registerAdminCreditHandler(route: string, handlerFile: string) {
+      function registerAdminCreditHandler(
+        route: string,
+        creditResource: "user-credits" | "credit-coupons",
+      ) {
         server.middlewares.use(route, (req, res, next) => {
           if (req.method !== "GET" && req.method !== "POST" && req.method !== "PATCH") return next();
 
@@ -316,13 +319,14 @@ function vitePluginApi(): Plugin {
           req.on("end", async () => {
             try {
               const handlerUrl = pathToFileURL(
-                path.join(PROJECT_ROOT, "api", "admin", handlerFile),
+                path.join(PROJECT_ROOT, "api", "admin", "credit-management.js"),
               ).href;
               const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
               const request = {
                 body: body ? JSON.parse(body) : undefined,
                 headers: req.headers,
                 method: req.method,
+                query: { creditResource },
                 url: `${requestUrl.pathname}${requestUrl.search}`,
               };
               const response = {
@@ -337,7 +341,7 @@ function vitePluginApi(): Plugin {
               };
               await handler(request, response);
             } catch (error: any) {
-              console.error(`[api/admin/${handlerFile}] failed:`, error);
+              console.error(`[api/admin/credit-management:${creditResource}] failed:`, error);
               res.writeHead(500, { "Content-Type": "application/json" });
               res.end(JSON.stringify({ error: error.message || "Internal server error" }));
             }
@@ -346,8 +350,8 @@ function vitePluginApi(): Plugin {
       }
 
       // Admin credit APIs use their Vercel handlers locally, including bearer headers and query strings.
-      registerAdminCreditHandler("/api/admin/user-credits", "user-credits.js");
-      registerAdminCreditHandler("/api/admin/credit-coupons", "credit-coupons.js");
+      registerAdminCreditHandler("/api/admin/user-credits", "user-credits");
+      registerAdminCreditHandler("/api/admin/credit-coupons", "credit-coupons");
 
       // /api/admin/ai-models — 관리자 AI 모델 현황
       server.middlewares.use("/api/admin/ai-models", (req, res, next) => {
