@@ -97,7 +97,7 @@ export async function readOwnedAnalysisRequestStatus({
 export function analysisReceipt({ analysisId, analysisRequestId, projectId, requestId, status }) {}
 ```
 
-`runAllocatedAnalysis` catches every provider and persistence error itself, writes an auditable terminal or recoverable state, and resolves without returning a report. `readOwnedAnalysisRequestStatus` checks an expired `PENDING` or `CALLING` state before returning it, and attempts safe recovery for `PERSISTENCE_PENDING` before returning it.
+`runAllocatedAnalysis` catches every provider and persistence error itself, writes an auditable terminal or recoverable state, and resolves without returning a report. `readOwnedAnalysisRequestStatus` expires only an unstarted `PENDING` state before returning it, leaves an expired `CALLING` state unchanged to avoid a duplicate provider-cost decision, and attempts safe recovery for `PERSISTENCE_PENDING` before returning it.
 
 ## Task 1: Install the Vercel background-work dependency and configure the bounded runtime
 
@@ -328,7 +328,7 @@ expect(res.body).toEqual(expect.objectContaining({
 expect(JSON.stringify(res.body)).not.toContain("providerResult");
 ```
 
-Add a stale `CALLING` fixture whose `expiresAt` is in the past. Assert that a conditional update changes it to `FAILED`, the related `Analysis` is failed, the reservation is cancelled, and the returned JSON is `{ status: "FAILED", analysis_id: null, error: "ANALYSIS_FAILED" }`.
+Add a stale `CALLING` fixture whose `expiresAt` is in the past. Assert that it remains `CALLING`, no cancellation occurs, and its safe JSON contains neither a report nor a provider result. This is intentional: Gemini may already have completed even though the server has not recorded a recoverable result, so automatic cancellation or refund would enable duplicate model cost.
 
 Add a `PERSISTENCE_PENDING` fixture with staged values and assert the lifecycle recovery runs before a `SUCCEEDED` response.
 

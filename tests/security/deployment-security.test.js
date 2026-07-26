@@ -71,6 +71,14 @@ describe("beta deployment security configuration", () => {
     });
   });
 
+  it("keeps analysis request status behind the authenticated server boundary", () => {
+    const source = read("api/analysis-requests/[id].js");
+
+    expect(source).toContain("requireActiveApplicationUser");
+    expect(source).toContain("userId: applicationUser.id");
+    expect(source).not.toContain("Access-Control-Allow-Origin");
+  });
+
   it("backfills existing OAuth users before client profile writes are removed", () => {
     const migration = read("prisma/migrations/20260723_backfill_auth_users/migration.sql");
 
