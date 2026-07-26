@@ -65,6 +65,14 @@ export default async function handler(req, res) {
         if (ids.length === 0 || ids.some((id) => !isUuid(id))) {
           return res.status(400).json({ error: "userIds must be comma-separated UUIDs" });
         }
+        const recipients = await prisma.user.findMany({
+          where: { id: { in: ids } },
+          select: { id: true },
+        });
+        const recipientIds = new Set(recipients.map((recipient) => recipient.id));
+        if (ids.some((id) => !recipientIds.has(id))) {
+          return res.status(404).json({ error: "User Not Found" });
+        }
         const summaries = await prisma.$transaction((tx) => getEntitlementSummaries(tx, ids));
         return res.status(200).json({ summaries });
       }

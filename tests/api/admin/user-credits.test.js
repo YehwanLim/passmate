@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 const USER_ID = "22222222-2222-4222-8222-222222222222";
+const MISSING_USER_ID = "44444444-4444-4444-8444-444444444444";
 const COUPON_ID = "33333333-3333-4333-8333-333333333333";
 const SUMMARY = { freeRemaining: 1, bonusRemaining: 2, premiumRemaining: 0, premiumEnabled: false, remaining: 3 };
 
@@ -9,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   applyCreditCoupon: vi.fn(),
   getEntitlementSummaries: vi.fn(),
   getEntitlementSummary: vi.fn(),
-  prisma: { $transaction: vi.fn(), adminCreditGrant: { findMany: vi.fn() }, user: { findUnique: vi.fn() } },
+  prisma: { $transaction: vi.fn(), adminCreditGrant: { findMany: vi.fn() }, user: { findMany: vi.fn(), findUnique: vi.fn() } },
   grantAdminCredits: vi.fn(),
   requireAdministrator: vi.fn(),
   transaction: {},
@@ -42,6 +43,7 @@ describe("admin user credit API", () => {
     mocks.requireAdministrator.mockResolvedValue({ id: ADMIN_ID });
     mocks.prisma.$transaction.mockImplementation((callback) => callback(mocks.transaction));
     mocks.prisma.user.findUnique.mockResolvedValue({ id: USER_ID });
+    mocks.prisma.user.findMany.mockResolvedValue([{ id: USER_ID }]);
     mocks.getEntitlementSummaries.mockResolvedValue([{ userId: USER_ID, ...SUMMARY }]);
     mocks.getEntitlementSummary.mockResolvedValue(SUMMARY);
     mocks.grantAdminCredits.mockResolvedValue(SUMMARY);
@@ -81,5 +83,11 @@ describe("admin user credit API", () => {
     const response = await invokeUserCredits({ url: `/api/admin/user-credits?userIds=${USER_ID}` });
     expect(response).toMatchObject({ statusCode: 200, body: { summaries: [{ userId: USER_ID, ...SUMMARY }] } });
     expect(mocks.getEntitlementSummaries).toHaveBeenCalledWith(mocks.transaction, [USER_ID]);
+  });
+
+  it("returns 404 instead of synthesizing a summary when a bulk recipient is missing", async () => {
+    const response = await invokeUserCredits({ url: `/api/admin/user-credits?userIds=${USER_ID},${MISSING_USER_ID}` });
+    expect(response).toMatchObject({ statusCode: 404, body: { error: "User Not Found" } });
+    expect(mocks.getEntitlementSummaries).not.toHaveBeenCalled();
   });
 });
