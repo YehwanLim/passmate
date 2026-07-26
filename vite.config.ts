@@ -116,6 +116,15 @@ export default defineConfig({
   },
   envDir: path.resolve(import.meta.dirname),
   root: IS_VITEST ? PROJECT_ROOT : path.resolve(import.meta.dirname, "client"),
+  test: {
+    // Unit tests import the browser auth client but must never require a real
+    // Supabase project URL or publishable key. Vite only applies these values
+    // under Vitest; Preview and Production still require their real variables.
+    env: {
+      VITE_SUPABASE_URL: "https://test.supabase.invalid",
+      VITE_SUPABASE_ANON_KEY: "test-anon-key",
+    },
+  },
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
