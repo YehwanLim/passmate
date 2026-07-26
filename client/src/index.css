@@ -279,7 +279,21 @@
 
 .social-proof-marquee {
   overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  contain: layout paint;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
 }
 
 .social-proof-marquee-track {
@@ -301,13 +315,70 @@
   animation-play-state: paused;
 }
 
-.social-proof-wordmark {
-  white-space: nowrap;
-  transition: color 240ms cubic-bezier(0.16, 1, 0.3, 1);
+.social-proof-logo-shell {
+  display: grid;
+  width: clamp(7.5rem, 12vw, 10.5rem);
+  height: 2.75rem;
+  place-items: center;
+  flex: 0 0 auto;
 }
 
-.social-proof-wordmark:hover {
-  color: rgba(244, 244, 245, 0.98);
+.social-proof-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: grayscale(1) opacity(0.55);
+  transition: filter 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.social-proof-logo-shell:hover .social-proof-logo {
+  filter: grayscale(0) opacity(1);
+}
+
+.social-proof-metrics {
+  display: grid;
+  max-width: 40rem;
+  margin-inline: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.social-proof-metric {
+  padding: 0.25rem 1.75rem;
+}
+
+.social-proof-metric + .social-proof-metric {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.social-proof-metric-value {
+  font-size: clamp(3.25rem, 8vw, 5.5rem);
+  font-weight: 600;
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.social-proof-metric-label {
+  margin-top: 0.85rem;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: rgb(107 114 128);
+}
+
+@media (max-width: 639px) {
+  .social-proof-metrics {
+    max-width: 19rem;
+    grid-template-columns: 1fr;
+  }
+
+  .social-proof-metric {
+    padding: 1.5rem 0;
+  }
+
+  .social-proof-metric + .social-proof-metric {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 0;
+  }
 }
 
 .landing-nav-link {
@@ -549,13 +620,17 @@
   .mobile-nav-toggle,
   .mobile-nav-link,
   .social-proof-marquee-track,
-  .social-proof-wordmark {
+  .social-proof-logo {
     animation: none;
     transition-duration: 1ms;
   }
 
   .social-proof-marquee-track {
     transform: translate3d(0, 0, 0);
+  }
+
+  .social-proof-marquee-group + .social-proof-marquee-group {
+    display: none;
   }
 
   .landing-nav-link:hover,

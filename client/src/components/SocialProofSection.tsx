@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import { Star } from "lucide-react";
 import {
   Carousel,
@@ -9,12 +10,15 @@ import {
 } from "@/components/ui/carousel";
 import {
   ACCEPTANCE_TESTIMONIALS,
+  SOCIAL_PROOF_METRICS,
   SUCCESSFUL_COMPANIES,
   SUCCESSFUL_COMPANY_COUNT,
 } from "@/constants/socialProof";
+import { SocialProofMetricCard } from "@/components/SocialProofMetric";
 
 export {
   ACCEPTANCE_TESTIMONIALS,
+  SOCIAL_PROOF_METRICS,
   SUCCESSFUL_COMPANIES,
   SUCCESSFUL_COMPANY_COUNT,
 } from "@/constants/socialProof";
@@ -51,6 +55,8 @@ function TestimonialStars({ rating }: { rating: number }) {
 }
 
 export default function SocialProofSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const isInView = useInView(sectionRef, { once: true, amount: 0.35 });
   const shouldReduceMotion = Boolean(useReducedMotion());
   const revealProps = getSocialProofRevealProps(shouldReduceMotion);
   const revealTransition = shouldReduceMotion
@@ -59,6 +65,7 @@ export default function SocialProofSection() {
 
   return (
     <section
+      ref={sectionRef}
       className="overflow-hidden border-t border-white/[0.04] py-28 md:py-36"
       aria-labelledby="social-proof-title"
     >
@@ -79,13 +86,17 @@ export default function SocialProofSection() {
             이미 많은 합격자들이
             <span className="block">PreView로 자소서를 완성했습니다.</span>
           </h2>
-          <div className="mt-10">
-            <p className="text-7xl font-semibold tracking-[-0.07em] tabular-nums md:text-9xl">
-              {SUCCESSFUL_COMPANY_COUNT.toLocaleString()}+
-            </p>
-            <p className="mt-3 text-[15px] font-light text-gray-500">
-              합격 기업
-            </p>
+          <div
+            className="social-proof-metrics mt-10"
+            aria-label="PreView 성과 지표"
+          >
+            {SOCIAL_PROOF_METRICS.map(metric => (
+              <SocialProofMetricCard
+                key={metric.id}
+                metric={metric}
+                isActive={isInView}
+              />
+            ))}
           </div>
         </motion.div>
       </div>
@@ -98,12 +109,16 @@ export default function SocialProofSection() {
           {marqueeCompanyGroups.map((companies, groupIndex) => (
             <div className="social-proof-marquee-group" key={groupIndex}>
               {companies.map(company => (
-                <span
-                  key={company.id}
-                  className="social-proof-wordmark text-[15px] font-semibold tracking-[-0.035em] text-zinc-500 sm:text-[17px]"
-                >
-                  {company.wordmark}
-                </span>
+                <div key={company.id} className="social-proof-logo-shell">
+                  <img
+                    src={company.logoSrc}
+                    alt=""
+                    aria-hidden="true"
+                    className="social-proof-logo"
+                    width={168}
+                    height={44}
+                  />
+                </div>
               ))}
             </div>
           ))}
