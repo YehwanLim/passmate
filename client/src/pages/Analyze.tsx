@@ -76,6 +76,9 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
   if (error === "ANALYSIS_CREDITS_EXHAUSTED") {
     return "이 계정의 무료 분석 1회를 모두 사용했어요. 베타 기간에는 추가 분석을 제공하지 않습니다.";
   }
+  if (error === "ANALYSIS_CONCURRENCY_LIMITED") {
+    return "진행 중인 분석이 끝난 뒤 다시 시도해 주세요.";
+  }
   if (error === "ANALYSIS_PERSISTENCE_PENDING" || error === "ANALYSIS_IN_PROGRESS") {
     return "분석 결과를 안전하게 저장하고 있어요. 잠시 후 같은 내용으로 다시 시도해 주세요.";
   }
@@ -89,6 +92,7 @@ export function getAnalyzeErrorTitle(errorData: unknown, status?: number): strin
     : {};
 
   if (status === 429 || error === "RATE_LIMITED") return "요청 제한";
+  if (error === "ANALYSIS_CONCURRENCY_LIMITED") return "분석 진행 중";
   return "분석 실패";
 }
 
@@ -691,6 +695,11 @@ export default function Analyze() {
         if (errorData?.error === "CONTEXT_IRRELEVANT") {
           trackAnalysisFailed("cover_letter", "context_irrelevant");
           setErrorModal({ title: "내용 확인 필요", message: UI_LABELS.CONTEXT_IRRELEVANT });
+          return;
+        }
+        if (errorData?.error === "ANALYSIS_CONCURRENCY_LIMITED") {
+          trackAnalysisFailed("cover_letter", "analysis_concurrency_limited");
+          setErrorModal({ title: getAnalyzeErrorTitle(errorData, response.status), message: getAnalyzeErrorMessage(errorData) });
           return;
         }
         trackAnalysisFailed("cover_letter", "server_error");
