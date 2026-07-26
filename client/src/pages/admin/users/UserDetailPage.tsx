@@ -1,7 +1,9 @@
 import { useParams, Link } from "wouter";
 import { useUserDetail } from "@/hooks/admin/useUserDetail";
+import { useUserCredits } from "@/hooks/admin/useUserCredits";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { UserRoleBadge } from "@/components/admin/users/UserRoleBadge";
+import { UserCreditManagementCard } from "@/components/admin/users/UserCreditManagementCard";
 import {
   Card,
   CardContent,
@@ -145,6 +147,7 @@ export default function UserDetailPage() {
   const params = useParams<{ id: string }>();
   const userId = params?.id ?? "";
   const { user, isLoading, error } = useUserDetail(userId);
+  const userCredits = useUserCredits(userId);
 
   // ── 에러 ─────────────────────────────────────────────────
   if (error) {
@@ -269,6 +272,8 @@ export default function UserDetailPage() {
           value={`$${user.total_ai_cost.toFixed(4)}`}
         />
       </div>
+
+      <UserCreditManagementCard credits={userCredits} />
 
       {/* ── 분석 이력 ────────────────────────────────────── */}
       <Card>

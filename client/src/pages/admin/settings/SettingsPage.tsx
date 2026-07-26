@@ -33,7 +33,6 @@ import {
   Megaphone,
   Key,
   Database,
-  Ticket,
   Users,
   Settings,
   ToggleLeft,
@@ -63,15 +62,6 @@ interface NoticeItem {
   createdAt: string;
 }
 
-interface CouponItem {
-  code: string;
-  discountRate: number; // 퍼센트
-  maxUses: number;
-  usedCount: number;
-  expiresAt: string;
-  status: "ACTIVE" | "EXPIRED";
-}
-
 interface AdminUser {
   email: string;
   addedAt: string;
@@ -82,7 +72,6 @@ interface AdminUser {
 // ============================================================
 const STORAGE_KEY = "passmate_admin_settings";
 const NOTICES_KEY = "passmate_admin_notices";
-const COUPONS_KEY = "passmate_admin_coupons";
 const ADMINS_KEY = "passmate_admin_list";
 
 const DEFAULT_SETTINGS: SystemSettings = {
@@ -103,11 +92,6 @@ const DEFAULT_NOTICES: NoticeItem[] = [
   { id: "2", title: "[안내] 7월 15일 결제 모듈 점검 시간 공지", isPinned: false, createdAt: "2026-07-05" },
 ];
 
-const DEFAULT_COUPONS: CouponItem[] = [
-  { code: "PASSMATEFREE", discountRate: 100, maxUses: 500, usedCount: 142, expiresAt: "2026-12-31", status: "ACTIVE" },
-  { code: "BETA50", discountRate: 50, maxUses: 100, usedCount: 100, expiresAt: "2026-06-30", status: "EXPIRED" },
-];
-
 const DEFAULT_ADMINS: AdminUser[] = [
   { email: "admin@passmate.co.kr", addedAt: "2026-06-01" },
 ];
@@ -116,7 +100,6 @@ export default function SettingsPage() {
   // ── 상태 선언 ──────────────────────────────────────────────
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [notices, setNotices] = useState<NoticeItem[]>(DEFAULT_NOTICES);
-  const [coupons, setCoupons] = useState<CouponItem[]>(DEFAULT_COUPONS);
   const [admins, setAdmins] = useState<AdminUser[]>(DEFAULT_ADMINS);
 
   // 알림 상태
@@ -125,12 +108,6 @@ export default function SettingsPage() {
   // 공지 추가 폼
   const [newNoticeTitle, setNewNoticeTitle] = useState("");
   const [newNoticePinned, setNewNoticePinned] = useState(false);
-
-  // 쿠폰 추가 폼
-  const [newCouponCode, setNewCouponCode] = useState("");
-  const [newCouponDiscount, setNewCouponDiscount] = useState(20);
-  const [newCouponMax, setNewCouponMax] = useState(100);
-  const [newCouponExpiry, setNewCouponExpiry] = useState("2026-12-31");
 
   // 관리자 추가 폼
   const [newAdminEmail, setNewAdminEmail] = useState("");
@@ -142,9 +119,6 @@ export default function SettingsPage() {
 
     const savedNotices = localStorage.getItem(NOTICES_KEY);
     if (savedNotices) setNotices(JSON.parse(savedNotices));
-
-    const savedCoupons = localStorage.getItem(COUPONS_KEY);
-    if (savedCoupons) setCoupons(JSON.parse(savedCoupons));
 
     const savedAdmins = localStorage.getItem(ADMINS_KEY);
     if (savedAdmins) setAdmins(JSON.parse(savedAdmins));
@@ -182,31 +156,6 @@ export default function SettingsPage() {
     const updated = notices.filter((n) => n.id !== id);
     setNotices(updated);
     localStorage.setItem(NOTICES_KEY, JSON.stringify(updated));
-    triggerSuccess();
-  };
-
-  // ── 쿠폰 기능 ────────────────────────────────────────────
-  const handleAddCoupon = () => {
-    if (!newCouponCode.trim()) return;
-    const next: CouponItem = {
-      code: newCouponCode.trim().toUpperCase(),
-      discountRate: newCouponDiscount,
-      maxUses: newCouponMax,
-      usedCount: 0,
-      expiresAt: newCouponExpiry,
-      status: "ACTIVE",
-    };
-    const updated = [next, ...coupons];
-    setCoupons(updated);
-    localStorage.setItem(COUPONS_KEY, JSON.stringify(updated));
-    setNewCouponCode("");
-    triggerSuccess();
-  };
-
-  const handleDeleteCoupon = (code: string) => {
-    const updated = coupons.filter((c) => c.code !== code);
-    setCoupons(updated);
-    localStorage.setItem(COUPONS_KEY, JSON.stringify(updated));
     triggerSuccess();
   };
 
@@ -253,7 +202,7 @@ export default function SettingsPage() {
       )}
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full lg:w-[650px] mb-4">
+        <TabsList className="grid grid-cols-4 w-full lg:w-[560px] mb-4">
           <TabsTrigger value="general" className="text-xs gap-1.5">
             <Settings className="size-3.5" />
             일반 설정
@@ -265,10 +214,6 @@ export default function SettingsPage() {
           <TabsTrigger value="features" className="text-xs gap-1.5">
             <ToggleLeft className="size-3.5" />
             Feature Flag
-          </TabsTrigger>
-          <TabsTrigger value="coupons" className="text-xs gap-1.5">
-            <Ticket className="size-3.5" />
-            쿠폰 관리
           </TabsTrigger>
           <TabsTrigger value="admins" className="text-xs gap-1.5">
             <Users className="size-3.5" />
@@ -529,104 +474,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* ── 4. 쿠폰 관리 (Coupons) ── */}
-        <TabsContent value="coupons">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">할인 쿠폰 제어</CardTitle>
-              <CardDescription className="text-xs">
-                결제 시 사용자가 입력하여 코인 할인을 받을 수 있는 마케팅 코드를 발급합니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* 쿠폰 생성 폼 */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 border rounded-lg bg-muted/20">
-                <div className="space-y-1">
-                  <Label htmlFor="coupon-code" className="text-xs">쿠폰 코드</Label>
-                  <Input
-                    id="coupon-code"
-                    placeholder="PASSMATE50"
-                    value={newCouponCode}
-                    onChange={(e) => setNewCouponCode(e.target.value)}
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="coupon-discount" className="text-xs">할인율 (%)</Label>
-                  <Input
-                    id="coupon-discount"
-                    type="number"
-                    value={newCouponDiscount}
-                    onChange={(e) => setNewCouponDiscount(Number(e.target.value))}
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="coupon-max" className="text-xs">최대 사용 수</Label>
-                  <Input
-                    id="coupon-max"
-                    type="number"
-                    value={newCouponMax}
-                    onChange={(e) => setNewCouponMax(Number(e.target.value))}
-                    className="h-9"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddCoupon} className="w-full gap-1 text-xs h-9">
-                    <Plus className="size-3.5" />
-                    쿠폰 생성
-                  </Button>
-                </div>
-              </div>
-
-              {/* 쿠폰 목록 */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>쿠폰 코드</TableHead>
-                    <TableHead className="text-right">할인율</TableHead>
-                    <TableHead className="text-right">사용 횟수</TableHead>
-                    <TableHead className="text-right">만료일</TableHead>
-                    <TableHead className="text-center">상태</TableHead>
-                    <TableHead className="w-[50px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {coupons.map((c) => (
-                    <TableRow key={c.code}>
-                      <TableCell className="font-bold font-mono text-xs">{c.code}</TableCell>
-                      <TableCell className="text-right font-mono text-xs">{c.discountRate}%</TableCell>
-                      <TableCell className="text-right font-mono text-xs">
-                        {c.usedCount} / {c.maxUses}
-                      </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">{c.expiresAt}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={c.status === "ACTIVE" ? "default" : "secondary"}
-                          className={c.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : ""}
-                        >
-                          {c.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteCoupon(c.code)}
-                          className="text-muted-foreground hover:text-destructive size-7"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── 5. 관리자 계정 (Admins) ── */}
+        {/* ── 4. 관리자 계정 (Admins) ── */}
         <TabsContent value="admins">
           <Card>
             <CardHeader>
