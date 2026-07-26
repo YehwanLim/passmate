@@ -6,6 +6,7 @@ import {
   cancelAnalysisReservation,
   EntitlementUnavailableError,
   finalizeAnalysisReservation,
+  getEntitlementSummary,
   reserveAnalysis,
 } from "../lib/analysis-entitlements.js";
 import {
@@ -25,13 +26,20 @@ import {
 } from "../lib/analysis-request-lifecycle.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../lib/auth.js";
-import { consumeUserRateLimit, USER_RATE_LIMITS } from "../lib/rate-limit.js";
+import { consumeUserRateLimit, getAnalysisThroughputPolicy } from "../lib/rate-limit.js";
 import prisma from "../lib/prisma.js";
 import { MASTER_SYSTEM_PROMPT } from "../shared/prompts/reportPrompt.js";
 
 const SETTINGS_ID = "singleton";
 const FALLBACK_RETRY_DELAY_MS = 3000;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
+
+class AnalysisConcurrencyLimitError extends Error {
+  constructor() {
+    super("ANALYSIS_CONCURRENCY_LIMITED");
+    this.code = "ANALYSIS_CONCURRENCY_LIMITED";
+  }
+}
 
 function sanitizeInput(value) {
   return String(value ?? "")
@@ -310,11 +318,39 @@ async function analyzeCoverLetter(request, db = prisma) {
   throw lastError ?? new ModelFailureError("API_ERROR");
 }
 
-async function allocateAnalysisRequest({ db, hash, idempotencyKey, request, reserve, userId }) {
+async function allocateAnalysisRequest({
+  consumeRateLimit,
+  db,
+  getSummary,
+  getThroughputPolicy,
+  hash,
+  idempotencyKey,
+  request,
+  reserve,
+  userId,
+}) {
   return db.$transaction(async (tx) => {
     const existing = await findExistingRequest(tx, userId, idempotencyKey);
     const reused = idempotencyResult(existing, hash);
     if (reused) return { type: "stored", ...reused };
+
+    const summary = await getSummary(tx, userId);
+    const policy = getThroughputPolicy(summary);
+    const activeCount = await tx.analysisRequest.count({
+      where: {
+        userId,
+        status: { in: ["PENDING", "CALLING", "PERSISTENCE_PENDING"] },
+      },
+    });
+    if (activeCount >= policy.concurrencyLimit) {
+      throw new AnalysisConcurrencyLimitError();
+    }
+
+    const rate = await consumeRateLimit(tx, {
+      userId,
+      policy: policy.rateLimit,
+    });
+    if (!rate.allowed) return { type: "rate_limited", rate };
 
     const reservation = await reserve(tx, userId);
     const project = await tx.project.create({
@@ -355,6 +391,8 @@ export function createAnalyzeHandler({
   db = prisma,
   enqueueBackgroundWork = (work) => waitUntil(work()),
   finalizeReservation = finalizeAnalysisReservation,
+  getEntitlementSummary: getSummary = getEntitlementSummary,
+  getAnalysisThroughputPolicy: getThroughputPolicy = getAnalysisThroughputPolicy,
   model = analyzeCoverLetter,
   requireUser = requireActiveApplicationUser,
   reserveAnalysis: reserve = reserveAnalysis,
@@ -433,15 +471,6 @@ export function createAnalyzeHandler({
       }
       if (unfinished) return sendError(res, 409, "ANALYSIS_IN_PROGRESS", requestId);
 
-      const rate = await consumeRateLimit(db, {
-        userId: applicationUser.id,
-        policy: USER_RATE_LIMITS.analysis,
-      });
-      if (!rate.allowed) {
-        res.setHeader?.("Retry-After", String(rate.retryAfterSeconds));
-        return sendError(res, 429, "RATE_LIMITED", requestId);
-      }
-
       const settings = await db.entitlementSetting.findUnique({
         where: { id: SETTINGS_ID },
         select: { analysisEnabled: true },
@@ -453,7 +482,10 @@ export function createAnalyzeHandler({
       let allocation;
       try {
         allocation = await allocateAnalysisRequest({
+          consumeRateLimit,
           db,
+          getSummary,
+          getThroughputPolicy,
           hash,
           idempotencyKey,
           request,
@@ -461,6 +493,9 @@ export function createAnalyzeHandler({
           userId: applicationUser.id,
         });
       } catch (error) {
+        if (error instanceof AnalysisConcurrencyLimitError) {
+          throw new ApiError("ANALYSIS_CONCURRENCY_LIMITED", 409);
+        }
         if (error instanceof EntitlementUnavailableError) {
           throw new ApiError("ANALYSIS_CREDITS_EXHAUSTED", 409);
         }
@@ -474,6 +509,11 @@ export function createAnalyzeHandler({
           }), requestId);
         }
         throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
+      }
+
+      if (allocation.type === "rate_limited") {
+        res.setHeader?.("Retry-After", String(allocation.rate.retryAfterSeconds));
+        return sendError(res, 429, "RATE_LIMITED", requestId);
       }
 
       if (allocation.type === "stored") {
