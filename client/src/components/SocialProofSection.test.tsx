@@ -101,5 +101,6 @@ describe("SocialProofSection", () => {
     expect(markup.match(/social-proof-metric"/g)).toHaveLength(2);
     expect(markup.match(/social-proof-marquee-group"/g)).toHaveLength(2);
     expect(markup).toContain('src="/company-logos/samsung-electronics.svg"');
+    expect(markup).toContain("--logo-scale:1.15");
   });
 });

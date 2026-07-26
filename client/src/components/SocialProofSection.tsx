@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { type CSSProperties, useRef } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { Star } from "lucide-react";
 import {
@@ -115,8 +115,11 @@ export default function SocialProofSection() {
                     alt=""
                     aria-hidden="true"
                     className="social-proof-logo"
+                    style={
+                      { "--logo-scale": company.logoScale } as CSSProperties
+                    }
                     width={168}
-                    height={44}
+                    height={48}
                   />
                 </div>
               ))}
