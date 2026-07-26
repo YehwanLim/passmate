@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyStagingSchema } from "./bootstrap-empty-staging-db.mjs";
+import { BOOTSTRAP_PRISMA_COMMANDS, classifyStagingSchema } from "./bootstrap-empty-staging-db.mjs";
 
 describe("classifyStagingSchema", () => {
+  it("uses only Prisma db push options supported by the pinned CLI", () => {
+    expect(BOOTSTRAP_PRISMA_COMMANDS).toEqual([
+      ["db", "push"],
+      ["migrate", "deploy"],
+      ["migrate", "status"],
+    ]);
+  });
+
   it("permits bootstrap only when the public schema and Prisma history are both absent", () => {
     expect(
       classifyStagingSchema({
