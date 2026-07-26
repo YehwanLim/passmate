@@ -16,6 +16,17 @@ function authorizedCronRequest(req, cronSecret) {
   return timingSafeEqual(Buffer.from(authorization), Buffer.from(expected));
 }
 
+function rejectedCronAuthorizationDiagnostic(req, cronSecret) {
+  const authorization = req.headers?.authorization ?? req.headers?.Authorization;
+  const expected = cronSecret ? `Bearer ${cronSecret}` : "";
+  return {
+    authorizationHeaderLength: typeof authorization === "string" ? authorization.length : 0,
+    authorizationHeaderPresent: typeof authorization === "string",
+    cronSecretConfigured: Boolean(cronSecret),
+    expectedAuthorizationHeaderLength: expected.length,
+  };
+}
+
 export function createPurgeDeletedAccountsHandler({
   cronSecret = process.env.CRON_SECRET,
   db = prisma,
@@ -28,6 +39,7 @@ export function createPurgeDeletedAccountsHandler({
         throw new ApiError("METHOD_NOT_ALLOWED", 405);
       }
       if (!authorizedCronRequest(req, cronSecret)) {
+        console.warn("[api/cron/purge] authorization rejected", rejectedCronAuthorizationDiagnostic(req, cronSecret));
         throw new ApiError("CRON_AUTH_REQUIRED", 401);
       }
 

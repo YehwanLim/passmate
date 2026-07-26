@@ -92,12 +92,27 @@ describe("deleted account purge cron", () => {
     const purgeAccounts = vi.fn();
     const handler = createPurgeDeletedAccountsHandler({ cronSecret: "cron-secret", purgeAccounts });
     const res = response();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    await handler(request({ headers: {}, method: "GET" }), res);
+    try {
+      await handler(request({ headers: {}, method: "GET" }), res);
 
-    expect(res.statusCode).toBe(401);
-    expect(res.body).toEqual({ error: "CRON_AUTH_REQUIRED", requestId: expect.any(String) });
-    expect(purgeAccounts).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toEqual({ error: "CRON_AUTH_REQUIRED", requestId: expect.any(String) });
+      expect(purgeAccounts).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(
+        "[api/cron/purge] authorization rejected",
+        {
+          authorizationHeaderLength: 0,
+          authorizationHeaderPresent: false,
+          cronSecretConfigured: true,
+          expectedAuthorizationHeaderLength: "Bearer cron-secret".length,
+        },
+      );
+      expect(JSON.stringify(warn.mock.calls)).not.toContain("cron-secret");
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("uses the service role only after cron authentication and reports an aggregate", async () => {
