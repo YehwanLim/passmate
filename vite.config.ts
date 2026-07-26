@@ -301,6 +301,54 @@ function vitePluginApi(): Plugin {
         });
       });
 
+      function registerAdminCreditHandler(route: string, handlerFile: string) {
+        server.middlewares.use(route, (req, res, next) => {
+          if (req.method !== "GET" && req.method !== "POST" && req.method !== "PATCH") return next();
+
+          const requestUrl = new URL(req.url ?? "/", "http://localhost");
+          if (requestUrl.pathname !== "/") return next();
+
+          let body = "";
+          req.on("data", (chunk) => {
+            body += chunk.toString();
+          });
+
+          req.on("end", async () => {
+            try {
+              const handlerUrl = pathToFileURL(
+                path.join(PROJECT_ROOT, "api", "admin", handlerFile),
+              ).href;
+              const { default: handler } = await import(`${handlerUrl}?t=${Date.now()}`);
+              const request = {
+                body: body ? JSON.parse(body) : undefined,
+                headers: req.headers,
+                method: req.method,
+                url: `${requestUrl.pathname}${requestUrl.search}`,
+              };
+              const response = {
+                status(code: number) {
+                  res.statusCode = code;
+                  return this;
+                },
+                json(payload: unknown) {
+                  res.setHeader("Content-Type", "application/json");
+                  res.end(JSON.stringify(payload));
+                },
+              };
+              await handler(request, response);
+            } catch (error: any) {
+              console.error(`[api/admin/${handlerFile}] failed:`, error);
+              res.writeHead(500, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: error.message || "Internal server error" }));
+            }
+          });
+        });
+      }
+
+      // Admin credit APIs use their Vercel handlers locally, including bearer headers and query strings.
+      registerAdminCreditHandler("/api/admin/user-credits", "user-credits.js");
+      registerAdminCreditHandler("/api/admin/credit-coupons", "credit-coupons.js");
+
       // /api/admin/ai-models — 관리자 AI 모델 현황
       server.middlewares.use("/api/admin/ai-models", (req, res, next) => {
         if (req.method !== "GET" && req.method !== "POST") return next();
