@@ -325,7 +325,7 @@ export function UserCreditManagementCard({
                       <TableHead className="text-right">지급 수량</TableHead>
                       <TableHead>쿠폰 코드</TableHead>
                       <TableHead>메모</TableHead>
-                      <TableHead>관리자 이메일 / ID</TableHead>
+                      <TableHead>관리자 이메일</TableHead>
                       <TableHead className="text-right">지급 일시</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -352,8 +352,8 @@ export function UserCreditManagementCard({
                         >
                           {item.note ?? "–"}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {item.grantedByUserId}
+                        <TableCell className="text-xs">
+                          {item.grantedByEmail}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-right text-xs text-muted-foreground">
                           {formatDateTime(item.createdAt)}

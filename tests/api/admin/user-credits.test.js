@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
+const ADMIN_EMAIL = "original-admin@example.com";
 const USER_ID = "22222222-2222-4222-8222-222222222222";
 const MISSING_USER_ID = "44444444-4444-4444-8444-444444444444";
 const COUPON_ID = "33333333-3333-4333-8333-333333333333";
@@ -40,7 +41,7 @@ async function invokeUserCredits({ body, method = "GET", query, url = "/api/admi
 describe("admin user credit API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireAdministrator.mockResolvedValue({ id: ADMIN_ID });
+    mocks.requireAdministrator.mockResolvedValue({ id: ADMIN_ID, email: ADMIN_EMAIL });
     mocks.prisma.$transaction.mockImplementation((callback) => callback(mocks.transaction));
     mocks.prisma.user.findUnique.mockResolvedValue({ id: USER_ID });
     mocks.prisma.user.findMany.mockResolvedValue([{ id: USER_ID }]);
@@ -70,7 +71,28 @@ describe("admin user credit API", () => {
   it("writes a manual grant for the verified administrator only", async () => {
     const response = await invokeUserCredits({ method: "POST", body: { action: "grant", userId: USER_ID, credits: 2, note: "  CS  " } });
     expect(response).toMatchObject({ statusCode: 200, body: { summary: SUMMARY } });
-    expect(mocks.grantAdminCredits).toHaveBeenCalledWith(mocks.transaction, { userId: USER_ID, credits: 2, note: "CS", grantedByUserId: ADMIN_ID });
+    expect(mocks.grantAdminCredits).toHaveBeenCalledWith(mocks.transaction, {
+      userId: USER_ID,
+      credits: 2,
+      note: "CS",
+      grantedByUserId: ADMIN_ID,
+      grantedByEmail: ADMIN_EMAIL,
+    });
+  });
+
+  it("snapshots the verified administrator email for a coupon grant", async () => {
+    const response = await invokeUserCredits({
+      method: "POST",
+      body: { action: "applyCoupon", userId: USER_ID, couponId: COUPON_ID },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mocks.applyCreditCoupon).toHaveBeenCalledWith(mocks.transaction, {
+      userId: USER_ID,
+      couponId: COUPON_ID,
+      grantedByUserId: ADMIN_ID,
+      grantedByEmail: ADMIN_EMAIL,
+    });
   });
 
   it("returns 409 when a coupon cannot be applied", async () => {

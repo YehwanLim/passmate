@@ -92,6 +92,27 @@ describe("admin credit API client", () => {
     })]);
   });
 
+  it("maps the immutable grantor email snapshot in credit history", async () => {
+    mockedFetch().mockResolvedValue(jsonResponse({
+      summary: SUMMARY,
+      grants: [{
+        id: "grant-id",
+        user_id: USER_ID,
+        granted_by_user_id: "11111111-1111-4111-8111-111111111111",
+        granted_by_email: "original-admin@example.com",
+        credits_granted: 2,
+        source: "MANUAL",
+        coupon_id: null,
+        note: "support",
+        created_at: "2026-07-26T00:00:00.000Z",
+      }],
+    }));
+
+    await expect(fetchUserCreditDetail(USER_ID)).resolves.toMatchObject({
+      grants: [{ grantedByEmail: "original-admin@example.com" }],
+    });
+  });
+
   it("rejects a missing Supabase session before making the request", async () => {
     mocks.getSession.mockResolvedValue({ data: { session: null } });
 

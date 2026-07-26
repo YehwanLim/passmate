@@ -34,7 +34,35 @@ describe("admin credit coupon API", () => {
   it("normalizes a valid new coupon and creates it", async () => {
     const response = await invokeCoupons({ method: "POST", body: { code: " welcome_2 ", creditsGranted: 2 } });
     expect(response.statusCode).toBe(201);
-    expect(mocks.prisma.creditCoupon.create).toHaveBeenCalledWith({ data: { code: "WELCOME_2", creditsGranted: 2, maxUses: null, expiresAt: null } });
+    expect(mocks.prisma.creditCoupon.create).toHaveBeenCalledWith({
+      data: {
+        code: "WELCOME_2",
+        creditsGranted: 2,
+        maxUses: null,
+        expiresAt: null,
+        isActive: true,
+      },
+    });
+  });
+
+  it("creates an initially inactive coupon atomically", async () => {
+    const response = await invokeCoupons({
+      method: "POST",
+      body: { code: "WELCOME_2", creditsGranted: 2, isActive: false },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.prisma.creditCoupon.create).toHaveBeenCalledOnce();
+    expect(mocks.prisma.creditCoupon.create).toHaveBeenCalledWith({
+      data: {
+        code: "WELCOME_2",
+        creditsGranted: 2,
+        maxUses: null,
+        expiresAt: null,
+        isActive: false,
+      },
+    });
+    expect(mocks.prisma.creditCoupon.update).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid coupon lifecycle payload without creating a coupon", async () => {

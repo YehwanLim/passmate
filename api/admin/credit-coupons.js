@@ -45,19 +45,26 @@ export default async function handler(req, res) {
 
     if (req.method === "POST") {
       const body = req.body;
-      if (!hasOnlyKeys(body, ["code", "creditsGranted", "maxUses", "expiresAt"])) {
+      if (!hasOnlyKeys(body, ["code", "creditsGranted", "maxUses", "expiresAt", "isActive"])) {
         return res.status(400).json({ error: "Invalid coupon payload" });
       }
       const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
       const expiresAt = parseExpiresAt(body.expiresAt);
       if (!CODE_PATTERN.test(code) || !isCredits(body.creditsGranted)
+        || (body.isActive !== undefined && typeof body.isActive !== "boolean")
         || (body.maxUses !== undefined && body.maxUses !== null && !isMaxUses(body.maxUses))
         || !expiresAt.valid) {
         return res.status(400).json({ error: "Invalid coupon payload" });
       }
       try {
         const coupon = await prisma.creditCoupon.create({
-          data: { code, creditsGranted: body.creditsGranted, maxUses: body.maxUses ?? null, expiresAt: expiresAt.value },
+          data: {
+            code,
+            creditsGranted: body.creditsGranted,
+            maxUses: body.maxUses ?? null,
+            expiresAt: expiresAt.value,
+            isActive: body.isActive ?? true,
+          },
         });
         return res.status(201).json({ coupon });
       } catch (error) {

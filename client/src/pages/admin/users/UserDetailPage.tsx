@@ -273,7 +273,7 @@ export default function UserDetailPage() {
         />
       </div>
 
-      <UserCreditManagementCard credits={userCredits} />
+      <UserCreditManagementCard key={userId} credits={userCredits} />
 
       {/* ── 분석 이력 ────────────────────────────────────── */}
       <Card>

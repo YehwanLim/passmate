@@ -108,6 +108,7 @@ export default async function handler(req, res) {
         credits: body.credits,
         note: note || null,
         grantedByUserId: administrator.id,
+        grantedByEmail: administrator.email,
       }));
       return res.status(200).json({ summary });
     }
@@ -123,6 +124,7 @@ export default async function handler(req, res) {
           userId: body.userId,
           couponId: body.couponId,
           grantedByUserId: administrator.id,
+          grantedByEmail: administrator.email,
         }));
         return res.status(200).json({ summary });
       } catch (error) {

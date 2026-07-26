@@ -25,6 +25,7 @@ export interface AdminCreditGrant {
   id: string;
   userId: string;
   grantedByUserId: string;
+  grantedByEmail: string;
   creditsGranted: number;
   source: "MANUAL" | "COUPON";
   couponId: string | null;
@@ -53,6 +54,7 @@ export interface CreateCreditCouponInput {
   creditsGranted: number;
   maxUses?: number | null;
   expiresAt?: string | null;
+  isActive?: boolean;
 }
 
 export interface UpdateCreditCouponInput {
@@ -101,6 +103,7 @@ function mapAdminCreditGrant(grant: JsonRecord): AdminCreditGrant {
     id: String(grant.id),
     userId: String(value(grant, "userId", "user_id")),
     grantedByUserId: String(value(grant, "grantedByUserId", "granted_by_user_id")),
+    grantedByEmail: String(value(grant, "grantedByEmail", "granted_by_email")),
     creditsGranted: Number(value(grant, "creditsGranted", "credits_granted")),
     source: String(grant.source) as AdminCreditGrant["source"],
     couponId: value(grant, "couponId", "coupon_id") as string | null,
