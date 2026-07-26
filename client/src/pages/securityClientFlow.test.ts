@@ -11,13 +11,15 @@ const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.ur
 const supabaseSource = readFileSync(new URL("../lib/supabase.ts", import.meta.url), "utf8");
 
 describe("authenticated client flow", () => {
-  it("uses the same idempotency key for a retry of unchanged analysis input and navigates with the persisted response id", () => {
+  it("uses the same idempotency key for a retry of unchanged analysis input and sends its receipt to the protected pending page", () => {
     expect(analyzeSource).toContain('import { getAuthorizationHeader } from "@/lib/apiAuth"');
     expect(analyzeSource).toContain("const analysisRequestRef = useRef");
     expect(analyzeSource).toContain("const requestFingerprint = JSON.stringify(requestPayload)");
     expect(analyzeSource).toContain('"Idempotency-Key": idempotencyKey');
-    expect(analyzeSource).toContain("data.report.questionTabs");
-    expect(analyzeSource).toContain('navigate(`/report-new?analysisId=${encodeURIComponent(data.analysis_id)}`)');
+    expect(analyzeSource).toContain("parseAnalysisReceipt(await response.json())");
+    expect(analyzeSource).toContain("analysisPendingPath(receipt.analysisRequestId)");
+    expect(analyzeSource).not.toContain("data.report.questionTabs");
+    expect(analyzeSource).not.toContain('navigate(`/report-new?analysisId=${encodeURIComponent(data.analysis_id)}`)');
     expect(analyzeSource).not.toMatch(/fetch\("\/api\/projects",\s*\{\s*method:\s*"POST"/);
     expect(analyzeSource).not.toContain("saveAnalysisToStorage");
   });

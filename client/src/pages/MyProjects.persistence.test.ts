@@ -7,11 +7,13 @@ const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.ur
 const reportSource = readFileSync(new URL("./ReportResult.tsx", import.meta.url), "utf8");
 
 describe("analysis persistence into My Projects", () => {
-  it("uses the analyze response as the only persistence path", () => {
+  it("uses the server analysis transaction as the only persistence path", () => {
     expect(analyzeSource).toContain('fetch("/api/analyze"');
-    expect(analyzeSource).toContain("data.project_id");
-    expect(analyzeSource).toContain("data.analysis_id");
-    expect(analyzeSource).toContain("data.report");
+    expect(analyzeSource).toContain("parseAnalysisReceipt(await response.json())");
+    expect(analyzeSource).toContain("analysisPendingPath(receipt.analysisRequestId)");
+    expect(analyzeSource).not.toContain("data.project_id");
+    expect(analyzeSource).not.toContain("data.analysis_id");
+    expect(analyzeSource).not.toContain("data.report");
     expect(analyzeSource).not.toMatch(/fetch\("\/api\/projects",\s*\{\s*method:\s*"POST"/);
     expect(analyzeSource).not.toContain("analysisMeta: data.analysisMeta");
     expect(analyzeSource).not.toContain("saveAnalysisToStorage");
