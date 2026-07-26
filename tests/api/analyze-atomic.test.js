@@ -463,6 +463,55 @@ describe("atomic analyze API", () => {
     expect(cancelReservation).not.toHaveBeenCalled();
   });
 
+  it("persists a valid Gemini result that arrives after 25 seconds but before the function deadline", async () => {
+    vi.useFakeTimers();
+    const db = createDatabase();
+    const res = response();
+    const fetchMock = vi.fn((_url, { signal }) => new Promise((resolve, reject) => {
+      const responseTimer = setTimeout(() => {
+        resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            candidates: [{ content: { parts: [{ text: "{}" }] } }],
+            usageMetadata: { candidatesTokenCount: 1, promptTokenCount: 1, totalTokenCount: 2 },
+          }),
+        });
+      }, 30_000);
+      signal.addEventListener("abort", () => {
+        clearTimeout(responseTimer);
+        reject(new DOMException("The operation was aborted.", "AbortError"));
+      }, { once: true });
+    }));
+    vi.stubEnv("GEMINI_API_KEY", "test-gemini-key");
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const handler = createAnalyzeHandler({
+        db,
+        requireUser: activeUser,
+        reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+        consumeRateLimit: rateAllowed,
+      });
+      const requestPromise = handler(request(), res);
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      await requestPromise;
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({
+        analysis_id: "analysis-1",
+        project_id: "project-1",
+        report: {},
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
   it("marks the request failed and cancels the reservation when the model fails", async () => {
     const finalizeReservation = vi.fn(async () => undefined);
     const cancelReservation = vi.fn(async () => undefined);
