@@ -76,6 +76,9 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
   if (error === "CONTEXT_IRRELEVANT") return UI_LABELS.CONTEXT_IRRELEVANT;
   if (error === "ANALYSIS_DISABLED")
     return "분석 기능이 일시적으로 중단되었습니다. 잠시 후 다시 시도해 주세요.";
+  if (error === "ANALYSIS_CREDITS_EXHAUSTED") {
+    return "이 계정의 무료 분석 1회를 모두 사용했어요. 베타 기간에는 추가 분석을 제공하지 않습니다.";
+  }
   if (
     error === "ANALYSIS_PERSISTENCE_PENDING" ||
     error === "ANALYSIS_IN_PROGRESS"

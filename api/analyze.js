@@ -4,6 +4,7 @@ import { waitUntil } from "@vercel/functions";
 import { getModelCallSequence, readAiModelSettings } from "../lib/ai-model-settings.js";
 import {
   cancelAnalysisReservation,
+  EntitlementUnavailableError,
   finalizeAnalysisReservation,
   reserveAnalysis,
 } from "../lib/analysis-entitlements.js";
@@ -460,6 +461,9 @@ export function createAnalyzeHandler({
           userId: applicationUser.id,
         });
       } catch (error) {
+        if (error instanceof EntitlementUnavailableError) {
+          throw new ApiError("ANALYSIS_CREDITS_EXHAUSTED", 409);
+        }
         if (error?.code !== "P2002") throw error;
         const existing = await findExistingRequest(db, applicationUser.id, idempotencyKey);
         const stored = idempotencyResult(existing, hash);

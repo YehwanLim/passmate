@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 
 import { AuthorizationError } from "../../lib/auth.js";
+import { EntitlementUnavailableError } from "../../lib/analysis-entitlements.js";
 import { createAnalyzeHandler } from "../../api/analyze.js";
 import { runAllocatedAnalysis } from "../../lib/analysis-request-lifecycle.js";
 
@@ -539,6 +540,30 @@ describe("atomic analyze API", () => {
     expect(res.statusCode).toBe(503);
     expect(res.body.error).toBe("ANALYSIS_DISABLED");
     expect(model).not.toHaveBeenCalled();
+  });
+
+  it("returns an opaque credit-exhausted response without calling the model", async () => {
+    const model = vi.fn();
+    const handler = createAnalyzeHandler({
+      db: createDatabase(),
+      model,
+      requireUser: activeUser,
+      reserveAnalysis: async () => {
+        throw new EntitlementUnavailableError();
+      },
+      consumeRateLimit: rateAllowed,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toEqual({
+      error: "ANALYSIS_CREDITS_EXHAUSTED",
+      requestId: expect.any(String),
+    });
+    expect(model).not.toHaveBeenCalled();
+    expect(JSON.stringify(res.body)).not.toContain("Analysis credits are exhausted");
   });
 
   it("finalizes a reservation only after persisting a successful report", async () => {
