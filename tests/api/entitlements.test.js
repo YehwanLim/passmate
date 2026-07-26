@@ -84,6 +84,7 @@ describe("entitlement APIs", () => {
     mocks.prisma.$transaction.mockImplementation((callback) => callback(mocks.transaction));
     mocks.getEntitlementSummary.mockResolvedValue({
       freeRemaining: 1,
+      bonusRemaining: 0,
       premiumEnabled: false,
       premiumRemaining: 0,
       remaining: 1,
@@ -107,6 +108,7 @@ describe("entitlement APIs", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
       freeRemaining: 1,
+      bonusRemaining: 0,
       groblePaymentUrl: "https://payments.groble.example/checkout",
       premiumEnabled: false,
       premiumRemaining: 0,

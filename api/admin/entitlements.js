@@ -1,27 +1,7 @@
-import { requireAuthenticatedUser } from "../../lib/auth.js";
+import { requireAdministrator } from "../../lib/admin-auth.js";
 import prisma from "../../lib/prisma.js";
 
 const SETTINGS_ID = "singleton";
-
-async function getAdministrator(req, res) {
-  const authenticatedUser = await requireAuthenticatedUser(req);
-  if (!authenticatedUser) {
-    res.status(401).json({ error: "Unauthorized" });
-    return null;
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: authenticatedUser.id },
-    select: { role: true },
-  });
-
-  if (user?.role !== "admin") {
-    res.status(403).json({ error: "Forbidden" });
-    return null;
-  }
-
-  return authenticatedUser;
-}
 
 function hasValidPremiumEnabledBody(body) {
   const keys = Object.keys(body ?? {});
@@ -30,7 +10,7 @@ function hasValidPremiumEnabledBody(body) {
 
 export default async function handler(req, res) {
   try {
-    const administrator = await getAdministrator(req, res);
+    const administrator = await requireAdministrator(req, res);
     if (!administrator) {
       return;
     }
