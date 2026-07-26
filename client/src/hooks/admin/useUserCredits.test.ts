@@ -1,11 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+// @vitest-environment jsdom
+
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreditCoupon, UserCreditDetail } from "@/lib/admin-credits";
 
-vi.mock("@/lib/admin-credits", () => ({
+const apiMocks = vi.hoisted(() => ({
   applyCouponToUser: vi.fn(),
   fetchCreditCoupons: vi.fn(),
   fetchUserCreditDetail: vi.fn(),
   grantUserCredits: vi.fn(),
+}));
+
+vi.mock("@/lib/admin-credits", () => ({
+  ...apiMocks,
 }));
 
 import * as userCreditsModule from "./useUserCredits";
@@ -144,5 +151,45 @@ describe("user credit state", () => {
     expect(firstStore.getSnapshot().detail).toBe(DETAIL);
     expect(nextStore.getSnapshot().detail).toBeNull();
     expect(nextStore.getSnapshot().isLoading).toBe(true);
+  });
+});
+
+describe("useUserCredits lifecycle", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMocks.fetchUserCreditDetail.mockResolvedValue(DETAIL);
+    apiMocks.fetchCreditCoupons.mockResolvedValue([]);
+    apiMocks.grantUserCredits.mockResolvedValue(DETAIL.summary);
+    apiMocks.applyCouponToUser.mockResolvedValue(DETAIL.summary);
+  });
+
+  it("remains loaded and mutable after StrictMode replays its effect", async () => {
+    const { result, unmount } = renderHook(
+      ({ userId }) => userCreditsModule.useUserCredits(userId),
+      {
+        initialProps: { userId: USER_A },
+        reactStrictMode: true,
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.detail).toEqual(DETAIL);
+    });
+    expect(apiMocks.fetchUserCreditDetail).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await result.current.grant(2, "support");
+    });
+    expect(apiMocks.grantUserCredits).toHaveBeenCalledWith({
+      userId: USER_A,
+      credits: 2,
+      note: "support",
+    });
+
+    const retainedResult = result.current;
+    unmount();
+    await Promise.resolve();
+    await expect(retainedResult.grant(2)).rejects.toThrow(
+      "사용자가 변경되었습니다"
+    );
   });
 });

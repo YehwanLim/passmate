@@ -48,13 +48,6 @@ function messageFrom(error: unknown): string {
     : "이용권 쿠폰을 저장하지 못했습니다.";
 }
 
-export function createCouponAtomically(
-  onCreate: (input: CreateCreditCouponInput) => Promise<CreditCoupon>,
-  input: CreateCreditCouponInput
-) {
-  return onCreate(input);
-}
-
 export function CreditCouponsDialog({
   open,
   onOpenChange,
@@ -133,7 +126,7 @@ export function CreditCouponsDialog({
           isActive,
         });
       } else {
-        await createCouponAtomically(onCreate, {
+        await onCreate({
           code: code.trim().toUpperCase(),
           creditsGranted: parsedCredits,
           maxUses: parsedMaxUses,

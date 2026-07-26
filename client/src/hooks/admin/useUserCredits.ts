@@ -40,6 +40,8 @@ export interface UserCreditsStore {
   refresh: () => Promise<void>;
   grant: (credits: number, note?: string) => Promise<void>;
   applyCoupon: (couponId: string) => Promise<void>;
+  mount: () => void;
+  release: () => void;
   dispose: () => void;
 }
 
@@ -68,6 +70,7 @@ export function createUserCreditsStore(
   };
   let disposed = false;
   let requestVersion = 0;
+  let lifecycleVersion = 0;
   const listeners = new Set<() => void>();
 
   const setSnapshot = (next: Partial<UserCreditsSnapshot>) => {
@@ -146,6 +149,12 @@ export function createUserCreditsStore(
     await refreshAfterMutation();
   };
 
+  const dispose = () => {
+    disposed = true;
+    requestVersion += 1;
+    listeners.clear();
+  };
+
   return {
     getSnapshot: () => snapshot,
     subscribe: listener => {
@@ -155,11 +164,16 @@ export function createUserCreditsStore(
     refresh,
     grant,
     applyCoupon,
-    dispose: () => {
-      disposed = true;
-      requestVersion += 1;
-      listeners.clear();
+    mount: () => {
+      lifecycleVersion += 1;
     },
+    release: () => {
+      const releaseVersion = ++lifecycleVersion;
+      queueMicrotask(() => {
+        if (releaseVersion === lifecycleVersion) dispose();
+      });
+    },
+    dispose,
   };
 }
 
@@ -172,10 +186,11 @@ export function useUserCredits(userId: string): UseUserCreditsResult {
   );
 
   useEffect(() => {
+    store.mount();
     void store.refresh().catch(() => {
       // The store exposes the server message for the card to render.
     });
-    return store.dispose;
+    return store.release;
   }, [store]);
 
   return {
