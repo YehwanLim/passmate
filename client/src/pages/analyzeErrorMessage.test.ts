@@ -27,6 +27,11 @@ describe("getAnalyzeErrorMessage", () => {
     ).toContain("일시적으로 중단");
   });
 
+  it("explains the beta free-analysis limit without treating it as a server failure", () => {
+    expect(getAnalyzeErrorMessage({ error: "ANALYSIS_CREDITS_EXHAUSTED" }))
+      .toContain("무료 분석");
+  });
+
   it("uses the shared auth profile button instead of a hard-coded login button in the header", () => {
     expect(analyzeSource).toContain("import AuthButton");
     expect(analyzeSource).toContain("<AuthButton />");
