@@ -26,6 +26,7 @@ describe("withApiHandler unexpected failures", () => {
     const secretMessage = "resume text and provider secret must never be logged";
     const failure = new Error(secretMessage);
     failure.code = "P2021";
+    failure.meta = { code: "42P01", message: secretMessage };
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const res = response();
 
@@ -38,6 +39,7 @@ describe("withApiHandler unexpected failures", () => {
       expect(res.body).toEqual({ error: "INTERNAL_ERROR", requestId: expect.any(String) });
       expect(errorLog).toHaveBeenCalledWith("[api] unexpected request failure", {
         code: "P2021",
+        databaseCode: "42P01",
         requestId: expect.any(String),
         statusCode: 500,
       });
