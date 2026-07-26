@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Request, type Response } from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,37 +6,23 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+type AnalyzeHandler = (req: Request, res: Response) => Promise<unknown>;
+
+async function handleAnalyze(req: Request, res: Response): Promise<void> {
+  // @ts-expect-error The Vercel handler remains JavaScript outside tsconfig inputs.
+  const analyzeModule = await import("../api/analyze.js");
+  const { default: analyzeHandler } = analyzeModule as { default: AnalyzeHandler };
+  await analyzeHandler(req, res);
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
   app.use(express.json());
 
   // API Routes
-  app.post("/api/analyze", async (req, res) => {
-    try {
-      const { questions, content, company, jobKeyword } = req.body;
-      
-      // 새 형식(questions[]) 또는 이전 형식(content string) 지원
-      if (!questions && (!content || typeof content !== "string")) {
-        return res.status(400).json({ error: "questions 또는 content가 필요합니다." });
-      }
-
-      const { analyzeCoverLetter } = await import("./api/analyze.js");
-      
-      const input = questions 
-        ? { questions, company, jobKeyword }
-        : content;
-      
-      const result = await analyzeCoverLetter(input);
-      
-      res.json(result);
-    } catch (error: any) {
-      console.error("Analyze error:", error);
-      const { getAnalyzeApiErrorResponse } = await import("./api/analyze.js");
-      const errorResponse = getAnalyzeApiErrorResponse(error);
-      res.status(errorResponse.status).json(errorResponse.body);
-    }
-  });
+  app.post("/api/analyze", handleAnalyze);
+  app.options("/api/analyze", handleAnalyze);
 
   // Gemini API 핑 테스트
   app.get("/api/test-gemini", async (_req, res) => {

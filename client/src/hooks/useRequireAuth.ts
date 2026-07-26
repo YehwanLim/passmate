@@ -2,6 +2,14 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 
+type RequireAuthOptions = {
+  redirectPath?: string;
+};
+
+export function getLoginRedirectPath(redirectPath?: string): string {
+  return redirectPath ? `/login?redirect=${encodeURIComponent(redirectPath)}` : "/login";
+}
+
 /**
  * useRequireAuth
  *
@@ -16,15 +24,15 @@ import { useAuth } from "@/contexts/AuthContext";
  *   return <PageContent />;
  * }
  */
-export function useRequireAuth() {
+export function useRequireAuth(options: RequireAuthOptions = {}) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      navigate("/login");
+      navigate(getLoginRedirectPath(options.redirectPath));
     }
-  }, [isLoading, isAuthenticated, navigate]);
+  }, [isLoading, isAuthenticated, navigate, options.redirectPath]);
 
   return { user, isLoading, isAuthenticated };
 }

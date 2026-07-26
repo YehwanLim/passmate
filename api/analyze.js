@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { getModelCallSequence } from "../lib/ai-model-settings.js";
+import { requireAuthenticatedUser } from "../lib/auth.js";
 import { MASTER_SYSTEM_PROMPT } from "../shared/prompts/reportPrompt.js";
 
 dotenv.config();
@@ -425,7 +426,7 @@ export default async function handler(req, res) {
   // CORS 처리 (필요시)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -436,7 +437,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const payload = req.body;
+    const user = await requireAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    let payload = req.body;
+    if (typeof payload === 'string') {
+      try {
+        payload = payload ? JSON.parse(payload) : undefined;
+      } catch {
+        return res.status(400).json({ error: 'INVALID_JSON', message: '요청 형식이 올바르지 않습니다.' });
+      }
+    }
     
     // 새 형식(questions[]) 또는 이전 형식(content string) 지원
     const input = payload?.questions ? payload : payload?.content;
