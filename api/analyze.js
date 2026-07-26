@@ -373,7 +373,7 @@ function buildUserPrompt(request) {
   return prompt;
 }
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 function buildFallbackData(request, errorMsg = "서버 연결에 실패했습니다.") {
   const company = request.company || "지원 기업";
