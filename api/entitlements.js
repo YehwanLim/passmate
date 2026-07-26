@@ -62,10 +62,12 @@ async function createPurchaseIntent(req, res, user) {
       userId: user.id,
     },
   });
+  const checkoutUrl = new URL(settings.groblePaymentUrl);
+  checkoutUrl.searchParams.set("ref", purchaseIntent.id);
 
   return res.status(201).json({
     purchaseIntentId: purchaseIntent.id,
-    checkoutUrl: settings.groblePaymentUrl,
+    checkoutUrl: checkoutUrl.toString(),
   });
 }
 

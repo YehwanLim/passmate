@@ -130,7 +130,7 @@ describe("entitlement APIs", () => {
 
   it("creates a pending purchase intent owned by the verified token user", async () => {
     mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
-      groblePaymentUrl: "https://payments.groble.example/checkout",
+      groblePaymentUrl: "https://payments.groble.example/checkout?campaign=summer",
       premiumEnabled: true,
     });
 
@@ -142,7 +142,7 @@ describe("entitlement APIs", () => {
 
     expect(response.statusCode).toBe(201);
     expect(response.body).toEqual({
-      checkoutUrl: "https://payments.groble.example/checkout",
+      checkoutUrl: "https://payments.groble.example/checkout?campaign=summer&ref=purchase-intent-1",
       purchaseIntentId: "purchase-intent-1",
     });
     expect(mocks.prisma.purchaseIntent.create).toHaveBeenCalledWith({
