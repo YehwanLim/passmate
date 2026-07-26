@@ -27,7 +27,26 @@ function createCorrelationId(event) {
   return hashIdentifier(`${event.providerPaymentId}:${event.purchaseIntentId}`);
 }
 
-function createSafeDiagnostic({ body, code, event }) {
+function createIdentifierDiagnostic(value) {
+  if (typeof value !== "string" || value.length === 0) {
+    return undefined;
+  }
+
+  return {
+    hash: hashIdentifier(value),
+    length: value.length,
+  };
+}
+
+function getHeaderNames(headers) {
+  if (!isRecord(headers)) {
+    return [];
+  }
+
+  return Object.keys(headers).map((name) => name.toLowerCase()).sort().slice(0, 40);
+}
+
+function createSafeDiagnostic({ body, code, event, headers }) {
   const data = isRecord(body?.data) ? body.data : null;
   const dataObject = isRecord(data?.object) ? data.object : null;
   const buyer = isRecord(dataObject?.buyer) ? dataObject.buyer : null;
@@ -42,6 +61,10 @@ function createSafeDiagnostic({ body, code, event }) {
     dataObjectKeys: dataObject ? Object.keys(dataObject).sort().slice(0, 40) : [],
     buyerKeys: buyer ? Object.keys(buyer).sort().slice(0, 30) : [],
     paymentKeys: payment ? Object.keys(payment).sort().slice(0, 30) : [],
+    eventIdHash: createIdentifierDiagnostic(body?.id)?.hash,
+    merchantUid: createIdentifierDiagnostic(dataObject?.merchantUid),
+    sellerReference: createIdentifierDiagnostic(dataObject?.sellerReference),
+    receivedHeaderNames: getHeaderNames(headers),
     paymentIdHash: event ? hashIdentifier(event.providerPaymentId) : undefined,
     purchaseIntentIdHash: event ? hashIdentifier(event.purchaseIntentId) : undefined,
   };
@@ -91,7 +114,11 @@ export function createGrobleWebhookHandler({
       if (event === null) {
         logger(
           "[api/webhooks/groble] ignored event",
-          createSafeDiagnostic({ body: req.body, code: "UNRECOGNIZED_GROBLE_EVENT" }),
+          createSafeDiagnostic({
+            body: req.body,
+            code: "UNRECOGNIZED_GROBLE_EVENT",
+            headers: req.headers,
+          }),
         );
         return res.status(204).end();
       }
@@ -139,6 +166,7 @@ export function createGrobleWebhookHandler({
           body: req.body,
           code: error.code,
           event,
+          headers: req.headers,
         });
         logger("[api/webhooks/groble] rejected event", diagnostic);
         return res.status(error.statusCode).json({
@@ -151,6 +179,7 @@ export function createGrobleWebhookHandler({
         body: req.body,
         code: "GROBLE_WEBHOOK_PROCESSING_FAILED",
         event,
+        headers: req.headers,
       });
       logger("[api/webhooks/groble] processing failed", diagnostic);
       return res.status(500).json({

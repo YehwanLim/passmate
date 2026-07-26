@@ -50,10 +50,10 @@ function verifiedPaidEvent(overrides = {}) {
   };
 }
 
-function invokeGrobleWebhook({ body = {}, handler, method = "POST" } = {}) {
+function invokeGrobleWebhook({ body = {}, handler, headers = {}, method = "POST" } = {}) {
   const response = createResponse();
   return handler(
-    { body, headers: {}, method, url: "/api/webhooks/groble" },
+    { body, headers, method, url: "/api/webhooks/groble" },
     response,
   ).then(() => response);
 }
@@ -138,6 +138,48 @@ describe("Groble webhook", () => {
     );
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
     expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
+  });
+
+  it("records safe delivery metadata for a Groble payment-completed event", async () => {
+    const payload = {
+      id: "evt_test_face2558c5c943848c77ebb7",
+      type: "payment.completed",
+      data: {
+        object: {
+          buyer: { email: "buyer@example.com", phoneNumber: "010-1234-5678" },
+          merchantUid: "merchant-order-42",
+          payment: { purchasedAt: "2026-07-26T11:53:18.812Z" },
+          sellerReference: "seller-reference-42",
+        },
+      },
+    };
+
+    await invokeGrobleWebhook({
+      body: payload,
+      handler: createGrobleWebhookHandler({ logger: mocks.logger }),
+      headers: {
+        authorization: "Bearer should-not-be-logged",
+        "x-groble-signature": "should-not-be-logged",
+      },
+    });
+
+    expect(mocks.logger).toHaveBeenCalledWith(
+      "[api/webhooks/groble] ignored event",
+      expect.objectContaining({
+        eventIdHash: expect.any(String),
+        merchantUid: { hash: expect.any(String), length: 17 },
+        sellerReference: { hash: expect.any(String), length: 19 },
+        receivedHeaderNames: ["authorization", "x-groble-signature"],
+      }),
+    );
+
+    const loggedDiagnostic = JSON.stringify(mocks.logger.mock.calls);
+    expect(loggedDiagnostic).not.toContain("evt_test_face2558c5c943848c77ebb7");
+    expect(loggedDiagnostic).not.toContain("merchant-order-42");
+    expect(loggedDiagnostic).not.toContain("seller-reference-42");
+    expect(loggedDiagnostic).not.toContain("buyer@example.com");
+    expect(loggedDiagnostic).not.toContain("010-1234-5678");
+    expect(loggedDiagnostic).not.toContain("should-not-be-logged");
   });
 
   it("rejects a malformed body without granting credits", async () => {
