@@ -6,7 +6,6 @@ describe("classifyStagingSchema", () => {
   it("uses only Prisma db push options supported by the pinned CLI", () => {
     expect(BOOTSTRAP_PRISMA_COMMANDS).toEqual([
       ["db", "push"],
-      ["migrate", "deploy"],
       ["migrate", "status"],
     ]);
   });
@@ -30,6 +29,26 @@ describe("classifyStagingSchema", () => {
       action: "abort",
       reason: "APPLICATION_TABLES_PRESENT",
     });
+  });
+
+  it("requires an explicit resume acknowledgement after the schema phase completed", () => {
+    expect(
+      classifyStagingSchema({
+        applicationTableNames: ["users"],
+        hasPrismaMigrationHistory: false,
+      }),
+    ).toEqual({
+      action: "abort",
+      reason: "APPLICATION_TABLES_PRESENT",
+    });
+
+    expect(
+      classifyStagingSchema({
+        applicationTableNames: ["users"],
+        hasPrismaMigrationHistory: false,
+        allowResume: true,
+      }),
+    ).toEqual({ action: "resume" });
   });
 
   it("refuses bootstrap when Prisma migration history already exists", () => {
