@@ -466,6 +466,7 @@ describe("atomic analyze API", () => {
   it("marks the request failed and cancels the reservation when the model fails", async () => {
     const finalizeReservation = vi.fn(async () => undefined);
     const cancelReservation = vi.fn(async () => undefined);
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const db = createDatabase();
     const handler = createAnalyzeHandler({
       cancelReservation,
@@ -480,24 +481,35 @@ describe("atomic analyze API", () => {
     });
     const res = response();
 
-    await handler(request(), res);
+    try {
+      await handler(request(), res);
 
-    expect(res.statusCode).toBe(500);
-    expect(res.body).toEqual({ error: "ANALYSIS_FAILED", requestId: expect.any(String) });
-    expect(db.analysis.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ errorCode: "API_ERROR", status: "FAILED" }),
-      where: { id: "analysis-1", status: "PENDING", userId: USER_ID },
-    }));
-    expect(cancelReservation).toHaveBeenCalledWith(expect.anything(), "reservation-1", USER_ID);
-    expect(finalizeReservation).not.toHaveBeenCalled();
-    expect(db.auditEvent.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        actorId: USER_ID,
-        outcome: "API_ERROR",
-        targetId: "analysis-1",
-        targetType: "analysis",
-      }),
-    }));
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({ error: "ANALYSIS_FAILED", requestId: expect.any(String) });
+      expect(db.analysis.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ errorCode: "API_ERROR", status: "FAILED" }),
+        where: { id: "analysis-1", status: "PENDING", userId: USER_ID },
+      }));
+      expect(cancelReservation).toHaveBeenCalledWith(expect.anything(), "reservation-1", USER_ID);
+      expect(finalizeReservation).not.toHaveBeenCalled();
+      expect(db.auditEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          actorId: USER_ID,
+          outcome: "API_ERROR",
+          targetId: "analysis-1",
+          targetType: "analysis",
+        }),
+      }));
+
+      expect(errorLog).toHaveBeenCalledWith("[api/analyze] model call failed", {
+        code: "API_ERROR",
+        providerStatusCode: null,
+        requestId: expect.any(String),
+      });
+      expect(JSON.stringify(errorLog.mock.calls)).not.toContain("provider details must not leave the server");
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 
   it("does not refund a completed provider call when report persistence fails", async () => {
