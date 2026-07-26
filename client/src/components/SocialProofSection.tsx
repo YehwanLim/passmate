@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Star } from "lucide-react";
 import {
   Carousel,
@@ -19,7 +19,19 @@ export {
   SUCCESSFUL_COMPANY_COUNT,
 } from "@/constants/socialProof";
 
-const marqueeCompanies = [...SUCCESSFUL_COMPANIES, ...SUCCESSFUL_COMPANIES];
+const marqueeCompanyGroups = [SUCCESSFUL_COMPANIES, SUCCESSFUL_COMPANIES];
+
+export function getSocialProofRevealProps(shouldReduceMotion: boolean) {
+  if (shouldReduceMotion) {
+    return { initial: false };
+  }
+
+  return {
+    initial: { opacity: 0, y: 32 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: "-80px" },
+  };
+}
 
 function TestimonialStars({ rating }: { rating: number }) {
   return (
@@ -39,6 +51,12 @@ function TestimonialStars({ rating }: { rating: number }) {
 }
 
 export default function SocialProofSection() {
+  const shouldReduceMotion = Boolean(useReducedMotion());
+  const revealProps = getSocialProofRevealProps(shouldReduceMotion);
+  const revealTransition = shouldReduceMotion
+    ? undefined
+    : { duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] as const };
+
   return (
     <section
       className="overflow-hidden border-t border-white/[0.04] py-28 md:py-36"
@@ -47,10 +65,8 @@ export default function SocialProofSection() {
       <div className="mx-auto max-w-6xl px-6 lg:px-10">
         <motion.div
           className="text-center"
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-          viewport={{ once: true, margin: "-80px" }}
+          {...revealProps}
+          transition={revealTransition}
         >
           <span className="mb-5 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-gray-600">
             <span className="h-px w-4 bg-gray-700" />
@@ -79,13 +95,17 @@ export default function SocialProofSection() {
         aria-label="합격 기업 목록"
       >
         <div className="social-proof-marquee-track" aria-hidden="true">
-          {marqueeCompanies.map((company, index) => (
-            <span
-              key={`${company.id}-${index}`}
-              className="social-proof-wordmark text-[15px] font-semibold tracking-[-0.035em] text-zinc-500 sm:text-[17px]"
-            >
-              {company.wordmark}
-            </span>
+          {marqueeCompanyGroups.map((companies, groupIndex) => (
+            <div className="social-proof-marquee-group" key={groupIndex}>
+              {companies.map(company => (
+                <span
+                  key={company.id}
+                  className="social-proof-wordmark text-[15px] font-semibold tracking-[-0.035em] text-zinc-500 sm:text-[17px]"
+                >
+                  {company.wordmark}
+                </span>
+              ))}
+            </div>
           ))}
         </div>
         <ul className="sr-only">
@@ -96,12 +116,7 @@ export default function SocialProofSection() {
       </div>
 
       <div className="mx-auto mt-20 max-w-6xl px-6 lg:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-          viewport={{ once: true, margin: "-80px" }}
-        >
+        <motion.div {...revealProps} transition={revealTransition}>
           <Carousel opts={{ align: "start", loop: false }} className="w-full">
             <div className="mb-6 flex items-end justify-between gap-6">
               <div>
@@ -129,7 +144,7 @@ export default function SocialProofSection() {
               {ACCEPTANCE_TESTIMONIALS.map(testimonial => (
                 <CarouselItem
                   key={testimonial.id}
-                  className="basis-[86%] sm:basis-1/2 lg:basis-1/3"
+                  className="basis-full sm:basis-1/2 lg:basis-1/3"
                 >
                   <article className="flex h-full min-h-[248px] flex-col rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-sm transition-colors duration-300 hover:border-white/[0.13]">
                     <TestimonialStars rating={testimonial.rating} />

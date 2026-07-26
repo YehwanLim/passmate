@@ -286,9 +286,15 @@
   display: flex;
   width: max-content;
   align-items: center;
-  gap: clamp(2.75rem, 7vw, 5rem);
   animation: social-proof-marquee 42s linear infinite;
   will-change: transform;
+}
+
+.social-proof-marquee-group {
+  display: flex;
+  align-items: center;
+  gap: clamp(2.75rem, 7vw, 5rem);
+  padding-right: clamp(2.75rem, 7vw, 5rem);
 }
 
 .social-proof-marquee:hover .social-proof-marquee-track {

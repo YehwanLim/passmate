@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import SocialProofSection, {
   ACCEPTANCE_TESTIMONIALS,
+  getSocialProofRevealProps,
   SUCCESSFUL_COMPANIES,
   SUCCESSFUL_COMPANY_COUNT,
 } from "./SocialProofSection";
@@ -49,5 +50,15 @@ describe("SocialProofSection", () => {
       expect(markup).toContain(testimonial.role);
       expect(markup).toContain(testimonial.period);
     }
+  });
+
+  it("uses one testimonial per view on mobile before expanding at larger breakpoints", () => {
+    const markup = renderToStaticMarkup(<SocialProofSection />);
+
+    expect(markup).toContain("basis-full sm:basis-1/2 lg:basis-1/3");
+  });
+
+  it("removes viewport reveal motion when the user prefers reduced motion", () => {
+    expect(getSocialProofRevealProps(true)).toEqual({ initial: false });
   });
 });
