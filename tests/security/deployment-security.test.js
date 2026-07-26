@@ -57,6 +57,14 @@ describe("beta deployment security configuration", () => {
     });
   });
 
+  it("keeps API requests out of the SPA fallback rewrite", () => {
+    const config = JSON.parse(read("vercel.json"));
+
+    expect(config.rewrites).toEqual([
+      { source: "/((?!api/).*)", destination: "/index.html" },
+    ]);
+  });
+
   it("backfills existing OAuth users before client profile writes are removed", () => {
     const migration = read("prisma/migrations/20260723_backfill_auth_users/migration.sql");
 
