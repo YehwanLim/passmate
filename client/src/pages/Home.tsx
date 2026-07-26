@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import ReportShowcase from "@/components/ReportShowcase";
+import SocialProofSection from "@/components/SocialProofSection";
 import ProcessSection from "@/components/ProcessSection";
 import PricingSection from "@/components/PricingSection";
 import FounderSection from "@/components/FounderSection";
@@ -114,57 +115,6 @@ function ScrollReveal({
     >
       {children}
     </motion.div>
-  );
-}
-
-/** Animated counter – ease-out cubic count-up when visible */
-function CountUp({
-  end,
-  suffix = "",
-  decimals = 0,
-}: {
-  end: number;
-  suffix?: string;
-  decimals?: number;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [display, setDisplay] = useState("0");
-  const animated = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !animated.current) {
-          animated.current = true;
-          const duration = 2000;
-          const start = performance.now();
-          const tick = (now: number) => {
-            const t = Math.min((now - start) / duration, 1);
-            const eased = 1 - Math.pow(1 - t, 3);
-            const val = eased * end;
-            setDisplay(
-              decimals > 0
-                ? val.toFixed(decimals)
-                : Math.floor(val).toLocaleString()
-            );
-            if (t < 1) requestAnimationFrame(tick);
-          };
-          requestAnimationFrame(tick);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [end, decimals]);
-
-  return (
-    <span ref={ref}>
-      {display}
-      {suffix}
-    </span>
   );
 }
 
@@ -586,41 +536,7 @@ export default function Home() {
           ══════════════════════════════════════════════════ */}
       <ReportShowcase />
 
-
-
-      {/* ── Stats ── */}
-      <section className="py-6 border-y border-white/[0.04]">
-        <div className="max-w-5xl mx-auto px-6 lg:px-10">
-          <div className="flex flex-wrap justify-center items-center gap-10 md:gap-20">
-            {[
-              { end: 1200, suffix: "+", label: "분석 완료" },
-              {
-                end: 4.8,
-                suffix: " / 5.0",
-                label: "유저 만족도",
-                decimals: 1,
-              },
-              { end: 10, suffix: "초", label: "평균 분석 시간" },
-            ].map(({ end, suffix, label, decimals }) => (
-              <div
-                key={label}
-                className="flex items-center gap-3"
-              >
-                <span className="text-[16px] font-bold text-white tabular-nums tracking-tight">
-                  <CountUp
-                    end={end}
-                    suffix={suffix}
-                    decimals={decimals ?? 0}
-                  />
-                </span>
-                <span className="text-[13px] text-gray-600 font-light">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <SocialProofSection />
 
       {/* ── System Diagram ── */}
       <section className="relative py-28 md:py-36 overflow-hidden">

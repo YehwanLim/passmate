@@ -65,4 +65,17 @@ describe("HOME_NAV_ITEMS", () => {
     expect(cssSource).toContain(".mobile-nav-panel");
     expect(cssSource).toContain(".mobile-nav-link:hover");
   });
+
+  it("places social proof directly after the report preview and before the analysis pipeline", () => {
+    expect(homeSource).toContain('import SocialProofSection from "@/components/SocialProofSection"');
+
+    const reportShowcaseIndex = homeSource.indexOf("<ReportShowcase />");
+    const socialProofIndex = homeSource.indexOf("<SocialProofSection />");
+    const pipelineIndex = homeSource.indexOf("분석 파이프라인");
+
+    expect(reportShowcaseIndex).toBeGreaterThan(-1);
+    expect(socialProofIndex).toBeGreaterThan(reportShowcaseIndex);
+    expect(pipelineIndex).toBeGreaterThan(socialProofIndex);
+    expect(homeSource).not.toContain('{ end: 1200, suffix: "+", label: "분석 완료" }');
+  });
 });

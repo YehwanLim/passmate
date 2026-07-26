@@ -245,6 +245,15 @@
   }
 }
 
+@keyframes social-proof-marquee {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .flow-dot {
   animation: flowRight 2.5s ease-in-out infinite;
 }
@@ -266,6 +275,33 @@
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.15));
   background-size: 200% 200%;
   animation: gradient-move 4s ease infinite;
+}
+
+.social-proof-marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.social-proof-marquee-track {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: clamp(2.75rem, 7vw, 5rem);
+  animation: social-proof-marquee 42s linear infinite;
+  will-change: transform;
+}
+
+.social-proof-marquee:hover .social-proof-marquee-track {
+  animation-play-state: paused;
+}
+
+.social-proof-wordmark {
+  white-space: nowrap;
+  transition: color 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.social-proof-wordmark:hover {
+  color: rgba(244, 244, 245, 0.98);
 }
 
 .landing-nav-link {
@@ -505,9 +541,15 @@
   .landing-primary-cta::before,
   .landing-primary-cta::after,
   .mobile-nav-toggle,
-  .mobile-nav-link {
+  .mobile-nav-link,
+  .social-proof-marquee-track,
+  .social-proof-wordmark {
     animation: none;
     transition-duration: 1ms;
+  }
+
+  .social-proof-marquee-track {
+    transform: translate3d(0, 0, 0);
   }
 
   .landing-nav-link:hover,
