@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { AuthorizationError } from "../../lib/auth.js";
 import { createAnalyzeHandler } from "../../api/analyze.js";
+import { runAllocatedAnalysis } from "../../lib/analysis-request-lifecycle.js";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const IDEMPOTENCY_KEY = "analysis-request-key-1234";
@@ -123,6 +124,94 @@ describe("atomic analyze API", () => {
     expect(model).not.toHaveBeenCalled();
   });
 
+  it("accepts a valid analysis before running its queued model work", async () => {
+    const queuedWork = [];
+    const model = vi.fn(async () => ({ report: "complete" }));
+    const handler = createAnalyzeHandler({
+      db: createDatabase(),
+      enqueueBackgroundWork: (work) => queuedWork.push(work),
+      model,
+      requireUser: activeUser,
+      reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+      consumeRateLimit: rateAllowed,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(202);
+    expect(res.body).toMatchObject({
+      analysis_id: "analysis-1",
+      analysis_request_id: "request-1",
+      project_id: "project-1",
+      status: "PENDING",
+    });
+    expect(res.body).not.toHaveProperty("report");
+    expect(model).not.toHaveBeenCalled();
+    expect(queuedWork).toHaveLength(1);
+  });
+
+  it("claims concurrent queued work once without cancelling the winning reservation", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const db = createDatabase();
+    let status = "PENDING";
+    db.analysisRequest.updateMany = vi.fn(async ({ data, where }) => {
+      if (where.status === "PENDING" && data.status === "CALLING") {
+        if (status !== "PENDING") return { count: 0 };
+        status = "CALLING";
+        return { count: 1 };
+      }
+      if (where.status === "CALLING" && data.status === "PERSISTENCE_PENDING") {
+        if (status !== "CALLING") return { count: 0 };
+        status = "PERSISTENCE_PENDING";
+        return { count: 1 };
+      }
+      if (where.status === "PERSISTENCE_PENDING" && data.status === "SUCCEEDED") {
+        if (status !== "PERSISTENCE_PENDING") return { count: 0 };
+        status = "SUCCEEDED";
+        return { count: 1 };
+      }
+      return { count: 0 };
+    });
+    const cancelReservation = vi.fn(async () => undefined);
+    const finalizeReservation = vi.fn(async () => undefined);
+    const model = vi.fn(async () => ({
+      analysisMeta: {
+        modelName: "test-model",
+        modelProvider: "test-provider",
+        responseTimeMs: 1,
+        tokenUsage: { completionTokens: 1, promptTokens: 1, totalTokens: 2 },
+      },
+      report: "complete",
+    }));
+    const allocation = {
+      analysis: { id: "analysis-1" },
+      analysisRequest: { id: "request-1" },
+      reservation: { reservationId: "reservation-1" },
+    };
+
+    try {
+      await Promise.all(Array.from({ length: 10 }, () => runAllocatedAnalysis({
+        allocation,
+        cancel: cancelReservation,
+        db,
+        finalize: finalizeReservation,
+        model,
+        request: request().body,
+        requestId: "request-id",
+        userId: USER_ID,
+      })));
+
+      expect(model).toHaveBeenCalledTimes(1);
+      expect(finalizeReservation).toHaveBeenCalledTimes(1);
+      expect(cancelReservation).not.toHaveBeenCalled();
+      expect(errorLog).not.toHaveBeenCalled();
+      expect(status).toBe("SUCCEEDED");
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+
   it("rejects a reused idempotency key with a different normalized request", async () => {
     const model = vi.fn();
     const handler = createAnalyzeHandler({
@@ -142,11 +231,17 @@ describe("atomic analyze API", () => {
     expect(model).not.toHaveBeenCalled();
   });
 
-  it("returns a conflict while an idempotent request is already pending", async () => {
+  it("returns an accepted receipt while an idempotent request is already pending", async () => {
     const model = vi.fn();
     const handler = createAnalyzeHandler({
       db: createDatabase({
-        existingRequest: { requestHash: requestHash(), status: "PENDING" },
+        existingRequest: {
+          analysis: { id: "analysis-1", projectId: "project-1" },
+          analysisId: "analysis-1",
+          id: "request-1",
+          requestHash: requestHash(),
+          status: "PENDING",
+        },
       }),
       model,
       requireUser: activeUser,
@@ -156,8 +251,14 @@ describe("atomic analyze API", () => {
 
     await handler(request(), res);
 
-    expect(res.statusCode).toBe(409);
-    expect(res.body.error).toBe("ANALYSIS_IN_PROGRESS");
+    expect(res.statusCode).toBe(202);
+    expect(res.body).toMatchObject({
+      analysis_id: "analysis-1",
+      analysis_request_id: "request-1",
+      project_id: "project-1",
+      status: "PENDING",
+    });
+    expect(res.body).not.toHaveProperty("report");
     expect(model).not.toHaveBeenCalled();
   });
 
@@ -165,6 +266,7 @@ describe("atomic analyze API", () => {
     const model = vi.fn();
     const db = createDatabase({
       existingRequest: {
+        analysis: { id: "analysis-1", projectId: "project-1" },
         analysisId: "analysis-1",
         expiresAt: new Date("2026-01-01T00:00:00.000Z"),
         id: "request-1",
@@ -199,6 +301,7 @@ describe("atomic analyze API", () => {
     const model = vi.fn();
     const db = createDatabase({
       existingRequest: {
+        analysis: { id: "analysis-1", projectId: "project-1" },
         analysisId: "analysis-1",
         expiresAt: new Date("2026-01-01T00:00:00.000Z"),
         id: "request-1",
@@ -217,8 +320,14 @@ describe("atomic analyze API", () => {
 
     await handler(request(), res);
 
-    expect(res.statusCode).toBe(409);
-    expect(res.body.error).toBe("ANALYSIS_IN_PROGRESS");
+    expect(res.statusCode).toBe(202);
+    expect(res.body).toMatchObject({
+      analysis_id: "analysis-1",
+      analysis_request_id: "request-1",
+      project_id: "project-1",
+      status: "CALLING",
+    });
+    expect(res.body).not.toHaveProperty("report");
     expect(db.analysis.updateMany).not.toHaveBeenCalled();
     expect(db.analysisReservation.updateMany).not.toHaveBeenCalled();
     expect(model).not.toHaveBeenCalled();
@@ -266,8 +375,10 @@ describe("atomic analyze API", () => {
       },
     });
     const model = vi.fn(async () => ({ report: "fresh" }));
+    const queuedWork = [];
     const handler = createAnalyzeHandler({
       db,
+      enqueueBackgroundWork: (work) => queuedWork.push(work),
       model,
       requireUser: activeUser,
       reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
@@ -277,14 +388,16 @@ describe("atomic analyze API", () => {
 
     await handler(request({ headers: { "idempotency-key": "fresh-analysis-request-1234" } }), res);
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(202);
     expect(db.analysisReservation.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: "stale-reservation", status: "PENDING", userId: USER_ID },
     }));
+    expect(model).not.toHaveBeenCalled();
+    await queuedWork[0]();
     expect(model).toHaveBeenCalledTimes(1);
   });
 
-  it("returns a stored report when the matching idempotent request already succeeded", async () => {
+  it("returns a stored receipt when the matching idempotent request already succeeded", async () => {
     const model = vi.fn();
     const consumeRateLimit = vi.fn(async () => ({ allowed: false, retryAfterSeconds: 900 }));
     const existingRequest = {
@@ -307,8 +420,9 @@ describe("atomic analyze API", () => {
     expect(res.body).toMatchObject({
       analysis_id: "analysis-1",
       project_id: "project-1",
-      report: { report: "stored" },
+      status: "SUCCEEDED",
     });
+    expect(res.body).not.toHaveProperty("report");
     expect(model).not.toHaveBeenCalled();
     expect(consumeRateLimit).not.toHaveBeenCalled();
     expect(db.entitlementSetting.findUnique).not.toHaveBeenCalled();
@@ -348,8 +462,9 @@ describe("atomic analyze API", () => {
     expect(res.body).toMatchObject({
       analysis_id: "analysis-1",
       project_id: "project-1",
-      report: { report: "staged" },
+      status: "SUCCEEDED",
     });
+    expect(res.body).not.toHaveProperty("report");
     expect(finalizeReservation).toHaveBeenCalledWith(expect.anything(), "reservation-1", USER_ID);
     expect(model).not.toHaveBeenCalled();
   });
@@ -385,7 +500,8 @@ describe("atomic analyze API", () => {
     await handler(request({ headers: { "idempotency-key": "refreshed-analysis-request-1234" } }), res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({ analysis_id: "analysis-1", report: { report: "staged" } });
+    expect(res.body).toMatchObject({ analysis_id: "analysis-1", status: "SUCCEEDED" });
+    expect(res.body).not.toHaveProperty("report");
     expect(model).not.toHaveBeenCalled();
     expect(consumeRateLimit).not.toHaveBeenCalled();
   });
@@ -429,9 +545,11 @@ describe("atomic analyze API", () => {
     const finalizeReservation = vi.fn(async () => undefined);
     const cancelReservation = vi.fn(async () => undefined);
     const db = createDatabase();
+    const queuedWork = [];
     const handler = createAnalyzeHandler({
       cancelReservation,
       db,
+      enqueueBackgroundWork: (work) => queuedWork.push(work),
       finalizeReservation,
       model: async () => ({
         analysisMeta: {
@@ -450,7 +568,8 @@ describe("atomic analyze API", () => {
 
     await handler(request(), res);
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(202);
+    await queuedWork[0]();
     expect(db.analysis.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: "SUCCESS" }),
       where: { id: "analysis-1" },
@@ -463,10 +582,11 @@ describe("atomic analyze API", () => {
     expect(cancelReservation).not.toHaveBeenCalled();
   });
 
-  it("persists a valid Gemini result that arrives after 25 seconds but before the function deadline", async () => {
+  it("persists a valid Gemini result that arrives after the former 45 second cutoff", async () => {
     vi.useFakeTimers();
     const db = createDatabase();
     const res = response();
+    const queuedWork = [];
     const fetchMock = vi.fn((_url, { signal }) => new Promise((resolve, reject) => {
       const responseTimer = setTimeout(() => {
         resolve({
@@ -477,7 +597,7 @@ describe("atomic analyze API", () => {
             usageMetadata: { candidatesTokenCount: 1, promptTokenCount: 1, totalTokenCount: 2 },
           }),
         });
-      }, 30_000);
+      }, 50_000);
       signal.addEventListener("abort", () => {
         clearTimeout(responseTimer);
         reject(new DOMException("The operation was aborted.", "AbortError"));
@@ -489,22 +609,28 @@ describe("atomic analyze API", () => {
     try {
       const handler = createAnalyzeHandler({
         db,
+        enqueueBackgroundWork: (work) => queuedWork.push(work),
         requireUser: activeUser,
         reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
         consumeRateLimit: rateAllowed,
       });
-      const requestPromise = handler(request(), res);
+      await handler(request(), res);
+      const backgroundPromise = queuedWork[0]();
 
-      await vi.advanceTimersByTimeAsync(30_000);
-      await requestPromise;
+      await vi.advanceTimersByTimeAsync(50_000);
+      await backgroundPromise;
 
-      expect(res.statusCode).toBe(200);
+      expect(res.statusCode).toBe(202);
       expect(res.body).toMatchObject({
         analysis_id: "analysis-1",
         project_id: "project-1",
-        report: {},
+        status: "PENDING",
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(db.analysis.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ status: "SUCCESS" }),
+        where: { id: "analysis-1" },
+      }));
     } finally {
       vi.unstubAllEnvs();
       vi.unstubAllGlobals();
@@ -517,9 +643,11 @@ describe("atomic analyze API", () => {
     const cancelReservation = vi.fn(async () => undefined);
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const db = createDatabase();
+    const queuedWork = [];
     const handler = createAnalyzeHandler({
       cancelReservation,
       db,
+      enqueueBackgroundWork: (work) => queuedWork.push(work),
       finalizeReservation,
       model: async () => {
         throw new Error("provider details must not leave the server");
@@ -532,9 +660,10 @@ describe("atomic analyze API", () => {
 
     try {
       await handler(request(), res);
+      await queuedWork[0]();
 
-      expect(res.statusCode).toBe(500);
-      expect(res.body).toEqual({ error: "ANALYSIS_FAILED", requestId: expect.any(String) });
+      expect(res.statusCode).toBe(202);
+      expect(res.body).toMatchObject({ status: "PENDING", requestId: expect.any(String) });
       expect(db.analysis.updateMany).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({ errorCode: "API_ERROR", status: "FAILED" }),
         where: { id: "analysis-1", status: "PENDING", userId: USER_ID },
@@ -564,10 +693,12 @@ describe("atomic analyze API", () => {
   it("does not refund a completed provider call when report persistence fails", async () => {
     const cancelReservation = vi.fn(async () => undefined);
     const db = createDatabase();
+    const queuedWork = [];
     db.tokenUsage.create.mockRejectedValue(new Error("database write unavailable"));
     const handler = createAnalyzeHandler({
       cancelReservation,
       db,
+      enqueueBackgroundWork: (work) => queuedWork.push(work),
       model: async () => ({
         analysisMeta: {
           modelName: "test-model",
@@ -584,9 +715,10 @@ describe("atomic analyze API", () => {
     const res = response();
 
     await handler(request(), res);
+    await queuedWork[0]();
 
-    expect(res.statusCode).toBe(503);
-    expect(res.body.error).toBe("ANALYSIS_PERSISTENCE_PENDING");
+    expect(res.statusCode).toBe(202);
+    expect(res.body).toMatchObject({ status: "PENDING" });
     expect(cancelReservation).not.toHaveBeenCalled();
     expect(db.analysisRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: "PERSISTENCE_PENDING" }),

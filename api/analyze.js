@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { waitUntil } from "@vercel/functions";
 
 import { getModelCallSequence, readAiModelSettings } from "../lib/ai-model-settings.js";
 import {
@@ -6,8 +7,22 @@ import {
   finalizeAnalysisReservation,
   reserveAnalysis,
 } from "../lib/analysis-entitlements.js";
+import {
+  ANALYSIS_MODEL_TIMEOUT_MS,
+  ANALYSIS_REQUEST_SELECT,
+  ANALYSIS_REQUEST_TTL_MS,
+  AnalysisModelFailureError as ModelFailureError,
+  analysisReceipt,
+  expirePendingRequest,
+  expireStaleRequestsForUser,
+  failUnstartedAnalysis,
+  findExistingRequest,
+  findUnfinishedRequest,
+  idempotencyResult,
+  recoverStagedRequest,
+  runAllocatedAnalysis,
+} from "../lib/analysis-request-lifecycle.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../lib/api-handler.js";
-import { recordAuditEvent } from "../lib/audit-log.js";
 import { requireActiveApplicationUser } from "../lib/auth.js";
 import { consumeUserRateLimit, USER_RATE_LIMITS } from "../lib/rate-limit.js";
 import prisma from "../lib/prisma.js";
@@ -15,18 +30,7 @@ import { MASTER_SYSTEM_PROMPT } from "../shared/prompts/reportPrompt.js";
 
 const SETTINGS_ID = "singleton";
 const FALLBACK_RETRY_DELAY_MS = 3000;
-// Keep enough of Vercel's 60-second function window for staging and persisting
-// the provider result after a slow-but-valid model response.
-const MODEL_CALL_TIMEOUT_MS = 45000;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
-
-class ModelFailureError extends Error {
-  constructor(code) {
-    super(code);
-    this.name = "ModelFailureError";
-    this.code = code;
-  }
-}
 
 function sanitizeInput(value) {
   return String(value ?? "")
@@ -194,7 +198,7 @@ export { getAnalyzeApiErrorResponse };
 
 async function fetchWithTimeout(url, options) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), MODEL_CALL_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), ANALYSIS_MODEL_TIMEOUT_MS);
   const startedAt = Date.now();
   try {
     const response = await fetch(url, { ...options, signal: controller.signal });
@@ -305,152 +309,6 @@ async function analyzeCoverLetter(request, db = prisma) {
   throw lastError ?? new ModelFailureError("API_ERROR");
 }
 
-function modelMetadata(value) {
-  const meta = isRecord(value) ? value : {};
-  const usage = isRecord(meta.tokenUsage) ? meta.tokenUsage : {};
-  const number = (candidate) => Number.isFinite(Number(candidate)) ? Number(candidate) : null;
-  return {
-    modelName: typeof meta.modelName === "string" && meta.modelName.length > 0 ? meta.modelName : null,
-    modelProvider: typeof meta.modelProvider === "string" && meta.modelProvider.length > 0 ? meta.modelProvider : null,
-    responseTimeMs: number(meta.responseTimeMs),
-    httpStatus: number(meta.httpStatus),
-    tokenUsage: {
-      promptTokens: number(usage.promptTokens) ?? 0,
-      completionTokens: number(usage.completionTokens) ?? 0,
-      totalTokens: number(usage.totalTokens) ?? 0,
-    },
-  };
-}
-
-function classifyFailure(error) {
-  if (error?.name === "AbortError") return { code: "TIMEOUT", statusCode: 504 };
-  if (error?.code === "PARSE_ERROR") return { code: "PARSE_ERROR", statusCode: 500 };
-  if (error?.code === "CONTEXT_IRRELEVANT") return { code: "CONTEXT_IRRELEVANT", statusCode: 400 };
-  return { code: "API_ERROR", statusCode: 500 };
-}
-
-function idempotencyResult(existing, hash) {
-  if (!existing) return null;
-  if (existing.requestHash !== hash) throw new ApiError("IDEMPOTENCY_KEY_REUSED", 409);
-  if (existing.status === "PENDING" || existing.status === "CALLING") {
-    throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
-  }
-  if (existing.status === "FAILED") throw new ApiError("ANALYSIS_RETRY_WITH_NEW_KEY", 409);
-  if (existing.status === "SUCCEEDED" && existing.analysis) {
-    return {
-      analysisId: existing.analysis.id,
-      projectId: existing.analysis.projectId,
-      report: existing.analysis.aiResponseJson,
-    };
-  }
-  throw new ApiError("ANALYSIS_RETRY_WITH_NEW_KEY", 409);
-}
-
-const ANALYSIS_REQUEST_SELECT = {
-  requestHash: true,
-  status: true,
-  expiresAt: true,
-  id: true,
-  reservationId: true,
-  analysisId: true,
-  idempotencyKey: true,
-  providerMetadata: true,
-  providerResult: true,
-  analysis: { select: { id: true, projectId: true, aiResponseJson: true } },
-};
-
-function analysisResponse({ analysisId, projectId, report, requestId }) {
-  return {
-    analysis_id: analysisId,
-    project_id: projectId,
-    report,
-    requestId,
-  };
-}
-
-async function findExistingRequest(tx, userId, idempotencyKey) {
-  return tx.analysisRequest.findUnique({
-    where: { userId_idempotencyKey: { userId, idempotencyKey } },
-    select: ANALYSIS_REQUEST_SELECT,
-  });
-}
-
-async function findUnfinishedRequest(tx, userId, hash) {
-  if (!tx.analysisRequest?.findFirst) return null;
-  return tx.analysisRequest.findFirst({
-    where: {
-      userId,
-      requestHash: hash,
-      status: { in: ["PENDING", "CALLING", "PERSISTENCE_PENDING"] },
-    },
-    orderBy: { createdAt: "asc" },
-    select: ANALYSIS_REQUEST_SELECT,
-  });
-}
-
-function isExpiredPendingRequest(existing, now = new Date()) {
-  // CALLING has crossed the external-provider boundary. Without a provider
-  // result lookup API, releasing it automatically could buy a second model
-  // invocation after an ambiguous provider success. Operators reconcile that
-  // state through the protected admin route instead.
-  if (existing?.status !== "PENDING" || !existing.expiresAt) return false;
-  const expiry = new Date(existing.expiresAt);
-  return Number.isFinite(expiry.getTime()) && expiry.getTime() <= now.getTime();
-}
-
-async function expirePendingRequest({ db, existing, requestId, userId }) {
-  if (!isExpiredPendingRequest(existing)) return existing;
-
-  return db.$transaction(async (tx) => {
-    const current = await findExistingRequest(tx, userId, existing.idempotencyKey);
-    if (!isExpiredPendingRequest(current)) return current;
-    const now = new Date();
-    const claimed = await tx.analysisRequest.updateMany({
-      where: { id: current.id, status: "PENDING", expiresAt: { lte: now } },
-      data: { status: "FAILED" },
-    });
-    if (claimed.count !== 1) {
-      return findExistingRequest(tx, userId, existing.idempotencyKey);
-    }
-
-    if (current.analysisId) {
-      await tx.analysis.updateMany({
-        where: { id: current.analysisId, status: "PENDING", userId },
-        data: { status: "FAILED", errorCode: "API_ERROR", errorMessage: null },
-      });
-    }
-    if (current.reservationId) {
-      await tx.analysisReservation.updateMany({
-        where: { id: current.reservationId, status: "PENDING", userId },
-        data: { status: "CANCELLED", cancelledAt: new Date() },
-      });
-    }
-    await recordAuditEvent({
-      actorId: userId,
-      db: tx,
-      outcome: "EXPIRED",
-      requestId,
-      targetId: current.analysisId,
-      targetType: "analysis",
-    });
-
-    return { ...current, status: "FAILED" };
-  });
-}
-
-async function expireStaleRequestsForUser({ db, requestId, userId }) {
-  if (!db.analysisRequest?.findMany) return;
-  const expired = await db.analysisRequest.findMany({
-    where: { userId, status: "PENDING", expiresAt: { lte: new Date() } },
-    select: ANALYSIS_REQUEST_SELECT,
-    take: 20,
-  });
-
-  for (const existing of expired) {
-    await expirePendingRequest({ db, existing, requestId, userId });
-  }
-}
-
 async function allocateAnalysisRequest({ db, hash, idempotencyKey, request, reserve, userId }) {
   return db.$transaction(async (tx) => {
     const existing = await findExistingRequest(tx, userId, idempotencyKey);
@@ -483,128 +341,10 @@ async function allocateAnalysisRequest({ db, hash, idempotencyKey, request, rese
         requestHash: hash,
         reservationId: reservation.reservationId,
         analysisId: analysis.id,
+        expiresAt: new Date(Date.now() + ANALYSIS_REQUEST_TTL_MS),
       },
     });
     return { type: "new", analysis, analysisRequest, project, reservation };
-  });
-}
-
-async function beginProviderCall({ db, requestId }) {
-  const claimed = await db.$transaction((tx) => tx.analysisRequest.updateMany({
-    where: { id: requestId, status: "PENDING" },
-    data: { status: "CALLING" },
-  }));
-  if (claimed.count !== 1) throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
-}
-
-async function stageProviderResult({ db, metadata, report, requestId }) {
-  const claimed = await db.$transaction((tx) => tx.analysisRequest.updateMany({
-    where: { id: requestId, status: "CALLING" },
-    data: {
-      status: "PERSISTENCE_PENDING",
-      providerMetadata: metadata,
-      providerResult: report,
-    },
-  }));
-  if (claimed.count !== 1) throw new ApiError("ANALYSIS_PERSISTENCE_PENDING", 409);
-}
-
-function allocationFromExisting(existing) {
-  return {
-    analysis: { id: existing.analysisId },
-    analysisRequest: { id: existing.id },
-    project: { id: existing.analysis?.projectId },
-    reservation: { reservationId: existing.reservationId },
-  };
-}
-
-async function recoverStagedRequest({ db, existing, finalize, userId }) {
-  if (!existing.analysis || !isRecord(existing.providerResult) || !isRecord(existing.providerMetadata)) {
-    return null;
-  }
-  try {
-    await finalizeAnalysis({
-      allocation: allocationFromExisting(existing),
-      db,
-      finalize,
-      metadata: modelMetadata(existing.providerMetadata),
-      report: existing.providerResult,
-      userId,
-    });
-    return {
-      analysisId: existing.analysis.id,
-      projectId: existing.analysis.projectId,
-      report: existing.providerResult,
-    };
-  } catch {
-    return null;
-  }
-}
-
-async function finalizeAnalysis({ db, allocation, finalize, metadata, report, userId }) {
-  await db.$transaction(async (tx) => {
-    const claimed = await tx.analysisRequest.updateMany({
-      where: { id: allocation.analysisRequest.id, status: "PERSISTENCE_PENDING" },
-      // The durable staging copy is needed only until this transaction commits;
-      // keep the report solely on Analysis afterwards to minimise duplicate PII.
-      data: { providerMetadata: null, providerResult: null, status: "SUCCEEDED" },
-    });
-    if (claimed.count !== 1) {
-      throw new ModelFailureError("API_ERROR");
-    }
-    await tx.analysis.update({
-      where: { id: allocation.analysis.id },
-      data: {
-        aiResponseJson: report,
-        status: "SUCCESS",
-        modelName: metadata.modelName,
-        modelProvider: metadata.modelProvider,
-        responseTime: metadata.responseTimeMs,
-      },
-    });
-    if (metadata.modelName && metadata.modelProvider) {
-      await tx.tokenUsage.create({
-        data: {
-          analysisId: allocation.analysis.id,
-          modelName: metadata.modelName,
-          modelProvider: metadata.modelProvider,
-          promptTokens: metadata.tokenUsage.promptTokens,
-          completionTokens: metadata.tokenUsage.completionTokens,
-          totalTokens: metadata.tokenUsage.totalTokens,
-          cost: null,
-          costCurrency: "USD",
-          callType: "ANALYSIS",
-          latencyMs: metadata.responseTimeMs,
-          httpStatus: metadata.httpStatus,
-          isSuccess: true,
-        },
-      });
-    }
-    await finalize(tx, allocation.reservation.reservationId, userId);
-  });
-}
-
-async function failAnalysis({ allocation, cancel, db, failure, requestId, userId }) {
-  await db.$transaction(async (tx) => {
-    const claimed = await tx.analysisRequest.updateMany({
-      where: { id: allocation.analysisRequest.id, status: "CALLING" },
-      data: { status: "FAILED" },
-    });
-    if (claimed.count !== 1) return false;
-    await tx.analysis.updateMany({
-      where: { id: allocation.analysis.id, status: "PENDING", userId },
-      data: { status: "FAILED", errorCode: failure.code, errorMessage: null },
-    });
-    await cancel(tx, allocation.reservation.reservationId, userId);
-    await recordAuditEvent({
-      actorId: userId,
-      db: tx,
-      outcome: failure.code,
-      requestId,
-      targetId: allocation.analysis.id,
-      targetType: "analysis",
-    });
-    return true;
   });
 }
 
@@ -612,6 +352,7 @@ export function createAnalyzeHandler({
   cancelReservation = cancelAnalysisReservation,
   consumeRateLimit = consumeUserRateLimit,
   db = prisma,
+  enqueueBackgroundWork = (work) => waitUntil(work()),
   finalizeReservation = finalizeAnalysisReservation,
   model = analyzeCoverLetter,
   requireUser = requireActiveApplicationUser,
@@ -652,12 +393,21 @@ export function createAnalyzeHandler({
           userId: applicationUser.id,
         });
         return recovered
-          ? sendJson(res, 200, analysisResponse({ ...recovered, requestId }), requestId)
+          ? sendJson(res, 200, analysisReceipt({
+            analysisId: recovered.analysisId,
+            analysisRequestId: existing.id,
+            projectId: recovered.projectId,
+            requestId,
+            status: "SUCCEEDED",
+          }), requestId)
           : sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
       }
       const stored = idempotencyResult(existing, hash);
       if (stored) {
-        return sendJson(res, 200, analysisResponse({ ...stored, requestId }), requestId);
+        return sendJson(res, stored.status === "SUCCEEDED" ? 200 : 202, analysisReceipt({
+          ...stored,
+          requestId,
+        }), requestId);
       }
 
       // A refresh loses the client-held idempotency key. Find unfinished work
@@ -671,7 +421,13 @@ export function createAnalyzeHandler({
           userId: applicationUser.id,
         });
         return recovered
-          ? sendJson(res, 200, analysisResponse({ ...recovered, requestId }), requestId)
+          ? sendJson(res, 200, analysisReceipt({
+            analysisId: recovered.analysisId,
+            analysisRequestId: unfinished.id,
+            projectId: recovered.projectId,
+            requestId,
+            status: "SUCCEEDED",
+          }), requestId)
           : sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
       }
       if (unfinished) return sendError(res, 409, "ANALYSIS_IN_PROGRESS", requestId);
@@ -708,83 +464,57 @@ export function createAnalyzeHandler({
         const existing = await findExistingRequest(db, applicationUser.id, idempotencyKey);
         const stored = idempotencyResult(existing, hash);
         if (stored) {
-          return sendJson(res, 200, analysisResponse({ ...stored, requestId }), requestId);
+          return sendJson(res, stored.status === "SUCCEEDED" ? 200 : 202, analysisReceipt({
+            ...stored,
+            requestId,
+          }), requestId);
         }
         throw new ApiError("ANALYSIS_IN_PROGRESS", 409);
       }
 
       if (allocation.type === "stored") {
-        return sendJson(res, 200, analysisResponse({
+        return sendJson(res, allocation.status === "SUCCEEDED" ? 200 : 202, analysisReceipt({
           analysisId: allocation.analysisId,
+          analysisRequestId: allocation.analysisRequestId,
           projectId: allocation.projectId,
-          report: allocation.report,
           requestId,
+          status: allocation.status,
         }), requestId);
       }
 
-      let providerCompleted = false;
       try {
-        await beginProviderCall({ db, requestId: allocation.analysisRequest.id });
-        const modelResult = await model(request, db);
-        if (!isRecord(modelResult)) throw new ModelFailureError("PARSE_ERROR");
-        if (modelResult.error === "CONTEXT_IRRELEVANT") {
-          throw new ModelFailureError("CONTEXT_IRRELEVANT");
-        }
-        const { analysisMeta, ...report } = modelResult;
-        const metadata = modelMetadata(analysisMeta);
-        providerCompleted = true;
-        await stageProviderResult({
-          db,
-          metadata,
-          report,
-          requestId: allocation.analysisRequest.id,
-        });
-        await finalizeAnalysis({
+        enqueueBackgroundWork(() => runAllocatedAnalysis({
           allocation,
+          cancel: cancelReservation,
           db,
           finalize: finalizeReservation,
-          metadata,
-          report,
+          model,
+          request,
+          requestId,
+          userId: applicationUser.id,
+        }));
+      } catch {
+        await failUnstartedAnalysis({
+          allocation,
+          cancel: cancelReservation,
+          db,
+          requestId,
           userId: applicationUser.id,
         });
-        return sendJson(res, 200, analysisResponse({
-          analysisId: allocation.analysis.id,
-          projectId: allocation.project.id,
-          report,
-          requestId,
-        }), requestId);
-      } catch (error) {
-        if (providerCompleted) {
-          // The provider result is durably staged (or the request remains in
-          // CALLING if the database was unavailable). Never refund this
-          // reservation based on an ambiguous post-provider failure; the same
-          // idempotency key is the recovery handle.
-          return sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
-        }
-        const failure = classifyFailure(error);
-        console.error("[api/analyze] model call failed", {
-          code: failure.code,
-          providerStatusCode: Number.isInteger(error?.statusCode) ? error.statusCode : null,
-          requestId,
-        });
-        try {
-          await failAnalysis({
-            allocation,
-            cancel: cancelReservation,
-            db,
-            failure,
-            requestId,
-            userId: applicationUser.id,
-          });
-        } catch {
-          // The original model failure remains the only client-visible state.
-        }
-        return sendError(res, failure.statusCode, failure.code === "CONTEXT_IRRELEVANT" ? failure.code : "ANALYSIS_FAILED", requestId);
+        return sendError(res, 503, "ANALYSIS_FAILED", requestId);
       }
+
+      return sendJson(res, 202, analysisReceipt({
+        analysisId: allocation.analysis.id,
+        analysisRequestId: allocation.analysisRequest.id,
+        projectId: allocation.project.id,
+        requestId,
+        status: "PENDING",
+      }), requestId);
     });
   };
 }
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export default createAnalyzeHandler();
