@@ -121,7 +121,7 @@ export function trackAnalysisComplete(
  * GA4 이벤트: analysis_failed
  *
  * @param analysisType  분석 유형 (예: "cover_letter")
- * @param errorType     에러 유형 ("timeout" | "rate_limit" | "parse_error" | "server_error" | "fallback_detected")
+ * @param errorType     에러 유형 ("timeout" | "rate_limit" | "parse_error" | "server_error" | "fallback_detected" | "analysis_concurrency_limited")
  */
 export function trackAnalysisFailed(
   analysisType: string = "cover_letter",

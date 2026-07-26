@@ -35,6 +35,15 @@ describe("getAnalyzeErrorMessage", () => {
     expect(getAnalyzeErrorTitle({ error: "RATE_LIMITED" })).toBe("요청 제한");
   });
 
+  it("explains the concurrency limit without exposing entitlement details", () => {
+    const error = { error: "ANALYSIS_CONCURRENCY_LIMITED" };
+
+    expect(getAnalyzeErrorTitle(error)).toBe("분석 진행 중");
+    expect(getAnalyzeErrorMessage(error)).toContain("진행 중인 분석");
+    expect(getAnalyzeErrorMessage(error)).not.toMatch(/이용권|premium|\d+회/i);
+    expect(analyzeSource).toContain('trackAnalysisFailed("cover_letter", "analysis_concurrency_limited")');
+  });
+
   it("explains the beta free-analysis limit without treating it as a server failure", () => {
     expect(getAnalyzeErrorMessage({ error: "ANALYSIS_CREDITS_EXHAUSTED" }))
       .toContain("무료 분석");
