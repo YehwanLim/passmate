@@ -90,6 +90,19 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
   return UI_LABELS.ANALYSIS_FAILED;
 }
 
+export function getAnalyzeErrorTitle(
+  errorData: unknown,
+  status?: number
+): string {
+  const { error } =
+    errorData && typeof errorData === "object"
+      ? (errorData as { error?: unknown })
+      : {};
+
+  if (status === 429 || error === "RATE_LIMITED") return "요청 제한";
+  return "분석 실패";
+}
+
 const LOADING_STEPS = {
   1: {
     icon: FileSearch,
@@ -752,16 +765,6 @@ export default function Analyze() {
         body: JSON.stringify(requestPayload),
       });
 
-      // Rate Limit (429)
-      if (response.status === 429) {
-        trackAnalysisFailed("cover_letter", "rate_limit");
-        setErrorModal({
-          title: "요청 제한",
-          message: UI_LABELS.RATE_LIMIT_ERROR,
-        });
-        return;
-      }
-
       // 분석 접수 실패
       if (response.status !== 202 && response.status !== 200) {
         let errorData;
@@ -769,6 +772,14 @@ export default function Analyze() {
           errorData = await response.json();
         } catch {
           /* ignore */
+        }
+        if (getAnalyzeErrorTitle(errorData, response.status) === "요청 제한") {
+          trackAnalysisFailed("cover_letter", "rate_limit");
+          setErrorModal({
+            title: "요청 제한",
+            message: UI_LABELS.RATE_LIMIT_ERROR,
+          });
+          return;
         }
         if (errorData?.error === "CONTEXT_IRRELEVANT") {
           trackAnalysisFailed("cover_letter", "context_irrelevant");
@@ -780,7 +791,7 @@ export default function Analyze() {
         }
         trackAnalysisFailed("cover_letter", "server_error");
         setErrorModal({
-          title: "분석 실패",
+          title: getAnalyzeErrorTitle(errorData, response.status),
           message: getAnalyzeErrorMessage(errorData),
         });
         return;
