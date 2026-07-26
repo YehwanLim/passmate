@@ -9,6 +9,8 @@ describe("admin users Supabase schema usage", () => {
     const detailHook = read("client/src/hooks/admin/useUserDetail.ts");
 
     expect(listHook).toContain("avatar_url");
+    expect(listHook).toContain('import { fetchUserCreditSummaries, type CreditSummary } from "@/lib/admin-credits"');
+    expect(listHook).toContain("fetchUserCreditSummaries(rows.map((row) => row.id))");
     expect(detailHook).toContain("avatar_url");
     expect(listHook).not.toContain("profile_image,");
     expect(detailHook).not.toContain("profile_image, provider");

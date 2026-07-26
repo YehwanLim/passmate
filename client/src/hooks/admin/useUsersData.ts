@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { fetchUserCreditSummaries, type CreditSummary } from "@/lib/admin-credits";
 import { supabase } from "@/lib/supabase";
 
 // ============================================================
@@ -22,6 +23,8 @@ export interface AdminUserRow {
   analysis_count: number;
   /** projects 테이블 COUNT */
   project_count: number;
+  /** 서버에서 계산된 남은 이용권 수 */
+  remaining_credits: number | null;
 }
 
 export interface UseUsersDataParams {
@@ -39,6 +42,22 @@ interface UseUsersDataResult {
   isLoading: boolean;
   error: string | null;
   refresh: () => void;
+}
+
+export function mergeUserCreditSummaries(
+  users: AdminUserRow[],
+  summaries: CreditSummary[],
+): AdminUserRow[] {
+  const remainingCreditsByUserId = new Map(
+    summaries
+      .filter((summary): summary is CreditSummary & { userId: string } => typeof summary.userId === "string")
+      .map((summary) => [summary.userId, summary.remaining]),
+  );
+
+  return users.map((user) => ({
+    ...user,
+    remaining_credits: remainingCreditsByUserId.get(user.id) ?? null,
+  }));
 }
 
 // ============================================================
@@ -138,9 +157,19 @@ export function useUsersData({
         project_count: Array.isArray(row.projects)
           ? (row.projects[0]?.count ?? 0)
           : 0,
+        remaining_credits: null,
       }));
 
-      setUsers(rows);
+      try {
+        const summaries = await fetchUserCreditSummaries(rows.map((row) => row.id));
+
+        if (cancelled) return;
+        setUsers(mergeUserCreditSummaries(rows, summaries));
+      } catch (summaryError) {
+        if (cancelled) return;
+        setUsers(rows);
+        setError(summaryError instanceof Error ? summaryError.message : "사용자 이용권 정보를 불러오지 못했습니다.");
+      }
       setTotal(count ?? 0);
       setIsLoading(false);
     };
