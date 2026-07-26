@@ -63,6 +63,14 @@ describe("beta deployment security configuration", () => {
     ]);
   });
 
+  it("reserves a bounded background window for the analysis function only", () => {
+    const config = JSON.parse(read("vercel.json"));
+
+    expect(config.functions).toEqual({
+      "api/analyze.js": { maxDuration: 120 },
+    });
+  });
+
   it("backfills existing OAuth users before client profile writes are removed", () => {
     const migration = read("prisma/migrations/20260723_backfill_auth_users/migration.sql");
 
