@@ -42,11 +42,14 @@ import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
 import {
   trackResumeUpload,
   trackAnalysisStart,
-  trackAnalysisComplete,
   trackAnalysisFailed,
 } from "@/lib/analytics";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAuthorizationHeader } from "@/lib/apiAuth";
+import {
+  analysisPendingPath,
+  parseAnalysisReceipt,
+} from "@/lib/analysisRequest";
 import type { ProjectSummary } from "@/types/my";
 
 /**
@@ -705,8 +708,6 @@ export default function Analyze() {
   // ── 분석 제출 (모든 예외 처리 포함) ──
   const executeSubmit = async () => {
     setIsLoading(true);
-    // GA4: 분석 시작 시간 기록
-    const analysisStartTime = performance.now();
 
     const jobLabel =
       selectedJob === "__custom__" ? customJob.trim() : (selectedJob ?? "");
@@ -736,10 +737,6 @@ export default function Analyze() {
     trackResumeUpload("text", totalChars);
     trackAnalysisStart("cover_letter", totalChars);
 
-    // 타임아웃 설정 (120초 - AI 분석이 길어질 수 있으므로 여유롭게 설정)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
-
     try {
       const authorization = await getAuthorizationHeader();
       const response = await fetch("/api/analyze", {
@@ -749,11 +746,8 @@ export default function Analyze() {
           ...authorization,
           "Idempotency-Key": idempotencyKey,
         },
-        signal: controller.signal,
         body: JSON.stringify(requestPayload),
       });
-
-      clearTimeout(timeoutId);
 
       // Rate Limit (429)
       if (response.status === 429) {
@@ -765,8 +759,8 @@ export default function Analyze() {
         return;
       }
 
-      // 문맥 이탈 / 서버 에러
-      if (!response.ok) {
+      // 분석 접수 실패
+      if (response.status !== 202 && response.status !== 200) {
         let errorData;
         try {
           errorData = await response.json();
@@ -781,13 +775,17 @@ export default function Analyze() {
           });
           return;
         }
-        throw new Error(getAnalyzeErrorMessage(errorData));
+        trackAnalysisFailed("cover_letter", "server_error");
+        setErrorModal({
+          title: "분석 실패",
+          message: getAnalyzeErrorMessage(errorData),
+        });
+        return;
       }
 
-      // JSON 파싱 에러 방지
-      let data;
+      let receipt;
       try {
-        data = await response.json();
+        receipt = parseAnalysisReceipt(await response.json());
       } catch {
         trackAnalysisFailed("cover_letter", "parse_error");
         setErrorModal({
@@ -797,49 +795,12 @@ export default function Analyze() {
         return;
       }
 
-      // 유효성 검사: 정상적인 리포트 구조인지 확인
-      if (
-        !data ||
-        typeof data.project_id !== "string" ||
-        typeof data.analysis_id !== "string" ||
-        !data.report ||
-        !Array.isArray(data.report.questionTabs) ||
-        data.report.questionTabs.length === 0
-      ) {
-        trackAnalysisFailed("cover_letter", "invalid_response");
-        setErrorModal({
-          title: "분석 오류",
-          message: UI_LABELS.JSON_PARSE_ERROR,
-        });
-        return;
-      }
-
-      // GA4: 분석 성공 이벤트
-      trackAnalysisComplete(
-        "cover_letter",
-        Math.round(performance.now() - analysisStartTime)
-      );
-
       analysisRequestRef.current = null;
-      navigate(
-        `/report-new?analysisId=${encodeURIComponent(data.analysis_id)}`
-      );
-    } catch (error: any) {
-      if (error.name === "AbortError") {
-        trackAnalysisFailed("cover_letter", "timeout");
-        setErrorModal({
-          title: "연결 불안정",
-          message: UI_LABELS.NETWORK_ERROR,
-        });
-      } else {
-        trackAnalysisFailed("cover_letter", "server_error");
-        setErrorModal({
-          title: "분석 실패",
-          message: error?.message || UI_LABELS.ANALYSIS_FAILED,
-        });
-      }
+      navigate(analysisPendingPath(receipt.analysisRequestId));
+    } catch {
+      trackAnalysisFailed("cover_letter", "server_error");
+      setErrorModal({ title: "연결 불안정", message: UI_LABELS.NETWORK_ERROR });
     } finally {
-      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };

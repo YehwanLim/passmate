@@ -37,4 +37,11 @@ describe("getAnalyzeErrorMessage", () => {
     expect(analyzeSource).toContain("내 지원서");
     expect(analyzeHeaderSource).not.toContain('navigate("/login');
   });
+
+  it("treats a 202 receipt as accepted work and does not inspect a report body", () => {
+    expect(analyzeSource).toContain("response.status !== 202 && response.status !== 200");
+    expect(analyzeSource).toContain("analysisPendingPath(receipt.analysisRequestId)");
+    expect(analyzeSource).not.toContain("data.report.questionTabs");
+    expect(analyzeSource).not.toContain("new AbortController()");
+  });
 });

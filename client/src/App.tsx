@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import Home from "./pages/Home";
 import Analyze from "./pages/Analyze";
+import AnalysisPending from "./pages/AnalysisPending";
 import ReportResult from "./pages/ReportResult";
 import MyProjects from "./pages/MyProjects";
 import Entitlements from "./pages/Entitlements";
@@ -30,6 +31,7 @@ function Router() {
       <Route path={"/privacy"} component={Privacy} />
       <Route path={"/account/deletion"} component={AccountDeletion} />
       <Route path={"/analyze"} component={Analyze} />
+      <Route path={"/analysis-pending"} component={AnalysisPending} />
       <Route path={"/report-new"} component={ReportResult} />
       <Route path={"/entitlements"} component={Entitlements} />
       <Route path={"/my"} component={MyProjects} />
