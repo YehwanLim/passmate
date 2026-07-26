@@ -15,7 +15,9 @@ import { MASTER_SYSTEM_PROMPT } from "../shared/prompts/reportPrompt.js";
 
 const SETTINGS_ID = "singleton";
 const FALLBACK_RETRY_DELAY_MS = 3000;
-const MODEL_CALL_TIMEOUT_MS = 25000;
+// Keep enough of Vercel's 60-second function window for staging and persisting
+// the provider result after a slow-but-valid model response.
+const MODEL_CALL_TIMEOUT_MS = 45000;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
 
 class ModelFailureError extends Error {
