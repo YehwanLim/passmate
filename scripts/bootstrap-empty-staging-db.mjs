@@ -4,6 +4,12 @@ import pg from "pg";
 
 const { Pool } = pg;
 
+export const BOOTSTRAP_PRISMA_COMMANDS = [
+  ["db", "push"],
+  ["migrate", "deploy"],
+  ["migrate", "status"],
+];
+
 export function classifyStagingSchema({ applicationTableNames, hasPrismaMigrationHistory }) {
   if (hasPrismaMigrationHistory) {
     return { action: "abort", reason: "PRISMA_MIGRATION_HISTORY_PRESENT" };
@@ -79,13 +85,13 @@ export async function bootstrapEmptyStagingDatabase({ directUrl = process.env.DI
   }
 
   console.log("Verified an empty staging public schema. Creating the Prisma schema without data loss.");
-  runPrisma(["db", "push", "--skip-generate"]);
+  runPrisma(BOOTSTRAP_PRISMA_COMMANDS[0]);
 
   console.log("Applying versioned migrations for triggers, RLS, and security functions.");
-  runPrisma(["migrate", "deploy"]);
+  runPrisma(BOOTSTRAP_PRISMA_COMMANDS[1]);
 
   console.log("Checking the final migration state.");
-  runPrisma(["migrate", "status"]);
+  runPrisma(BOOTSTRAP_PRISMA_COMMANDS[2]);
 }
 
 async function main() {
