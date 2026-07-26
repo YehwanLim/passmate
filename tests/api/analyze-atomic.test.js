@@ -54,6 +54,7 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
     : null;
   const db = {
     $transaction: async (work) => work(db),
+    $queryRaw: vi.fn(async () => []),
     analysis: {
       create: vi.fn(async ({ data }) => ({ id: "analysis-1", ...data })),
       update: vi.fn(async ({ data, where }) => ({ id: where.id, ...data })),
@@ -63,6 +64,7 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
       create: vi.fn(async ({ data }) => ({ id: "audit-1", ...data })),
     },
     analysisRequest: {
+      count: vi.fn(async () => 0),
       create: vi.fn(async ({ data }) => ({ id: "request-1", ...data })),
       findFirst: vi.fn(async ({ where }) => (
         where.status.in.includes(resolvedExistingRequest?.status)
@@ -88,10 +90,23 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
       }),
     },
     analysisReservation: {
+      count: vi.fn(async () => 0),
       updateMany: vi.fn(async () => ({ count: 1 })),
     },
+    analysisEntitlement: {
+      findUnique: vi.fn(async ({ where: { userId } }) => ({
+        id: `entitlement-${userId}`,
+        premiumCreditsGranted: 0,
+        userId,
+      })),
+      upsert: vi.fn(async ({ where: { userId } }) => ({
+        id: `entitlement-${userId}`,
+        premiumCreditsGranted: 0,
+        userId,
+      })),
+    },
     entitlementSetting: {
-      findUnique: vi.fn(async () => ({ analysisEnabled })),
+      findUnique: vi.fn(async () => ({ analysisEnabled, premiumEnabled: false })),
     },
     project: {
       create: vi.fn(async ({ data }) => ({ id: "project-1", ...data })),
@@ -100,6 +115,35 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
       create: vi.fn(async ({ data }) => ({ id: "token-1", ...data })),
     },
   };
+  return db;
+}
+
+function createSerializedDatabase() {
+  const db = createDatabase();
+  const state = { activeRequests: [], tail: Promise.resolve() };
+  let nextRequestId = 1;
+
+  db.$transaction = async (work) => {
+    const previous = state.tail;
+    let release;
+    state.tail = new Promise((resolve) => { release = resolve; });
+    await previous;
+    try {
+      return await work(db);
+    } finally {
+      release();
+    }
+  };
+  db.analysisRequest.count = vi.fn(async ({ where }) => state.activeRequests.filter(
+    (analysisRequest) => where.status.in.includes(analysisRequest.status),
+  ).length);
+  db.analysisRequest.create = vi.fn(async ({ data }) => {
+    const analysisRequest = { id: `request-${nextRequestId++}`, ...data, status: "PENDING" };
+    state.activeRequests.push(analysisRequest);
+    return analysisRequest;
+  });
+  db.state = state;
+
   return db;
 }
 
@@ -523,6 +567,105 @@ describe("atomic analyze API", () => {
     expect(res.body.error).toBe("RATE_LIMITED");
     expect(res.headers["Retry-After"]).toBe("900");
     expect(model).not.toHaveBeenCalled();
+  });
+
+  it("rejects a second distinct free analysis without consuming a rate slot or calling the model", async () => {
+    const db = createDatabase();
+    db.analysisRequest.count = vi.fn(async () => 1);
+    const consumeRateLimit = vi.fn(rateAllowed);
+    const reserveAnalysis = vi.fn(async () => ({ reservationId: "reservation-1" }));
+    const handler = createAnalyzeHandler({
+      db,
+      model: vi.fn(),
+      requireUser: activeUser,
+      consumeRateLimit,
+      reserveAnalysis,
+      getEntitlementSummary: async () => ({ premiumEnabled: false, premiumRemaining: 0 }),
+    });
+    const res = response();
+
+    await handler(request({ headers: { "idempotency-key": "second-free-request-key-1234" } }), res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe("ANALYSIS_CONCURRENCY_LIMITED");
+    expect(consumeRateLimit).not.toHaveBeenCalled();
+    expect(reserveAnalysis).not.toHaveBeenCalled();
+  });
+
+  it("allows a second premium analysis but rejects a third", async () => {
+    const premiumSummary = { premiumEnabled: true, premiumRemaining: 2 };
+    const allowedDb = createDatabase();
+    allowedDb.analysisRequest.count = vi.fn(async () => 1);
+    const allowedHandler = createAnalyzeHandler({
+      db: allowedDb,
+      enqueueBackgroundWork: () => undefined,
+      requireUser: activeUser,
+      reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+      consumeRateLimit: rateAllowed,
+      getEntitlementSummary: async () => premiumSummary,
+    });
+    const allowedRes = response();
+
+    await allowedHandler(request(), allowedRes);
+
+    expect(allowedRes.statusCode).toBe(202);
+
+    const limitedDb = createDatabase();
+    limitedDb.analysisRequest.count = vi.fn(async () => 2);
+    const limitedHandler = createAnalyzeHandler({
+      db: limitedDb,
+      requireUser: activeUser,
+      consumeRateLimit: rateAllowed,
+      reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+      getEntitlementSummary: async () => premiumSummary,
+    });
+    const limitedRes = response();
+
+    await limitedHandler(request(), limitedRes);
+
+    expect(limitedRes.statusCode).toBe(409);
+    expect(limitedRes.body.error).toBe("ANALYSIS_CONCURRENCY_LIMITED");
+  });
+
+  it("uses the ten-start premium policy for a user with remaining premium credits", async () => {
+    const consumeRateLimit = vi.fn(rateAllowed);
+    const handler = createAnalyzeHandler({
+      db: createDatabase(),
+      enqueueBackgroundWork: () => undefined,
+      requireUser: activeUser,
+      reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+      consumeRateLimit,
+      getEntitlementSummary: async () => ({ premiumEnabled: true, premiumRemaining: 1 }),
+    });
+
+    await handler(request(), response());
+
+    expect(consumeRateLimit).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      policy: expect.objectContaining({ limit: 10, route: "analysis" }),
+    }));
+  });
+
+  it("serializes two simultaneous free requests so exactly one is accepted", async () => {
+    const db = createSerializedDatabase();
+    let nextReservation = 1;
+    const handler = createAnalyzeHandler({
+      db,
+      enqueueBackgroundWork: () => undefined,
+      requireUser: activeUser,
+      reserveAnalysis: async () => ({ reservationId: `reservation-${nextReservation++}` }),
+      consumeRateLimit: rateAllowed,
+      getEntitlementSummary: async () => ({ premiumEnabled: false, premiumRemaining: 0 }),
+    });
+    const first = response();
+    const second = response();
+
+    await Promise.all([
+      handler(request({ headers: { "idempotency-key": "concurrent-free-request-0001" } }), first),
+      handler(request({ headers: { "idempotency-key": "concurrent-free-request-0002" } }), second),
+    ]);
+
+    expect([first.statusCode, second.statusCode].sort()).toEqual([202, 409]);
+    expect(db.state.activeRequests).toHaveLength(1);
   });
 
   it("stops before the model when the analysis kill switch is disabled", async () => {
