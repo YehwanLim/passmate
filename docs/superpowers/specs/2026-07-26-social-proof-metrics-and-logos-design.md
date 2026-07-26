@@ -8,7 +8,7 @@ Replace text-only company names with real company marks, make the proof metrics 
 ## Scope
 
 - Keep the existing Social Proof section location and testimonial carousel.
-- Add real, locally served SVG logo assets for every company in the data list. Render them in grayscale and restore their native color on hover or keyboard focus.
+- Add real, locally served SVG logo assets for all 18 companies in the data list. Render them in grayscale and restore their native color on hover.
 - Expand the company list with LG Display, SK Chemicals, SK Telecom, NHN Commerce, Samyang Group, and CJ OliveNetworks. Rename the existing SK Chemistry entry to SK Chemicals.
 - Replace the single oversized `127+` presentation with A-style paired metrics:
   - `127+` — 합격 기업
@@ -36,7 +36,7 @@ The company marks are a calm proof rail below the metrics. Every logo has a fixe
 - Metric counters use a request-animation-frame based numeric interpolation only after the section is visible; suffixes and thousands separators are present throughout.
 - Reduced-motion users receive final metric values and a static first logo group.
 - The marquee track contains exactly two equal-width logo groups. Each group includes its own trailing spacing, while the track has no inter-group gap. The animation moves by exactly one group width, eliminating the reset jump.
-- Logo focus styles match the existing keyboard-visible treatment.
+- The accessible company list announces every company exactly once; duplicated decorative marquee groups remain hidden from assistive technology.
 
 ## Validation
 
