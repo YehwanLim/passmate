@@ -174,13 +174,6 @@ function vitePluginApi(): Plugin {
 
         req.on("end", async () => {
           try {
-            let body: unknown = null;
-            try {
-              body = rawBody ? JSON.parse(rawBody) : null;
-            } catch {
-              // Let the webhook handler return its documented malformed-payload response.
-            }
-
             const handlerUrl = pathToFileURL(
               path.join(PROJECT_ROOT, "api", "webhooks", "groble.js"),
             ).href;
@@ -201,9 +194,9 @@ function vitePluginApi(): Plugin {
 
             await handler(
               {
-                body,
                 headers: req.headers,
                 method: req.method,
+                rawBody,
                 url: requestUrl.pathname,
               },
               response,

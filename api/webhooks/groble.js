@@ -8,6 +8,10 @@ import {
 } from "../../lib/groble-webhook.js";
 import prisma from "../../lib/prisma.js";
 
+export const config = {
+  api: { bodyParser: false },
+};
+
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
