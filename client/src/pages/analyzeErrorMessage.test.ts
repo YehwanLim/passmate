@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
-import { getAnalyzeErrorMessage } from "./Analyze";
+import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./Analyze";
 import { UI_LABELS } from "@/constants/labels";
 
 const analyzeSource = readFileSync(new URL("./Analyze.tsx", import.meta.url), "utf8");
@@ -25,6 +25,10 @@ describe("getAnalyzeErrorMessage", () => {
         error: "ANALYSIS_DISABLED",
       })
     ).toContain("일시적으로 중단");
+  });
+
+  it("labels a rate-limit code as a request limit even when an intermediary changes the HTTP status", () => {
+    expect(getAnalyzeErrorTitle({ error: "RATE_LIMITED" })).toBe("요청 제한");
   });
 
   it("explains the beta free-analysis limit without treating it as a server failure", () => {
