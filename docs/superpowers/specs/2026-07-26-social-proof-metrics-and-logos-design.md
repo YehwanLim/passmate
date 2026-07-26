@@ -8,7 +8,7 @@ Replace text-only company names with real company marks, make the proof metrics 
 ## Scope
 
 - Keep the existing Social Proof section location and testimonial carousel.
-- Add real, locally served SVG logo assets for all 18 companies in the data list. Render them in grayscale and restore their native color on hover.
+- Add real, locally served logo assets for all 18 companies in the data list. Use local SVG files; when a company publishes only a PNG, embed it in a local SVG wrapper. Render them in grayscale and restore their native color on hover.
 - Expand the company list with LG Display, SK Chemicals, SK Telecom, NHN Commerce, Samyang Group, and CJ OliveNetworks. Rename the existing SK Chemistry entry to SK Chemicals.
 - Replace the single oversized `127+` presentation with A-style paired metrics:
   - `127+` — 합격 기업
