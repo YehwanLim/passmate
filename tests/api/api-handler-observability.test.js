@@ -27,6 +27,7 @@ describe("withApiHandler unexpected failures", () => {
     const failure = new Error(secretMessage);
     failure.code = "P2021";
     failure.meta = { code: "42P01", message: secretMessage };
+    failure.safeDiagnosticStage = "rate_limit_bucket";
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const res = response();
 
@@ -41,6 +42,7 @@ describe("withApiHandler unexpected failures", () => {
         code: "P2021",
         databaseCode: "42P01",
         requestId: expect.any(String),
+        stage: "rate_limit_bucket",
         statusCode: 500,
       });
       expect(JSON.stringify(errorLog.mock.calls)).not.toContain(secretMessage);
