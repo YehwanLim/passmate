@@ -69,7 +69,7 @@ export default function FounderSection() {
                   소개
                 </span>
                 <h2 className="text-2xl md:text-4xl font-bold leading-tight tracking-tight mb-6">
-                  왜 PassMate를 만들었나요?
+                  왜 PreView를 만들었나요?
                 </h2>
                 <p className="text-gray-400 font-light text-[16px] leading-[1.9] mb-5">
                   합격하는 자소서는 글을 잘 쓰는 문서가 아니라, 읽는 사람이
@@ -80,7 +80,7 @@ export default function FounderSection() {
                   멘토링을 하다 보면 많은 지원자가 같은 문제에서 막혔습니다.
                   경험은 있는데 직무와 연결되지 않고, 성과는 있는데 본인의
                   판단이 보이지 않고, 문장은 매끄럽지만 면접 질문에는 약한
-                  상태였습니다. PassMate는 그 빈틈을 빠르게 발견하고 고칠
+                  상태였습니다. PreView는 그 빈틈을 빠르게 발견하고 고칠
                   순서를 알려주기 위해 만들었습니다.
                 </p>
 
@@ -99,7 +99,7 @@ export default function FounderSection() {
               <div className="space-y-5">
                 <div className="rounded-xl border border-white/[0.08] bg-[#0A0A0A] p-6">
                   <p className="mb-5 text-sm font-semibold text-white">
-                    PassMate가 보는 기준
+                    PreView가 보는 기준
                   </p>
                   <div className="space-y-4">
                     {reviewPrinciples.map(({ icon: Icon, title, text }) => (
@@ -244,7 +244,7 @@ export default function FounderSection() {
               <Logo className="w-4 h-4" textClassName="text-[13px] text-gray-400" />
             </div>
             <p className="text-[12px] text-gray-700">
-              &copy; 2026 PassMate. All rights reserved.{" "}
+              &copy; 2026 PreView. All rights reserved.{" "}
               <Link
                 href="/privacy"
                 className="text-gray-500 hover:text-white transition-colors ml-1"

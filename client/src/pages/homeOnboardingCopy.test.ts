@@ -14,6 +14,7 @@ const founderSource = readFileSync(
   new URL("../components/FounderSection.tsx", import.meta.url),
   "utf8"
 );
+const documentSource = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
 
 describe("home onboarding copy", () => {
   it("does not promise report features that are not shown in the actual report", () => {
@@ -25,7 +26,7 @@ describe("home onboarding copy", () => {
   });
 
   it("presents core analysis as a reading flow instead of abstract feature cards", () => {
-    expect(homeSource).toContain("PassMate는 자소서를 이렇게 읽습니다");
+    expect(homeSource).toContain("PreView는 자소서를 이렇게 읽습니다");
     expect(homeSource).toContain("먼저, 어떤 사람으로 기억되는지 봅니다");
     expect(homeSource).toContain("경험이 회사 기준과 만나는지 봅니다");
     expect(homeSource).toContain("문장마다 근거가 충분한지 봅니다");
@@ -78,12 +79,24 @@ describe("home onboarding copy", () => {
   });
 
   it("uses a founder note instead of a placeholder founder avatar", () => {
-    expect(founderSource).toContain("왜 PassMate를 만들었나요?");
+    expect(founderSource).toContain("왜 PreView를 만들었나요?");
     expect(founderSource).toContain("합격하는 자소서는 글을 잘 쓰는 문서가 아니라");
     expect(founderSource).toContain("founderSignals");
     expect(founderSource).not.toContain("파운더");
     expect(founderSource).not.toContain("<User");
     expect(founderSource).not.toContain("현직 대기업 PM이 직접 설계한");
     expect(founderSource).not.toContain("진짜");
+  });
+
+  it("uses the PreView brand consistently across landing-page copy", () => {
+    for (const source of [
+      homeSource,
+      reportShowcaseSource,
+      founderSource,
+      documentSource,
+    ]) {
+      expect(source).not.toContain("PassMate");
+      expect(source).toContain("PreView");
+    }
   });
 });

@@ -136,7 +136,7 @@ function FirstImpressionPreview() {
     <section className="relative overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0B0B0E] px-5 py-6 sm:px-7 sm:py-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent_50%)]" />
       <div className="relative flex flex-col gap-2 border-b border-white/[0.06] pb-4 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-        <span>PassMate Report</span>
+        <span>PreView Report</span>
         <span>First Read · 현대자동차</span>
       </div>
 
@@ -418,7 +418,7 @@ function ReportPreviewFrame({
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
           <div className="mb-7 flex flex-col gap-4 border-b border-white/[0.07] pb-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[11px] text-gray-600 tracking-widest uppercase mb-1">PassMate Report Preview</p>
+              <p className="text-[11px] text-gray-600 tracking-widest uppercase mb-1">PreView Report Preview</p>
               <p className="text-[15px] text-zinc-200 font-medium">현대자동차 · 서비스 기획</p>
             </div>
             <div className="flex flex-wrap gap-2 xl:hidden">

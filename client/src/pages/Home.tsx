@@ -78,7 +78,7 @@ const RESUME_READING_STEPS = [
 ] as const;
 
 /**
- * PassMate – Premium Dark SaaS Landing Page
+ * PreView – Premium Dark SaaS Landing Page
  *
  * Design: Vercel / Stripe inspired pitch-black theme
  * Colors: #000000 bg, white text, subtle blue/purple neon glows
@@ -438,7 +438,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          STEP 2-B: How PassMate Reads
+          STEP 2-B: How PreView Reads
           ══════════════════════════════════════════════════ */}
       <section id="service-intro" className="relative py-28 md:py-36 border-t border-white/[0.04]">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
@@ -448,7 +448,7 @@ export default function Home() {
               핵심 분석 기능
             </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              PassMate는 자소서를 이렇게 읽습니다
+              PreView는 자소서를 이렇게 읽습니다
             </h2>
             <p className="text-gray-500 font-light text-[15px] leading-[1.8] max-w-xl mx-auto">
               점수를 매기기보다, 면접관이 실제로 판단하는 흐름에 맞춰 읽습니다.
