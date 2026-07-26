@@ -216,6 +216,19 @@ describe("Groble webhook", () => {
     expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
   });
 
+  it("rejects a buyer-altered non-UUID purchase reference without querying Prisma", async () => {
+    mocks.prisma.purchaseIntent.findUnique.mockRejectedValue(new Error("invalid UUID"));
+
+    const response = await invokeGrobleWebhook({
+      payload: paidPayload({ object: { sellerReference: "buyer-altered-reference" } }),
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(response.body.error).toBe("UNLINKED_PURCHASE_INTENT");
+    expect(mocks.prisma.purchaseIntent.findUnique).not.toHaveBeenCalled();
+    expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
+  });
+
   it("rejects a valid payment for a cancelled purchase intent", async () => {
     mocks.prisma.purchaseIntent.findUnique.mockResolvedValue({
       id: INTENT_ID,

@@ -20,6 +20,13 @@ function isNonEmptyString(value) {
   return typeof value === "string" && value.length > 0;
 }
 
+function isPurchaseIntentId(value) {
+  return (
+    isNonEmptyString(value) &&
+    /^[\da-f]{8}-[\da-f]{4}-[1-5][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(value)
+  );
+}
+
 function hashIdentifier(value) {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
 }
@@ -104,6 +111,10 @@ export function parseGroblePaidEvent(body, premiumContentId) {
 
   if (object.content.id !== premiumContentId) {
     throw new GrobleWebhookError("UNEXPECTED_GROBLE_PRODUCT", 422);
+  }
+
+  if (!isPurchaseIntentId(object.sellerReference)) {
+    throw new GrobleWebhookError("UNLINKED_PURCHASE_INTENT", 422);
   }
 
   return {
