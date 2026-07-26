@@ -11,7 +11,8 @@
     "preview": "vite preview --host",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "staging:bootstrap": "node scripts/bootstrap-empty-staging-db.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.50.1",
