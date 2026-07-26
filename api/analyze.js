@@ -760,6 +760,11 @@ export function createAnalyzeHandler({
           return sendError(res, 503, "ANALYSIS_PERSISTENCE_PENDING", requestId);
         }
         const failure = classifyFailure(error);
+        console.error("[api/analyze] model call failed", {
+          code: failure.code,
+          providerStatusCode: Number.isInteger(error?.statusCode) ? error.statusCode : null,
+          requestId,
+        });
         try {
           await failAnalysis({
             allocation,
