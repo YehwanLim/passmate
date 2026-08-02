@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Analyze from "./pages/Analyze";
 import ReportResult from "./pages/ReportResult";
 import MyProjects from "./pages/MyProjects";
+import Entitlements from "./pages/Entitlements";
 import MyAnalyses from "./pages/MyAnalyses";
 import Login from "./pages/Login";
 import Terms from "./pages/Terms";
@@ -28,6 +29,7 @@ function Router() {
       <Route path={"/privacy"} component={Privacy} />
       <Route path={"/analyze"} component={Analyze} />
       <Route path={"/report-new"} component={ReportResult} />
+      <Route path={"/entitlements"} component={Entitlements} />
       <Route path={"/my"} component={MyProjects} />
       <Route path={"/my/:projectId"} component={MyAnalyses} />
       <Route path={"/404"} component={NotFound} />
