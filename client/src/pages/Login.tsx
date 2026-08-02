@@ -131,7 +131,7 @@ export default function Login() {
             <p className="text-[14px] text-gray-400 text-center mb-8 leading-relaxed">
               Google 계정으로 간편하게 로그인하고
               <br />
-              AI 자소서 분석을 시작하세요.
+              로그인만 하면 무료로 자소서 분석을 시작할 수 있어요.
             </p>
 
             {/* 에러 메시지 */}

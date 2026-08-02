@@ -8,18 +8,21 @@ const __dirname = path.dirname(__filename);
 
 type AnalyzeHandler = (req: Request, res: Response) => Promise<unknown>;
 
+async function handleAnalyze(req: Request, res: Response): Promise<void> {
+  // @ts-expect-error The Vercel handler remains JavaScript outside tsconfig inputs.
+  const analyzeModule = await import("../api/analyze.js");
+  const { default: analyzeHandler } = analyzeModule as { default: AnalyzeHandler };
+  await analyzeHandler(req, res);
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
   app.use(express.json());
 
   // API Routes
-  app.post("/api/analyze", async (req, res) => {
-    // @ts-expect-error The Vercel handler remains JavaScript outside tsconfig inputs.
-    const analyzeModule = await import("../api/analyze.js");
-    const { default: analyzeHandler } = analyzeModule as { default: AnalyzeHandler };
-    return analyzeHandler(req, res);
-  });
+  app.post("/api/analyze", handleAnalyze);
+  app.options("/api/analyze", handleAnalyze);
 
   // Gemini API 핑 테스트
   app.get("/api/test-gemini", async (_req, res) => {

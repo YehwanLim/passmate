@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
-import { getAnalyzeErrorMessage } from "./Analyze";
+import { getAnalyzeErrorMessage } from "@/lib/analyzeErrorMessage";
 import { UI_LABELS } from "@/constants/labels";
 
 const analyzeSource = readFileSync(new URL("./Analyze.tsx", import.meta.url), "utf8");
+const analyzeHeaderSource = analyzeSource.slice(
+  analyzeSource.indexOf("{/* ════════ GNB ════════ */}"),
+  analyzeSource.indexOf("{/* ════════ MAIN FORM ════════ */}"),
+);
 
 describe("getAnalyzeErrorMessage", () => {
   it("uses server error text when message is omitted", () => {
@@ -31,6 +35,6 @@ describe("getAnalyzeErrorMessage", () => {
     expect(analyzeSource).toContain("import AuthButton");
     expect(analyzeSource).toContain("<AuthButton />");
     expect(analyzeSource).toContain("내 지원서");
-    expect(analyzeSource).not.toContain('navigate("/login?redirect=/analyze")');
+    expect(analyzeHeaderSource).not.toContain('navigate("/login');
   });
 });

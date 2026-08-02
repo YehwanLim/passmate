@@ -39,6 +39,7 @@ import { sanitizeText } from "@/utils/sanitize";
 import { checkDuplicateQuestions } from "@/utils/textSimilarity";
 import { saveAnalysisToStorage, clearAnalysisResult } from "@/utils/storage";
 import { UI_LABELS } from "@/constants/labels";
+import { getAnalyzeErrorMessage } from "@/lib/analyzeErrorMessage";
 import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
 import {
   trackResumeUpload,
@@ -46,7 +47,8 @@ import {
   trackAnalysisComplete,
   trackAnalysisFailed,
 } from "@/lib/analytics";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { supabase } from "@/lib/supabase";
 import type { ProjectSummary } from "@/types/my";
 
 
@@ -63,35 +65,6 @@ const MAX_QUESTIONS = 5;
 const MAX_TOTAL_CHARS = 6000;
 const MIN_TOTAL_CHARS = 200;
 const WARN_TOTAL_CHARS = 1000;
-
-export function getAnalyzeErrorMessage(errorData: unknown): string {
-  if (!errorData || typeof errorData !== "object") {
-    return UI_LABELS.ANALYSIS_FAILED;
-  }
-
-  const { message, error } = errorData as {
-    message?: unknown;
-    error?: unknown;
-  };
-
-  const rawMessage = [message, error]
-    .filter((value): value is string => typeof value === "string")
-    .join(" ");
-
-  if (/Google API Error 503|UNAVAILABLE|high demand|과부하/i.test(rawMessage)) {
-    return UI_LABELS.MODEL_OVERLOADED_ERROR;
-  }
-
-  if (typeof message === "string" && message.trim()) {
-    return message;
-  }
-
-  if (typeof error === "string" && error.trim()) {
-    return error;
-  }
-
-  return UI_LABELS.ANALYSIS_FAILED;
-}
 
 const LOADING_STEPS = {
   1: {
@@ -510,7 +483,7 @@ function QuestionCard({
 ────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated } = useRequireAuth({ redirectPath: "/analyze" });
   const [company, setCompany] = useState("");
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [customJob, setCustomJob] = useState("");
@@ -641,6 +614,14 @@ export default function Analyze() {
 
   // ── 분석 제출 (모든 예외 처리 포함) ──
   const executeSubmit = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      navigate("/login?redirect=/analyze");
+      return;
+    }
+
     setIsLoading(true);
     // GA4: 분석 시작 시간 기록
     const analysisStartTime = performance.now();
@@ -665,7 +646,10 @@ export default function Analyze() {
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         signal: controller.signal,
         body: JSON.stringify({
           questions: structuredQuestions,
@@ -675,6 +659,11 @@ export default function Analyze() {
       });
 
       clearTimeout(timeoutId);
+
+      if (response.status === 401) {
+        navigate("/login?redirect=/analyze");
+        return;
+      }
 
       // Rate Limit (429)
       if (response.status === 429) {
@@ -840,6 +829,14 @@ export default function Analyze() {
       transition: { duration: 0.5 },
     },
   };
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28">

@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
+import { getLoginRedirectPath } from "@/lib/authRedirect";
+
+type RequireAuthOptions = {
+  redirectPath?: string;
+};
 
 /**
  * useRequireAuth
@@ -16,15 +21,15 @@ import { useAuth } from "@/contexts/AuthContext";
  *   return <PageContent />;
  * }
  */
-export function useRequireAuth() {
+export function useRequireAuth(options: RequireAuthOptions = {}) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      navigate("/login");
+      navigate(getLoginRedirectPath(options.redirectPath));
     }
-  }, [isLoading, isAuthenticated, navigate]);
+  }, [isLoading, isAuthenticated, navigate, options.redirectPath]);
 
   return { user, isLoading, isAuthenticated };
 }

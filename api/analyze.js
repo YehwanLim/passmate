@@ -436,13 +436,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const user = await requireAuthenticatedUser(req);
-  if (!user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
   try {
-    const payload = req.body;
+    const user = await requireAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    let payload = req.body;
+    if (typeof payload === 'string') {
+      try {
+        payload = payload ? JSON.parse(payload) : undefined;
+      } catch {
+        return res.status(400).json({ error: 'INVALID_JSON', message: '요청 형식이 올바르지 않습니다.' });
+      }
+    }
     
     // 새 형식(questions[]) 또는 이전 형식(content string) 지원
     const input = payload?.questions ? payload : payload?.content;

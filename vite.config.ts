@@ -532,7 +532,7 @@ function vitePluginApi(): Plugin {
 
             await handler(
               {
-                body: body ? JSON.parse(body) : undefined,
+                body,
                 headers: req.headers,
                 method: req.method,
                 url: req.url,
