@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, ChevronDown, Trash2, User } from "lucide-react";
+import { LogOut, ChevronDown, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
@@ -127,16 +127,6 @@ export default function AuthButton() {
 
             {/* 로그아웃 */}
             <div className="p-1.5">
-              <button
-                onClick={() => {
-                  setDropdownOpen(false);
-                  navigate("/account/deletion");
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 transition-colors duration-150"
-              >
-                <Trash2 className="w-4 h-4" />
-                계정 삭제
-              </button>
               <button
                 id="header-logout-btn"
                 onClick={handleSignOut}

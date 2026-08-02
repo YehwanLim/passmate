@@ -26,4 +26,9 @@ describe("AuthButton header polish", () => {
     expect(source).toContain("navigate(path)");
     expect(source).toContain("setDropdownOpen(false)");
   });
+
+  it("does not offer account deletion from the profile dropdown", () => {
+    expect(source).not.toContain("계정 삭제");
+    expect(source).not.toContain('navigate("/account/deletion")');
+  });
 });
