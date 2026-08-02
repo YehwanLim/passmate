@@ -51,7 +51,6 @@ interface SystemSettings {
   betaFeatures: {
     aiDetailedFeedback: boolean;
     rewriteEngineV2: boolean;
-    paymentModule: boolean;
   };
 }
 
@@ -83,7 +82,6 @@ const DEFAULT_SETTINGS: SystemSettings = {
   betaFeatures: {
     aiDetailedFeedback: true,
     rewriteEngineV2: false,
-    paymentModule: false,
   },
 };
 
@@ -407,7 +405,7 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="text-sm font-semibold">기능 플래그 (Feature Flag)</CardTitle>
               <CardDescription className="text-xs">
-                베타 기능의 노출 여부 또는 결제 결합 모듈을 배포 전 일부 권한 차단/허용하도록 동적 변경합니다.
+                베타 기능의 노출 여부를 배포 전 일부 사용자에게 동적으로 변경합니다.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -442,24 +440,6 @@ export default function SettingsPage() {
                     setSettings({
                       ...settings,
                       betaFeatures: { ...settings.betaFeatures, rewriteEngineV2: checked },
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/10 transition-colors">
-                <div className="space-y-0.5">
-                  <span className="text-sm font-semibold">결제 모듈 활성화</span>
-                  <p className="text-xs text-muted-foreground">
-                    포인트 결제 PG 모듈 및 결제 유도 창을 활성화합니다. (비활성 시 전면 무료 서비스 유지)
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.betaFeatures.paymentModule}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      betaFeatures: { ...settings.betaFeatures, paymentModule: checked },
                     })
                   }
                 />
