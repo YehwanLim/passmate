@@ -31,4 +31,17 @@ describe("AuthButton header polish", () => {
     expect(source).not.toContain("계정 삭제");
     expect(source).not.toContain('navigate("/account/deletion")');
   });
+
+  it("offers application and entitlement destinations before logout for authenticated users", () => {
+    const projectsIndex = source.indexOf('id="header-my-projects-btn"');
+    const entitlementsIndex = source.indexOf('id="header-entitlements-btn"');
+    const logoutIndex = source.indexOf('id="header-logout-btn"');
+
+    expect(projectsIndex).toBeGreaterThan(-1);
+    expect(entitlementsIndex).toBeGreaterThan(projectsIndex);
+    expect(logoutIndex).toBeGreaterThan(entitlementsIndex);
+    expect(source).toContain('handleNavigate("/my")');
+    expect(source).toContain('handleNavigate("/entitlements")');
+    expect(source).toContain("setDropdownOpen(false)");
+  });
 });
