@@ -57,17 +57,29 @@ describe("analyze API authentication", () => {
 
   it("converts authentication configuration failures into an API error response", async () => {
     const response = createResponse();
+    const originalSupabaseUrl = process.env.SUPABASE_URL;
+    const originalServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    await analyzeHandler(
-      {
-        body: { questions: [{ question: "문항", answer: "가".repeat(200) }] },
-        headers: { authorization: "Bearer test-token" },
-        method: "POST",
-      },
-      response,
-    );
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    try {
+      await analyzeHandler(
+        {
+          body: { questions: [{ question: "문항", answer: "가".repeat(200) }] },
+          headers: { authorization: "Bearer test-token" },
+          method: "POST",
+        },
+        response,
+      );
 
-    expect(response.statusCode).toBe(500);
-    expect(response.body.error).toContain("SUPABASE_URL");
+      expect(response.statusCode).toBe(500);
+      expect(response.body.error).toContain("SUPABASE_URL");
+    } finally {
+      if (originalSupabaseUrl === undefined) delete process.env.SUPABASE_URL;
+      else process.env.SUPABASE_URL = originalSupabaseUrl;
+
+      if (originalServiceRoleKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+      else process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+    }
   });
 });

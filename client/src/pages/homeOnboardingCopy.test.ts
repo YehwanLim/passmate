@@ -56,8 +56,8 @@ describe("home onboarding copy", () => {
     expect(reportShowcaseSource).toContain("MiniReportNavigator");
     expect(reportShowcaseSource).toContain("ActiveReportScene");
     expect(reportShowcaseSource).toContain("AnimatePresence");
-    expect(reportShowcaseSource).toContain("source-text-body");
-    expect(reportShowcaseSource).toContain("section-tab");
+    expect(reportShowcaseSource).toContain("LineAnalysisPreview");
+    expect(reportShowcaseSource).toContain("문장 04 · 수정 제안");
     expect(reportShowcaseSource).not.toContain("캡처가 아닌");
     expect(reportShowcaseSource).not.toContain("미니 리포트입니다");
     expect(reportShowcaseSource).not.toContain("grid-cols-4 gap-2");
