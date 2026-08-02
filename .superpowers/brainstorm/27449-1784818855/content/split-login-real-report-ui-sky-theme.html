@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#080a0f}
+  </style>
+</head>
+<body>
+  <iframe id="preview" title="하늘색 테마 로그인 미리보기" src="/files/split-login-real-report-ui-dense.html"></iframe>
+  <script>
+    const frame = document.getElementById('preview');
+    frame.addEventListener('load', () => {
+      const doc = frame.contentDocument;
+      const style = doc.createElement('style');
+      style.textContent = `
+        .lead h1 strong { color: #7dd3fc !important; }
+        .nav button.active { color: rgba(125, 211, 252, .9) !important; }
+        .impression-head .tags span { border-color: rgba(125, 211, 252, .18) !important; color: #bae6fd !important; background: rgba(14, 165, 233, .055) !important; }
+        .insight-strip { border-color: rgba(125, 211, 252, .18) !important; background: linear-gradient(90deg, rgba(14, 165, 233, .09), rgba(255,255,255,.018)) !important; color: #c9e9f5 !important; }
+        .insight-strip b { color: #7dd3fc !important; }
+        .diagnosis-grid .strength, .diagnosis-grid .gap { color: rgba(125, 211, 252, .82) !important; }
+        .criteria span { background: rgba(14, 165, 233, .08) !important; color: #bae6fd !important; }
+        .tabs .active:after { background: #38bdf8 !important; }
+        .annotation.good { background: rgba(56, 189, 248, .24) !important; }
+        .annotation.improve { background: rgba(125, 211, 252, .18) !important; }
+        .badge, .number { background: #38bdf8 !important; color: #082f49 !important; }
+        .accordion.active { border-color: rgba(125, 211, 252, .28) !important; }
+        .comment-result { background: rgba(14, 165, 233, .08) !important; color: #c5e8f6 !important; }
+        .check { border-color: #38bdf8 !important; color: #38bdf8 !important; }
+        .actions small { color: rgba(125, 211, 252, .7) !important; }
+        .mentor { border-left-color: rgba(125, 211, 252, .85) !important; background: rgba(14, 165, 233, .07) !important; color: #c4e4f1 !important; }
+        .mentor b { color: #d8f3fc !important; }
+      `;
+      doc.head.appendChild(style);
+    });
+  </script>
+</body>
+</html>

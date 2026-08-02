@@ -5,3 +5,12 @@
 - Task 3: pending
 - Task 4: pending
 - Task 5: pending
+
+# Editorial Report Prompt SDD Progress
+
+- Task 1: complete (commits 07333d0..c8cf8c9, review clean)
+
+# Premium Analysis Entitlements SDD Progress
+
+- Task 1: complete (commits c47941d..6ce64a2, review clean)
+- Task 2: complete (commits 6ce64a2..14219df, review clean; Groble correlation waits for test payload)

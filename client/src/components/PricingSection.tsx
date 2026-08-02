@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 const includedItems = [
   "첫 분석 1회 무료",
   "첫 분석부터 전체 리포트 제공",
-  "추가 분석은 2회권으로 이용",
+  "추가 분석은 3회권으로 이용",
   "수정본 재분석 또는 다른 지원서 분석 가능",
 ];
 
@@ -38,7 +38,7 @@ export default function PricingSection() {
             처음 1회는 무료로 시작하세요
           </h2>
           <p className="text-gray-500 font-light text-[15px] leading-[1.8] max-w-lg mx-auto">
-            더 다듬고 싶은 지원서가 생기면 2회권으로 이어서 분석할 수 있습니다.
+            더 다듬고 싶은 지원서가 생기면 3회권으로 이어서 분석할 수 있습니다.
           </p>
         </motion.div>
 
@@ -65,7 +65,8 @@ export default function PricingSection() {
                     첫 분석 1회 무료
                   </h3>
                   <p className="text-[14px] text-gray-500 font-light leading-[1.8]">
-                    가입 후 첫 자소서는 비용 없이 전체 리포트를 확인할 수 있어요.
+                    가입 후 첫 자소서는 비용 없이 전체 리포트를 확인할 수
+                    있어요.
                   </p>
                 </div>
 
@@ -93,16 +94,17 @@ export default function PricingSection() {
                       ₩9,900
                     </span>
                     <span className="text-[13px] text-gray-500 font-light">
-                      / 2회권
+                      / 분석 3회권
                     </span>
                   </div>
                   <p className="text-[14px] text-gray-500 font-light leading-[1.8]">
-                    추가 분석은 2회권으로 이용하고, 수정본이나 다른 지원서에 자유롭게 사용할 수 있습니다.
+                    추가 분석은 3회권으로 이용하고, 수정본이나 다른 지원서에
+                    자유롭게 사용할 수 있습니다.
                   </p>
                 </div>
 
                 <ul className="space-y-3">
-                  {includedItems.map((item) => (
+                  {includedItems.map(item => (
                     <li
                       key={item}
                       className="flex items-start gap-2.5 text-[14px] text-gray-400 font-light"
@@ -112,6 +114,15 @@ export default function PricingSection() {
                     </li>
                   ))}
                 </ul>
+
+                <button
+                  type="button"
+                  className="group w-full md:w-fit flex items-center justify-center gap-2 h-12 px-5 rounded-xl bg-purple-400 text-[#0A0A0A] text-[14px] font-medium transition-all duration-300 hover:bg-purple-300 active:scale-[0.98]"
+                  onClick={() => navigate("/entitlements")}
+                >
+                  분석 3회권 구매하기
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
+                </button>
               </div>
             </div>
           </div>

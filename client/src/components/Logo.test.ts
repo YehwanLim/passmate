@@ -1,14 +1,21 @@
-import { readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import Logo from "./Logo";
 
-const source = readFileSync(new URL("./Logo.tsx", import.meta.url), "utf8");
+describe("Logo", () => {
+  it("renders the inverse supplied wordmark with an accessible name by default", () => {
+    const markup = renderToStaticMarkup(createElement(Logo, { className: "h-5" }));
 
-describe("Pre:View wordmark", () => {
-  it("renders a colon-only blue Pre:View wordmark without the legacy checkmark", () => {
-    expect(source).toMatch(/>\s*Pre\s*<span/);
-    expect(source).toMatch(/<\/span>\s*View\s*<\/span>/);
-    expect(source).toContain('padding: "0 0.045em"');
-    expect(source).toContain('letterSpacing: "-0.045em"');
-    expect(source).not.toContain('viewBox="0 0 24 24"');
+    expect(markup).toContain('src="/pre-view-wordmark-white.png"');
+    expect(markup).toContain('alt="Pre:View"');
+    expect(markup).toContain("h-5");
+  });
+
+  it("renders the supplied default wordmark on a light surface", () => {
+    const markup = renderToStaticMarkup(createElement(Logo, { variant: "default" }));
+
+    expect(markup).toContain('src="/pre-view-wordmark.png"');
+    expect(markup).toContain('alt="Pre:View"');
   });
 });

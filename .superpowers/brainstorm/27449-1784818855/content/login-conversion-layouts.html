@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #07090e; color: #f5f7fb; font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .page { max-width: 1260px; margin: 0 auto; padding: 36px 24px 56px; }
+    h1 { margin: 0; font-size: clamp(26px, 4vw, 38px); letter-spacing: -0.045em; }
+    .intro { margin: 12px 0 30px; color: #a4adbc; line-height: 1.65; }
+    .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+    .choice { border: 1px solid #273141; border-radius: 20px; padding: 14px; background: #10151e; cursor: pointer; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .choice:hover, .choice.selected { transform: translateY(-3px); border-color: #6898ff; box-shadow: 0 16px 42px rgba(0,0,0,.28), 0 0 0 1px rgba(104,152,255,.25); }
+    .choice > header { display:flex; align-items:center; justify-content:space-between; padding: 6px 6px 14px; }
+    .choice h2 { font-size: 17px; margin: 0; letter-spacing: -0.025em; }
+    .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; color:#9fc0ff; border:1px solid #355f9d; border-radius:999px; padding:5px 8px; }
+    .note { padding: 13px 7px 3px; color:#9da7b6; font-size: 13px; line-height: 1.55; }
+    .phone { min-height: 670px; border:1px solid #283245; border-radius: 15px; overflow: hidden; position:relative; background: radial-gradient(circle at 50% -5%, rgba(51,105,244,.22), transparent 35%), #090d14; }
+    .brand { display:flex; justify-content:center; padding: 24px 0 7px; font-weight:800; letter-spacing:-.05em; font-size: 20px; }
+    .brand i { font-style:normal; color:#8cabff; margin-right:2px; }
+    .hero { text-align:center; padding: 20px 30px 0; }
+    .eyebrow { display:inline-flex; gap:6px; align-items:center; color:#9bb8ff; font-size:11px; font-weight:700; border:1px solid rgba(112,153,255,.34); padding:6px 9px; border-radius:999px; background:rgba(42,88,188,.15); }
+    .spark { color:#b9ccff; font-size:12px; }
+    .hero h3 { margin:14px 0 9px; font-size:26px; line-height:1.22; letter-spacing:-.055em; }
+    .hero p { margin:0; color:#a2aab7; font-size:13px; line-height:1.55; }
+    .cta { margin: 23px 30px 0; height:50px; border-radius:11px; border:0; background:#f4f7ff; color:#151a25; font-size:14px; font-weight:700; display:flex; justify-content:center; align-items:center; gap:10px; }
+    .g { width:18px; height:18px; border-radius:50%; background: conic-gradient(#4385f4 0 25%, #34a853 0 50%, #fbbc05 0 75%, #ea4335 0); }
+    .safe { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:16px; color:#657083; font-size:11px; }
+    .safe b { color:#8d98a9; font-size:12px; }
+    .preview { position:absolute; left:18px; right:18px; bottom:22px; border:1px solid rgba(255,255,255,.11); background:linear-gradient(145deg, rgba(26,35,53,.92), rgba(15,19,29,.94)); box-shadow:0 18px 42px rgba(0,0,0,.35); border-radius:16px; overflow:hidden; }
+    .preview-head { padding:13px 15px 10px; display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; color:#c9d3e5; }
+    .preview-head span { color:#86a9ff; font-size:10px; }
+    .score-card { margin:0 13px 12px; padding:13px; background:#131a26; border-radius:11px; }
+    .score-row { display:flex; align-items:center; justify-content:space-between; }
+    .mini-title { font-size:12px; font-weight:700; }
+    .score { font-size:21px; font-weight:800; letter-spacing:-.05em; color:#dce8ff; }
+    .meter { height:6px; background:#2d3648; border-radius:99px; margin-top:10px; overflow:hidden; }
+    .meter b { display:block; width:79%; height:100%; border-radius:99px; background:linear-gradient(90deg,#638aff,#a779ff); }
+    .tip { padding: 0 13px 14px; font-size:11px; color:#9facbd; line-height:1.55; }
+    .tip strong { color:#d8e3ff; font-weight:600; }
+    .how { padding: 18px 18px 0; display:grid; grid-template-columns:repeat(3, 1fr); gap:7px; }
+    .how div { border:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.025); border-radius:10px; padding:9px 8px; color:#b5bfce; font-size:10px; line-height:1.4; text-align:left; }
+    .how b { display:block; color:#90b0ff; font-size:13px; margin-bottom:3px; }
+    .report { margin: 22px 20px 0; border-radius:15px; overflow:hidden; border:1px solid rgba(255,255,255,.1); background:#101620; transform: perspective(800px) rotateX(2deg); box-shadow: 0 18px 40px rgba(0,0,0,.3); }
+    .report-bar { height:25px; display:flex; align-items:center; gap:5px; padding:0 10px; background:#1b2433; }
+    .dot { width:5px; height:5px; border-radius:50%; background:#4b5a70; }
+    .report-body { padding: 14px; }
+    .report-label { font-size:9px; letter-spacing:.1em; color:#8191a9; font-weight:700; }
+    .report-title { margin-top:6px; font-size:15px; font-weight:800; letter-spacing:-.04em; }
+    .report-grid { display:grid; grid-template-columns: 1.1fr .9fr; gap:8px; margin-top:12px; }
+    .chart, .comment { min-height:94px; border-radius:9px; background:#182130; padding:9px; box-sizing:border-box; }
+    .chart-bars { height:58px; display:flex; align-items:end; gap:5px; padding-top:7px; }
+    .chart-bars i { width:12%; background:linear-gradient(#9baeff,#5d78e4); border-radius:4px 4px 2px 2px; }
+    .comment { color:#9fabc0; font-size:9px; line-height:1.55; }
+    .comment b { color:#d2dcf0; display:block; font-size:10px; margin-bottom:5px; }
+    .benefits { margin: 17px 25px 0; display:flex; flex-direction:column; gap:8px; }
+    .benefit { display:flex; align-items:center; gap:9px; color:#aeb8c9; font-size:11px; }
+    .check { display:grid; place-items:center; width:17px; height:17px; border-radius:50%; color:#9db8ff; background:rgba(72,117,234,.2); font-size:11px; flex: 0 0 auto; }
+    .footer { position:absolute; bottom:18px; left:0; right:0; text-align:center; color:#657083; font-size:10px; }
+    @media (max-width: 780px) { .choices { grid-template-columns:1fr; } .phone { min-height:630px; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>로그인 화면, 어느 쪽이 더 로그인하고 싶게 느껴지나요?</h1>
+    <p class="intro">두 안 모두 상단의 ‘AI 자소서 분석 서비스’ 뱃지는 제거하고, 하단의 PassMate 노출 영역을 서비스 결과 미리보기로 바꿉니다.</p>
+    <section class="choices">
+      <article class="choice" data-choice="proof" onclick="toggleSelect(this)">
+        <header><h2>A. 결과를 먼저 보여주는 안</h2><span class="tag">추천</span></header>
+        <div class="phone">
+          <div class="brand"><i>pass</i>mate</div>
+          <div class="hero">
+            <span class="eyebrow"><span class="spark">✦</span> 로그인 후 바로 무료 분석</span>
+            <h3>내 자소서,<br/>어떻게 달라질지 먼저 확인하세요</h3>
+            <p>직무 적합도와 구체적인 개선 포인트를<br/>한눈에 확인할 수 있어요.</p>
+          </div>
+          <button class="cta"><span class="g"></span>Google로 무료 분석 시작하기</button>
+          <div class="safe"><b>⌾</b> 비밀번호는 PassMate에 저장되지 않아요</div>
+          <div class="preview">
+            <div class="preview-head">분석 리포트 미리보기 <span>로그인 후 전체 확인 →</span></div>
+            <div class="score-card"><div class="score-row"><span class="mini-title">직무 적합도</span><span class="score">79점</span></div><div class="meter"><b></b></div></div>
+            <div class="tip"><strong>강점</strong> · 고객 문제를 끝까지 해결한 경험이 구체적이에요.<br/><strong>보완점</strong> · 성과 수치를 한 줄 더 덧붙여 보세요.</div>
+          </div>
+        </div>
+        <p class="note">분석 결과의 일부를 실제처럼 보여줘 ‘무엇을 얻는지’를 즉시 이해시키는 방식입니다.</p>
+      </article>
+      <article class="choice" data-choice="journey" onclick="toggleSelect(this)">
+        <header><h2>B. 무료 분석의 과정을 보여주는 안</h2><span class="tag">안심 중심</span></header>
+        <div class="phone">
+          <div class="brand"><i>pass</i>mate</div>
+          <div class="hero">
+            <span class="eyebrow"><span class="spark">✦</span> 로그인만 하면 무료</span>
+            <h3>막막했던 자소서,<br/>방향부터 선명하게</h3>
+            <p>Google 로그인 한 번이면<br/>맞춤형 피드백을 바로 받을 수 있어요.</p>
+          </div>
+          <div class="how"><div><b>01</b>자소서 입력</div><div><b>02</b>AI 분석</div><div><b>03</b>개선 제안</div></div>
+          <div class="report">
+            <div class="report-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+            <div class="report-body"><div class="report-label">AI ANALYSIS REPORT</div><div class="report-title">지원 직무에 맞춘 피드백</div><div class="report-grid"><div class="chart"><div class="report-label">적합도</div><div class="chart-bars"><i style="height:34%"></i><i style="height:54%"></i><i style="height:43%"></i><i style="height:73%"></i><i style="height:86%"></i><i style="height:67%"></i></div></div><div class="comment"><b>첫 인상</b>경험의 맥락이 잘 드러납니다. 핵심 성과를 더 선명하게…</div></div></div>
+          </div>
+          <div class="benefits"><div class="benefit"><i class="check">✓</i>직무에 맞는 자소서 진단</div><div class="benefit"><i class="check">✓</i>바로 적용할 수 있는 개선 문장</div></div>
+          <button class="cta">Google로 무료 분석 시작하기</button>
+          <div class="footer">⌾ 안전하게 로그인할 수 있어요</div>
+        </div>
+        <p class="note">처음 방문한 사용자의 불안을 낮추며, 분석까지의 흐름과 무료 혜택을 차분히 설명합니다.</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

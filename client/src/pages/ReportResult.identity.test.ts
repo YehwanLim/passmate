@@ -27,6 +27,13 @@ describe("ReportResult identity display", () => {
     expect(source).toContain('navigate("/my")');
   });
 
+  it("uses the shared visual Pre:View brand in report chrome", () => {
+    expect(source).toContain('import { BrandName } from "@/components/BrandName"');
+    expect(source).toContain("<BrandName");
+    expect(source).not.toContain("<span>PassMate Report</span>");
+    expect(source).not.toContain("<p>PassMate 2026. All rights reserved.</p>");
+  });
+
   it("renders lower mentor comments as a timestamped feedback thread", () => {
     const lowerMentorSection = source.split('id="section-pm-comment"')[1]
 

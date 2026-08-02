@@ -1,0 +1,210 @@
+# Review package: 63cc82c..04cafe8
+
+## Commits
+04cafe8 fix: preserve JSON paragraph escapes in prompt
+2c4d0a5 feat: constrain report summary copy
+
+## Files changed
+ .superpowers/sdd/report-layout-task-1-report.md    | 64 ++++++++++++++++++++++
+ client/src/pages/reportPrompt.singleSource.test.ts | 10 ++++
+ shared/prompts/reportPrompt.js                     | 10 ++--
+ 3 files changed, 79 insertions(+), 5 deletions(-)
+
+## Diff
+diff --git a/.superpowers/sdd/report-layout-task-1-report.md b/.superpowers/sdd/report-layout-task-1-report.md
+new file mode 100644
+index 0000000..c318c88
+--- /dev/null
++++ b/.superpowers/sdd/report-layout-task-1-report.md
+@@ -0,0 +1,64 @@
++# Task 1 완료 보고서: 짧은 요약과 세 문단 코멘트 계약
++
++## 상태
++
++완료. 기존 JSON 스키마를 변경하지 않고 공용 `MASTER_SYSTEM_PROMPT`에 요약 길이와 실무자 코멘트 구조 규칙을 추가했다.
++
++## TDD 기록
++
++1. `reportPrompt.singleSource.test.ts`에 다음 계약 단언을 먼저 추가했다.
++   - `공백 포함 28자 이내`
++   - `공백 포함 42자 이내`
++   - `정확히 세 문단`
++   - `빈 줄(\\n\\n)`
++   - `각 문단은 1~2문장`
++2. 집중 테스트를 실행해 새 규칙이 없어 실패하는 것을 확인했다.
++   - 실패 원인: 공용 프롬프트에 `공백 포함 28자 이내` 문구가 없었음.
++3. 공용 프롬프트의 `firstImpression`과 `pmComment` 설명 및 제약 조건에 최소 변경으로 계약을 추가했다.
++4. 집중 테스트를 다시 실행해 통과를 확인했다.
++
++## 구현 내용
++
++- `persona`: 공백 포함 28자 이내의 한 문장.
++- `summaryOneLiner`: 공백 포함 42자 이내의 한 문장.
++- `pmComment`: 빈 줄(`\\n\\n`)로 나눈 정확히 세 문단, 각 문단 1~2문장.
++- `pmComment` 문단 순서: 읽힌 관통 인상 → 더 선명하게 만들 연결고리 → 면접에서 준비할 설명.
++
++## 검증
++
++`pnpm exec vitest run client/src/pages/reportPrompt.singleSource.test.ts`
++
++결과: 테스트 파일 1개, 테스트 3개 모두 통과.
++
++추가 확인: `git diff --cached --check` 통과.
++
++## 자체 검토
++
++- JSON 키, 배열/중첩 구조, 한국어 및 JSON 단독 출력 규칙은 변경하지 않았다.
++- 변경 범위는 지정된 프롬프트와 계약 테스트 두 파일로 한정했다.
++- `pmComment`의 줄바꿈 표기는 JSON 문자열 규칙과 계약 테스트에 맞춰 `\\n\\n` 의미를 명시했다.
++
++## 커밋
++
++`2c4d0a5 feat: constrain report summary copy`
++
++## Important 이슈 수정: 런타임 JSON 줄바꿈 이스케이프
++
++### 상태
++
++완료. JavaScript 템플릿 리터럴에서 `\n\n`이 실제 개행으로 해석되던 문제를 수정했다. 이제 모델이 받는 `MASTER_SYSTEM_PROMPT`에는 JSON 문자열용 리터럴 이스케이프 문자 `\n\n`이 포함된다.
++
++### TDD 기록
++
++1. `MASTER_SYSTEM_PROMPT`를 직접 import하는 런타임 계약 테스트를 먼저 추가했다.
++2. `pnpm exec vitest run client/src/pages/reportPrompt.singleSource.test.ts`를 실행해 실패를 확인했다.
++   - 실패 원인: 런타임 프롬프트에 `빈 줄(\n\n)` 대신 실제 줄바꿈이 포함되어 있었음.
++3. 공용 프롬프트의 줄바꿈 안내와 `pmComment`의 JSON 예시·제약 문구만 `\\n` 및 `\\n\\n` 이스케이프 표기로 수정했다.
++4. 같은 집중 테스트를 다시 실행했다.
++   - 결과: 테스트 파일 1개, 테스트 4개 모두 통과.
++
++### 자체 검토
++
++- JSON 스키마와 기존 에디토리얼 규칙은 변경하지 않았다.
++- 런타임 테스트는 파일 원문 검사와 별도로 실제 `MASTER_SYSTEM_PROMPT` 값에 리터럴 JSON 이스케이프가 존재하는지 확인한다.
++- `git diff --check`를 통과했다.
+diff --git a/client/src/pages/reportPrompt.singleSource.test.ts b/client/src/pages/reportPrompt.singleSource.test.ts
+index ad1e1c6..149349a 100644
+--- a/client/src/pages/reportPrompt.singleSource.test.ts
++++ b/client/src/pages/reportPrompt.singleSource.test.ts
+@@ -1,12 +1,13 @@
+ import { readFileSync } from "node:fs";
+ import { describe, expect, it } from "vitest";
++import { MASTER_SYSTEM_PROMPT } from "../../../shared/prompts/reportPrompt.js";
+ 
+ const serverPrompt = readFileSync(new URL("../../../server/prompts/reportPrompt.ts", import.meta.url), "utf8");
+ const serverAnalyze = readFileSync(new URL("../../../server/api/analyze.ts", import.meta.url), "utf8");
+ const apiAnalyze = readFileSync(new URL("../../../api/analyze.js", import.meta.url), "utf8");
+ const sharedPrompt = readFileSync(new URL("../../../shared/prompts/reportPrompt.js", import.meta.url), "utf8");
+ 
+ describe("report prompt single source", () => {
+   it("keeps the prompt body in the shared prompt module only", () => {
+     expect(sharedPrompt).toContain("export const MASTER_SYSTEM_PROMPT");
+     expect(sharedPrompt).toContain("당신은 국내 대기업");
+@@ -20,12 +21,21 @@ describe("report prompt single source", () => {
+     expect(apiAnalyze).toContain("../shared/prompts/reportPrompt.js");
+   });
+ 
+   it("keeps editorial interpretation rules in the canonical prompt", () => {
+     expect(sharedPrompt).toContain("반복해서 보여주는 하나의 관통 패턴");
+     expect(sharedPrompt).toContain("도메인 + 행동 + 특징");
+     expect(sharedPrompt).toContain("산업, 프로젝트, 직무, 기술");
+     expect(sharedPrompt).toContain("인정 → 왜 좋은지 → 무엇이 조금 부족한지 → 어떻게 보완하면 더 좋아지는지");
+     expect(sharedPrompt).toContain("서로 다른 관점");
+     expect(sharedPrompt).toContain("feedbackCards의 original 필드");
++    expect(sharedPrompt).toContain("공백 포함 28자 이내");
++    expect(sharedPrompt).toContain("공백 포함 42자 이내");
++    expect(sharedPrompt).toContain("정확히 세 문단");
++    expect(sharedPrompt).toContain("빈 줄(\\\\n\\\\n)");
++    expect(sharedPrompt).toContain("각 문단은 1~2문장");
++  });
++
++  it("keeps the pmComment paragraph separator as a JSON escape at runtime", () => {
++    expect(MASTER_SYSTEM_PROMPT).toContain("빈 줄(\\n\\n)");
+   });
+ });
+diff --git a/shared/prompts/reportPrompt.js b/shared/prompts/reportPrompt.js
+index 52ca7f2..5c39c8e 100644
+--- a/shared/prompts/reportPrompt.js
++++ b/shared/prompts/reportPrompt.js
+@@ -29,21 +29,21 @@ export const MASTER_SYSTEM_PROMPT = `
+ 1. 영어 단어 사용 금지 (불가피한 기술 용어 제외)
+ 2. 모든 섹션 제목은 100% 한국어로 작성
+ 3. 모든 설명 문장, 피드백, 질문, 액션 플랜은 한국어로 작성
+ 4. 어색한 번역투 금지 (예: "~을 향상시키다", "~을 최적화하다" 지양)
+ 5. 실제 한국 기업 채용 담당자가 사용하는 현실적인 표현 사용
+ 6. section title, 카드 제목, 요약 문장 등 UI에 노출되는 모든 텍스트는 100% 한국어로 작성한다
+ 7. "Strengths", "Gap", "Insight" 등의 영어 단어 사용 금지
+ 8. 반드시 JSON만 출력한다
+ 9. 설명, 서문, 코드블록 절대 금지
+ 10. 따옴표는 반드시 쌍따옴표(")만 사용
+-11. 줄바꿈은 \n 으로 표현
++11. 줄바꿈은 \\n 으로 표현
+ 12. 위 규칙을 어길 경우 잘못된 출력으로 간주한다
+ 
+ 금지 예시:
+ - improve, optimize, execution, alignment, impact 등 영어 표현 사용 금지
+ - 번역투 문장 ("~을 수행하였습니다", "~을 기반으로 하여") 과도 사용 금지
+ 
+ 권장 톤:
+ - 간결하고 직설적
+ - 실무 피드백 느낌
+ - 불필요한 미사여구 제거
+@@ -52,22 +52,22 @@ export const MASTER_SYSTEM_PROMPT = `
+ 
+ {
+   "companyInsight": {
+     "summary": "이 회사가 사람을 뽑는 방식 한줄 정의",
+     "talentKeywords": ["인재상 키워드 3~5개"],
+     "hiringSignals": ["실제 합격 판단 기준 3~5개"],
+     "rejectionTriggers": ["이 회사에서 떨어지는 전형적인 이유 3~5개"],
+     "cultureSignals": ["조직 문화 시그널 3~5개"]
+   },
+   "firstImpression": {
+-    "summaryOneLiner": "도메인 + 행동 + 특징 구조의 짧고 기억되는 한 줄. '도전적인 인재', '성장형 인재', '글로벌 마인드', '실행력이 뛰어난 인재' 같은 추상 표현 금지",
+-    "persona": "도메인 + 행동 + 특징 구조로, 경험 전체의 관통 패턴을 해석한 한 줄",
++    "summaryOneLiner": "도메인 + 행동 + 특징 구조의 짧고 기억되는 한 줄. 공백 포함 42자 이내의 한 문장으로 작성. '도전적인 인재', '성장형 인재', '글로벌 마인드', '실행력이 뛰어난 인재' 같은 추상 표현 금지",
++    "persona": "도메인 + 행동 + 특징 구조로, 경험 전체의 관통 패턴을 해석한 한 줄. 공백 포함 28자 이내의 한 문장으로 작성",
+     "hashtags": ["#산업, 프로젝트, 직무, 기술 관련 키워드 우선", "#추상 역량은 최대 1~2개", "#키워드3"]
+   },
+   "strengths": [
+     "회사 채용 기준으로 해석한 강점 (각 2~3문장, 3개)"
+   ],
+   "gaps": [
+     "회사 채용 기준으로 해석한 부족한 점 (각 2~3문장, 3개)"
+   ],
+   "positioning": {
+     "current": "지금 지원자의 위치 (냉정하게)",
+@@ -111,32 +111,32 @@ export const MASTER_SYSTEM_PROMPT = `
+       "modelAnswer": "모범 답변 가이드 (3~4문장)"
+     }
+   ],
+   "actionPlan": [
+     {
+       "title": "합격 확률을 높이기 위한 액션",
+       "description": "구체적인 실행 가이드",
+       "expectedImpact": "이걸 하면 뭐가 달라지는지"
+     }
+   ],
+-  "pmComment": "실무자(Mentor Hansi) 입장에서 남기는 구체적이고 심도 있는 총평 코멘트 (최소 3문장 이상, 또는 3가지 이상의 구체적인 지적/조언 포함)"
++  "pmComment": "실무자(Mentor Hansi) 입장에서 남기는 구체적이고 심도 있는 총평. 빈 줄(\\n\\n)로 구분한 정확히 세 문단으로 작성하고, 각 문단은 1~2문장으로 제한. 문단 순서는 읽힌 관통 인상 → 더 선명하게 만들 연결고리 → 면접에서 준비할 설명"
+ }
+ 
+ # [제약 조건]
+ - feedbackCards의 original 필드는 반드시 fullAnswer의 정확한 부분 문자열이어야 한다. 한 글자라도 다르면 하이라이팅이 깨진다.
+ - interviewLink는 improvement 유형에서는 필수, praise 유형에서는 선택.
+ - detailedAnalysis는 praise/improvement 모두 필수. feedback 또는 praisePoint의 단순 반복 금지. 서로 다른 관점 세 가지 이상을 포함하고, 같은 내용을 표현만 바꿔 반복하지 않는다.
+ - 비유·스토리텔링·문학적 표현은 메시지가 명확하고 읽기 쉬우며 지원 직무와 연결되면 유지한다. 수정은 더 자연스럽고, 설득력 있고, 직관적으로 만드는 범위에서만 제안한다.
+ - strengths는 역량을 나열하지 말고 왜 그렇게 읽히는지 경험의 근거로 설명한다. gaps는 부족한 점만 말하지 말고 이미 좋은 부분을 어떻게 더 살릴 수 있는지 제안한다.
+ - 이모지 사용 금지.
+ - 문항당 feedbackCards는 4~8개. 최소 1개는 praise 유형 포함.
+ - interviewQA는 최소 5개에서 10개 작성, 각각 followUps 2~3개씩.
+ - actionPlan 개수는 자소서 품질에 따라 유동적.
+-- pmComment는 실제 면접관이 할 법한 말투로, 최소 3문장 이상 상세하게 작성.
++- pmComment는 실제 면접관이 할 법한 말투로 작성한다. 빈 줄(\\n\\n)로 구분한 정확히 세 문단, 각 문단은 1~2문장을 반드시 지킨다. 문단 순서는 읽힌 관통 인상 → 더 선명하게 만들 연결고리 → 면접에서 준비할 설명이다.
+ - companyInsight는 기업명에 따라 동적으로 추론한다. 하드코딩 금지.
+ 
+ # [문맥 이탈 방지]
+ 사용자의 텍스트가 자기소개서 맥락과 완전히 무관하거나 장난스러운 내용(의미 없는 반복, 욕설, 무작위 텍스트, 노래 가사, 급식체 도배 등)인 경우,
+ 분석을 진행하지 말고 다음 JSON만 반환하라:
+ {"error": "CONTEXT_IRRELEVANT", "message": "자기소개서와 무관한 내용입니다."}
+ 이 경우 위의 리포트 JSON 스키마를 사용하지 않는다.
+ `;

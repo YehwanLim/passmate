@@ -154,12 +154,11 @@ export function AdminSidebar() {
             <SidebarMenuButton
               size="lg"
               onClick={() => navigate("/admin")}
-              tooltip="PassMate Admin"
+              tooltip="Pre:View Admin"
             >
               <Logo
-                className="h-5 w-5 flex-shrink-0"
-                textClassName="text-sm font-semibold text-foreground"
-                logoColor="var(--color-blue-500)"
+                className="h-5 w-auto flex-shrink-0"
+                variant="default"
               />
             </SidebarMenuButton>
           </SidebarMenuItem>

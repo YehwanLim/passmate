@@ -96,7 +96,7 @@ export default function Login() {
         transition={{ duration: 0.5 }}
       >
         <div className="cursor-pointer" onClick={() => navigate("/")}>
-          <Logo className="w-6 h-6" textClassName="text-xl font-bold text-white" />
+          <Logo className="h-6 w-auto" />
         </div>
       </motion.header>
 

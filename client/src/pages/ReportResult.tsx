@@ -12,6 +12,7 @@ import {
 } from "../utils/reportAccess"
 import FeedbackSection from "../components/FeedbackSection"
 import AuthButton from "../components/AuthButton"
+import { BrandName } from "@/components/BrandName"
 import { FreeAnalysisNotice, ReportAccessGate } from "../components/report/ReportAccessGate"
 import { useAuth } from "../contexts/AuthContext"
 import { supabase } from "../lib/supabase"
@@ -541,7 +542,10 @@ export default function PassMateReport() {
                         <div className="pointer-events-none absolute inset-px rounded-[15px] border border-white/[0.035]" />
 
                         <div className="relative flex min-w-0 flex-col gap-2 border-b border-white/[0.06] pb-4 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-                            <span>PassMate Report</span>
+                            <span className="inline-flex items-center gap-1">
+                                <BrandName className="h-[0.95em]" />
+                                <span>Report</span>
+                            </span>
                             <span className="min-w-0 break-words sm:text-right">First Read · {targetCompany}</span>
                         </div>
 
@@ -1176,7 +1180,10 @@ export default function PassMateReport() {
                 <footer className="pt-20 pb-8 mt-10">
                     <p className="text-xs text-zinc-600 leading-relaxed mb-6 text-center">{UI_LABELS.FOOTER_DISCLAIMER}</p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-zinc-600">
-                        <p>PassMate 2026. All rights reserved.</p>
+                        <p className="inline-flex items-center gap-1">
+                            <BrandName className="h-[1em]" />
+                            <span>2026. All rights reserved.</span>
+                        </p>
                         <span className="hidden sm:inline">-</span>
                         <p>Report ID: RPT-2026-0430-{Math.random().toString(36).slice(2, 6).toUpperCase()}</p>
                     </div>

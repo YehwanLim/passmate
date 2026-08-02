@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import ReportShowcase from "@/components/ReportShowcase";
 import SocialProofSection from "@/components/SocialProofSection";
+import { BrandName } from "@/components/BrandName";
 import ProcessSection from "@/components/ProcessSection";
 import PricingSection from "@/components/PricingSection";
 import FounderSection from "@/components/FounderSection";
@@ -221,7 +222,7 @@ export default function Home() {
             className="flex items-center cursor-pointer"
             onClick={() => navigate("/")}
           >
-            <Logo className="w-5 h-5" textClassName="text-lg font-bold text-white" />
+            <Logo className="h-5 w-auto" />
           </div>
 
           <div className="hidden sm:flex items-center gap-4 md:gap-7">
@@ -398,7 +399,7 @@ export default function Home() {
               핵심 분석 기능
             </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              PreView는 자소서를 이렇게 읽습니다
+              <BrandName />는 자소서를 이렇게 읽습니다
             </h2>
             <p className="text-gray-500 font-light text-[15px] leading-[1.8] max-w-xl mx-auto">
               점수를 매기기보다, 면접관이 실제로 판단하는 흐름에 맞춰 읽습니다.

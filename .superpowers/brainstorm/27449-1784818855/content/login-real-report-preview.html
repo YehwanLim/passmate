@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#07090e; color:#f5f7fb; font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .page { max-width:1190px; margin:0 auto; padding:36px 24px 56px; }
+    h1 { margin:0; font-size:clamp(25px, 4vw, 38px); letter-spacing:-.05em; }
+    .intro { margin:12px 0 28px; color:#a8b1c1; font-size:15px; line-height:1.65; }
+    .intro b { color:#d9e5ff; }
+    .choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; }
+    .choice { cursor:pointer; padding:14px; border-radius:20px; border:1px solid #283345; background:#10151e; transition:.18s ease; }
+    .choice:hover,.choice.selected { transform:translateY(-3px); border-color:#6e9aff; box-shadow:0 16px 42px rgba(0,0,0,.28),0 0 0 1px rgba(103,151,255,.23); }
+    .choice > header { padding:6px 6px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    h2 { margin:0; font-size:17px; letter-spacing:-.03em; }
+    .tag { white-space:nowrap; font-size:11px; font-weight:700; letter-spacing:.06em; color:#9fc0ff; border:1px solid #355f9d; padding:5px 8px; border-radius:999px; }
+    .phone { min-height:660px; position:relative; overflow:hidden; border:1px solid #283245; border-radius:15px; background:radial-gradient(circle at 50% -12%,rgba(60,99,235,.24),transparent 35%),#090d14; }
+    .brand { padding:24px 0 6px; text-align:center; font-size:20px; font-weight:800; letter-spacing:-.06em; }
+    .brand i { color:#8babff; font-style:normal; }
+    .hero { padding:18px 27px 0; text-align:center; }
+    .hero h3 { margin:11px 0 8px; font-size:25px; line-height:1.23; letter-spacing:-.055em; }
+    .hero p { margin:0; color:#a5aeba; font-size:13px; line-height:1.55; }
+    .pill { display:inline-flex; align-items:center; gap:5px; border:1px solid rgba(113,155,255,.32); border-radius:999px; background:rgba(51,92,192,.13); color:#a2c0ff; padding:6px 9px; font-size:11px; font-weight:700; }
+    .cta { margin:22px 28px 0; display:flex; height:50px; align-items:center; justify-content:center; gap:10px; border-radius:11px; background:#f4f7ff; color:#151a25; font-size:14px; font-weight:700; }
+    .g { width:18px; height:18px; border-radius:50%; background:conic-gradient(#4385f4 0 25%,#34a853 0 50%,#fbbc05 0 75%,#ea4335 0); }
+    .safe { margin-top:15px; text-align:center; color:#718096; font-size:11px; }
+    .report { position:absolute; left:17px; right:17px; bottom:20px; overflow:hidden; border:1px solid rgba(255,255,255,.11); border-radius:15px; background:#0b0b0e; box-shadow:0 18px 40px rgba(0,0,0,.36); }
+    .report-top { display:flex; justify-content:space-between; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.07); color:#7d8795; font-size:9px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; }
+    .impression { padding:18px 16px 16px; text-align:center; }
+    .small { color:#c4cbd4; font-size:10px; }
+    .persona { margin:8px 0 9px; font-size:24px; font-weight:700; line-height:1.05; letter-spacing:-.06em; }
+    .summary { margin:0 auto; max-width:350px; color:#afb7c3; font-size:11px; line-height:1.55; }
+    .keywords { display:flex; flex-wrap:wrap; justify-content:center; gap:5px; margin-top:13px; }
+    .keywords span { border:1px solid rgba(255,255,255,.09); border-radius:999px; background:rgba(255,255,255,.035); padding:5px 7px; color:#9ca6b4; font-size:9px; }
+    .detail { padding:13px 14px 15px; }
+    .detail-head { color:#747e8e; font-size:9px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; }
+    .columns { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:9px; }
+    .panel { border:1px solid rgba(255,255,255,.07); border-radius:10px; padding:10px; background:rgba(255,255,255,.025); }
+    .panel h4 { margin:0 0 7px; font-size:10px; color:#e9eef8; }
+    .panel p { margin:0; color:#a9b3c2; font-size:9px; line-height:1.5; }
+    .green { color:#85d9ba!important; } .amber { color:#e5c56d!important; }
+    .note { margin:12px 7px 2px; color:#9da7b6; font-size:13px; line-height:1.55; }
+    .mini-doc { padding:15px 14px 14px; }
+    .tabs { display:flex; gap:12px; margin:0 0 12px; border-bottom:1px solid rgba(255,255,255,.07); }
+    .tabs span { padding-bottom:8px; color:#9ba5b5; font-size:9px; } .tabs .active { color:#f5f7fb; border-bottom:1px solid #a8bfff; }
+    .prompt { color:#cbd2dd; font-size:10px; line-height:1.45; }
+    .line { margin:8px 0 0; padding:8px 9px; border-radius:7px; color:#afb8c5; font-size:9px; line-height:1.5; background:#131a25; }
+    .line.good { border-left:2px solid #65d3b1; } .line.gap { border-left:2px solid #d9b94b; }
+    .comment { margin-top:10px; border-radius:9px; border:1px solid rgba(255,255,255,.08); background:#141b27; padding:10px; }
+    .comment strong { display:block; margin-bottom:4px; color:#dce5f3; font-size:10px; } .comment p { margin:0; color:#aab5c4; font-size:9px; line-height:1.5; }
+    @media(max-width:760px){.choices{grid-template-columns:1fr}.phone{min-height:635px}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>현재 리포트에 있는 내용만 사용한 로그인 미리보기</h1>
+    <p class="intro">점수·가공된 진단 문구는 모두 제외했습니다. 아래는 <b>현재 리포트의 ‘첫인상’, ‘강점/보완점’, ‘문장별 피드백’</b>을 그대로 축소한 두 가지 방식입니다.</p>
+    <section class="choices">
+      <article class="choice" data-choice="first-impression" onclick="toggleSelect(this)">
+        <header><h2>A. 첫인상 리포트 일부</h2><span class="tag">추천</span></header>
+        <div class="phone">
+          <div class="brand"><i>pass</i>mate</div>
+          <div class="hero"><span class="pill">✦ 로그인만 하면 무료 분석</span><h3>내 자소서가<br/>처음 어떻게 읽힐지 확인하세요</h3><p>지원 직무 기준의 첫인상과<br/>강점·보완점을 바로 보여드려요.</p></div>
+          <div class="cta"><span class="g"></span>Google로 무료 분석 시작하기</div>
+          <div class="safe">⌾ 비밀번호는 PassMate에 저장되지 않아요</div>
+          <section class="report">
+            <div class="report-top"><span>PreView Report</span><span>First Read · 현대자동차</span></div>
+            <div class="impression"><div class="small">김민지님은</div><div class="persona">데이터 기반<br/>실행형 PM</div><p class="summary">데이터 기반 실행력은 강하지만, 현대자동차 기준 모빌리티 임팩트 연결이 부족합니다.</p><div class="keywords"><span>데이터분석</span><span>가설검증</span><span>고객 중심</span></div></div>
+          </section>
+        </div>
+        <p class="note">실제 리포트의 첫 화면을 짧게 보여줍니다. 무료 분석 후 무엇을 받는지가 가장 직관적입니다.</p>
+      </article>
+      <article class="choice" data-choice="feedback" onclick="toggleSelect(this)">
+        <header><h2>B. 문장별 피드백 일부</h2><span class="tag">기능 중심</span></header>
+        <div class="phone">
+          <div class="brand"><i>pass</i>mate</div>
+          <div class="hero"><span class="pill">✦ 로그인만 하면 무료 분석</span><h3>문장마다,<br/>더 설득력 있게 다듬어요</h3><p>원문과 개선 포인트를 나란히 보며<br/>바로 고칠 부분을 찾을 수 있어요.</p></div>
+          <div class="cta"><span class="g"></span>Google로 무료 분석 시작하기</div>
+          <div class="safe">⌾ 비밀번호는 PassMate에 저장되지 않아요</div>
+          <section class="report">
+            <div class="report-top"><span>04. 문장 분석</span><span>문항 1</span></div>
+            <div class="mini-doc"><div class="tabs"><span class="active">문항 1</span><span>문항 2</span></div><p class="prompt">자신이 주도적으로 문제를 발견하고 해결한 경험에 대해 서술해 주세요.</p><p class="line good">직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다.</p><p class="line gap">유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.</p><div class="comment"><strong>문장별 코멘트</strong><p>분석의 깊이가 다소 얕게 느껴집니다. 어떤 세그먼트의 유저가 어떤 행동 양상을 보였는지 더 구체적으로 서술하면 좋습니다.</p></div></div>
+          </section>
+        </div>
+        <p class="note">실제 리포트의 ‘문장 분석’ 구조를 보여줍니다. 무엇을 고칠 수 있는 서비스인지가 분명해집니다.</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

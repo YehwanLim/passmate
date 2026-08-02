@@ -888,7 +888,7 @@ export default function Analyze() {
               className="flex items-center cursor-pointer"
               onClick={() => navigate("/")}
             >
-              <Logo className="w-6 h-6" textClassName="text-lg md:text-xl text-white" />
+              <Logo className="h-6 w-auto" />
             </div>
           </div>
 

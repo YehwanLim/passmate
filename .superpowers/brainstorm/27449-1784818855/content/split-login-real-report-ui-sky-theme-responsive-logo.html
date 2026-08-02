@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+  <script>
+    const previewKey = "96a15fadc4148e92994cb43070f76f2ff0c63d6622d3e35a70ff1722f7c30cad";
+    const themeAndResponsiveLayout = `<style>
+      .lead h1 strong { color: #7dd3fc !important; }
+      .nav button.active { color: rgba(125, 211, 252, .9) !important; }
+      .impression-head .tags span { border-color: rgba(125, 211, 252, .18) !important; color: #bae6fd !important; background: rgba(14, 165, 233, .055) !important; }
+      .insight-strip { border-color: rgba(125, 211, 252, .18) !important; background: linear-gradient(90deg, rgba(14, 165, 233, .09), rgba(255,255,255,.018)) !important; color: #c9e9f5 !important; }
+      .insight-strip b { color: #7dd3fc !important; }
+      .diagnosis-grid .strength, .diagnosis-grid .gap { color: rgba(125, 211, 252, .82) !important; }
+      .criteria span { background: rgba(14, 165, 233, .08) !important; color: #bae6fd !important; }
+      .tabs .active:after { background: #38bdf8 !important; }
+      .annotation.good { background: rgba(56, 189, 248, .24) !important; }
+      .annotation.improve { background: rgba(125, 211, 252, .18) !important; }
+      .badge, .number { background: #38bdf8 !important; color: #082f49 !important; }
+      .accordion.active { border-color: rgba(125, 211, 252, .28) !important; }
+      .comment-result { background: rgba(14, 165, 233, .08) !important; color: #c5e8f6 !important; }
+      .check { border-color: #38bdf8 !important; color: #38bdf8 !important; }
+      .actions small { color: rgba(125, 211, 252, .7) !important; }
+      .mentor { border-left-color: rgba(125, 211, 252, .85) !important; background: rgba(14, 165, 233, .07) !important; color: #c4e4f1 !important; }
+      .mentor b { color: #d8f3fc !important; }
+      .brand, .brand i { color: #f2f4f9 !important; }
+      .brand-colon { color: #91adff; display: inline-block; padding: 0 .045em; }
+      @media (max-width: 1080px) {
+        .screen { grid-template-columns: 1fr !important; }
+        .right { order: -1; min-height: 330px !important; padding: 82px 28px 48px !important; border-bottom: 1px solid rgba(255,255,255,.08); }
+        .brand { top: 24px !important; right: 28px !important; }
+        .terms { display: none; }
+        .left { min-height: 720px; }
+      }
+    </style>`;
+    fetch(`/files/split-login-real-report-ui-dense.html?key=${previewKey}`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Preview request failed: ${response.status}`);
+        return response.text();
+      })
+      .then((html) => {
+        const withCorrectLogo = html.replace(
+          '<div class="brand"><i>Pre</i>:View</div>',
+          '<div class="brand">Pre<span class="brand-colon">:</span>View</div>',
+        );
+        document.open();
+        document.write(withCorrectLogo.replace("</head>", `${themeAndResponsiveLayout}</head>`));
+        document.close();
+      })
+      .catch((error) => {
+        document.body.textContent = `미리보기를 불러오지 못했습니다: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

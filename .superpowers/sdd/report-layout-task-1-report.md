@@ -62,3 +62,24 @@
 - JSON 스키마와 기존 에디토리얼 규칙은 변경하지 않았다.
 - 런타임 테스트는 파일 원문 검사와 별도로 실제 `MASTER_SYSTEM_PROMPT` 값에 리터럴 JSON 이스케이프가 존재하는지 확인한다.
 - `git diff --check`를 통과했다.
+
+## 후속 Important 이슈: JSON 예시의 `pmComment` 실제 줄바꿈 방지
+
+### 상태
+
+차단됨. 요청 범위가 `client/src/pages/reportPrompt.singleSource.test.ts`만 허용하지만, 새 런타임 계약 테스트가 공용 프롬프트에 남아 있는 실제 결함을 재현했다. GREEN을 만들려면 프로덕션 프롬프트의 JSON 예시 이스케이프를 수정해야 한다.
+
+### TDD 기록
+
+1. `# [출력: JSON만, 마크다운 코드 블록 없이]` 마커 뒤의 JSON 예시를 추출하고 `JSON.parse`하는 테스트를 먼저 추가했다.
+2. RED 실행:
+   - 명령: `pnpm exec vitest run client/src/pages/reportPrompt.singleSource.test.ts`
+   - 최초 실패: `extractOutputJsonExample is not defined`.
+   - 테스트 파일에만 마커 기반 추출 헬퍼를 추가했다.
+3. 두 번째 실행에서 실제 결함을 확인했다.
+   - 실패: `parsed.pmComment`에 실제 줄바꿈 문자가 포함됨.
+   - 원인: 런타임 JSON 예시의 `\\n\\n`이 JSON 파싱 시 개행으로 해석된다. 파싱 뒤 리터럴 `\\n\\n`을 유지하려면 공용 프롬프트 문자열에서 한 단계 더 이스케이프해야 한다.
+
+### GREEN 상태
+
+미실행. 사용자 지시대로 프로덕션 파일을 수정하지 않았으므로, 현재 테스트는 의도대로 실패한다.

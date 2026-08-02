@@ -1,34 +1,24 @@
-import React from "react";
+type BrandVariant = "default" | "inverse";
 
 type LogoProps = {
-  /** Retained so existing call sites can migrate from the removed icon prop safely. */
   className?: string;
-  textClassName?: string;
-  logoColor?: string;
+  variant?: BrandVariant;
+};
+
+const WORDMARK_SOURCE: Record<BrandVariant, string> = {
+  default: "/pre-view-wordmark.png",
+  inverse: "/pre-view-wordmark-white.png",
 };
 
 export default function Logo({
-  textClassName = "text-xl md:text-2xl text-white",
-  logoColor = "#38BDF8",
+  className = "h-6 w-auto",
+  variant = "inverse",
 }: LogoProps) {
   return (
-    <div className="flex items-center">
-      <span
-        className={`font-bold ${textClassName}`}
-        style={{ letterSpacing: "-0.045em" }}
-      >
-        Pre
-        <span
-          style={{
-            color: logoColor,
-            display: "inline-block",
-            padding: "0 0.045em",
-          }}
-        >
-          :
-        </span>
-        View
-      </span>
-    </div>
+    <img
+      alt="Pre:View"
+      className={className}
+      src={WORDMARK_SOURCE[variant]}
+    />
   );
 }

@@ -1,0 +1,547 @@
+# Review package: c47941d..6541313b6b7dced61079ab963477b64afd29a1bc
+
+## Commits
+6541313 feat: add analysis entitlement domain
+
+## Files changed
+ lib/analysis-entitlements.js                       | 147 ++++++++++++++++++++
+ lib/analysis-entitlements.test.js                  | 149 +++++++++++++++++++++
+ .../migration.sql                                  |  88 ++++++++++++
+ prisma/schema.prisma                               | 103 ++++++++++++++
+ 4 files changed, 487 insertions(+)
+
+## Diff
+diff --git a/lib/analysis-entitlements.js b/lib/analysis-entitlements.js
+new file mode 100644
+index 0000000..a558d70
+--- /dev/null
++++ b/lib/analysis-entitlements.js
+@@ -0,0 +1,147 @@
++const SETTINGS_ID = "singleton";
++const FREE_CREDITS_PER_ACCOUNT = 1;
++const CREDIT_RESERVATION_STATUSES = ["PENDING", "CONSUMED"];
++
++export class EntitlementUnavailableError extends Error {
++  constructor() {
++    super("Analysis credits are exhausted");
++    this.code = "ANALYSIS_CREDITS_EXHAUSTED";
++  }
++}
++
++function isUniqueConstraintError(error) {
++  return error?.code === "P2002";
++}
++
++async function getLockedEntitlement(tx, userId) {
++  try {
++    await tx.analysisEntitlement.create({ data: { userId } });
++  } catch (error) {
++    if (!isUniqueConstraintError(error)) {
++      throw error;
++    }
++  }
++
++  await tx.$queryRaw`
++    SELECT id
++    FROM analysis_entitlements
++    WHERE user_id = ${userId}::uuid
++    FOR UPDATE
++  `;
++
++  return tx.analysisEntitlement.findUnique({ where: { userId } });
++}
++
++async function getUsage(tx, userId, source) {
++  return tx.analysisReservation.count({
++    where: {
++      userId,
++      source,
++      status: { in: CREDIT_RESERVATION_STATUSES },
++    },
++  });
++}
++
++async function getSummaryForEntitlement(tx, userId, entitlement) {
++  const [settings, freeUsed, premiumUsed] = await Promise.all([
++    tx.entitlementSetting.findUnique({ where: { id: SETTINGS_ID } }),
++    getUsage(tx, userId, "FREE"),
++    getUsage(tx, userId, "PREMIUM"),
++  ]);
++  const freeRemaining = Math.max(FREE_CREDITS_PER_ACCOUNT - freeUsed, 0);
++  const premiumRemaining = Math.max(entitlement.premiumCreditsGranted - premiumUsed, 0);
++
++  return {
++    premiumEnabled: settings?.premiumEnabled ?? false,
++    freeRemaining,
++    premiumRemaining,
++    remaining: freeRemaining + premiumRemaining,
++  };
++}
++
++export async function getEntitlementSummary(tx, userId) {
++  const entitlement = await getLockedEntitlement(tx, userId);
++  return getSummaryForEntitlement(tx, userId, entitlement);
++}
++
++export async function reserveAnalysis(tx, userId) {
++  const entitlement = await getLockedEntitlement(tx, userId);
++  const summary = await getSummaryForEntitlement(tx, userId, entitlement);
++
++  if (summary.remaining === 0) {
++    throw new EntitlementUnavailableError();
++  }
++
++  const source = summary.freeRemaining > 0 ? "FREE" : "PREMIUM";
++  const reservation = await tx.analysisReservation.create({
++    data: {
++      userId,
++      source,
++      status: "PENDING",
++    },
++  });
++
++  return {
++    reservationId: reservation.id,
++    source: source.toLowerCase(),
++  };
++}
++
++export async function finalizeAnalysisReservation(tx, reservationId, userId) {
++  await tx.analysisReservation.updateMany({
++    where: {
++      id: reservationId,
++      userId,
++      status: "PENDING",
++    },
++    data: {
++      status: "CONSUMED",
++      finalizedAt: new Date(),
++    },
++  });
++}
++
++export async function cancelAnalysisReservation(tx, reservationId, userId) {
++  await tx.analysisReservation.updateMany({
++    where: {
++      id: reservationId,
++      userId,
++      status: "PENDING",
++    },
++    data: {
++      status: "CANCELLED",
++      cancelledAt: new Date(),
++    },
++  });
++}
++
++export async function grantGroblePurchase(tx, input) {
++  const entitlement = await getLockedEntitlement(tx, input.userId);
++  const settings = await tx.entitlementSetting.findUnique({ where: { id: SETTINGS_ID } });
++  const credits = settings?.premiumCreditsPerPurchase ?? 3;
++
++  try {
++    await tx.paymentEntitlement.create({
++      data: {
++        userId: input.userId,
++        providerPaymentId: input.providerPaymentId,
++        creditsGranted: credits,
++        rawEvent: input.rawEvent,
++      },
++    });
++  } catch (error) {
++    if (isUniqueConstraintError(error)) {
++      return { granted: false, credits: 0 };
++    }
++    throw error;
++  }
++
++  await tx.analysisEntitlement.update({
++    where: { userId: entitlement.userId },
++    data: {
++      premiumCreditsGranted: { increment: credits },
++    },
++  });
++
++  return { granted: true, credits };
++}
+diff --git a/lib/analysis-entitlements.test.js b/lib/analysis-entitlements.test.js
+new file mode 100644
+index 0000000..fe14122
+--- /dev/null
++++ b/lib/analysis-entitlements.test.js
+@@ -0,0 +1,149 @@
++import { describe, expect, it } from "vitest";
++
++import {
++  cancelAnalysisReservation,
++  finalizeAnalysisReservation,
++  getEntitlementSummary,
++  grantGroblePurchase,
++  reserveAnalysis,
++} from "./analysis-entitlements.js";
++
++function createMemoryDatabase() {
++  const state = {
++    entitlements: new Map(),
++    lockedUserIds: [],
++    payments: new Map(),
++    reservations: [],
++    settings: {
++      id: "singleton",
++      premiumEnabled: false,
++      premiumCreditsPerPurchase: 3,
++    },
++  };
++  let nextReservationId = 1;
++
++  const db = {
++    $queryRaw: async (_strings, ...values) => {
++      state.lockedUserIds.push(values[0]);
++      return [];
++    },
++    analysisEntitlement: {
++      create: async ({ data }) => {
++        if (state.entitlements.has(data.userId)) {
++          const error = new Error("Unique constraint failed");
++          error.code = "P2002";
++          throw error;
++        }
++        const entitlement = {
++          id: `entitlement-${data.userId}`,
++          premiumCreditsGranted: 0,
++          userId: data.userId,
++        };
++        state.entitlements.set(data.userId, entitlement);
++        return { ...entitlement };
++      },
++      findUnique: async ({ where: { userId } }) => {
++        const entitlement = state.entitlements.get(userId);
++        return entitlement ? { ...entitlement } : null;
++      },
++      update: async ({ where: { userId }, data }) => {
++        const entitlement = state.entitlements.get(userId);
++        entitlement.premiumCreditsGranted += data.premiumCreditsGranted.increment;
++        return { ...entitlement };
++      },
++    },
++    analysisReservation: {
++      count: async ({ where }) =>
++        state.reservations.filter(
++          (reservation) =>
++            reservation.userId === where.userId &&
++            reservation.source === where.source &&
++            where.status.in.includes(reservation.status),
++        ).length,
++      create: async ({ data }) => {
++        const reservation = {
++          id: `reservation-${nextReservationId++}`,
++          ...data,
++        };
++        state.reservations.push(reservation);
++        return { ...reservation };
++      },
++      updateMany: async ({ where, data }) => {
++        const matching = state.reservations.filter(
++          (reservation) =>
++            reservation.id === where.id &&
++            reservation.userId === where.userId &&
++            reservation.status === where.status,
++        );
++        matching.forEach((reservation) => {
++          reservation.status = data.status;
++        });
++        return { count: matching.length };
++      },
++    },
++    entitlementSetting: {
++      findUnique: async () => ({ ...state.settings }),
++    },
++    paymentEntitlement: {
++      create: async ({ data }) => {
++        if (state.payments.has(data.providerPaymentId)) {
++          const error = new Error("Unique constraint failed");
++          error.code = "P2002";
++          throw error;
++        }
++        state.payments.set(data.providerPaymentId, { ...data });
++        return { ...data };
++      },
++    },
++  };
++
++  return { db, state };
++}
++
++describe("analysis entitlements", () => {
++  it("gives a new account one free analysis and then blocks a second reservation", async () => {
++    const { db } = createMemoryDatabase();
++
++    const first = await reserveAnalysis(db, "user-1");
++    await finalizeAnalysisReservation(db, first.reservationId, "user-1");
++
++    await expect(reserveAnalysis(db, "user-1")).rejects.toMatchObject({
++      code: "ANALYSIS_CREDITS_EXHAUSTED",
++    });
++  });
++
++  it("grants exactly three credits once when Groble retries a paid event", async () => {
++    const { db } = createMemoryDatabase();
++
++    await grantGroblePurchase(db, {
++      providerPaymentId: "pay-1",
++      rawEvent: {},
++      userId: "user-1",
++    });
++    const duplicate = await grantGroblePurchase(db, {
++      providerPaymentId: "pay-1",
++      rawEvent: {},
++      userId: "user-1",
++    });
++
++    expect(duplicate).toEqual({ granted: false, credits: 0 });
++    await expect(getEntitlementSummary(db, "user-1")).resolves.toMatchObject({
++      premiumRemaining: 3,
++    });
++  });
++
++  it("holds a pending credit until cancelling its reservation", async () => {
++    const { db, state } = createMemoryDatabase();
++
++    const reservation = await reserveAnalysis(db, "user-1");
++    await expect(reserveAnalysis(db, "user-1")).rejects.toMatchObject({
++      code: "ANALYSIS_CREDITS_EXHAUSTED",
++    });
++
++    await cancelAnalysisReservation(db, reservation.reservationId, "user-1");
++    await expect(reserveAnalysis(db, "user-1")).resolves.toMatchObject({
++      source: "free",
++    });
++    expect(state.lockedUserIds).toContain("user-1");
++  });
++});
+diff --git a/prisma/migrations/20260721_add_analysis_entitlements/migration.sql b/prisma/migrations/20260721_add_analysis_entitlements/migration.sql
+new file mode 100644
+index 0000000..63c7346
+--- /dev/null
++++ b/prisma/migrations/20260721_add_analysis_entitlements/migration.sql
+@@ -0,0 +1,88 @@
++DO $$
++BEGIN
++  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'analysis_reservation_status') THEN
++    CREATE TYPE analysis_reservation_status AS ENUM ('PENDING', 'CONSUMED', 'CANCELLED');
++  END IF;
++
++  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'analysis_reservation_source') THEN
++    CREATE TYPE analysis_reservation_source AS ENUM ('FREE', 'PREMIUM');
++  END IF;
++
++  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'purchase_intent_status') THEN
++    CREATE TYPE purchase_intent_status AS ENUM ('PENDING', 'PAID', 'CANCELLED');
++  END IF;
++END
++$$;
++
++CREATE TABLE IF NOT EXISTS entitlement_settings (
++  id VARCHAR(32) PRIMARY KEY,
++  premium_enabled BOOLEAN NOT NULL DEFAULT FALSE,
++  premium_credits_per_purchase INTEGER NOT NULL DEFAULT 3,
++  groble_payment_url TEXT NOT NULL,
++  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++  CONSTRAINT entitlement_settings_singleton CHECK (id = 'singleton')
++);
++
++CREATE TABLE IF NOT EXISTS analysis_entitlements (
++  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
++  premium_credits_granted INTEGER NOT NULL DEFAULT 0,
++  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
++);
++
++CREATE TABLE IF NOT EXISTS analysis_reservations (
++  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
++  source analysis_reservation_source NOT NULL,
++  status analysis_reservation_status NOT NULL DEFAULT 'PENDING',
++  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++  finalized_at TIMESTAMPTZ,
++  cancelled_at TIMESTAMPTZ
++);
++
++CREATE TABLE IF NOT EXISTS purchase_intents (
++  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
++  status purchase_intent_status NOT NULL DEFAULT 'PENDING',
++  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
++  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
++);
++
++CREATE TABLE IF NOT EXISTS payment_entitlements (
++  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
++  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
++  provider_payment_id VARCHAR(255) NOT NULL,
++  credits_granted INTEGER NOT NULL,
++  raw_event JSONB NOT NULL,
++  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_analysis_reservations_user_id
++  ON analysis_reservations (user_id);
++CREATE INDEX IF NOT EXISTS idx_analysis_reservations_status
++  ON analysis_reservations (status);
++CREATE INDEX IF NOT EXISTS idx_purchase_intents_user_id
++  ON purchase_intents (user_id);
++CREATE INDEX IF NOT EXISTS idx_purchase_intents_status
++  ON purchase_intents (status);
++CREATE INDEX IF NOT EXISTS idx_payment_entitlements_user_id
++  ON payment_entitlements (user_id);
++CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_entitlements_provider_payment_id
++  ON payment_entitlements (provider_payment_id);
++
++INSERT INTO entitlement_settings (
++  id,
++  premium_enabled,
++  premium_credits_per_purchase,
++  groble_payment_url
++)
++VALUES (
++  'singleton',
++  FALSE,
++  3,
++  'https://www.groble.im/payment/4SGBV5'
++)
++ON CONFLICT DO NOTHING;
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index 063d0dd..db2c294 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -22,24 +22,127 @@ model User {
+   role      String   @default("user") @db.Text
+ 
+   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+ 
+   // Relations
+   projects   Project[]
+   analyses   Analysis[]
+   feedbacks  Feedback[]
+   apiKey     UserApiKey?
++  analysisEntitlement AnalysisEntitlement?
++  analysisReservations AnalysisReservation[]
++  purchaseIntents PurchaseIntent[]
++  paymentEntitlements PaymentEntitlement[]
+ 
+   @@map("users")
+ }
+ 
++// =============================================================================
++// Analysis entitlements — account-level analysis credits and payment audit data
++// =============================================================================
++enum AnalysisReservationStatus {
++  PENDING
++  CONSUMED
++  CANCELLED
++
++  @@map("analysis_reservation_status")
++}
++
++enum AnalysisReservationSource {
++  FREE
++  PREMIUM
++
++  @@map("analysis_reservation_source")
++}
++
++enum PurchaseIntentStatus {
++  PENDING
++  PAID
++  CANCELLED
++
++  @@map("purchase_intent_status")
++}
++
++model EntitlementSetting {
++  id                        String  @id @default("singleton") @db.VarChar(32)
++  premiumEnabled            Boolean @default(false) @map("premium_enabled")
++  premiumCreditsPerPurchase Int     @default(3) @map("premium_credits_per_purchase")
++  groblePaymentUrl          String  @map("groble_payment_url") @db.Text
++
++  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
++  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
++
++  @@map("entitlement_settings")
++}
++
++model AnalysisEntitlement {
++  id                      String @id @default(uuid()) @db.Uuid
++  userId                  String @unique @map("user_id") @db.Uuid
++  premiumCreditsGranted   Int    @default(0) @map("premium_credits_granted")
++
++  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
++  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
++
++  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
++
++  @@map("analysis_entitlements")
++}
++
++model AnalysisReservation {
++  id     String                    @id @default(uuid()) @db.Uuid
++  userId String                    @map("user_id") @db.Uuid
++  source AnalysisReservationSource
++  status AnalysisReservationStatus @default(PENDING)
++
++  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
++  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
++  finalizedAt DateTime? @map("finalized_at") @db.Timestamptz
++  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz
++
++  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
++
++  @@index([userId])
++  @@index([status])
++  @@map("analysis_reservations")
++}
++
++model PurchaseIntent {
++  id     String               @id @default(uuid()) @db.Uuid
++  userId String               @map("user_id") @db.Uuid
++  status PurchaseIntentStatus @default(PENDING)
++
++  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
++  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
++
++  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
++
++  @@index([userId])
++  @@index([status])
++  @@map("purchase_intents")
++}
++
++model PaymentEntitlement {
++  id                String @id @default(uuid()) @db.Uuid
++  userId            String @map("user_id") @db.Uuid
++  providerPaymentId String @unique @map("provider_payment_id") @db.VarChar(255)
++  creditsGranted    Int    @map("credits_granted")
++  rawEvent          Json   @map("raw_event")
++
++  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
++
++  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
++
++  @@index([userId])
++  @@map("payment_entitlements")
++}
++
+ // =============================================================================
+ // UserApiKey — 유저별 Gemini API Key 저장
+ // =============================================================================
+ model UserApiKey {
+   id         String   @id @default(uuid()) @db.Uuid
+   userId     String   @unique @map("user_id") @db.Uuid
+ 
+   encryptedKey String  @map("encrypted_key") @db.Text  // 실제 키 (서버 전용)
+   keyPreview   String? @map("key_preview") @db.VarChar(20) // 마스킹 표시용 (AIza...fpQ)
+ 

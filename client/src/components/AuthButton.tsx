@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, ChevronDown, User } from "lucide-react";
+import { LogOut, ChevronDown, User, FileText, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
@@ -21,7 +21,10 @@ export default function AuthButton() {
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -41,6 +44,11 @@ export default function AuthButton() {
     } finally {
       setIsSigningOut(false);
     }
+  };
+
+  const handleNavigate = (path: "/my" | "/entitlements") => {
+    setDropdownOpen(false);
+    navigate(path);
   };
 
   // 세션 로딩 중에는 빈 자리 유지 (레이아웃 흔들림 방지)
@@ -70,7 +78,7 @@ export default function AuthButton() {
       {/* 프로필 버튼 */}
       <button
         id="header-profile-btn"
-        onClick={() => setDropdownOpen((prev) => !prev)}
+        onClick={() => setDropdownOpen(prev => !prev)}
         className="header-action-link flex items-center gap-2 h-8 px-2 pr-2.5 rounded-md"
         aria-label="사용자 메뉴"
         aria-expanded={dropdownOpen}
@@ -123,6 +131,24 @@ export default function AuthButton() {
               <p className="text-[11px] text-gray-500 truncate mt-0.5">
                 {user?.email}
               </p>
+            </div>
+
+            <div className="p-1.5 border-b border-white/[0.06]">
+              <button
+                id="header-my-projects-btn"
+                onClick={() => handleNavigate("/my")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-300 hover:text-white hover:bg-white/10 transition-colors duration-150"
+              >
+                <FileText className="w-4 h-4 text-gray-500" />내 지원서
+              </button>
+              <button
+                id="header-entitlements-btn"
+                onClick={() => handleNavigate("/entitlements")}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-300 hover:text-white hover:bg-white/10 transition-colors duration-150"
+              >
+                <Ticket className="w-4 h-4 text-gray-500" />
+                이용권
+              </button>
             </div>
 
             {/* 로그아웃 */}

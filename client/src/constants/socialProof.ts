@@ -23,7 +23,7 @@ export type AcceptanceTestimonial = {
   period: string;
 };
 
-export const SUCCESSFUL_COMPANY_COUNT = 127;
+export const SUCCESSFUL_COMPANY_COUNT = 20;
 
 export const SOCIAL_PROOF_METRICS: readonly SocialProofMetric[] = [
   {
@@ -42,14 +42,6 @@ export const SOCIAL_PROOF_METRICS: readonly SocialProofMetric[] = [
 
 export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
   {
-    id: "cj",
-    name: "CJ",
-    wordmark: "CJ",
-    logoSrc: "/company-logos/cj.svg",
-    logoAlt: "CJ 로고",
-    logoScale: 1.15,
-  },
-  {
     id: "kakao",
     name: "카카오",
     wordmark: "kakao",
@@ -63,7 +55,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "NAVER",
     logoSrc: "/company-logos/naver.svg",
     logoAlt: "NAVER 로고",
-    logoScale: 0.95,
+    logoScale: 0.91,
   },
   {
     id: "lg",
@@ -71,7 +63,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "LG",
     logoSrc: "/company-logos/lg.svg",
     logoAlt: "LG 로고",
-    logoScale: 1.1,
+    logoScale: 0.98,
   },
   {
     id: "nexon",
@@ -79,7 +71,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "NEXON",
     logoSrc: "/company-logos/nexon.svg",
     logoAlt: "넥슨 로고",
-    logoScale: 1,
+    logoScale: 0.96,
   },
   {
     id: "ncsoft",
@@ -87,7 +79,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "NCSOFT",
     logoSrc: "/company-logos/ncsoft.svg",
     logoAlt: "NCSOFT 로고",
-    logoScale: 1.12,
+    logoScale: 0.82,
   },
   {
     id: "netmarble",
@@ -103,7 +95,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "POSCO INTERNATIONAL",
     logoSrc: "/company-logos/posco-international.svg",
     logoAlt: "포스코인터내셔널 로고",
-    logoScale: 1,
+    logoScale: 0.95,
   },
   {
     id: "hyundai-motor",
@@ -111,7 +103,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "HYUNDAI",
     logoSrc: "/company-logos/hyundai-motor.svg",
     logoAlt: "현대자동차 로고",
-    logoScale: 1.18,
+    logoScale: 0.96,
   },
   {
     id: "sk-chemicals",
@@ -119,7 +111,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "SK chemicals",
     logoSrc: "/company-logos/sk-chemicals.svg",
     logoAlt: "SK케미칼 로고",
-    logoScale: 1.08,
+    logoScale: 0.96,
   },
   {
     id: "hyundai-autoever",
@@ -127,7 +119,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "HYUNDAI AUTOEVER",
     logoSrc: "/company-logos/hyundai-autoever.svg",
     logoAlt: "현대오토에버 로고",
-    logoScale: 0.98,
+    logoScale: 0.95,
   },
   {
     id: "orion",
@@ -143,7 +135,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "SAMSUNG",
     logoSrc: "/company-logos/samsung-electronics.svg",
     logoAlt: "삼성전자 로고",
-    logoScale: 1.15,
+    logoScale: 1,
   },
   {
     id: "lg-display",
@@ -159,7 +151,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "SK telecom",
     logoSrc: "/company-logos/sk-telecom.svg",
     logoAlt: "SK텔레콤 로고",
-    logoScale: 1.05,
+    logoScale: 0.97,
   },
   {
     id: "nhn-commerce",
@@ -167,7 +159,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "NHN COMMERCE",
     logoSrc: "/company-logos/nhn-commerce.svg",
     logoAlt: "NHN커머스 로고",
-    logoScale: 0.97,
+    logoScale: 1,
   },
   {
     id: "samyang-group",
@@ -183,7 +175,7 @@ export const SUCCESSFUL_COMPANIES: readonly SuccessfulCompany[] = [
     wordmark: "CJ OliveNetworks",
     logoSrc: "/company-logos/cj-olive-networks.svg",
     logoAlt: "CJ올리브네트웍스 로고",
-    logoScale: 1.12,
+    logoScale: 1,
   },
 ];
 

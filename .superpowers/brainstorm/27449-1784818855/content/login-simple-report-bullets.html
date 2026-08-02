@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; background:#050505; color:#f7f8fc; font-family:Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .frame { min-height:100vh; position:relative; overflow:hidden; display:flex; flex-direction:column; }
+    .frame::before { content:""; position:absolute; width:720px; height:720px; left:50%; top:48%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle,rgba(82,115,241,.14),transparent 67%); pointer-events:none; }
+    .top { position:relative; z-index:1; display:flex; justify-content:center; padding:38px 24px 0; }
+    .brand { color:#f2f4f9; font-size:21px; font-weight:800; letter-spacing:-.07em; }
+    .brand i { font-style:normal; color:#91adff; }
+    main { position:relative; z-index:1; flex:1; display:flex; align-items:center; justify-content:center; padding:42px 22px 84px; }
+    .panel { width:min(100%,390px); text-align:center; }
+    h1 { margin:0 0 18px; font-size:clamp(26px,6.3vw,33px); font-weight:730; line-height:1.22; letter-spacing:-.06em; }
+    .google { margin:auto; min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:0 15px; border:1px solid rgba(255,255,255,.14); border-radius:10px; color:#e6eaf0; background:rgba(255,255,255,.045); font-size:13px; font-weight:600; }
+    .g { width:15px; height:15px; border-radius:50%; background:conic-gradient(#4385f4 0 25%,#34a853 0 50%,#fbbc05 0 75%,#ea4335 0); }
+    .safe { margin:11px 0 0; color:#687384; font-size:11px; }
+    .included { margin:34px auto 0; max-width:302px; padding-top:23px; border-top:1px solid rgba(255,255,255,.075); text-align:left; }
+    .included-title { margin:0 0 14px; color:#99a4b7; font-size:11px; font-weight:700; letter-spacing:.08em; text-align:center; }
+    ul { margin:0; padding:0; list-style:none; display:grid; gap:10px; }
+    li { display:flex; align-items:baseline; gap:9px; color:#c5ccd7; font-size:13px; line-height:1.45; }
+    li::before { content:""; width:4px; height:4px; flex:0 0 4px; border-radius:50%; background:#92aefe; transform:translateY(-1px); }
+    li span { color:#848f9f; font-size:12px; }
+    .terms { position:relative; z-index:1; padding:0 22px 28px; text-align:center; color:#5c6573; font-size:11px; line-height:1.6; }
+    .terms u { color:#9099a7; text-underline-offset:2px; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <header class="top"><div class="brand"><i>Pre</i>View</div></header>
+    <main>
+      <section class="panel">
+        <h1>로그인하고,<br/>내 자소서 피드백을 확인하세요</h1>
+        <button class="google"><span class="g"></span>Google로 계속하기</button>
+        <p class="safe">⌾ Google 계정 비밀번호는 PreView에 저장되지 않아요</p>
+        <section class="included">
+          <p class="included-title">분석 결과에서 확인할 수 있어요</p>
+          <ul>
+            <li>지원 직무 기준 첫인상</li>
+            <li>기업의 합격 기준과 인재상</li>
+            <li>자소서의 강점과 보완점</li>
+            <li>문장별 AI 코멘트와 개선 방향</li>
+            <li>예상 면접 질문과 다음 보완 단계</li>
+          </ul>
+        </section>
+      </section>
+    </main>
+    <footer class="terms">로그인 시 <u>이용약관</u> 및 <u>개인정보 처리방침</u>에 동의하는 것으로 간주합니다.</footer>
+  </div>
+</body>
+</html>

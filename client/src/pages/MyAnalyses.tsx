@@ -107,7 +107,7 @@ export default function MyAnalyses() {
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </button>
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation("/")}>
-              <Logo className="w-6 h-6" textClassName="text-lg md:text-xl text-white" />
+              <Logo className="h-6 w-auto" />
             </div>
           </div>
 

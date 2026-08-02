@@ -14,6 +14,7 @@ import {
   SUCCESSFUL_COMPANIES,
   SUCCESSFUL_COMPANY_COUNT,
 } from "@/constants/socialProof";
+import { BrandName } from "@/components/BrandName";
 import { SocialProofMetricCard } from "@/components/SocialProofMetric";
 
 export {
@@ -84,11 +85,13 @@ export default function SocialProofSection() {
             className="text-3xl font-bold tracking-tight md:text-5xl"
           >
             이미 많은 합격자들이
-            <span className="block">PreView로 자소서를 완성했습니다.</span>
+            <span className="block">
+              <BrandName />로 자소서를 완성했습니다.
+            </span>
           </h2>
           <div
             className="social-proof-metrics mt-10"
-            aria-label="PreView 성과 지표"
+            aria-label="Pre:View 성과 지표"
           >
             {SOCIAL_PROOF_METRICS.map(metric => (
               <SocialProofMetricCard
@@ -167,7 +170,9 @@ export default function SocialProofSection() {
                   <article className="flex h-full min-h-[248px] flex-col rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-sm transition-colors duration-300 hover:border-white/[0.13]">
                     <TestimonialStars rating={testimonial.rating} />
                     <blockquote className="mt-6 text-[16px] font-light leading-[1.8] tracking-[-0.01em] text-zinc-200">
-                      &ldquo;{testimonial.quote}&rdquo;
+                      &ldquo;
+                      {testimonial.quote}
+                      &rdquo;
                     </blockquote>
                     <footer className="mt-auto border-t border-white/[0.06] pt-5">
                       <p className="text-[14px] font-semibold text-white">

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#07090e; color:#f5f7fb; font-family:Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .page { max-width:1250px; margin:0 auto; padding:36px 22px 64px; }
+    h1 { margin:0; font-size:clamp(26px,4vw,38px); letter-spacing:-.055em; }
+    .intro { margin:11px 0 30px; color:#a5afbf; font-size:15px; line-height:1.65; }
+    .option { margin:0 0 28px; padding:13px; border:1px solid #293446; border-radius:20px; background:#10151e; cursor:pointer; transition:.18s ease; }
+    .option:hover,.option.selected { border-color:#6e9aff; box-shadow:0 16px 42px rgba(0,0,0,.27),0 0 0 1px rgba(103,151,255,.22); transform:translateY(-2px); }
+    .option-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:5px 6px 14px; }
+    .option h2 { margin:0; font-size:17px; letter-spacing:-.03em; }
+    .tag { white-space:nowrap; border:1px solid #355f9d; border-radius:999px; padding:5px 8px; color:#a7c3ff; font-size:11px; font-weight:700; letter-spacing:.07em; }
+    .note { margin:12px 7px 3px; color:#a1aab9; font-size:13px; line-height:1.55; }
+    .screen { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(320px,.85fr); min-height:450px; overflow:hidden; border:1px solid #293344; border-radius:13px; background:#080b11; }
+    .left { position:relative; overflow:hidden; border-right:1px solid rgba(255,255,255,.08); background:#0b0e15; }
+    .right { position:relative; display:flex; align-items:center; justify-content:center; padding:38px 28px; background:#060708; }
+    .right::before { content:""; position:absolute; width:440px; height:440px; border-radius:50%; background:radial-gradient(circle,rgba(82,115,241,.14),transparent 68%); pointer-events:none; }
+    .right-inner { position:relative; width:min(100%,330px); text-align:center; }
+    .brand { position:absolute; top:25px; right:28px; color:#f0f3f9; font-size:18px; font-weight:800; letter-spacing:-.07em; }
+    .brand i { color:#8eacff; font-style:normal; }
+    .right h3 { margin:0 0 20px; font-size:25px; line-height:1.28; letter-spacing:-.055em; }
+    .google { min-height:42px; display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:0 17px; border:1px solid rgba(255,255,255,.74); border-radius:10px; background:#fff; color:#293241; font-size:13px; font-weight:450; box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 16px rgba(159,184,255,.16),0 3px 10px rgba(0,0,0,.16); }
+    .google svg { width:17px; height:17px; }
+    .safe { margin:11px 0 0; color:#687384; font-size:11px; }
+    .terms { position:absolute; bottom:22px; left:25px; right:25px; color:#5e6877; font-size:10px; line-height:1.55; text-align:center; }
+    .mini-nav { position:absolute; z-index:5; top:50px; left:24px; width:110px; display:grid; gap:11px; color:#778397; font-size:10px; }
+    .mini-nav span:first-child { color:#e9eef8; }
+    .mini-nav span b { display:inline-block; width:20px; color:#68768e; font-weight:600; }
+    .report-window { position:absolute; top:30px; left:153px; right:30px; bottom:25px; overflow:hidden; border:1px solid rgba(255,255,255,.11); border-radius:12px; background:#08090d; box-shadow:0 20px 46px rgba(0,0,0,.35); }
+    .report-top { display:flex; align-items:center; justify-content:space-between; padding:14px 17px; border-bottom:1px solid rgba(255,255,255,.07); color:#737e90; font-size:9px; letter-spacing:.1em; text-transform:uppercase; }
+    .scenes { position:relative; height:calc(100% - 42px); }
+    .scene { position:absolute; inset:0; display:grid; place-items:center; padding:30px; opacity:0; animation:sceneCycle 15s infinite; }
+    .scene:nth-child(2){animation-delay:5s}.scene:nth-child(3){animation-delay:10s}
+    @keyframes sceneCycle { 0%,28% {opacity:1; transform:translateY(0)} 33%,100%{opacity:0;transform:translateY(-10px)} }
+    .eyebrow { color:#7f8b9d; font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
+    .persona { margin:11px 0 10px; text-align:center; color:#fff; font-size:clamp(26px,3.2vw,43px); font-weight:700; line-height:1.05; letter-spacing:-.07em; }
+    .summary { max-width:420px; margin:0 auto; color:#adb6c4; font-size:12px; line-height:1.65; text-align:center; }
+    .chips { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:18px; }.chips span{border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:5px 7px;color:#8d98a8;font-size:9px}
+    .diag { width:min(100%,450px); display:grid; grid-template-columns:1fr 1fr; gap:22px; }.diag h4{margin:0 0 12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase}.diag h4.green{color:#86d9b9}.diag h4.amber{color:#e4c46b}.diag p{margin:0 0 10px;color:#bac2cf;font-size:11px;line-height:1.55}
+    .question { width:min(100%,470px); }.question h4{margin:0 0 14px;color:#fff;font-size:15px;letter-spacing:-.035em}.line{margin:7px 0;padding:9px 10px;border-radius:7px;background:#121822;color:#b3bdcb;font-size:10px;line-height:1.5}.line.good{border-left:2px solid #65d3b1}.line.gap{border-left:2px solid #d9b94b}.comment{margin-top:12px;padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#121824;color:#acb6c5;font-size:10px;line-height:1.5}.comment b{display:block;margin-bottom:4px;color:#eff2f7}
+    .b-left { background:radial-gradient(circle at 78% 18%,rgba(75,108,233,.16),transparent 38%),#0a0d13; }
+    .b-copy { position:absolute; top:58px; left:38px; max-width:310px; }.b-copy p{margin:0 0 11px;color:#8090a9;font-size:10px;letter-spacing:.11em;text-transform:uppercase}.b-copy h4{margin:0;color:#f5f7fb;font-size:26px;line-height:1.1;letter-spacing:-.065em}.b-copy span{display:block;margin-top:13px;color:#a1acbd;font-size:12px;line-height:1.55}
+    .b-report { position:absolute; top:175px; left:38px; right:38px; bottom:27px; display:grid; grid-template-columns:1.15fr .85fr; overflow:hidden; border:1px solid rgba(255,255,255,.11); border-radius:13px; background:#0c1018; box-shadow:0 20px 45px rgba(0,0,0,.34); }
+    .answer { padding:18px; border-right:1px solid rgba(255,255,255,.07); }.answer label{color:#738095;font-size:9px;letter-spacing:.1em;text-transform:uppercase}.answer p{margin:13px 0 0;color:#aeb7c5;font-size:10px;line-height:1.7}.answer mark{padding:1px 2px;color:#d5fae9;background:rgba(101,211,177,.15)}.answer em{padding:1px 2px;color:#fae3a1;background:rgba(217,185,75,.14);font-style:normal}
+    .feedback { padding:18px; }.feedback label{color:#738095;font-size:9px;letter-spacing:.1em;text-transform:uppercase}.feedback h5{margin:15px 0 8px;color:#fff;font-size:12px}.feedback p{margin:0;color:#aab4c3;font-size:10px;line-height:1.55}.feedback .proposal{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);color:#c6d4f5;font-size:10px;line-height:1.5}
+    .c-left { background:linear-gradient(135deg,#0b0e16,#101126 55%,#0a0d15); }.c-head { position:absolute; top:35px; left:36px; right:36px; display:flex; align-items:center; justify-content:space-between; }.c-head span{color:#7c8799;font-size:10px;letter-spacing:.1em;text-transform:uppercase}.c-head b{color:#e6ebf5;font-size:11px;font-weight:500}.cards{position:absolute;top:88px;left:36px;right:36px;bottom:29px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:center}.r-card{min-height:230px;padding:17px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(9,12,20,.72);box-shadow:0 18px 35px rgba(0,0,0,.25)}.r-card:nth-child(1){transform:translateY(18px)}.r-card:nth-child(2){border-color:rgba(145,171,255,.4);box-shadow:0 0 22px rgba(91,121,232,.12),0 20px 35px rgba(0,0,0,.3)}.r-card:nth-child(3){transform:translateY(18px)}.r-card small{color:#79869a;font-size:9px;letter-spacing:.1em}.r-card h4{margin:13px 0 9px;color:#fff;font-size:16px;line-height:1.08;letter-spacing:-.055em}.r-card p{margin:0;color:#a7b1c0;font-size:10px;line-height:1.55}.r-card .bar{height:5px;margin-top:16px;border-radius:99px;background:#273144}.r-card .bar i{display:block;height:100%;border-radius:99px;background:#8eabff}.r-card .quote{margin-top:16px;padding:10px;border-left:2px solid #7ea0ff;background:rgba(120,149,255,.08);color:#c1cee6;font-size:10px;line-height:1.5}
+    @media(max-width:780px){.screen{grid-template-columns:1fr}.left{min-height:360px;border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}.right{min-height:380px}.mini-nav{display:none}.report-window{left:24px}.b-copy{left:25px}.b-report{left:25px;right:25px}.cards{left:22px;right:22px}.c-head{left:22px;right:22px}.diag{gap:12px}.option-head{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>분할 로그인 화면, 어떤 방향이 더 맞을까요?</h1>
+    <p class="intro">왼쪽은 랜딩 페이지의 실제 리포트 구조와 문구를 활용하고, 오른쪽은 로그인에만 집중합니다. 각 시안을 클릭해 선택할 수 있어요.</p>
+
+    <article class="option" data-choice="live-report" onclick="toggleSelect(this)">
+      <header class="option-head"><h2>A. 자동 전환 리포트 — 랜딩 화면의 흐름을 그대로</h2><span class="tag">추천</span></header>
+      <div class="screen">
+        <section class="left">
+          <nav class="mini-nav"><span><b>01.</b> 첫인상</span><span><b>02.</b> 핵심 진단</span><span><b>03.</b> 문장 피드백</span></nav>
+          <div class="report-window"><div class="report-top"><span>PreView Report Preview</span><span>현대자동차 · 서비스 기획</span></div><div class="scenes">
+            <div class="scene"><div><p class="eyebrow" style="text-align:center">First Read</p><div class="persona">데이터 기반<br/>실행형 PM</div><p class="summary">데이터 기반 실행력은 강하지만, 현대자동차 기준 모빌리티 임팩트 연결이 부족합니다.</p><div class="chips"><span>데이터분석</span><span>가설검증</span><span>고객 중심</span></div></div></div>
+            <div class="scene"><div class="diag"><div><h4 class="green">강점</h4><p>3,000건 이상의 행동 데이터를 직접 수집하고 분석한 점이 실행력을 보여줍니다.</p><p>A/B 테스트와 이탈률 개선 수치가 함께 제시되어 성과가 선명합니다.</p></div><div><h4 class="amber">보완점</h4><p>개선한 지표가 현대자동차의 서비스와 어떻게 연결되는지 더 보여줘야 합니다.</p><p>분석 기준과 세그먼트 정의를 보강하면 좋습니다.</p></div></div></div>
+            <div class="scene"><div class="question"><p class="eyebrow">문장별 상세 진단</p><h4>원문과 AI 코멘터리를 나란히 확인합니다</h4><p class="line good">직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다.</p><p class="line gap">유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.</p><div class="comment"><b>문장 진단</b>분석의 깊이가 다소 얕게 느껴집니다. 어떤 세그먼트의 유저가 어떤 행동 양상을 보였는지 더 구체적으로 서술하면 좋습니다.</div></div></div>
+          </div></div>
+        </section>
+        <aside class="right"><div class="brand"><i>Pre</i>:View</div><div class="right-inner"><h3>지금 로그인하고,<br/>자소서 분석 결과를 확인해 보세요.</h3><button class="google"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Google 계정으로 3초 만에 시작하기</button><p class="safe">⌾ Google 계정 비밀번호는 Pre:View에 저장되지 않아요</p></div><p class="terms">로그인 시 이용약관 및 개인정보 처리방침에 동의하는 것으로 간주합니다.</p></aside>
+      </div>
+      <p class="note">현재 랜딩 페이지의 자동 전환(첫인상 → 핵심 진단 → 문장 피드백)을 로그인 화면 왼쪽에 그대로 가져옵니다. 서비스의 깊이를 가장 잘 보여주는 방식입니다.</p>
+    </article>
+
+    <article class="option" data-choice="line-feedback" onclick="toggleSelect(this)">
+      <header class="option-head"><h2>B. 문장 피드백 집중 — 무엇을 고칠 수 있는지 즉시 전달</h2><span class="tag">행동 유도</span></header>
+      <div class="screen">
+        <section class="left b-left"><div class="b-copy"><p>PreView Report</p><h4>문장마다,<br/>더 설득력 있게</h4><span>원문과 개선 포인트를 나란히 보며<br/>바로 고칠 부분을 찾을 수 있어요.</span></div><div class="b-report"><div class="answer"><label>지원서 원문 · 문항 1</label><p>교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영했습니다. <mark>직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다.</mark> <em>유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.</em></p></div><div class="feedback"><label>AI Commentary</label><h5>문장 진단</h5><p>분석의 깊이가 다소 얕게 느껴집니다. 어떤 세그먼트의 유저가 어떤 행동 양상을 보였는지 더 구체적으로 서술하면 좋습니다.</p><div class="proposal">개선한 문장<br/>신규 가입 후 3일 내 특정 기능만 소비하는 고객군에서 이탈이 두드러짐을 확인했습니다.</div></div></div></section>
+        <aside class="right"><div class="brand"><i>Pre</i>:View</div><div class="right-inner"><h3>지금 로그인하고,<br/>자소서 분석 결과를 확인해 보세요.</h3><button class="google"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Google 계정으로 3초 만에 시작하기</button><p class="safe">⌾ Google 계정 비밀번호는 Pre:View에 저장되지 않아요</p></div><p class="terms">로그인 시 이용약관 및 개인정보 처리방침에 동의하는 것으로 간주합니다.</p></aside>
+      </div>
+      <p class="note">가입 직전 사용자가 가장 궁금해할 ‘실제로 무엇을 받는지’를 문장 하나와 피드백으로 즉시 보여줍니다. 자동 전환은 없습니다.</p>
+    </article>
+
+    <article class="option" data-choice="report-gallery" onclick="toggleSelect(this)">
+      <header class="option-head"><h2>C. 리포트 갤러리 — 깊이와 범위를 한눈에</h2><span class="tag">차분한 톤</span></header>
+      <div class="screen">
+        <section class="left c-left"><div class="c-head"><span>PreView Report</span><b>현대자동차 · 서비스 기획</b></div><div class="cards"><div class="r-card"><small>01. FIRST READ</small><h4>데이터 기반<br/>실행형 PM</h4><p>지원자가 주는 첫인상과 핵심 키워드를 확인합니다.</p><div class="bar"><i style="width:76%"></i></div></div><div class="r-card"><small>02. CORE DIAGNOSIS</small><h4>강점과<br/>보완점</h4><p>지원 직무 기준으로 자소서가 어떻게 읽히는지 정리합니다.</p><div class="quote">“성과는 선명하지만, 회사 맥락 연결이 더 필요합니다.”</div></div><div class="r-card"><small>03. INTERVIEW DRILL</small><h4>예상 질문과<br/>다음 단계</h4><p>면접에서 이어질 질문과 우선 보완할 항목을 확인합니다.</p><div class="bar"><i style="width:58%"></i></div></div></div></section>
+        <aside class="right"><div class="brand"><i>Pre</i>:View</div><div class="right-inner"><h3>지금 로그인하고,<br/>자소서 분석 결과를 확인해 보세요.</h3><button class="google"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Google 계정으로 3초 만에 시작하기</button><p class="safe">⌾ Google 계정 비밀번호는 Pre:View에 저장되지 않아요</p></div><p class="terms">로그인 시 이용약관 및 개인정보 처리방침에 동의하는 것으로 간주합니다.</p></aside>
+      </div>
+      <p class="note">여러 리포트 섹션을 한 화면에 보여주되, 움직임은 최소화합니다. 안정적이고 에디토리얼한 인상을 주는 방식입니다.</p>
+    </article>
+  </main>
+</body>
+</html>

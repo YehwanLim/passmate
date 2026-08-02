@@ -19,6 +19,11 @@ describe("SocialProofMetricCard", () => {
       renderToStaticMarkup(
         <SocialProofMetricCard metric={metric} isActive={false} />
       )
+    ).toContain('class="social-proof-metric-number"');
+    expect(
+      renderToStaticMarkup(
+        <SocialProofMetricCard metric={metric} isActive={false} />
+      )
     ).toContain("0+");
   });
 });

@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
         transition={{ duration: 0.4 }}
       >
         <div className="cursor-pointer" onClick={() => navigate("/")}>
-          <Logo className="w-5 h-5" textClassName="text-lg font-bold text-white" />
+          <Logo className="h-5 w-auto" />
         </div>
       </motion.header>
 

@@ -1,13 +1,18 @@
-import { AnimatePresence, motion } from "framer-motion";
 import {
+  AnimatePresence,
+  motion,
+  useMotionValueEvent,
+  useScroll,
+} from "framer-motion";
+import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Check,
   ChevronDown,
-  ListChecks,
-  Type,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { BrandName } from "@/components/BrandName";
 
 type PreviewScene = {
   id: string;
@@ -48,22 +53,79 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
   },
 ];
 
-const reportKeywords = ["데이터분석", "가설검증", "고객 중심", "빠른 실행력", "협업"];
+const DESKTOP_SCROLL_PREVIEW_QUERY =
+  "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
+
+export function getReportPreviewSceneIndex(progress: number) {
+  const clampedProgress = Math.min(1, Math.max(0, progress));
+
+  return Math.min(
+    REPORT_PREVIEW_SCENES.length - 1,
+    Math.floor(clampedProgress * (REPORT_PREVIEW_SCENES.length + 1))
+  );
+}
+
+export function getBoundedReportPreviewSceneIndex(
+  currentIndex: number,
+  progress: number
+) {
+  const targetIndex = getReportPreviewSceneIndex(progress);
+
+  if (targetIndex > currentIndex) return currentIndex + 1;
+  if (targetIndex < currentIndex) return currentIndex - 1;
+
+  return currentIndex;
+}
+
+const reportKeywords = [
+  "데이터분석",
+  "가설검증",
+  "고객 중심",
+  "빠른 실행력",
+  "협업",
+];
 
 const hiringMemoryItems = [
   { mark: "✓", text: "논리적으로 일할 것 같다" },
   { mark: "✓", text: "실행력이 좋아 보인다" },
+  { mark: "✓", text: "숫자로 결과를 설명할 수 있다" },
   { mark: "△", text: "모빌리티 맥락은 더 필요하다" },
+];
+
+const mentorCommentPreviews = [
+  {
+    title: "첫인상",
+    numberClassName: "text-[#A7A8FF]",
+    text: "데이터를 근거로 문제를 찾고 실행까지 옮기는 사람으로 읽힙니다.",
+  },
+  {
+    title: "보완하면 좋을 점",
+    numberClassName: "text-[#D9B94B]",
+    text: "성과를 모빌리티 고객 여정과 연결하는 한 문장이 더 필요합니다.",
+  },
+  {
+    title: "면접 체크포인트",
+    numberClassName: "text-[#69D5B1]",
+    text: "고객군 정의와 판단 기준을 꼬리 질문에도 설명할 수 있어야 합니다.",
+  },
 ];
 
 const strengths = [
   "3,000건 이상의 행동 데이터를 직접 수집하고 분석한 점이 실행력을 보여줍니다.",
   "A/B 테스트와 이탈률 개선 수치가 함께 제시되어 성과가 선명합니다.",
+  "문제를 발견한 뒤 기획과 운영까지 연결한 경험이 서비스 기획 직무와 잘 맞습니다.",
 ];
 
 const gaps = [
   "개선한 지표가 현대자동차의 커넥티드 서비스와 어떻게 연결되는지 더 보여줘야 합니다.",
   "분석 기준과 세그먼트 정의가 빠져 있어 면접에서 추가 질문을 받을 수 있습니다.",
+  "협업 과정에서 본인이 어떤 기준으로 의사결정을 이끌었는지 한 장면이 더 필요합니다.",
+];
+
+const diagnosisPriorities = [
+  "커넥티드 서비스의 고객 여정과 개선 경험을 한 문장으로 연결합니다.",
+  "핵심 고객군의 정의와 이탈 신호를 구체적으로 적어 분석의 신뢰를 높입니다.",
+  "개발·디자인과의 의견 차이를 조정한 본인만의 판단 과정을 보강합니다.",
 ];
 
 const previewAnswer = [
@@ -83,16 +145,39 @@ const previewAnswer = [
     text: "메인 화면 이탈률을 35%에서 18%로 낮췄고, 일간 활성 사용자 수를 20% 늘렸습니다.",
     type: "praise",
   },
+  {
+    text: "이를 위해 신규 가입 후 3일 이내 이탈하는 고객군을 따로 분류하고, 첫 화면 진입 경로를 비교했습니다.",
+    type: "improvement",
+  },
+  {
+    text: "분석 결과를 바탕으로 추천 콘텐츠의 노출 순서를 바꾸고, 개발자와 실험 기간 및 성공 기준을 합의했습니다.",
+    type: "neutral",
+  },
 ] as const;
 
 const interviewQuestions = [
   {
-    question: "현대자동차의 모빌리티 서비스를 개선한다면 어떤 데이터를 가장 먼저 볼 것 같나요?",
-    followUps: ["왜 그 데이터가 가장 중요하다고 생각하나요?", "해당 데이터를 수집하려면 어떤 기획이 필요할까요?"],
+    question:
+      "현대자동차의 모빌리티 서비스를 개선한다면 어떤 데이터를 가장 먼저 볼 것 같나요?",
+    followUps: [
+      "왜 그 데이터가 가장 중요하다고 생각하나요?",
+      "해당 데이터를 수집하려면 어떤 기획이 필요할까요?",
+    ],
+    answerFocus:
+      "차량 연동 기능의 진입률, 기능별 이탈 구간, 재사용 빈도를 고객 여정 순서대로 설명해 보세요.",
   },
   {
     question: "글로벌 고객 타겟팅 시 지역별 특성은 어떻게 파악할 계획인가요?",
     followUps: ["현지 조사가 어렵다면 어떤 데이터를 활용할 수 있을까요?"],
+    answerFocus:
+      "국가별 이용 시간대, 차량 등급, 기능 사용 빈도를 비교해 가설을 세우는 순서를 설명해 보세요.",
+  },
+  {
+    question:
+      "추천 노출 순서를 바꿀 때 어떤 지표가 좋아져야 성공이라고 판단했나요?",
+    followUps: ["단기 클릭률이 올라도 장기 만족도를 어떻게 확인할 건가요?"],
+    answerFocus:
+      "첫 화면 이탈률과 7일 재방문율을 함께 보고, 실험군·대조군의 차이를 판단 근거로 제시하세요.",
   },
 ];
 
@@ -100,6 +185,7 @@ const actionItems = [
   "마무리 문장에 커넥티드 서비스 맥락 추가",
   "데이터 분석 기준과 세그먼트 정의 보강",
   "협업 문항에서 본인 의사결정 과정 구체화",
+  "예상 질문별로 판단 근거와 대안까지 한 문장씩 준비",
 ];
 
 function MiniReportNavigator({
@@ -110,7 +196,10 @@ function MiniReportNavigator({
   onSelectScene: (index: number) => void;
 }) {
   return (
-    <nav className="hidden xl:block w-[132px] flex-shrink-0 pt-5" aria-label="리포트 미리보기 목차">
+    <nav
+      className="hidden xl:block w-[132px] flex-shrink-0 pt-5"
+      aria-label="리포트 미리보기 목차"
+    >
       <div className="report-nav-list sticky top-24">
         {REPORT_PREVIEW_SCENES.map((scene, index) => {
           const active = index === activeIndex;
@@ -133,50 +222,102 @@ function MiniReportNavigator({
 
 function FirstImpressionPreview() {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0B0B0E] px-5 py-6 sm:px-7 sm:py-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent_50%)]" />
-      <div className="relative flex flex-col gap-2 border-b border-white/[0.06] pb-4 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-        <span>PreView Report</span>
+    <section className="relative py-1 lg:h-full lg:overflow-hidden">
+      <div className="flex flex-col gap-2 border-b border-white/[0.06] pb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+        <span>
+          <BrandName /> Report
+        </span>
         <span>First Read · 현대자동차</span>
       </div>
 
-      <div className="relative py-10 text-center md:py-12">
-        <p className="mb-4 text-[14px] text-zinc-300">김민지님은</p>
-        <h3 className="mx-auto max-w-2xl text-[2.2rem] font-semibold leading-[1.05] tracking-tight text-white sm:text-[3rem] md:text-[3.7rem]">
+      <div className="py-2 text-center lg:py-3">
+        <p className="mb-2 text-[13px] text-zinc-300">김민지님은</p>
+        <h3 className="mx-auto max-w-2xl text-3xl font-semibold leading-[1.05] tracking-tight text-white sm:text-[2.35rem] md:text-[2.7rem]">
           <span className="block">데이터 기반</span>
           <span className="block">실행형 PM</span>
         </h3>
-        <p className="mx-auto mt-6 max-w-2xl text-[15px] leading-[1.75] text-zinc-300 sm:text-[17px]">
-          데이터 기반 실행력은 강하지만, 현대자동차 기준 모빌리티 임팩트 연결이 부족합니다.
+        <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-[1.65] text-zinc-300 sm:text-[15px]">
+          데이터 기반 실행력은 강하지만, 현대자동차 기준 모빌리티 임팩트 연결이
+          부족합니다.
         </p>
       </div>
 
-      <div className="relative flex flex-wrap justify-center gap-2 pb-6">
-        {reportKeywords.map((keyword) => (
-          <span key={keyword} className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-zinc-400">
+      <div className="relative z-10 flex flex-wrap justify-center gap-2 pb-3">
+        {reportKeywords.map(keyword => (
+          <span
+            key={keyword}
+            className="rounded-full border border-white/[0.12] bg-white/[0.045] px-3.5 py-2 text-xs font-semibold text-zinc-300"
+          >
             {keyword}
           </span>
         ))}
       </div>
 
-      <div className="relative grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
-          <p className="mb-3 text-sm font-semibold text-white">채용담당자가 기억할 모습</p>
-          <ul className="space-y-2.5">
-            {hiringMemoryItems.map((item) => (
-              <li key={item.text} className="grid grid-cols-[18px_1fr] gap-2.5 text-sm leading-[1.55] text-zinc-300">
-                <span className="font-semibold text-zinc-100">{item.mark}</span>
-                <span>{item.text}</span>
+      <div className="relative z-0 grid items-start gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-3">
+          <p className="mb-2 text-sm font-semibold text-white">
+            채용담당자가 기억할 모습
+          </p>
+          <ul className="space-y-1.5">
+            {hiringMemoryItems.map(item => (
+              <li
+                key={item.text}
+                className="grid grid-cols-[20px_1fr] gap-2 text-[12px] leading-[1.4] text-zinc-300"
+              >
+                <span
+                  className={`mt-0.5 inline-flex size-[18px] items-center justify-center rounded-full border ${
+                    item.mark === "✓"
+                      ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-200"
+                      : "border-amber-300/30 bg-amber-400/10 text-amber-200"
+                  }`}
+                >
+                  {item.mark === "✓" ? (
+                    <Check className="size-3" />
+                  ) : (
+                    <AlertTriangle className="size-3" />
+                  )}
+                </span>
+                <span className="pt-px">{item.text}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
-          <p className="mb-3 text-sm font-semibold text-white">지원자 프로필</p>
-          <p className="text-sm leading-[1.7] text-zinc-400">
-            문제를 발견하고 근거를 모아 실행으로 옮기는 지원자라는 인상이 먼저 남습니다.
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-3">
+          <p className="mb-2 text-sm font-semibold text-white">지원자 프로필</p>
+          <p className="text-[12px] leading-[1.6] text-zinc-400">
+            지원자는 데이터로 고객의 이탈 원인을 좁히고, 실험 결과를 다음
+            개선안에 반영하는 방식에 익숙합니다.
           </p>
+          <p className="mt-2 text-[12px] leading-[1.6] text-zinc-500">
+            현대자동차에서는 이 역량을 커넥티드 서비스의 기능 탐색과 재사용 경험
+            개선으로 연결하면 직무 적합도가 더 선명해집니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
+          현직자 코멘트
+        </p>
+        <div className="grid gap-3 md:grid-cols-3">
+          {mentorCommentPreviews.map((comment, index) => (
+            <blockquote key={comment.title} className="min-w-0">
+              <div className="mb-1.5 flex items-center gap-2">
+                <span
+                  className={`text-[24px] font-extrabold leading-none tracking-[0.08em] opacity-60 ${comment.numberClassName}`}
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <p className="text-[12px] font-bold text-zinc-100">
+                  {comment.title}
+                </p>
+              </div>
+              <p className="text-[11px] leading-[1.5] text-zinc-300">
+                {comment.text}
+              </p>
+            </blockquote>
+          ))}
         </div>
       </div>
     </section>
@@ -185,39 +326,85 @@ function FirstImpressionPreview() {
 
 function DiagnosisPreview() {
   return (
-    <section className="py-8">
-      <h3 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">02. 핵심 진단</h3>
-      <p className="text-2xl font-semibold text-white mb-10 tracking-tight">현대자동차 기준 강점과 보완점</p>
+    <section className="flex flex-col py-3 lg:h-full lg:justify-between lg:overflow-hidden">
+      <h3 className="mb-1 text-xs font-medium uppercase tracking-[0.15em] text-zinc-500">
+        02. 핵심 진단
+      </h3>
+      <p className="mb-3 text-xl font-semibold tracking-tight text-white">
+        현대자동차 기준 강점과 보완점
+      </p>
 
-      <div className="grid gap-8 md:grid-cols-2 mb-10">
-        <div>
-          <p className="text-sm text-emerald-400/70 uppercase tracking-[0.12em] mb-5 font-semibold">강점</p>
-          <div className="space-y-5">
-            {strengths.map((item) => (
-              <p key={item} className="text-[15px] text-zinc-100 leading-[1.8]">{item}</p>
+      <div className="mb-3 grid gap-3 md:grid-cols-2">
+        <div className="rounded-xl border border-emerald-300/[0.08] bg-emerald-300/[0.025] p-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-400/70">
+            강점
+          </p>
+          <div className="space-y-1.5">
+            {strengths.map(item => (
+              <p
+                key={item}
+                className="text-[12px] leading-[1.45] text-zinc-100"
+              >
+                {item}
+              </p>
             ))}
           </div>
         </div>
-        <div>
-          <p className="text-sm text-amber-300/60 uppercase tracking-[0.12em] mb-5 font-semibold">보완점</p>
-          <div className="space-y-5">
-            {gaps.map((item) => (
-              <p key={item} className="text-[15px] text-zinc-300 leading-[1.8]">{item}</p>
+        <div className="rounded-xl border border-amber-200/[0.08] bg-amber-200/[0.025] p-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-amber-300/60">
+            보완점
+          </p>
+          <div className="space-y-1.5">
+            {gaps.map(item => (
+              <p
+                key={item}
+                className="text-[12px] leading-[1.45] text-zinc-300"
+              >
+                {item}
+              </p>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/[0.05] bg-white/[0.03] p-6">
-        <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-5 font-semibold">전략적 포지셔닝</p>
-        <div className="grid gap-6 sm:grid-cols-2">
+      <div className="mb-3 rounded-xl border border-white/[0.05] bg-white/[0.03] p-3">
+        <p className="mb-2 text-sm font-semibold text-white">우선 보완 순서</p>
+        <ol className="grid gap-2 md:grid-cols-3">
+          {diagnosisPriorities.map((item, index) => (
+            <li
+              key={item}
+              className="flex gap-2 rounded-lg border border-white/[0.05] bg-black/20 p-2"
+            >
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/[0.08] text-[9px] font-semibold text-zinc-300">
+                {index + 1}
+              </span>
+              <p className="text-[11px] leading-[1.4] text-zinc-400">{item}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="rounded-xl border border-white/[0.05] bg-white/[0.03] p-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">
+          전략적 포지셔닝
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <span className="inline-block rounded-md border border-white/[0.05] bg-zinc-800/80 px-3 py-1.5 text-xs font-semibold text-zinc-300">현재 위치</span>
-            <p className="mt-3 text-sm leading-[1.7] text-zinc-400">데이터 툴 활용과 실행력은 검증되었으나, 모빌리티 비즈니스 이해가 약한 주니어</p>
+            <span className="inline-block rounded-md border border-white/[0.05] bg-zinc-800/80 px-2 py-1 text-[10px] font-semibold text-zinc-300">
+              현재 위치
+            </span>
+            <p className="mt-1.5 text-[12px] leading-[1.45] text-zinc-400">
+              데이터 툴 활용과 실행력은 검증되었으나, 모빌리티 비즈니스 이해가
+              약한 주니어
+            </p>
           </div>
           <div>
-            <span className="inline-block rounded-md border border-white/[0.05] bg-zinc-800/80 px-3 py-1.5 text-xs font-semibold text-zinc-300">목표 포지션</span>
-            <p className="mt-3 text-[15px] font-bold leading-[1.7] text-white">데이터 인사이트로 고객 경험을 높이는 모빌리티 PM</p>
+            <span className="inline-block rounded-md border border-white/[0.05] bg-zinc-800/80 px-2 py-1 text-[10px] font-semibold text-zinc-300">
+              목표 포지션
+            </span>
+            <p className="mt-1.5 text-[12px] font-bold leading-[1.45] text-white">
+              데이터 인사이트로 고객 경험을 높이는 모빌리티 PM
+            </p>
           </div>
         </div>
       </div>
@@ -227,79 +414,113 @@ function DiagnosisPreview() {
 
 function LineAnalysisPreview() {
   return (
-    <section className="py-8">
-      <h3 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">03. 문장별 상세 진단</h3>
-      <p className="text-2xl font-semibold text-white mb-10 tracking-tight">원문과 AI 코멘터리를 나란히 확인합니다</p>
+    <section className="flex flex-col gap-4 py-1 lg:h-full lg:overflow-hidden">
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col">
+          <h3 className="text-xs font-medium uppercase tracking-[0.15em] text-zinc-500">
+            03. 문장별 상세 진단
+          </h3>
+          <p className="mt-1 text-xl font-semibold tracking-tight text-white">
+            원문 옆에서 바로 확인하는 AI 코멘터리
+          </p>
+        </div>
+        <span className="hidden rounded-full border border-white/[0.06] bg-white/[0.025] px-3 py-1.5 text-[11px] font-medium text-zinc-500 sm:inline-flex">
+          문항 1 · 4개 피드백
+        </span>
+      </div>
 
-      <div className="grid gap-0 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <div className="lg:pr-8">
-          <div className="doc-header mb-5">
-            <span>현대자동차</span>
-            <span className="separator">·</span>
-            <span>김민지</span>
+      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+        <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+          <div className="mb-3 flex items-center justify-between border-b border-white/[0.06] pb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">
+            <span>현대자동차 · 김민지</span>
+            <span>자소서 문항 1</span>
           </div>
-          <div className="flex items-center border-b border-white/[0.06] mb-7">
-            <button className="section-tab active">문항 1</button>
-            <button className="section-tab">문항 2</button>
-          </div>
-          <p className="question-prompt mb-7">자신이 주도적으로 문제를 발견하고 해결한 경험에 대해 서술해 주세요.</p>
-
-          <div className="source-text-body original-text-dimmed">
-            {previewAnswer.map((line, index) => {
-              const typeClass = line.type === "praise" ? "praise-hl" : line.type === "improvement" ? "improvement-hl" : "";
-              if (!typeClass) return <p key={line.text}>{line.text}</p>;
-              return (
-                <p key={line.text}>
-                  <span className={`annotation-hl ${typeClass}`}>
-                    {line.text}
-                    <span className="annotation-num">{index}</span>
-                  </span>
-                </p>
-              );
-            })}
+          <p className="mb-3 text-[12px] leading-[1.55] text-zinc-400">
+            자신이 주도적으로 문제를 발견하고 해결한 경험에 대해 서술해 주세요.
+          </p>
+          <div className="space-y-2 text-[12px] leading-[1.55] text-zinc-300">
+            {previewAnswer.map((line, index) => (
+              <p
+                key={line.text}
+                className={`rounded-md px-2.5 py-1.5 ${
+                  line.type === "praise"
+                    ? "border-l-2 border-emerald-300/60 bg-emerald-300/[0.06]"
+                    : line.type === "improvement"
+                      ? "border-l-2 border-amber-200/60 bg-amber-200/[0.055]"
+                      : "bg-white/[0.025]"
+                }`}
+              >
+                <span className="mr-2 text-[10px] font-semibold text-zinc-600">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                {line.text}
+              </p>
+            ))}
           </div>
         </div>
 
-        <div className="mt-10 lg:mt-0 lg:border-l lg:border-white/[0.06] lg:pl-8">
-          <div className="mb-5 flex items-center justify-between">
-            <p className="text-sm font-semibold uppercase tracking-[0.15em] text-zinc-500">AI Commentary</p>
-            <div className="view-mode-toggle">
-              <button className="view-mode-btn active">목록</button>
-              <button className="view-mode-btn">집중</button>
+        <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:h-full lg:flex-col">
+          <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5 lg:flex-1">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-semibold text-white">소제목 진단</p>
+              <span className="rounded-full bg-amber-200/10 px-2 py-0.5 text-[10px] font-medium text-amber-100/80">
+                보완
+              </span>
             </div>
+            <p className="text-[12px] leading-[1.55] text-zinc-400">
+              성과는 드러나지만, 어떤 비즈니스 문제를 해결했는지 목적을 먼저
+              보여주면 좋습니다.
+            </p>
+            <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+              수정 방향
+            </p>
+            <p className="mt-1 text-[12px] font-medium leading-[1.5] text-zinc-200">
+              서비스 탐색 이탈률 방어를 위한 3,000건의 고객 데이터 분석
+            </p>
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-white/[0.06] bg-zinc-900/40 p-5">
-              <button className="flex w-full items-center justify-between text-left">
-                <span className="panel-header flex items-center gap-3 text-zinc-50"><Type className="h-5 w-5 text-zinc-300" />소제목 진단</span>
-                <ChevronDown className="h-4 w-4 text-zinc-500 rotate-180" />
-              </button>
-              <div className="mt-4 border-t border-white/[0.04] pt-4">
-                <p className="commentary-body-text">성과는 드러나지만 추천 개선이 어떤 비즈니스 문제를 해결했는지 목적이 더 명확하면 좋습니다.</p>
-                <p className="commentary-label">소제목 수정 제안</p>
-                <p className="commentary-headline">서비스 탐색 이탈률 15% 방어를 위한 3,000건의 고객 데이터 분석</p>
-              </div>
+          <div className="rounded-xl border border-amber-200/[0.12] bg-amber-200/[0.035] p-3.5 lg:flex-1">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-semibold text-white">
+                문장 04 · 수정 제안
+              </p>
+              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-amber-200/70">
+                Why
+              </span>
             </div>
+            <p className="text-[12px] leading-[1.55] text-zinc-300">
+              고객군을 나눈 기준을 문장 안에 넣어야 합니다.
+            </p>
+            <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/65">
+              판단 근거
+            </p>
+            <p className="mt-1 text-[11px] leading-[1.5] text-zinc-400">
+              분석 기준이 보이면, 성과가 재현 가능한 판단으로 읽힙니다.
+            </p>
+            <p className="mt-2.5 border-t border-white/[0.06] pt-2.5 text-[11px] leading-[1.5] text-zinc-500">
+              신규 가입 후 3일 이내 이탈한 고객군에서 추천 콘텐츠 진입률이
+              낮다는 점을 확인했습니다.
+            </p>
+          </div>
 
-            <div className="rounded-2xl border border-white/[0.06] bg-zinc-900/40 p-5">
-              <div className="mb-5 flex items-center gap-3">
-                <ListChecks className="h-5 w-5 text-zinc-300" />
-                <span className="panel-header text-zinc-50">문장 진단</span>
-              </div>
-              <div className="commentary-item improvement expanded focused">
-                <button className="commentary-trigger">
-                  <span className="commentary-num">3</span>
-                  <span className="commentary-preview flex-1 min-w-0">분석의 깊이가 다소 얕게 느껴집니다.</span>
-                  <ChevronDown className="commentary-chevron rotate-180" />
-                </button>
-                <div className="commentary-body pt-2">
-                  <p className="commentary-body-text">클릭 패턴과 체류 시간만으로 개인화 부족을 도출한 과정에 논리적 비약이 있을 수 있습니다.</p>
-                  <p className="commentary-label">개선한 문장</p>
-                  <p className="commentary-headline">신규 가입 후 3일 내 특정 기능만 소비하는 고객군에서 이탈률이 두드러짐을 확인했습니다.</p>
-                </div>
-              </div>
+          <div className="rounded-xl border border-emerald-300/[0.11] bg-emerald-300/[0.03] p-3.5 sm:col-span-2 lg:flex-1">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-semibold text-white">
+                문장 02 · 강점으로 유지
+              </p>
+              <Check className="h-3.5 w-3.5 text-emerald-200/80" />
             </div>
+            <p className="text-[12px] leading-[1.55] text-zinc-400">
+              직접 수집한 데이터 규모가 실행력을 설득합니다. 이 수치는 그대로
+              남기고, 수집 기준만 한 줄 덧붙이세요.
+            </p>
+            <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200/65">
+              면접에서 이어질 질문
+            </p>
+            <p className="mt-1 text-[11px] leading-[1.5] text-zinc-500">
+              어떤 기준으로 데이터를 정제했고, 그 기준이 다음 실험에 어떻게
+              반영됐는지까지 준비하세요.
+            </p>
           </div>
         </div>
       </div>
@@ -309,26 +530,37 @@ function LineAnalysisPreview() {
 
 function InterviewAndActionPreview() {
   return (
-    <section className="py-8">
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.86fr)]">
+    <section className="flex flex-col gap-4 py-1 lg:h-full lg:overflow-hidden">
+      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.86fr)]">
         <div>
-          <h3 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">04. 예상 질문</h3>
-          <p className="text-2xl font-semibold text-white mb-8 tracking-tight">면접에서는 이런 질문이 나올 수 있어요</p>
-          <div className="space-y-0">
+          <h3 className="text-xs uppercase tracking-[0.15em] text-zinc-500 mb-1 font-medium">
+            04. 예상 질문
+          </h3>
+          <p className="text-xl font-semibold text-white mb-3 tracking-tight">
+            면접에서는 이런 질문이 나올 수 있어요
+          </p>
+          <div className="flex flex-1 flex-col gap-2">
             {interviewQuestions.map((item, index) => (
-              <div key={item.question} className="border-b border-white/[0.04] last:border-0">
-                <div className="flex items-start gap-5 py-5 text-left">
-                  <span className="mt-1 min-w-[44px] text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">Q{index + 1}</span>
+              <div
+                key={item.question}
+                className="flex flex-1 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3"
+              >
+                <div className="flex items-start gap-3 text-left">
+                  <span className="mt-0.5 min-w-[25px] text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                    Q{index + 1}
+                  </span>
                   <div className="flex-1">
-                    <p className="text-[16px] leading-[1.6] text-zinc-300">{item.question}</p>
-                    <ul className="mt-4 space-y-2">
-                      {item.followUps.map((followUp) => (
-                        <li key={followUp} className="flex items-start gap-2.5 text-[14px] leading-[1.7] text-zinc-500">
-                          <ArrowRight className="mt-1.5 h-3 w-3 shrink-0 text-amber-300/35" />
-                          {followUp}
-                        </li>
-                      ))}
-                    </ul>
+                    <p className="text-[12px] leading-[1.55] text-zinc-200">
+                      {item.question}
+                    </p>
+                    <div className="mt-2.5 border-t border-white/[0.06] pt-2.5">
+                      <p className="text-[11px] font-semibold text-zinc-100">
+                        답변에서 설명할 근거
+                      </p>
+                      <p className="mt-1 text-[11px] leading-[1.5] text-zinc-500">
+                        {item.answerFocus}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -336,18 +568,31 @@ function InterviewAndActionPreview() {
           </div>
         </div>
 
-        <div>
-          <h3 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">05. 액션 플랜</h3>
-          <p className="text-2xl font-semibold text-white mb-8 tracking-tight">가장 먼저 고칠 부분부터 정리합니다</p>
-          <div className="space-y-0">
+        <div className="flex flex-col">
+          <h3 className="text-xs uppercase tracking-[0.15em] text-zinc-500 mb-1 font-medium">
+            05. 액션 플랜
+          </h3>
+          <p className="text-xl font-semibold text-white mb-3 tracking-tight">
+            가장 먼저 고칠 부분부터 정리합니다
+          </p>
+          <div className="flex flex-1 flex-col gap-2">
             {actionItems.map((item, index) => (
-              <div key={item} className="flex items-start gap-5 border-b border-white/[0.03] py-5 last:border-0">
-                <div className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border ${index === 0 ? "border-indigo-500 bg-indigo-500" : "border-zinc-700"}`}>
+              <div
+                key={item}
+                className="flex flex-1 items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3"
+              >
+                <div
+                  className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${index === 0 ? "border-indigo-500 bg-indigo-500" : "border-zinc-700"}`}
+                >
                   {index === 0 && <Check className="h-3 w-3 text-white" />}
                 </div>
                 <div>
-                  <p className="text-base leading-[1.6] text-zinc-200">{item}</p>
-                  <p className="mt-2 text-sm text-emerald-400/50">예상 효과: 지원 회사와 경험의 연결성이 선명해집니다.</p>
+                  <p className="text-[12px] leading-[1.45] text-zinc-200">
+                    {item}
+                  </p>
+                  <p className="mt-1 text-[11px] text-emerald-400/50">
+                    예상 효과: 지원 회사와 경험의 연결성이 선명해집니다.
+                  </p>
                 </div>
               </div>
             ))}
@@ -369,7 +614,7 @@ function ActiveReportScene({ activeIndex }: { activeIndex: number }) {
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         exit={{ opacity: 0, y: -22, filter: "blur(6px)" }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="min-h-[780px]"
+        className="pb-16 lg:h-full lg:pb-0"
       >
         {activeScene.id === "impression" && <FirstImpressionPreview />}
         {activeScene.id === "diagnosis" && <DiagnosisPreview />}
@@ -391,12 +636,14 @@ function ReportPreviewFrame({
   goToPreviousScene: () => void;
   goToNextScene: () => void;
 }) {
+  const isLastScene = activeIndex === REPORT_PREVIEW_SCENES.length - 1;
+
   return (
-    <div className="relative max-w-7xl mx-auto">
+    <div className="relative mx-auto w-full min-w-0 max-w-7xl lg:h-[min(42rem,calc(100svh-4rem))]">
       <button
         type="button"
         aria-label="이전 리포트 미리보기"
-        className="absolute left-0 top-[430px] z-20 hidden h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
+        className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
         onClick={goToPreviousScene}
       >
         <ArrowLeft className="h-5 w-5" />
@@ -405,21 +652,28 @@ function ReportPreviewFrame({
       <button
         type="button"
         aria-label="다음 리포트 미리보기"
-        className="absolute right-0 top-[430px] z-20 hidden h-11 w-11 translate-x-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
+        className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
         onClick={goToNextScene}
       >
         <ArrowRight className="h-5 w-5" />
       </button>
 
-      <div className="flex gap-8">
-        <MiniReportNavigator activeIndex={activeIndex} onSelectScene={onSelectScene} />
+      <div className="flex w-full gap-8 lg:h-full">
+        <MiniReportNavigator
+          activeIndex={activeIndex}
+          onSelectScene={onSelectScene}
+        />
 
-        <div className="relative min-h-[900px] flex-1 overflow-hidden rounded-xl border border-white/[0.1] bg-[#070707] p-4 shadow-2xl shadow-black/40 md:p-7">
+        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/[0.1] bg-[#070707] p-4 shadow-2xl shadow-black/40 md:p-5">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
-          <div className="mb-7 flex flex-col gap-4 border-b border-white/[0.07] pb-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mb-4 flex flex-col gap-3 border-b border-white/[0.07] pb-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[11px] text-gray-600 tracking-widest uppercase mb-1">PreView Report Preview</p>
-              <p className="text-[15px] text-zinc-200 font-medium">현대자동차 · 서비스 기획</p>
+              <p className="text-[11px] text-gray-600 tracking-widest uppercase mb-1">
+                <BrandName /> Report Preview
+              </p>
+              <p className="text-[15px] text-zinc-200 font-medium">
+                현대자동차 · 서비스 기획
+              </p>
             </div>
             <div className="flex flex-wrap gap-2 xl:hidden">
               {REPORT_PREVIEW_SCENES.map((scene, index) => (
@@ -439,29 +693,61 @@ function ReportPreviewFrame({
             </div>
           </div>
 
-          <ActiveReportScene activeIndex={activeIndex} />
+          <div className="lg:min-h-0 lg:flex-1">
+            <ActiveReportScene activeIndex={activeIndex} />
+          </div>
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#070707] to-transparent" />
-          <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 md:bottom-6 md:right-6">
-            <button
-              type="button"
-              aria-label="이전 리포트 미리보기"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black lg:hidden"
-              onClick={goToPreviousScene}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <span className="rounded-full border border-white/[0.07] bg-[#090909]/90 px-3 py-2 text-[12px] text-zinc-600">
-              {String(activeIndex + 1).padStart(2, "0")} / {String(REPORT_PREVIEW_SCENES.length).padStart(2, "0")}
-            </span>
-            <button
-              type="button"
-              aria-label="다음 리포트 미리보기"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black lg:hidden"
-              onClick={goToNextScene}
-            >
-              <ArrowRight className="h-4 w-4" />
-            </button>
+          <div className="mt-3 flex shrink-0 items-center justify-between gap-4 border-t border-white/[0.07] pt-3">
+            <div className="flex min-w-0 items-center gap-2 text-[11px] text-zinc-500">
+              <span className="font-medium tabular-nums text-zinc-400">
+                {String(activeIndex + 1).padStart(2, "0")} /{" "}
+                {String(REPORT_PREVIEW_SCENES.length).padStart(2, "0")}
+              </span>
+              <span className="h-px w-6 bg-white/[0.12]" />
+              <p className="hidden truncate lg:block">
+                {isLastScene ? (
+                  "스크롤하면 다음 섹션으로 이어집니다"
+                ) : (
+                  <>
+                    스크롤하면{" "}
+                    {
+                      REPORT_PREVIEW_SCENES[
+                        (activeIndex + 1) % REPORT_PREVIEW_SCENES.length
+                      ].tab
+                    }
+                    으로 이어집니다
+                  </>
+                )}
+              </p>
+              <p className="truncate lg:hidden">
+                다음 장면:{" "}
+                {
+                  REPORT_PREVIEW_SCENES[
+                    (activeIndex + 1) % REPORT_PREVIEW_SCENES.length
+                  ].tab
+                }
+              </p>
+              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 lg:block" />
+            </div>
+
+            <div className="flex items-center gap-2 lg:hidden">
+              <button
+                type="button"
+                aria-label="이전 리포트 미리보기"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black"
+                onClick={goToPreviousScene}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="다음 리포트 미리보기"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black"
+                onClick={goToNextScene}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -471,24 +757,38 @@ function ReportPreviewFrame({
 
 export default function ReportShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isScrollDriven, setIsScrollDriven] = useState(false);
+  const scrollTrackRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: scrollTrackRef,
+    offset: ["start start", "end end"],
+  });
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(DESKTOP_SCROLL_PREVIEW_QUERY);
+    const updateScrollMode = () => setIsScrollDriven(mediaQuery.matches);
+
+    updateScrollMode();
+    mediaQuery.addEventListener("change", updateScrollMode);
+
+    return () => mediaQuery.removeEventListener("change", updateScrollMode);
+  }, []);
+
+  useMotionValueEvent(scrollYProgress, "change", progress => {
+    if (!isScrollDriven) return;
+
+    setActiveIndex(index => getBoundedReportPreviewSceneIndex(index, progress));
+  });
 
   const goToPreviousScene = () => {
-    setActiveIndex((index) =>
+    setActiveIndex(index =>
       index === 0 ? REPORT_PREVIEW_SCENES.length - 1 : index - 1
     );
   };
 
   const goToNextScene = () => {
-    setActiveIndex((index) => (index + 1) % REPORT_PREVIEW_SCENES.length);
+    setActiveIndex(index => (index + 1) % REPORT_PREVIEW_SCENES.length);
   };
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      goToNextScene();
-    }, 5200);
-
-    return () => window.clearInterval(timer);
-  }, []);
 
   return (
     <section className="py-24 md:py-40 border-t border-white/[0.04]">
@@ -502,16 +802,30 @@ export default function ReportShowcase() {
             합격을 설계하는 인사이트 리포트
           </h2>
           <p className="text-[15px] md:text-[16px] text-gray-500 font-light leading-[1.8] max-w-2xl mx-auto">
-            강점은 더 선명하게, 빈틈은 더 꼼꼼하게. 자소서가 면접관에게 어떻게 읽힐지 리포트로 확인하세요.
+            강점은 더 선명하게, 빈틈은 더 꼼꼼하게. 자소서가 면접관에게 어떻게
+            읽힐지 리포트로 확인하세요.
           </p>
         </div>
 
-        <ReportPreviewFrame
-          activeIndex={activeIndex}
-          onSelectScene={setActiveIndex}
-          goToPreviousScene={goToPreviousScene}
-          goToNextScene={goToNextScene}
-        />
+        <div
+          ref={scrollTrackRef}
+          className={isScrollDriven ? "relative h-[500vh]" : "relative"}
+        >
+          <div
+            className={
+              isScrollDriven
+                ? "sticky top-0 flex min-h-screen w-full items-center justify-center py-8"
+                : ""
+            }
+          >
+            <ReportPreviewFrame
+              activeIndex={activeIndex}
+              onSelectScene={setActiveIndex}
+              goToPreviousScene={goToPreviousScene}
+              goToNextScene={goToNextScene}
+            />
+          </div>
+        </div>
       </div>
     </section>
   );

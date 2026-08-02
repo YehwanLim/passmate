@@ -40,10 +40,7 @@ export default function AdminForbiddenPage() {
         className="absolute top-8 left-1/2 -translate-x-1/2 cursor-pointer"
         onClick={() => navigate("/")}
       >
-        <Logo
-          className="w-5 h-5"
-          textClassName="text-base font-bold text-white"
-        />
+        <Logo className="h-5 w-auto" />
       </div>
 
       {/* 본문 */}

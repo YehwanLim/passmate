@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pre:View — Minimal logo directions</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin:0; min-height:100vh; color:#f5f5f5; background:#050505; font-family:Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .wrap { width:min(1080px, calc(100% - 44px)); margin:0 auto; padding:62px 0 72px; }
+      .eyebrow { color:#38bdf8; font-size:11px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+      h1 { margin:12px 0 10px; font-size:clamp(30px, 4.5vw, 48px); letter-spacing:-.06em; line-height:1.08; }
+      .lead { max-width:690px; margin:0; color:#98989f; font-size:15px; line-height:1.72; }
+      .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:38px; }
+      .card { overflow:hidden; border:1px solid #242424; border-radius:18px; background:#0b0b0c; cursor:pointer; transition:.2s ease; }
+      .card:hover { transform:translateY(-3px); border-color:#5f5f64; }
+      .card.selected { border-color:#38bdf8; box-shadow:0 0 0 1px #38bdf8; }
+      .nav { display:flex; align-items:center; justify-content:space-between; height:66px; padding:0 20px; border-bottom:1px solid #1b1b1d; }
+      .label { color:#85858b; font-size:11px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+      .stage { display:grid; place-items:center; min-height:240px; padding:30px; background:#070707; }
+      .brand { display:flex; align-items:center; gap:10px; }
+      .brand-name { color:#f8f8f8; font-size:30px; font-weight:770; letter-spacing:-.075em; white-space:nowrap; }
+      .accent { color:#38bdf8; }
+      .desc { padding:20px 21px 23px; }
+      .desc h2 { margin:0 0 8px; font-size:17px; letter-spacing:-.035em; }
+      .desc p { margin:0; min-height:64px; color:#96969e; font-size:13px; line-height:1.65; }
+      .tag { display:inline-block; margin-top:14px; color:#c0c0c5; font-size:11px; font-weight:650; }
+      .orbit { position:relative; width:38px; height:38px; border:3px solid #38bdf8; border-top-color:transparent; border-right-color:transparent; border-radius:50%; transform:rotate(-23deg); }
+      .orbit:before { content:""; position:absolute; width:14px; height:8px; left:9px; top:11px; border-left:3px solid #38bdf8; border-bottom:3px solid #38bdf8; transform:rotate(-45deg); border-radius:1px; }
+      .orbit:after { content:""; position:absolute; width:5px; height:5px; right:-2px; top:7px; border-radius:50%; background:#38bdf8; }
+      .colonmark { position:relative; width:38px; height:38px; border:2.5px solid #38bdf8; border-radius:12px; }
+      .colonmark:before, .colonmark:after { content:""; position:absolute; left:14px; width:7px; height:7px; border-radius:50%; background:#38bdf8; }
+      .colonmark:before { top:9px; } .colonmark:after { bottom:9px; }
+      .loop { position:relative; width:38px; height:38px; border:3px solid #38bdf8; border-radius:50%; border-left-color:transparent; transform:rotate(-33deg); }
+      .loop:before { content:""; position:absolute; width:13px; height:7px; left:4px; top:15px; border-left:3px solid #38bdf8; border-bottom:3px solid #38bdf8; transform:rotate(-45deg); border-radius:1px; }
+      .mini { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:285px; padding:10px 0 0; border-top:1px solid #19191b; margin-top:35px; }
+      .mini span { color:#707077; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+      .favicon { display:grid; place-items:center; width:27px; height:27px; border:2px solid #38bdf8; border-radius:9px; color:#38bdf8; font-size:18px; font-weight:800; line-height:1; }
+      .note { margin-top:28px; padding:16px 18px; border-left:2px solid #38bdf8; color:#aaaab0; background:#0b0b0c; font-size:13px; line-height:1.65; }
+      .note strong { color:#f1f1f3; }
+      @media (max-width:780px) { .cards { grid-template-columns:1fr; } .stage { min-height:190px; } }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="eyebrow">Pre:View / refined direction</div>
+      <h1>심볼은 작게, 이름은 또렷하게.</h1>
+      <p class="lead">참고 로고처럼 헤더에 자연스럽게 놓일 정도의 크기로만 만들었습니다. 그라데이션·광원·AI 그래픽 없이, 청량한 블루와 단정한 워드마크만 유지합니다.</p>
+      <section class="cards">
+        <article class="card" data-choice="a-orbit-check" onclick="toggleSelect(this)">
+          <div class="nav"><span class="label">A · Orbit Check</span><span class="label">기존 결 유지</span></div>
+          <div class="stage">
+            <div class="brand"><span class="orbit"></span><span class="brand-name">pre<span class="accent">:</span>view</span></div>
+            <div class="mini"><span>favicon</span><span class="favicon">✓</span></div>
+          </div>
+          <div class="desc"><h2>열린 체크마크</h2><p>현재 PassMate의 친근한 결을 가장 자연스럽게 이어갑니다. ‘준비가 됐다’는 긍정적 메시지도 유지할 수 있어요.</p><span class="tag">가장 안전한 리브랜딩</span></div>
+        </article>
+        <article class="card" data-choice="b-colon-mark" onclick="toggleSelect(this)">
+          <div class="nav"><span class="label">B · Colon Mark</span><span class="label">이름의 시그니처</span></div>
+          <div class="stage">
+            <div class="brand"><span class="colonmark"></span><span class="brand-name">pre<span class="accent">:</span>view</span></div>
+            <div class="mini"><span>favicon</span><span class="favicon">:</span></div>
+          </div>
+          <div class="desc"><h2>콜론을 기억하게</h2><p>Pre:View만의 콜론을 아주 작은 심볼로 확장합니다. 가장 간결하고, 이름이 곧 브랜드 자산이 되는 방식입니다.</p><span class="tag">가장 미니멀한 방향</span></div>
+        </article>
+        <article class="card" data-choice="c-open-loop" onclick="toggleSelect(this)">
+          <div class="nav"><span class="label">C · Open Loop</span><span class="label">새로운 시작</span></div>
+          <div class="stage">
+            <div class="brand"><span class="loop"></span><span class="brand-name">pre<span class="accent">:</span>view</span></div>
+            <div class="mini"><span>favicon</span><span class="favicon">⌁</span></div>
+          </div>
+          <div class="desc"><h2>열린 원, 작은 체크</h2><p>렌즈처럼 보이지 않되, ‘앞을 본다’는 의미만 은근하게 남깁니다. 지금 심볼보다 조금 더 가볍고 현대적인 변주예요.</p><span class="tag">가장 새로운 방향</span></div>
+        </article>
+      </section>
+      <p class="note"><strong>제 추천은 B입니다.</strong> Pre:View의 콜론이 이름의 가장 독특한 요소라서, 그 자체를 작고 절제된 아이콘으로 쓰는 편이 지금 레퍼런스의 간결함과 가장 잘 맞습니다.</p>
+    </main>
+  </body>
+</html>

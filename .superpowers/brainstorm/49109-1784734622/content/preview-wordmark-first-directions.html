@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pre:View — Wordmark first</title>
+    <style>
+      * { box-sizing:border-box; }
+      body { margin:0; min-height:100vh; background:#080808; color:#f4f4f5; font-family:Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .wrap { width:min(1050px, calc(100% - 44px)); margin:0 auto; padding:58px 0 76px; }
+      .eyebrow { color:#48c4f9; font-size:11px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+      h1 { margin:11px 0 10px; font-size:clamp(30px, 4.4vw, 47px); letter-spacing:-.065em; line-height:1.1; }
+      .lead { max-width:695px; margin:0; color:#929298; font-size:15px; line-height:1.7; }
+      .cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; margin-top:38px; }
+      .card { overflow:hidden; border:1px solid #252525; border-radius:15px; background:#0f0f10; cursor:pointer; transition:border-color .18s ease, transform .18s ease; }
+      .card:hover { transform:translateY(-3px); border-color:#616166; } .card.selected { border-color:#44c4fb; box-shadow:0 0 0 1px #44c4fb; }
+      .tinybar { display:flex; align-items:center; justify-content:space-between; height:50px; padding:0 17px; border-bottom:1px solid #212123; color:#77777d; font-size:10px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+      .mock { padding:0 18px 22px; }
+      .appbar { display:flex; align-items:center; height:78px; border-bottom:1px solid #202023; }
+      .logo { display:flex; align-items:center; gap:8px; color:#f7f7f8; font-weight:770; letter-spacing:-.073em; font-size:25px; white-space:nowrap; }
+      .blue { color:#42c4fb; } .colon { color:#e8e8ea; margin:0 1px; }
+      .bodyline { width:51%; height:7px; margin-top:25px; border-radius:100px; background:#202023; } .bodyline.short { width:29%; margin-top:9px; background:#1a1a1c; }
+      .desc { padding:0 20px 22px; } .desc h2 { margin:0 0 8px; font-size:17px; letter-spacing:-.035em; } .desc p { margin:0; min-height:63px; color:#929298; font-size:13px; line-height:1.65; }
+      .tag { display:inline-block; margin-top:15px; color:#b7b7bc; font-size:11px; font-weight:700; }
+      .vmark { position:relative; width:25px; height:25px; }
+      .vmark:before { content:""; position:absolute; width:14px; height:14px; left:4px; top:3px; border-right:3px solid #42c4fb; border-bottom:3px solid #42c4fb; transform:rotate(45deg); border-radius:2px; }
+      .loopmark { position:relative; width:25px; height:25px; border:2.5px solid #42c4fb; border-top-color:transparent; border-radius:50%; transform:rotate(35deg); }
+      .loopmark:after { content:""; position:absolute; right:2px; top:4px; width:4px; height:4px; border-radius:50%; background:#42c4fb; }
+      .submark { display:flex; align-items:center; justify-content:center; width:25px; height:25px; border-radius:7px; background:#42c4fb; color:#080808; font-size:17px; font-weight:900; letter-spacing:-.15em; }
+      .rationale { margin-top:28px; padding:17px 18px; border-radius:11px; background:#111112; border:1px solid #222224; color:#a7a7ac; font-size:13px; line-height:1.65; }
+      .rationale strong { color:#f2f2f3; } @media(max-width:760px){.cards{grid-template-columns:1fr;}}
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="eyebrow">Pre:View / wordmark exploration</div>
+      <h1>로고가 아니라, 이름이 기억되게.</h1>
+      <p class="lead">PassMate 레퍼런스의 핵심은 ‘작은 심볼 하나와 명료한 워드마크’예요. 이번에는 헤더에 실제로 놓일 크기만 보여드리고, 의미를 과하게 넣은 그래픽은 제외했습니다.</p>
+      <section class="cards">
+        <article class="card" data-choice="a-wordmark-only" onclick="toggleSelect(this)">
+          <div class="tinybar"><span>A · Wordmark only</span><span>추천</span></div>
+          <div class="mock"><div class="appbar"><div class="logo"><span>pre</span><span class="colon">:</span><span class="blue">view</span></div></div><div class="bodyline"></div><div class="bodyline short"></div></div>
+          <div class="desc"><h2>심볼 없이, 이름만</h2><p>Pre:View의 표기 자체가 이미 충분히 개성 있습니다. 아이콘을 억지로 붙이지 않고, 글자 비율과 색만으로 브랜드를 만드는 가장 깔끔한 방식이에요.</p><span class="tag">가장 자연스러운 선택</span></div>
+        </article>
+        <article class="card" data-choice="b-v-mark" onclick="toggleSelect(this)">
+          <div class="tinybar"><span>B · Small V</span><span>보조 심볼</span></div>
+          <div class="mock"><div class="appbar"><div class="logo"><span class="vmark"></span><span>pre</span><span class="colon">:</span><span class="blue">view</span></div></div><div class="bodyline"></div><div class="bodyline short"></div></div>
+          <div class="desc"><h2>작은 V 하나</h2><p>‘View’의 V를 아주 단순한 체크처럼만 사용합니다. 아이콘이 필요할 때만 쓰고, 평소에는 워드마크가 주인공인 방향입니다.</p><span class="tag">가장 조용한 아이콘</span></div>
+        </article>
+        <article class="card" data-choice="c-open-loop" onclick="toggleSelect(this)">
+          <div class="tinybar"><span>C · Open loop</span><span>기존 결 계승</span></div>
+          <div class="mock"><div class="appbar"><div class="logo"><span class="loopmark"></span><span>pre</span><span class="colon">:</span><span class="blue">view</span></div></div><div class="bodyline"></div><div class="bodyline short"></div></div>
+          <div class="desc"><h2>아주 작은 열린 원</h2><p>현재 PassMate의 열린 체크 심볼이 가진 경쾌함만 남긴 변주입니다. 새 이름과의 연결은 약하지만, 전환 과정은 가장 편안합니다.</p><span class="tag">가장 익숙한 방향</span></div>
+        </article>
+      </section>
+      <div class="rationale"><strong>저라면 A로 갑니다.</strong> Pre:View는 표기와 발음이 이미 선명해서, 서비스가 더 커질수록 오히려 워드마크만 있는 편이 세련돼 보입니다. 앱 파비콘이 꼭 필요해질 때만 B의 작은 V를 보조로 쓰면 됩니다.</div>
+    </main>
+  </body>
+</html>

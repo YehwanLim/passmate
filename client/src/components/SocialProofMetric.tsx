@@ -54,7 +54,9 @@ export function SocialProofMetricCard({
   return (
     <div className="social-proof-metric">
       <p className="social-proof-metric-value tabular-nums">
-        {formatSocialProofMetric(displayValue)}{metric.suffix}
+        <span className="social-proof-metric-number">
+          {formatSocialProofMetric(displayValue)}{metric.suffix}
+        </span>
       </p>
       <p className="social-proof-metric-label">{metric.label}</p>
     </div>

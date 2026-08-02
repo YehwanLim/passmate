@@ -145,7 +145,7 @@ export default function Terms() {
       <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#050505]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-4xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2">
-            <Logo className="w-5 h-5" textClassName="text-[15px] text-white" />
+            <Logo className="h-5 w-auto" />
           </Link>
           <Link
             href="/"
