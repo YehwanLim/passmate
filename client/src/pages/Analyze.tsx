@@ -44,7 +44,7 @@ import {
   trackAnalysisStart,
   trackAnalysisFailed,
 } from "@/lib/analytics";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getAuthorizationHeader } from "@/lib/apiAuth";
 import {
   analysisPendingPath,
@@ -559,7 +559,9 @@ function QuestionCard({
 ────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useRequireAuth({
+    redirectPath: "/analyze",
+  });
   const [company, setCompany] = useState("");
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [customJob, setCustomJob] = useState("");
@@ -909,10 +911,7 @@ export default function Analyze() {
               className="flex items-center cursor-pointer"
               onClick={() => navigate("/")}
             >
-              <Logo
-                className="w-6 h-6"
-                textClassName="text-lg md:text-xl text-white"
-              />
+              <Logo className="h-6 w-auto" />
             </div>
           </div>
 

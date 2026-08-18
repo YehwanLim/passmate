@@ -35,8 +35,11 @@ describe("analyze API authentication", () => {
     );
 
     expect(response.statusCode).toBe(401);
-    expect(response.body).toEqual({ error: "Unauthorized" });
-    expect(response.headers["Access-Control-Allow-Headers"]).toContain("Authorization");
+    expect(response.body).toEqual({
+      error: "AUTHENTICATION_REQUIRED",
+      requestId: expect.any(String),
+    });
+    expect(response.headers["Access-Control-Allow-Headers"]).toBeUndefined();
   });
 
   it("rejects malformed unauthenticated bodies before parsing them", async () => {
@@ -52,7 +55,10 @@ describe("analyze API authentication", () => {
     );
 
     expect(response.statusCode).toBe(401);
-    expect(response.body).toEqual({ error: "Unauthorized" });
+    expect(response.body).toEqual({
+      error: "AUTHENTICATION_REQUIRED",
+      requestId: expect.any(String),
+    });
   });
 
   it("converts authentication configuration failures into an API error response", async () => {
@@ -73,7 +79,10 @@ describe("analyze API authentication", () => {
       );
 
       expect(response.statusCode).toBe(500);
-      expect(response.body.error).toContain("SUPABASE_URL");
+      expect(response.body).toEqual({
+        error: "INTERNAL_ERROR",
+        requestId: expect.any(String),
+      });
     } finally {
       if (originalSupabaseUrl === undefined) delete process.env.SUPABASE_URL;
       else process.env.SUPABASE_URL = originalSupabaseUrl;

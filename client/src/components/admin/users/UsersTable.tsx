@@ -10,7 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserRoleBadge } from "./UserRoleBadge";
-import { FileText, FolderOpen, Ticket, ChevronRight } from "lucide-react";
+import { FileText, FolderOpen, ChevronRight } from "lucide-react";
 import type { AdminUserRow } from "@/hooks/admin/useUsersData";
 
 // ============================================================
@@ -62,7 +62,6 @@ function TableRowSkeleton() {
       <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-16" /></TableCell>
       <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-10" /></TableCell>
       <TableCell className="hidden xl:table-cell"><Skeleton className="h-4 w-10" /></TableCell>
-      <TableCell className="hidden xl:table-cell"><Skeleton className="h-4 w-10" /></TableCell>
       <TableCell><Skeleton className="size-4" /></TableCell>
     </TableRow>
   );
@@ -89,7 +88,6 @@ interface UsersTableProps {
  * - 최근 활성 (md 이상)
  * - 분석 수 (lg 이상)
  * - 프로젝트 수 (xl 이상)
- * - 잔여 이용권 (xl 이상)
  * - 상세 보기 링크
  *
  * 현재 DB에서 구현 불가 → 표시 안 함:
@@ -109,7 +107,6 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
             <TableHead className="hidden lg:table-cell w-[110px]">최근 활성</TableHead>
             <TableHead className="hidden lg:table-cell w-[80px] text-right">분석</TableHead>
             <TableHead className="hidden xl:table-cell w-[80px] text-right">프로젝트</TableHead>
-            <TableHead className="hidden xl:table-cell w-[100px] text-right">잔여 이용권</TableHead>
             <TableHead className="w-[40px]" />
           </TableRow>
         </TableHeader>
@@ -118,7 +115,7 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
             Array.from({ length: 8 }).map((_, i) => <TableRowSkeleton key={i} />)
           ) : users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="h-32 text-center text-muted-foreground text-sm">
+              <TableCell colSpan={7} className="h-32 text-center text-muted-foreground text-sm">
                 검색 결과가 없습니다.
               </TableCell>
             </TableRow>
@@ -185,14 +182,6 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
                   <span className="inline-flex items-center gap-1 text-sm">
                     <FolderOpen className="size-3 text-muted-foreground" />
                     {user.project_count.toLocaleString("ko-KR")}
-                  </span>
-                </TableCell>
-
-                {/* 잔여 이용권 */}
-                <TableCell className="hidden xl:table-cell text-right">
-                  <span className="inline-flex items-center gap-1 text-sm">
-                    <Ticket className="size-3 text-muted-foreground" />
-                    {user.remaining_credits?.toLocaleString("ko-KR") ?? "–"}
                   </span>
                 </TableCell>
 

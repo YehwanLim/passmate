@@ -33,8 +33,8 @@ describe("JOB_ROLE_CATEGORIES", () => {
   it("renders grouped roles and recognizes them when restoring a saved resume", () => {
     const source = readFileSync(new URL("./Analyze.tsx", import.meta.url), "utf8");
 
-    expect(source).toContain("JOB_ROLE_CATEGORIES.map((category) => (");
-    expect(source).toContain("category.roles.map((role) => {");
+    expect(source).toContain("JOB_ROLE_CATEGORIES.map(category => (");
+    expect(source).toContain("category.roles.map(role => {");
     expect(source).toContain("isPresetJobRole(savedJob)");
   });
 

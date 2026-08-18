@@ -21,8 +21,8 @@ function apiRoute(pathname: string) {
       query: { route: pathname.slice("/api/admin/".length).split("/").filter(Boolean) },
     };
   }
-  if (pathname === "/api/account/deletion") return { file: "api/account/deletion.js", query: {} };
-  if (pathname === "/api/account/deletion/cancel") return { file: "api/account/deletion/cancel.js", query: {} };
+  if (pathname === "/api/account/deletion") return { file: "api/account/[...route].js", query: {} };
+  if (pathname === "/api/account/deletion/cancel") return { file: "api/account/[...route].js", query: {} };
 
   const projectAnalysis = pathname.match(/^\/api\/projects\/([^/]+)\/analyses$/);
   if (projectAnalysis) return { file: "api/projects/[projectId]/analyses.js", query: { projectId: projectAnalysis[1] } };

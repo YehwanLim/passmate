@@ -21,11 +21,11 @@ describe("Entitlements page", () => {
     );
   });
 
-  it("provides retryable errors and only starts checkout after a purchase intent", () => {
+  it("provides retryable errors without exposing beta checkout controls", () => {
     expect(pageSource).toContain("다시 시도");
-    expect(pageSource).toContain("canPurchaseEntitlement");
-    expect(pageSource).toContain("createPurchaseIntent");
-    expect(pageSource).toContain("window.location.assign");
-    expect(pageSource).toContain("결제하기");
+    expect(pageSource).toContain("현재 추가 이용권 판매를 준비하고 있어요.");
+    expect(pageSource).not.toContain("createPurchaseIntent");
+    expect(pageSource).not.toContain("window.location.assign");
+    expect(pageSource).not.toContain("결제하기");
   });
 });

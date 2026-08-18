@@ -1,16 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
 import { getLoginRedirectPath, useRequireAuth } from "@/hooks/useRequireAuth";
-import {
-  canPurchaseEntitlement,
-  createPurchaseIntent,
-  fetchEntitlementSummary,
-  type EntitlementSummary,
-} from "@/lib/entitlements";
+import { fetchEntitlementSummary, type EntitlementSummary } from "@/lib/entitlements";
 import { supabase } from "@/lib/supabase";
 
 function CreditSkeleton() {
@@ -60,7 +55,6 @@ export default function Entitlements() {
   const [summary, setSummary] = useState<EntitlementSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPurchasing, setIsPurchasing] = useState(false);
 
   const getAccessToken = useCallback(async () => {
     const {
@@ -97,29 +91,6 @@ export default function Entitlements() {
       void loadEntitlements();
     }
   }, [authLoading, isAuthenticated, loadEntitlements]);
-
-  const handlePurchase = async () => {
-    if (isPurchasing) return;
-
-    setIsPurchasing(true);
-    setError(null);
-
-    try {
-      const accessToken = await getAccessToken();
-      if (!accessToken) {
-        setIsPurchasing(false);
-        return;
-      }
-
-      const { checkoutUrl } = await createPurchaseIntent(accessToken);
-      window.location.assign(checkoutUrl);
-    } catch {
-      setError("결제를 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
-      setIsPurchasing(false);
-    }
-  };
-
-  const showPurchaseButton = summary ? canPurchaseEntitlement(summary) : false;
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28 text-white">
@@ -213,25 +184,9 @@ export default function Entitlements() {
                     </p>
                   </div>
 
-                  {showPurchaseButton ? (
-                    <button
-                      type="button"
-                      onClick={() => void handlePurchase()}
-                      disabled={isPurchasing}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-3 text-xs font-semibold text-black transition-colors hover:bg-zinc-200 disabled:cursor-wait disabled:opacity-60"
-                    >
-                      {isPurchasing ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <CreditCard className="h-3.5 w-3.5" />
-                      )}
-                      {isPurchasing ? "결제 페이지로 이동 중..." : "결제하기"}
-                    </button>
-                  ) : (
-                    <p className="text-xs text-zinc-600">
-                      현재 추가 이용권 판매를 준비하고 있어요.
-                    </p>
-                  )}
+                  <p className="text-xs text-zinc-600">
+                    현재 추가 이용권 판매를 준비하고 있어요.
+                  </p>
                 </div>
               </div>
 

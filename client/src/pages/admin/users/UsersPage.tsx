@@ -2,9 +2,7 @@ import { useState, useCallback } from "react";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { UsersFilters } from "@/components/admin/users/UsersFilters";
 import { UsersTable } from "@/components/admin/users/UsersTable";
-import { CreditCouponsDialog } from "@/components/admin/users/CreditCouponsDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
   Pagination,
   PaginationContent,
@@ -15,15 +13,7 @@ import {
   PaginationEllipsis,
 } from "@/components/ui/pagination";
 import { useUsersData, type UserSortField, type SortDir } from "@/hooks/admin/useUsersData";
-import {
-  createCreditCoupon,
-  fetchCreditCoupons,
-  updateCreditCoupon,
-  type CreateCreditCouponInput,
-  type CreditCoupon,
-  type UpdateCreditCouponInput,
-} from "@/lib/admin-credits";
-import { AlertCircle, Ticket } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -66,50 +56,6 @@ export default function UsersPage() {
   const [sortField, setSortField] = useState<UserSortField>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
-  const [couponDialogOpen, setCouponDialogOpen] = useState(false);
-  const [coupons, setCoupons] = useState<CreditCoupon[]>([]);
-  const [couponsLoading, setCouponsLoading] = useState(false);
-  const [couponsError, setCouponsError] = useState<string | null>(null);
-
-  const loadCoupons = useCallback(async () => {
-    setCouponsLoading(true);
-    setCouponsError(null);
-    try {
-      setCoupons(await fetchCreditCoupons());
-    } catch (cause) {
-      setCouponsError(cause instanceof Error ? cause.message : "이용권 쿠폰을 불러오지 못했습니다.");
-    } finally {
-      setCouponsLoading(false);
-    }
-  }, []);
-
-  const handleCreateCoupon = async (input: CreateCreditCouponInput) => {
-    try {
-      const coupon = await createCreditCoupon(input);
-      await loadCoupons();
-      return coupon;
-    } catch (cause) {
-      setCouponsError(cause instanceof Error ? cause.message : "이용권 쿠폰을 만들지 못했습니다.");
-      throw cause;
-    }
-  };
-
-  const handleUpdateCoupon = async (input: UpdateCreditCouponInput) => {
-    try {
-      const coupon = await updateCreditCoupon(input);
-      await loadCoupons();
-      return coupon;
-    } catch (cause) {
-      setCouponsError(cause instanceof Error ? cause.message : "이용권 쿠폰을 수정하지 못했습니다.");
-      throw cause;
-    }
-  };
-
-  const handleCouponDialogChange = (open: boolean) => {
-    setCouponDialogOpen(open);
-    if (open) void loadCoupons();
-  };
-
   // 검색 시 첫 페이지로 리셋
   const handleSearchChange = useCallback((v: string) => {
     setSearch(v);
@@ -132,12 +78,6 @@ export default function UsersPage() {
       <AdminPageHeader
         title="Users"
         description="가입 사용자 목록을 조회하고 관리합니다."
-        actions={(
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => handleCouponDialogChange(true)}>
-            <Ticket className="size-4" />
-            무료 이용권 쿠폰 관리
-          </Button>
-        )}
       />
 
       {/* 에러 */}
@@ -222,16 +162,6 @@ export default function UsersPage() {
           {total.toLocaleString("ko-KR")}명
         </p>
       )}
-
-      <CreditCouponsDialog
-        open={couponDialogOpen}
-        onOpenChange={handleCouponDialogChange}
-        coupons={coupons}
-        isLoading={couponsLoading}
-        error={couponsError}
-        onCreate={handleCreateCoupon}
-        onUpdate={handleUpdateCoupon}
-      />
     </div>
   );
 }

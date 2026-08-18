@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { AuthorizationError } from "../../../lib/auth.js";
-import { createAccountDeletionHandler } from "../../../api/account/deletion.js";
-import { createAccountDeletionCancelHandler } from "../../../api/account/deletion/cancel.js";
+import {
+  createAccountDeletionCancelHandler,
+  createAccountDeletionHandler,
+  createAccountRoutesHandler,
+} from "../../../api/account/[...route].js";
 import { createPurgeDeletedAccountsHandler } from "../../../api/cron/purge-deleted-users.js";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -84,6 +87,19 @@ describe("account deletion API", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ deletionPending: false });
     expect(cancel).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_ID }));
+  });
+
+  it("does not treat an unknown account route as an account deletion request", async () => {
+    const schedule = vi.fn();
+    const handler = createAccountRoutesHandler({
+      scheduleHandler: createAccountDeletionHandler({ requestDeletion: schedule }),
+    });
+    const res = response();
+
+    await handler(request({ url: "/api/account/unknown" }), res);
+
+    expect(res.statusCode).toBe(404);
+    expect(schedule).not.toHaveBeenCalled();
   });
 });
 

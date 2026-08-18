@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   EntitlementApiError,
-  canPurchaseEntitlement,
-  createPurchaseIntent,
   fetchEntitlementSummary,
 } from "./entitlements";
+
+const entitlementClientSource = readFileSync(
+  new URL("./entitlements.ts", import.meta.url),
+  "utf8"
+);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -14,27 +18,32 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("entitlements client", () => {
+  it("does not ship beta checkout or purchase-intent code", () => {
+    expect(entitlementClientSource).not.toContain("createPurchaseIntent");
+    expect(entitlementClientSource).not.toContain("purchase-intents");
+  });
+
   it("returns the server-provided credit counts without recalculating them", async () => {
     const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
     const fetcher: typeof fetch = async (input, init) => {
       calls.push([input, init]);
       return jsonResponse({
-        premiumEnabled: true,
+        premiumEnabled: false,
         freeRemaining: 1,
-        premiumRemaining: 2,
-        remaining: 3,
-        groblePaymentUrl: "https://www.groble.im/payment/example",
+        premiumRemaining: 0,
+        remaining: 1,
+        groblePaymentUrl: null,
       });
     };
 
     await expect(
       fetchEntitlementSummary("access-token", fetcher)
     ).resolves.toEqual({
-      premiumEnabled: true,
+      premiumEnabled: false,
       freeRemaining: 1,
-      premiumRemaining: 2,
-      remaining: 3,
-      groblePaymentUrl: "https://www.groble.im/payment/example",
+      premiumRemaining: 0,
+      remaining: 1,
+      groblePaymentUrl: null,
     });
     expect(calls).toEqual([
       [
@@ -44,69 +53,12 @@ describe("entitlements client", () => {
     ]);
   });
 
-  it("makes checkout available only for an enabled and configured product", () => {
-    expect(
-      canPurchaseEntitlement({
-        premiumEnabled: true,
-        freeRemaining: 0,
-        premiumRemaining: 0,
-        remaining: 0,
-        groblePaymentUrl: "https://www.groble.im/payment/example",
-      })
-    ).toBe(true);
-    expect(
-      canPurchaseEntitlement({
-        premiumEnabled: false,
-        freeRemaining: 0,
-        premiumRemaining: 0,
-        remaining: 0,
-        groblePaymentUrl: "https://www.groble.im/payment/example",
-      })
-    ).toBe(false);
-  });
-
-  it("creates a purchase intent before returning the checkout URL", async () => {
-    const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
-    const fetcher: typeof fetch = async (input, init) => {
-      calls.push([input, init]);
-      return jsonResponse(
-        {
-          purchaseIntentId: "purchase-intent-1",
-          checkoutUrl: "https://www.groble.im/payment/example",
-        },
-        201
-      );
-    };
-
-    await expect(
-      createPurchaseIntent("access-token", fetcher)
-    ).resolves.toEqual({
-      purchaseIntentId: "purchase-intent-1",
-      checkoutUrl: "https://www.groble.im/payment/example",
-    });
-    expect(calls).toEqual([
-      [
-        "/api/entitlements/purchase-intents",
-        { method: "POST", headers: { Authorization: "Bearer access-token" } },
-      ],
-    ]);
-  });
-
-  it("reports an unsuccessful purchase-intent response as an actionable API error", async () => {
-    const fetcher: typeof fetch = async () =>
-      jsonResponse({ error: "PREMIUM_SALES_DISABLED" }, 403);
-
-    await expect(createPurchaseIntent("access-token", fetcher)).rejects.toEqual(
-      new EntitlementApiError("PREMIUM_SALES_DISABLED")
-    );
-  });
-
   it("rejects malformed credit counts instead of displaying an invented balance", async () => {
     const fetcher: typeof fetch = async () =>
       jsonResponse({
-        premiumEnabled: true,
+        premiumEnabled: false,
         freeRemaining: 1,
-        premiumRemaining: 2,
+        premiumRemaining: 0,
         remaining: "3",
         groblePaymentUrl: null,
       });
@@ -114,21 +66,6 @@ describe("entitlements client", () => {
     await expect(
       fetchEntitlementSummary("access-token", fetcher)
     ).rejects.toEqual(new EntitlementApiError("Invalid remaining response"));
-  });
-
-  it("rejects an insecure checkout URL before redirecting to payment", async () => {
-    const fetcher: typeof fetch = async () =>
-      jsonResponse(
-        {
-          purchaseIntentId: "purchase-intent-1",
-          checkoutUrl: "http://www.groble.im/payment/example",
-        },
-        201
-      );
-
-    await expect(createPurchaseIntent("access-token", fetcher)).rejects.toEqual(
-      new EntitlementApiError("Invalid checkoutUrl response")
-    );
   });
 
   it("rejects a missing session token before an anonymous request is sent", async () => {

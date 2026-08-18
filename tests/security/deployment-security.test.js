@@ -33,6 +33,13 @@ describe("beta deployment security configuration", () => {
     expect(read("lib/admin-handlers/entitlements.js")).not.toContain('req.method === "PATCH"');
   });
 
+  it("does not deploy administrator credit grants or coupon management during beta", () => {
+    expect(existsSync(`${root}/api/admin/credit-management.js`)).toBe(false);
+    expect(existsSync(`${root}/client/src/lib/admin-credits.ts`)).toBe(false);
+    expect(read("client/src/pages/admin/users/UsersPage.tsx")).not.toContain("무료 이용권 쿠폰 관리");
+    expect(read("client/src/pages/admin/users/UserDetailPage.tsx")).not.toContain("UserCreditManagementCard");
+  });
+
   it("removes diagnostic AI routes and routes local runtimes through the secured analysis handler", () => {
     const viteConfig = read("vite.config.ts");
     const expressServer = read("server/index.ts");

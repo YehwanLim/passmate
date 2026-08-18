@@ -3,7 +3,6 @@ import ReportShowcase from "@/components/ReportShowcase";
 import SocialProofSection from "@/components/SocialProofSection";
 import { BrandName } from "@/components/BrandName";
 import ProcessSection from "@/components/ProcessSection";
-import PricingSection from "@/components/PricingSection";
 import FounderSection from "@/components/FounderSection";
 import SubtleBackground from "@/components/SubtleBackground";
 import Logo from "@/components/Logo";
@@ -754,9 +753,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* ── Pricing Section ── */}
-      <PricingSection />
 
       {/* ── Founder + CTA + Footer ── */}
       <FounderSection />
