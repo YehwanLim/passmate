@@ -112,3 +112,9 @@ temp/
 .vercel
 .env*
 .worktrees/
+
+# Agent skills — skills-lock.json으로 복원되는 서드파티 의존성
+# (.agents/product-marketing.md 같은 프로젝트 고유 자산은 커밋 대상이라 .agents/ 전체를 무시하지 않는다)
+.agents/skills/
+.claude/skills/
+.claude/settings.local.json
