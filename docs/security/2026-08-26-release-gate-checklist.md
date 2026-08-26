@@ -25,6 +25,64 @@
 
 **남은 일은 전부 실환경 검증이다.** 코드에서 확인할 수 있는 것은 이번에 다 봤고, 이제부터는 실제로 요청을 보내고 결과를 봐야 하는 항목만 남았다.
 
+---
+
+## 🔴 2026-08-27 추가 — 실DB 점검에서 나온 P0
+
+**위 "현재 상태"는 코드와 마이그레이션 *파일* 기준이다. 실제 DB는 그 상태가 아니었다.**
+
+0·1번을 끝내고 2번에 착수하면서 대상 DB(`DIRECT_URL`이 가리키는 Supabase 프로젝트 `nygljwrlycnmnywwhpjg`, 도쿄)를 읽기 전용으로 점검한 결과:
+
+### 발견 A — 마이그레이션 9건이 미적용이고, 테이블 4개가 실재하지 않는다
+
+`prisma migrate status` 기준 13건 중 **9건 미적용**. `_prisma_migrations` 기록은 4건뿐이다.
+그 결과 `schema.prisma`의 18개 모델 중 4개의 테이블이 DB에 없다. **넷 다 현재 코드가 실제로 쓴다.**
+
+| 없는 테이블 | 만드는 마이그레이션 | 쓰는 곳 |
+|---|---|---|
+| `analysis_requests` | `20260723_add_security_primitives` | `api/analyze.js`, `api/analysis-requests/[id].js`, `lib/analysis-request-lifecycle.js` |
+| `api_rate_limit_buckets` | 〃 | `lib/rate-limit.js` |
+| `audit_events` | `20260723_add_audit_events` | `lib/audit-log.js` |
+| `ai_model_settings` | `20260723_add_ai_model_settings` | `lib/ai-model-settings.js` |
+
+`analysis_requests`가 없다는 것은 **CLAUDE.md에 적힌 핵심 분석 흐름(202 접수증 → 폴링)이 이 DB에서는 동작하지 않는다**는 뜻이다. 같은 마이그레이션에 있는 가입 트리거(`handle_auth_user_created`)도 미적용이라, 신규 가입자는 `public.users` 행이 생기지 않아 403으로 막힌다.
+
+### 발견 B — 기본 거부 베이스라인이 적용된 적이 없다
+
+2번 항목의 완료 조건은 *"나머지 16개 애플리케이션 테이블과 동일한 기본 거부 상태"*였다. **그 전제가 사실이 아니다.**
+
+- 앱 테이블 14개 중 **RLS가 켜진 것은 `users` 하나뿐**. 나머지 13개는 RLS OFF.
+- `anon`·`authenticated`가 **전 테이블에 7개 권한(SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER)을 보유**. 총 210개.
+
+원인은 이 베이스라인을 담당하는 `20260723_add_security_primitives`가 미적용이기 때문이다(발견 A와 같은 뿌리).
+
+2026-08-26 감사가 "인증 우회와 IDOR은 발견되지 않았다"고 판정한 것은 **코드와 마이그레이션 파일만 봤기 때문**이다. `tests/security/database-default-deny.test.js`가 통과한 것도 같은 이유로, 파일을 검증한 것이지 라이브 DB를 검증한 것이 아니다. **이 격차가 이번 감사의 가장 큰 사각지대였다.**
+
+### 발견 C — 실제 노출이 발생하고 있었다 (조치 완료)
+
+Data API(PostgREST)가 **켜져 있었다**. 공개 anon 키(설계상 클라이언트 번들에 배포되는 값)로 인증 없이 실데이터가 읽혔다. `HEAD` + 카운트 헤더로만 확인했고 본문은 수신하지 않았다.
+
+| 테이블 | 조치 전 | 조치 후 |
+|---|---|---|
+| `analyses` (자소서 본문) | 🔴 200, **7건 열람 가능** | 503 차단 |
+| `projects` | 🔴 200, **7건 열람 가능** | 503 차단 |
+| `users` | 200 / 0건 (RLS ON이라 차단) | 503 차단 |
+| `feedbacks`, `user_api_keys`, `credit_coupons`, `admin_credit_grants` | 200 / 0건 — **보호돼서가 아니라 비어 있어서** | 503 차단 |
+
+`anon`에 `INSERT`/`UPDATE`/`DELETE`/`TRUNCATE` 권한도 있고 RLS가 꺼져 있으므로 **쓰기·삭제도 가능했을 것으로 보인다.** 파괴적이라 테스트하지 않았다 — 권한 테이블과 읽기 실증으로부터의 추론이다.
+
+**조치**: 2026-08-27, Supabase 대시보드에서 Data API 비활성화. 4회 반복 프로브로 503 안정 확인. 서버 직접 DB 접속은 정상(Prisma는 Postgres에 직접 붙으므로 무관).
+
+**단, 이것은 지혈이다.** DB 내부의 권한 210개와 RLS OFF 14개는 그대로다. **누가 Data API를 다시 켜면 즉시 재노출된다.** 발견 A·B를 해소하기 전까지 이 설정을 건드리면 안 된다.
+
+### 이 발견이 바꾸는 것
+
+- **2번은 "마이그레이션 1건 적용"이 아니라 "9건 적용 + 스키마 정합성 복구"다.** 아래 2번 항목을 그에 맞게 다시 썼다.
+- **출시 판정은 NO-GO다.** 6번까지 통과 여부와 무관하게, 코드가 요구하는 테이블이 없는 DB로는 출시할 수 없다.
+- **앞으로의 감사는 파일이 아니라 라이브 DB를 근거로 해야 한다.** 이번 건은 "마이그레이션 파일이 존재한다"와 "DB에 적용돼 있다"를 동일시해서 생긴 문제다.
+
+**미해결**: `nygljwrlycnmnywwhpjg`가 스테이징인지 운영인지 아직 확정되지 않았다. 로컬 `.env`와 `dist` 번들은 둘 다 이 프로젝트를 가리키는 것을 확인했으나, **Vercel Production 환경변수는 확인하지 못했다.** 만약 운영이 별도 프로젝트라면 **거기에도 같은 점검을 반드시 반복해야 한다** — 같은 누락이 있을 가능성이 높다.
+
 ## 진행 순서
 
 번호 순서대로 하는 것을 권한다. 특히 **3번을 4·5번보다 먼저** 해야 한다. 그 이유는 3번 항목에 적었다.
@@ -68,19 +126,61 @@
 
 ---
 
-### 2. 스테이징 DB에 RLS 마이그레이션 적용
+### 2. DB 스키마·보안 베이스라인 복구  ← **P0 / 출시 차단**
 
-`prisma/migrations/20260826_secure_admin_credit_tables/`가 커밋되어 있으나 아직 어디에도 적용되지 않았다.
+> **2026-08-27 개정.** 원래 이 항목은 `20260826_secure_admin_credit_tables` 1건 적용이었다.
+> 실DB 점검 결과 미적용 마이그레이션이 9건이고 코드가 요구하는 테이블 4개가 없어, 범위를 다시 잡았다.
+> 근거는 위 "🔴 2026-08-27 추가" 절에 있다.
 
-- [ ] **대상이 스테이징 Supabase 프로젝트인지 정확히 확인** (운영 DB 금지)
-- [ ] 마이그레이션 적용 (`AGENTS.md`의 파괴적 명령 규칙을 따를 것 — 사용자 승인 필요)
-- [ ] 원격에서 `credit_coupons`, `admin_credit_grants` 두 테이블의 상태 확인:
-  - `pg_tables.rowsecurity = true`
-  - `anon`, `authenticated` 역할의 SELECT/INSERT/UPDATE/DELETE 권한 0개
+#### 2-a. 대상 환경 확정 (선행 조건)
 
-**완료 조건**: 위 두 테이블이 나머지 16개 애플리케이션 테이블과 동일한 기본 거부 상태다.
+- [x] 로컬 `.env`의 `DIRECT_URL` 대상 확인 → Supabase `nygljwrlycnmnywwhpjg` (도쿄)
+- [x] `dist` 번들의 `VITE_SUPABASE_URL` 대조 → 동일 프로젝트
+- [ ] **Vercel Production 환경변수의 `DATABASE_URL`/`DIRECT_URL`/`VITE_SUPABASE_URL` 확인** — ref가 같은지 다른지
+- [ ] 운영이 별도 프로젝트라면, **그 프로젝트에도 아래 점검을 처음부터 반복**
 
-**주의**: `admin_credit_grants`는 지급 시점 이메일 스냅샷을 보관한다. 확인 과정의 쿼리 결과에 실제 이메일이 나오지 않도록 count와 권한 메타데이터만 조회할 것.
+이게 끝나기 전에는 어떤 마이그레이션도 적용하지 않는다.
+
+#### 2-b. 즉시 조치 (완료)
+
+- [x] Data API 비활성화 — 진행 중이던 실데이터 노출 차단 (발견 C)
+- [x] 차단 실증 (4회 반복 프로브, 503 안정)
+- [ ] **2-c가 끝날 때까지 Data API를 다시 켜지 않는다** ← 켜는 순간 재노출
+
+#### 2-c. 근본 수정 — 미적용 마이그레이션 9건
+
+적용 순서와 각각의 성격을 먼저 파악할 것. **DDL만 있는 것과 데이터를 건드리는 것이 섞여 있다.**
+
+| 마이그레이션 | 성격 |
+|---|---|
+| `20260723_add_ai_model_settings` | 테이블 생성 + seed INSERT |
+| `20260723_add_analysis_request_processing_states` | (DDL 없음 — 내용 확인 필요) |
+| `20260723_add_audit_events` | 테이블 생성 |
+| `20260723_add_security_primitives` | **핵심** — `analysis_requests`·`api_rate_limit_buckets` 생성, RLS 활성화, 권한 회수, 가입 트리거 |
+| `20260723_backfill_auth_users` | **데이터 백필** (`INSERT INTO public.users`) |
+| `20260723_claim_account_purges` | 컬럼 추가 |
+| `20260723_expire_stale_analysis_requests` | 컬럼 추가 |
+| `20260723_stage_provider_results` | **데이터 UPDATE** 3건 + audit INSERT |
+| `20260826_secure_admin_credit_tables` | 원래 이 항목의 대상 (RLS + 권한 회수) |
+
+- [ ] 각 마이그레이션 SQL을 **적용 전에 개별로 읽고** 파괴적 구문 유무 확인 (특히 백필·UPDATE 2건)
+- [ ] 적용 전 DB 백업 또는 Supabase 스냅샷 확보
+- [ ] `AGENTS.md`의 파괴적 명령 규칙에 따라 **사용자 승인 후** 적용
+- [ ] 적용 후 `prisma migrate status`가 "up to date"
+
+**주의 — 이미 있는 테이블과의 충돌**: `_prisma_migrations` 기록(4건)과 실제 스키마가 어긋나 있다. `20260726_*` 2건은 적용된 것으로 기록돼 있는데 `20260723_*`은 미기록이다. 즉 **순서가 뒤바뀐 채 수동 적용된 이력**이 있다. 그냥 `migrate deploy`를 돌리면 이미 존재하는 객체와 충돌할 수 있다. 대부분 `IF NOT EXISTS`로 방어돼 있으나 확인 없이 신뢰하지 말 것.
+
+#### 2-d. 완료 조건 (라이브 DB 기준, 파일 기준 아님)
+
+- [ ] `schema.prisma`의 18개 모델에 대응하는 테이블이 **전부 실재**
+- [ ] 앱 테이블 전체가 `pg_class.relrowsecurity = true`
+- [ ] `information_schema.role_table_grants`에서 `anon`·`authenticated` 권한 **0개**
+- [ ] Data API를 다시 켜도 위 프로브가 전부 차단되는 것을 실증 (지금은 Data API가 꺼져서 막히는 것이지, DB가 막는 게 아니다)
+- [ ] 핵심 흐름 스모크: 분석 접수(202) → 폴링 → 완료
+
+**주의**: `admin_credit_grants`는 지급 시점 이메일 스냅샷을 보관한다. 확인 과정의 쿼리 결과에 실제 이메일이 나오지 않도록 count와 권한 메타데이터만 조회할 것. (2026-08-27 점검도 이 규칙을 지켰다.)
+
+**점검 도구**: 이번에 쓴 임시 스크립트 2개가 프로젝트 루트에 있다 — `tmp-inspect-db.mjs`(읽기 전용 DB 상태), `tmp-probe-dataapi.sh`(Data API 노출 프로브). 재검증에 재사용하고, 2번이 끝나면 삭제할 것. 커밋하지 않았다.
 
 ---
 
@@ -155,10 +255,10 @@
 저장소만으로는 검증할 수 없다.
 
 - [ ] Supabase 대시보드의 OAuth redirect allowlist 실제 값
-- [ ] Data API 비활성 상태 유지 확인
+- [x] ~~Data API 비활성 상태 유지 확인~~ → **켜져 있었고 실제 노출이 있었다.** 2026-08-27 비활성화함. 발견 C 참조. 2-c 완료 전까지 다시 켜지 말 것
 - [ ] 로그·백업 보관 기간 정책 문서화
 - [ ] 개인정보 처리방침에 30일 유예 삭제와 보관 기간 반영
-- [ ] Vercel 환경변수에 `CRON_SECRET` 설정 확인 (로컬 `.env`에는 없다)
+- [ ] Vercel 환경변수에 `CRON_SECRET` 설정 확인 (로컬 `.env`에는 없다 — 0번에서 `pnpm build`가 이 변수 누락으로 실패하는 것을 확인했다. 로컬은 그대로 두고 Vercel 쪽만 확인하면 된다)
 
 ---
 
@@ -180,4 +280,5 @@
 - **`CLAUDE.md`가 아직 git에 추적되지 않는다.** 프로젝트 맥락과 함정이 잘 정리되어 있으므로 커밋해서 공유하는 편이 낫다.
 - **저장소는 Prettier로 포맷되어 있지 않다.** `.prettierrc`의 `printWidth: 80`과 실제 코드 스타일이 맞지 않는다. 2026-08-26 수정에도 Prettier를 적용하지 않고 주변 스타일에 맞췄다. 전역 `pnpm format`을 돌리면 전 파일이 재포맷되어 diff가 무의미해진다.
 - **`dist/`는 2026-08-26에 새로 빌드된 상태다.** 이전에 남아 있던 `dist/public/__manus__/debug-collector.js`는 제거됐다.
-- **출시 판정은 아직 GO가 아니다.** 이번 감사는 코드·설정 레벨만 다뤘고 Preview 실환경 검증을 하지 않았다. 위 6번까지 통과한 뒤에 판정을 갱신한다.
+- **출시 판정: NO-GO (2026-08-27 갱신).** 이전 판정("아직 GO가 아니다")보다 강하다. 6번까지의 통과 여부와 무관하게, **코드가 요구하는 테이블 4개가 없는 DB로는 출시할 수 없다.** 2번(2-a~2-d)이 끝나야 판정을 다시 논할 수 있다.
+- **파일이 아니라 라이브 DB를 근거로 볼 것.** 2026-08-26 감사가 P0를 놓친 이유는 "마이그레이션 파일이 존재한다"를 "DB에 적용돼 있다"로 간주했기 때문이다. `tests/security/database-default-deny.test.js`도 파일을 검증할 뿐 라이브 DB를 보지 않는다. 이 테스트의 통과를 DB가 안전하다는 근거로 쓰지 말 것.
