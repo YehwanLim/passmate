@@ -163,12 +163,64 @@ Data API(PostgREST)가 **켜져 있었다**. 공개 anon 키(설계상 클라이
 | `20260723_stage_provider_results` | **데이터 UPDATE** 3건 + audit INSERT |
 | `20260826_secure_admin_credit_tables` | 원래 이 항목의 대상 (RLS + 권한 회수) |
 
-- [ ] 각 마이그레이션 SQL을 **적용 전에 개별로 읽고** 파괴적 구문 유무 확인 (특히 백필·UPDATE 2건)
-- [ ] 적용 전 DB 백업 또는 Supabase 스냅샷 확보
-- [ ] `AGENTS.md`의 파괴적 명령 규칙에 따라 **사용자 승인 후** 적용
+- [x] 각 마이그레이션 SQL을 **적용 전에 개별로 읽고** 파괴적 구문 유무 확인 (특히 백필·UPDATE 2건)
+- [x] 사전점검으로 충돌 가능성 실측
+- [ ] `passmate-staging`에서 리허설
+- [ ] `AGENTS.md`의 파괴적 명령 규칙에 따라 **사용자 승인 후** 운영 적용
 - [ ] 적용 후 `prisma migrate status`가 "up to date"
 
-**주의 — 이미 있는 테이블과의 충돌**: `_prisma_migrations` 기록(4건)과 실제 스키마가 어긋나 있다. `20260726_*` 2건은 적용된 것으로 기록돼 있는데 `20260723_*`은 미기록이다. 즉 **순서가 뒤바뀐 채 수동 적용된 이력**이 있다. 그냥 `migrate deploy`를 돌리면 이미 존재하는 객체와 충돌할 수 있다. 대부분 `IF NOT EXISTS`로 방어돼 있으나 확인 없이 신뢰하지 말 것.
+##### SQL 검토 결과 (2026-08-27) — 9건 전부 멱등, 순서 정상
+
+| 마이그레이션 | 성격 | 판정 |
+|---|---|---|
+| `add_ai_model_settings` | `CREATE TABLE IF NOT EXISTS` + `INSERT ... ON CONFLICT DO NOTHING` + RLS/REVOKE | 멱등 |
+| `add_analysis_request_processing_states` | 타입이 있을 때만 `ALTER TYPE ... ADD VALUE IF NOT EXISTS` | **운영에선 no-op** (타입 없음) |
+| `add_audit_events` | `CREATE TABLE IF NOT EXISTS` + RLS/REVOKE | 멱등 |
+| `add_security_primitives` | 핵심. 전 구문이 `IF NOT EXISTS`/`OR REPLACE`/`DROP IF EXISTS` | 멱등 |
+| `backfill_auth_users` | `INSERT ... ON CONFLICT (id) DO NOTHING` | 멱등, **실측 0건 추가** |
+| `claim_account_purges` | `ADD COLUMN IF NOT EXISTS` + `CREATE INDEX IF NOT EXISTS` | 멱등 |
+| `expire_stale_analysis_requests` | `ALTER COLUMN ... SET DEFAULT` (테이블 가드 없음) | 순서상 안전 — 선행 마이그레이션이 테이블을 만든다 |
+| `stage_provider_results` | `ADD COLUMN IF NOT EXISTS` + 빈 테이블 UPDATE | **no-op** (대상 테이블이 갓 생성돼 비어 있음) |
+| `secure_admin_credit_tables` | RLS/REVOKE | 멱등 |
+
+적용 순서는 디렉터리명 사전순이고, 의존 관계와 일치한다 (`add_security_primitives`가 `analysis_requests`를 만든 뒤 `expire_*`·`stage_*`가 그것을 변경).
+`add_analysis_request_processing_states`의 주석이 이 사전순 의존을 명시적으로 다루고 있다.
+
+##### 사전점검 실측 (2026-08-27, 읽기 전용)
+
+| 확인 항목 | 결과 |
+|---|---|
+| 생성 예정 테이블 4개 | **전부 없음** → 충돌 없음, 깔끔하게 생성됨 |
+| 추가 예정 컬럼 4개 | **전부 없음** → 충돌 없음 |
+| `analysis_request_status` 타입 | **없음** → 2번 마이그레이션 no-op 확정 |
+| `auth.users`(email 있음) vs `public.users` | 2건 vs 3건, **백필로 생길 행 0건** → 403으로 잠긴 계정 없음 |
+| 접속 롤 | `postgres` (superuser 아님, `public.users` 소유자) → DDL 가능 |
+
+앞서 우려했던 "`_prisma_migrations` 순서 뒤바뀜으로 인한 충돌"은 **실측 결과 해당 없음**이다.
+`20260726_*`이 만든 것(`credit_coupons`, `admin_credit_grants`)과 `20260723_*`이 만들 것은 서로 겹치지 않는다.
+
+##### 의도된 부작용 1건 — `users`의 RLS 정책 3개가 삭제된다
+
+`add_security_primitives`는 대상 테이블의 기존 정책을 전부 `DROP` 한 뒤 RLS를 켜고 권한을 회수한다.
+이는 "서버 Prisma만이 신뢰 경계"라는 설계 의도이며(해당 파일 상단 주석), Data API가 꺼져 있어 기능 영향은 없다.
+만약 되돌려야 할 경우를 대비해 **삭제 전 정의를 확보해 두었다**:
+
+```sql
+-- 복원용. 정상 경로에서는 사용하지 않는다.
+CREATE POLICY "Users can insert own data" ON public.users FOR INSERT TO public WITH CHECK ((auth.uid() = id));
+CREATE POLICY "Users can read own data"   ON public.users FOR SELECT TO public USING ((auth.uid() = id));
+CREATE POLICY "Users can update own data" ON public.users FOR UPDATE TO public USING ((auth.uid() = id));
+```
+
+##### 잔여 위험 1건 — `auth.users` 트리거 생성
+
+`add_security_primitives`는 `auth.users`에 `on_auth_user_created` 트리거를 건다.
+`auth.users`의 소유자는 `supabase_auth_admin`이고 우리 접속 롤은 `postgres`(superuser 아님)라, TRIGGER 권한이 있어야 성공한다.
+Supabase의 표준 패턴이라 대개 통과하지만 **이번 작업에서 유일하게 실패 가능성이 있는 지점**이다.
+스테이징 리허설의 핵심 목적이 바로 이것을 확인하는 데 있다.
+
+이 트리거가 없으면 신규 가입자에게 `public.users` 행이 생기지 않아 403으로 막힌다.
+(지금은 잠긴 계정이 0건이지만, 그건 현재 가입자가 전부 기존 계정이기 때문이지 트리거가 있어서가 아니다.)
 
 #### 2-d. 완료 조건 (라이브 DB 기준, 파일 기준 아님)
 
