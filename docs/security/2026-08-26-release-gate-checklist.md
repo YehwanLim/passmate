@@ -52,11 +52,17 @@
 - `.worktrees/admin-premium-sales-control/api/admin/entitlements.js`
 - `.worktrees/admin-user-credit-management/` (동일한 두 파일)
 
-- [ ] 두 worktree의 import를 `lib/auth.js`의 `requireAdministrator`로 교체
-- [ ] `lib/admin-auth.js` 삭제
-- [ ] 해당 worktree의 테스트가 mock하는 모듈 경로도 함께 수정 (`tests/api/admin/credit-coupons.test.js`, `user-credits.test.js`)
+- [x] 두 worktree의 import를 `lib/auth.js`의 `requireAdministrator`로 교체
+- [x] `lib/admin-auth.js` 삭제
+- [x] 해당 worktree의 테스트가 mock하는 모듈 경로도 함께 수정 (`tests/api/admin/credit-coupons.test.js`, `user-credits.test.js`)
 
 **완료 조건**: 저장소 전체에서 `admin-auth`를 grep했을 때 결과가 없다.
+
+**완료 (2026-08-27)**: 코드 레벨(`*.js/*.ts/*.tsx`) grep 결과 없음 — 남은 3건은 문서뿐이다 (이 체크리스트, 감사 보고서, `docs/superpowers/plans/2026-07-26-admin-user-credit-management.md`의 과거 설계 기록. 감사 보고서와 설계 문서는 과거 시점 기록이라 수정하지 않았다).
+
+**추가로 필요했던 작업**: 두 worktree(`codex/admin-premium-sales-control`, `codex/admin-user-credit-management`)는 `codex/release-candidate` 대비 각각 51·65커밋 뒤처져 있어, 각 worktree의 `lib/auth.js`에는 애초에 `requireAdministrator`/`requireActiveApplicationUser`/`AuthorizationError`가 없었다(그 worktree만의 구버전 `lib/auth.js`). 단순 import 교체만으로는 해결되지 않아, release-candidate의 `lib/auth.js` 구현(`deletionRequestedAt` 검사 포함)을 각 worktree의 `lib/auth.js`에 이식했다 — 전체 rebase는 하지 않았다(범위 밖의 큰 diff를 피하기 위함). 두 API 파일의 에러 처리도 `requireAdministrator`가 이제 (res에 직접 쓰는 대신) `statusCode`를 가진 에러를 throw하는 계약에 맞춰 조정했다. `tests/api/entitlements.test.js`도 함께 손봐야 했다 — 체크리스트에는 없었지만, 그 파일이 `lib/auth.js`를 통째로 mock하고 있어 `requireAdministrator`가 없으면 admin entitlements 테스트 2건이 깨졌다.
+
+각 worktree에서 대상 테스트(`entitlements`, `credit-coupons`, `user-credits`) 28개 전부 통과, 전체 스위트는 사전부터 있던 무관한 실패 7건(해당 worktree에 `.env`가 없어 `VITE_SUPABASE_URL` 미설정으로 발생, `admin-auth`와 무관)을 빼면 모두 통과. 세 위치(main repo, 두 worktree) 모두 아직 커밋 전 상태다.
 
 **왜 지금**: 이 상태로 worktree를 머지하면 삭제 예약된 계정이 관리자 API를 통과하는 권한 검사 회귀가 들어온다. **머지 전에 반드시 처리할 것.**
 
