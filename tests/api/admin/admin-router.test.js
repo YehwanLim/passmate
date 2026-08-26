@@ -45,4 +45,46 @@ describe("admin catch-all router", () => {
     expect(res.statusCode).toBe(401);
     expect(res.body).toEqual({ error: "Request failed", requestId: expect.any(String) });
   });
+
+  it.each(["constructor", "toString", "valueOf", "hasOwnProperty", "__proto__"])(
+    "answers %s with an authenticated 404 instead of dispatching an inherited property",
+    async (segment) => {
+      const requireAdmin = vi.fn(async () => {
+        throw Object.assign(new Error("secret"), { statusCode: 401 });
+      });
+      const handler = createAdminRouter({ handlers: { users: vi.fn() }, requireAdmin });
+      const res = response();
+
+      await handler({ headers: {}, method: "GET", query: { route: [segment] } }, res);
+
+      expect(requireAdmin).toHaveBeenCalled();
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toEqual({ error: "Request failed", requestId: expect.any(String) });
+    },
+  );
+
+  it("does not treat an inherited resource name as a detail route", async () => {
+    const userDetail = vi.fn();
+    const requireAdmin = vi.fn(async () => undefined);
+    const handler = createAdminRouter({ handlers: { "user-detail": userDetail }, requireAdmin });
+    const res = response();
+
+    await handler({ headers: {}, method: "GET", query: { route: ["constructor", "user-1"] } }, res);
+
+    expect(userDetail).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("returns a safe error when a dispatched handler throws", async () => {
+    const failing = vi.fn(async () => {
+      throw Object.assign(new Error("resume text must never leak"), { statusCode: 500 });
+    });
+    const handler = createAdminRouter({ handlers: { users: failing } });
+    const res = response();
+
+    await handler({ headers: {}, method: "GET", query: { route: ["users"] } }, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ error: "Request failed", requestId: expect.any(String) });
+  });
 });

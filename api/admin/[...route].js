@@ -40,21 +40,38 @@ function routeSegments(req) {
   return pathname.replace(/^\/api\/admin\/?/, "").split("/").filter(Boolean);
 }
 
+const HANDLER_KEY_BY_RESOURCE = Object.freeze({
+  analyses: "analysis-detail",
+  "analysis-reconciliation": "analysis-reconciliation",
+  prompts: "prompt-detail",
+  users: "user-detail",
+});
+
+/**
+ * Route segments arrive from the network, so a handler may only be looked up as
+ * an own property. A plain property read would resolve inherited names such as
+ * `constructor` or `__proto__` to values that are not request handlers, and the
+ * router would then either never answer or throw before authentication runs.
+ */
+function resolveHandler(handlers, handlerKey) {
+  if (typeof handlerKey !== "string" || !Object.hasOwn(handlers, handlerKey)) return null;
+  const handler = handlers[handlerKey];
+  return typeof handler === "function" ? handler : null;
+}
+
 function targetFor(segments, handlers) {
-  if (segments.length === 1) return { handler: handlers[segments[0]], query: {} };
+  if (segments.length === 1) {
+    const handler = resolveHandler(handlers, segments[0]);
+    return handler ? { handler, query: {} } : null;
+  }
   if (segments.length !== 2) return null;
 
   const [resource, id] = segments;
-  const handlerKey = resource === "users"
-    ? "user-detail"
-    : resource === "analyses"
-      ? "analysis-detail"
-      : resource === "prompts"
-        ? "prompt-detail"
-        : resource === "analysis-reconciliation"
-          ? "analysis-reconciliation"
-        : null;
-  return handlerKey ? { handler: handlers[handlerKey], query: { id } } : null;
+  const handlerKey = Object.hasOwn(HANDLER_KEY_BY_RESOURCE, resource)
+    ? HANDLER_KEY_BY_RESOURCE[resource]
+    : null;
+  const handler = resolveHandler(handlers, handlerKey);
+  return handler ? { handler, query: { id } } : null;
 }
 
 /** Consolidates all protected admin HTTP routes into one Vercel function. */
@@ -64,13 +81,17 @@ export function createAdminRouter({
   requireAdmin = (req) => requireAdministrator(req, db),
 } = {}) {
   return async function adminRouter(req, res) {
-    const target = targetFor(routeSegments(req), handlers);
-    if (target?.handler) {
-      return target.handler({ ...req, query: { ...(req.query ?? {}), ...target.query } }, res);
-    }
-
     const requestId = requestIdFor(req);
+
     try {
+      const target = targetFor(routeSegments(req), handlers);
+      if (target) {
+        return await target.handler(
+          { ...req, query: { ...(req.query ?? {}), ...target.query } },
+          res,
+        );
+      }
+
       await requireAdmin(req);
       return sendRequestError(res, 404, requestId);
     } catch (error) {
