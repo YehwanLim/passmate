@@ -172,6 +172,8 @@
 
 이 감사는 코드·설정 레벨만 다뤘다. GO 판정에는 다음이 남아 있다.
 
+> 아래는 감사 시점의 스냅샷이다. **진행 중인 체크리스트는 `docs/security/2026-08-26-release-gate-checklist.md`** 가 정본이며, 각 항목의 완료 조건과 검증 명령, 권장 순서가 거기에 있다.
+
 1. `pnpm install` 로 의존성 제거를 로컬·CI 에 반영하고 `pnpm check` / `pnpm build` 재확인
 2. 스테이징 Supabase 에 `20260826_secure_admin_credit_tables` 적용 후 두 테이블의 RLS·권한 상태를 원격에서 확인
 3. **P0-GATE-02**: 프로젝트 DELETE, 분석 상세, 피드백 POST 에 대해 A 본인 2xx / B 의 A 대상 404 / 비로그인 401 을 Preview 에서 실제로 확인
