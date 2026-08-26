@@ -118,3 +118,6 @@ temp/
 .agents/skills/
 .claude/skills/
 .claude/settings.local.json
+
+# 일회성 점검·디버깅 스크립트
+tmp-*
