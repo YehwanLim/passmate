@@ -103,7 +103,21 @@ function vitePluginApi(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginApi()];
+// Authoring tools must not reach a deployed bundle that renders cover letters.
+// The Manus runtime is an in-browser editing overlay that inspects the DOM,
+// selects elements, can screenshot the page, and opens a `postMessage("*")`
+// bridge to a parent frame; the JSX location plugin stamps source file paths
+// and line numbers onto every rendered element. Neither has a production
+// purpose, and `apply: "serve"` keeps both out of `vite build`.
+const devOnly = (plugin: Plugin): Plugin => ({ ...plugin, apply: "serve" });
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  devOnly(jsxLocPlugin() as Plugin),
+  devOnly(vitePluginManusRuntime() as Plugin),
+  vitePluginApi(),
+];
 
 export default defineConfig({
   plugins,

@@ -115,4 +115,16 @@ describe("beta deployment security configuration", () => {
     expect(stateMigration).toContain("IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'analysis_request_status')");
     expect(primitiveMigration).toContain("'PENDING', 'CALLING', 'PERSISTENCE_PENDING', 'SUCCEEDED', 'FAILED'");
   });
+
+  it("keeps browser authoring tools out of the production bundle", async () => {
+    const { default: viteConfig } = await import("../../vite.config.ts");
+    const plugins = viteConfig.plugins.flat(Infinity).filter(Boolean);
+    const byName = (name) => plugins.find((plugin) => plugin?.name === name);
+
+    // Both inject themselves into the page: the Manus runtime is a DOM
+    // inspection and screenshot overlay, and the JSX plugin stamps source file
+    // paths onto rendered elements. Neither may run outside `vite dev`.
+    expect(byName("vite-plugin-manus-runtime")?.apply).toBe("serve");
+    expect(byName("vite-plugin-jsx-loc")?.apply).toBe("serve");
+  });
 });
