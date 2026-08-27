@@ -121,3 +121,6 @@ temp/
 
 # 일회성 점검·디버깅 스크립트
 tmp-*
+
+# 통합 테스트 로컬 산출물
+tests/integration/.tmp/
