@@ -84,6 +84,10 @@ export function createAccountRoutesHandler({
   return async function accountRoutesHandler(req, res) {
     const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
 
+    if (req.headers["x-route-diag"] === "1") {
+      return res.status(200).json({ rawUrl: req.url ?? null, pathname, query: req.query ?? null });
+    }
+
     if (pathname === "/api/account/deletion") return scheduleHandler(req, res);
     if (pathname === "/api/account/deletion/cancel") return cancelHandler(req, res);
 
