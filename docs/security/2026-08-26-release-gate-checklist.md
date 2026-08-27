@@ -274,12 +274,46 @@ Supabase의 표준 패턴이라 대개 통과하지만 **이번 작업에서 유
 
 ### 3. 격리된 provider fixture / 테스트 전용 러너 구축  ← **병목**
 
-- [ ] 실제 AI 호출 없이 Gemini/OpenAI 응답을 대체하는 fixture 작성
-- [ ] 성공, timeout(AbortError), 429, 500, 파싱 실패 시나리오를 각각 재현 가능하게
-- [ ] 이용권·크레딧을 소모하지 않는 실행 경로 확보
-- [ ] 동시 요청을 원하는 수만큼 발생시킬 수 있을 것
+- [x] 실제 AI 호출 없이 Gemini/OpenAI 응답을 대체하는 fixture 작성
+- [x] 성공, timeout(AbortError), 429, 500, 파싱 실패 시나리오를 각각 재현 가능하게
+- [x] 이용권·크레딧을 소모하지 않는 실행 경로 확보
+- [x] 동시 요청을 원하는 수만큼 발생시킬 수 있을 것
 
 **완료 조건**: 한 번의 명령으로 위 시나리오를 반복 실행할 수 있고, 실행해도 실제 provider 비용과 사용자 이용권이 소모되지 않는다.
+
+**완료 (2026-08-27)** — `pnpm test:integration`, 28개 테스트 약 10초.
+
+설계는 `docs/superpowers/specs/2026-08-27-provider-fixture-test-runner-design.md`,
+구현 계획은 `docs/superpowers/plans/2026-08-27-provider-fixture-test-runner.md` 에 있다.
+
+| 구성 | 위치 |
+|---|---|
+| 테스트 DB 하네스 (로컬 강제) | `tests/integration/harness/test-database.js` |
+| provider fixture (네트워크 가로채기) | `tests/integration/harness/provider-fixture.js` |
+| 시드 (사용자·크레딧·모델설정) | `tests/integration/harness/seed.js` |
+| 가짜 API 키 가드 | `tests/integration/harness/setup.js` |
+| provider 시나리오 5종 | `tests/integration/analyze-provider-scenarios.test.js` |
+| 동시성·멱등키 | `tests/integration/analyze-concurrency.test.js` |
+
+**전제**: 로컬 PostgreSQL 이 떠 있어야 한다 — `brew services start postgresql@17`.
+테스트 DB(`passmate_test`)는 하네스가 알아서 만들고 각 테스트 전에 비운다.
+
+**제품 코드는 0줄 바뀌지 않았다.** `createAnalyzeHandler` 의 기존 주입 지점만 사용했다.
+기본 스위트(`pnpm exec vitest run`)도 73파일 328테스트 그대로다.
+
+**구현 중 배운 것 (다음 사람이 같은 데서 막히지 않도록)**
+
+- **`migrate deploy` 가 아니라 `db push` 를 쓴다.** 마이그레이션 이력은 이미 존재하는 기본
+  스키마를 전제한다 — 가장 오래된 마이그레이션이 `prompt_templates` 를 *변경*하는데 그것을
+  *만드는* 마이그레이션은 없다. 빈 DB 에는 `db push` 하나로 충분하다.
+- **핸들러는 배경 작업을 await 하지 않는다** (Vercel `waitUntil` 방식). 테스트가 결과를
+  관찰하려면 `enqueueBackgroundWork` 로 넘어온 약속을 붙잡아 두었다가 기다려야 한다.
+- **멱등키는 16자 이상**이어야 한다(`/^[A-Za-z0-9_-]{16,128}$/`). 짧으면 예약에 도달하기 전에
+  400 으로 거부되어, 마치 락이 동작한 것처럼 보이는 착시가 생긴다.
+- **폴백 모델을 심지 않으면 재시도가 일어나지 않는다.** `ai_model_settings` 행이 없으면
+  기본값의 폴백이 `null` 이라 모델 후보가 하나뿐이다.
+- Prisma 는 연결 문자열에 사용자명이 없으면 P1010 으로 거부한다 (`pg` 와 달리 OS 사용자를
+  채우지 않는다).
 
 **왜 이걸 먼저 하는가**: 2026-07-26 감사와 그 이전 감사 모두 P1-02에서 *"비용·이용권을 쓰지 않는 전용 서버 테스트 러너가 없어서 미수행"* 이라는 같은 이유로 멈췄다. **두 번 연속 같은 벽에 막혔다는 것은, 이 러너가 없어서 검증이 계속 밀린다는 뜻이다.** 지금 구조에서는 검증 한 번에 실제 Gemini 호출과 이용권이 소모되므로 자꾸 미루게 된다. 이걸 만들면 4번과 5번이 반복 가능한 저비용 작업으로 바뀐다.
 
@@ -289,20 +323,40 @@ Supabase의 표준 패턴이라 대개 통과하지만 **이번 작업에서 유
 
 ### 4. P1-02 — 동시성·중복 멱등키·provider 오류 (3번에 의존)
 
-- [ ] 동시 10건 요청
-- [ ] 같은 멱등키로 동시 요청
-- [ ] provider 429 / 500 / timeout
+- [x] 동시 10건 요청
+- [x] 같은 멱등키로 동시 요청
+- [x] provider 429 / 500 / timeout
 
 각 시나리오에서 다음이 기대값과 일치하는지 확인한다.
 
-- [ ] 외부 모델 호출 횟수
-- [ ] `AnalysisRequest` 레코드 수와 최종 상태
-- [ ] `AnalysisReservation`의 CONSUMED / CANCELLED 개수
-- [ ] 사용자에게 차감된 크레딧
+- [x] 외부 모델 호출 횟수
+- [x] `AnalysisRequest` 레코드 수와 최종 상태
+- [x] `AnalysisReservation`의 CONSUMED / CANCELLED 개수
+- [x] 사용자에게 차감된 크레딧
 
 **완료 조건**: 모든 시나리오에서 크레딧이 **정확히 한 번만** 처리되고, 실패한 요청은 크레딧을 소모하지 않는다.
 
 **참고**: 코드 레벨에서는 `lib/analysis-entitlements.js`의 `getLockedEntitlement`가 `SELECT ... FOR UPDATE`로 사용자 단위 직렬화를 보장하는 것을 확인했다. 이 항목은 그 보장이 실제로 성립하는지 확인하는 것이다.
+
+**완료 (2026-08-27)** — 3번의 러너로 진짜 Postgres 에서 실측했다. `pnpm test:integration`.
+
+| 시나리오 | 결과 |
+|---|---|
+| 무료 1건 사용자에게 **동시 10건** | 202 는 **1건만**, CONSUMED 1, PENDING 0, 모델 호출 **1회** |
+| **같은 멱등키로 동시 5건** | `AnalysisRequest` **1개**, 모델 호출 **1회**, CONSUMED 1 |
+| 크레딧 4개 사용자에게 동시 10건 | 202 **4건**, CONSUMED 4, PENDING 0, 모델 호출 **4회** |
+| 동시 4건 전부 provider 500 | CONSUMED **0**, CANCELLED **4**, PENDING 0 |
+| timeout / 429 / 500 / 파싱 실패 (단건) | 각각 CANCELLED, `AnalysisRequest` 는 FAILED, 무료 크레딧 회복 |
+| 429 → 폴백 재시도 성공 | gemini 429 → openai 성공, CONSUMED **1** (중복 과금 없음) |
+
+**`getLockedEntitlement` 의 `SELECT ... FOR UPDATE` 직렬화가 실제로 성립하는 것을 확인했다.**
+동시 10건이 크레딧 1개를 두고 경쟁했을 때 정확히 하나만 통과했고, 어떤 시나리오에서도
+`PENDING` 으로 남는 예약이 없었다.
+
+**주의 — 이 실측의 한계**: 락 직렬화를 관찰하려고 레이트리밋과 동시성 제한을 무제한 정책으로
+주입했다(그러지 않으면 무료 15분 3회 제한이 먼저 걸려 락에 도달하지 못한다).
+따라서 **처리량 제한 자체(무료 동시 1건·15분 3회 / 프리미엄 동시 2건·15분 10회)는 아직
+실측하지 않았다.** 그것은 별도 시나리오로 남아 있다.
 
 ---
 
