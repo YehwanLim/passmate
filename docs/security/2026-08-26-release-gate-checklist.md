@@ -445,7 +445,8 @@ node scripts/measure-analysis-slo.mjs --confirm-real-provider-calls --runs=10
 - [x] ~~Data API 비활성 상태 유지 확인~~ → **켜져 있었고 실제 노출이 있었다.** 2026-08-27 비활성화함. 발견 C 참조. 2-c 완료 전까지 다시 켜지 말 것
 - [ ] 로그·백업 보관 기간 정책 문서화
 - [ ] 개인정보 처리방침에 30일 유예 삭제와 보관 기간 반영
-- [ ] Vercel 환경변수에 `CRON_SECRET` 설정 확인 (로컬 `.env`에는 없다 — 0번에서 `pnpm build`가 이 변수 누락으로 실패하는 것을 확인했다. 로컬은 그대로 두고 Vercel 쪽만 확인하면 된다)
+- [x] Vercel 환경변수에 `CRON_SECRET` 설정 확인 — **확인됨 (2026-08-27)**. Preview 첫 빌드가 "환경변수 없음"으로 실패했을 때 누락 목록에 `CRON_SECRET` 만 없었다 = 이미 설정돼 있다는 뜻이다. (다른 5개는 Production 에만 있어서 Preview 에 체크를 추가했다)
+- [ ] **신규 발견 — Vercel 이 `npm install --legacy-peer-deps` 로 설치한다.** 이 저장소는 pnpm 전용이고 `pnpm-lock.yaml` 로 버전을 고정하는데, npm 은 그 잠금파일을 무시하고 `package.json` 범위에서 버전을 새로 고른다. **0번에서 감사한 의존성 트리와 배포본의 트리가 다를 수 있다.** Vercel → Settings → Build & Development Settings 의 Install Command 를 비우거나 `pnpm install --frozen-lockfile` 로 바꿀 것. (Preview 첫 빌드 로그에서 발견)
 
 ---
 
