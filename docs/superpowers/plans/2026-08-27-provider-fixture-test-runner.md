@@ -510,9 +510,16 @@ git commit -m "test: add a network-level provider fixture with call counting"
 - Produces:
   - `seedEntitlementSettings(db, { premiumEnabled?, analysisEnabled? }): Promise<void>`
   - `seedUser(db, { premiumCredits?, email? }): Promise<string>` — 생성된 userId 반환
+  - `seedAiModelSettings(db, { withFallback? }): Promise<void>`
   - `unlimitedThroughputPolicy(): { concurrencyLimit: number, rateLimit: { route, limit, windowMs } }`
 
 `unlimitedThroughputPolicy` 가 필요한 이유: 무료 정책은 15분에 3회, 동시 1건이다. 동시 10건 시나리오에서 그 제한이 먼저 걸리면 정작 확인하려는 크레딧 락 직렬화에 도달하지 못한다. 락을 볼 때는 이 정책을 주입하고, 제한 자체를 볼 때는 실제 정책을 쓴다.
+
+`seedAiModelSettings` 가 필요한 이유: `readAiModelSettings` 는 `ai_model_settings` 행이 없으면
+`fallbackModel: null` 인 기본값을 돌려준다. 그러면 `getModelCallSequence` 의 후보가 하나뿐이라
+**폴백 재시도가 아예 일어나지 않는다.** 429 뒤 재시도를 검증하려면 폴백 모델을 명시적으로 심어야 한다.
+폴백은 OpenAI 로 심는다 — 실제 설정에 가깝고 `callOpenAiOnce` 와 OpenAI 응답 봉투까지 검증된다.
+`resetTables` 가 이 행도 지우므로 폴백이 필요한 테스트마다 다시 심어야 한다.
 
 - [ ] **Step 1: 실패하는 테스트를 쓴다**
 
@@ -527,7 +534,12 @@ import {
   prepareTestDatabase,
   resetTables,
 } from "./test-database.js";
-import { seedEntitlementSettings, seedUser, unlimitedThroughputPolicy } from "./seed.js";
+import {
+  seedAiModelSettings,
+  seedEntitlementSettings,
+  seedUser,
+  unlimitedThroughputPolicy,
+} from "./seed.js";
 
 describe("시드 헬퍼", () => {
   let db;
@@ -579,6 +591,28 @@ describe("시드 헬퍼", () => {
     expect(policy.rateLimit.limit).toBeGreaterThanOrEqual(1000);
     expect(policy.rateLimit.route).toBe("analysis");
   });
+
+  it("폴백을 심지 않으면 모델 후보가 하나뿐이라 재시도가 일어나지 않는다", async () => {
+    const { getModelCallSequence } = await import("../../../lib/ai-model-settings.js");
+    const { readAiModelSettings } = await import("../../../lib/ai-model-settings.js");
+
+    const sequence = getModelCallSequence(await readAiModelSettings(db));
+
+    expect(sequence).toHaveLength(1);
+  });
+
+  it("폴백을 심으면 모델 후보가 둘이 되어 재시도가 가능해진다", async () => {
+    const { getModelCallSequence, readAiModelSettings } = await import(
+      "../../../lib/ai-model-settings.js"
+    );
+    await seedAiModelSettings(db, { withFallback: true });
+
+    const sequence = getModelCallSequence(await readAiModelSettings(db));
+
+    expect(sequence).toHaveLength(2);
+    expect(sequence[0].providerKey).toBe("gemini");
+    expect(sequence[1].providerKey).toBe("openai");
+  });
 });
 ```
 
@@ -623,6 +657,30 @@ export async function seedUser(db, { premiumCredits = 0, email } = {}) {
 }
 
 /**
+ * ai_model_settings 행이 없으면 readAiModelSettings 가 fallbackModel: null 인
+ * 기본값을 돌려주고, 그러면 모델 후보가 하나뿐이라 폴백 재시도가 일어나지 않는다.
+ * 429 뒤 재시도를 검증하는 테스트는 withFallback: true 로 심어야 한다.
+ */
+export async function seedAiModelSettings(db, { withFallback = false } = {}) {
+  await db.aiModelSetting.upsert({
+    where: { id: "singleton" },
+    update: {
+      defaultProviderKey: "gemini",
+      defaultModelName: "gemini-2.5-flash-lite",
+      fallbackProviderKey: withFallback ? "openai" : null,
+      fallbackModelName: withFallback ? "gpt-4o-mini" : null,
+    },
+    create: {
+      id: "singleton",
+      defaultProviderKey: "gemini",
+      defaultModelName: "gemini-2.5-flash-lite",
+      fallbackProviderKey: withFallback ? "openai" : null,
+      fallbackModelName: withFallback ? "gpt-4o-mini" : null,
+    },
+  });
+}
+
+/**
  * 크레딧 락 직렬화를 관찰하려면 레이트리밋과 동시성 제한이 먼저 걸리면 안 된다.
  * 제한 자체를 검증하는 테스트에서는 이것을 쓰지 말고 실제 정책을 쓴다.
  */
@@ -637,7 +695,7 @@ export function unlimitedThroughputPolicy() {
 - [ ] **Step 4: 통과를 확인한다**
 
 Run: `pnpm test:integration -- seed`
-Expected: PASS — 4개 테스트 통과.
+Expected: PASS — 6개 테스트 통과.
 
 - [ ] **Step 5: 커밋한다**
 
@@ -668,7 +726,12 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 
 import { createAnalyzeHandler } from "../../api/analyze.js";
 import { SUCCESS_REPORT_TEXT, installProviderFixture } from "./harness/provider-fixture.js";
-import { seedEntitlementSettings, seedUser, unlimitedThroughputPolicy } from "./harness/seed.js";
+import {
+  seedAiModelSettings,
+  seedEntitlementSettings,
+  seedUser,
+  unlimitedThroughputPolicy,
+} from "./harness/seed.js";
 import { createTestPrismaClient, prepareTestDatabase, resetTables } from "./harness/test-database.js";
 
 function response() {
@@ -772,15 +835,18 @@ describe("provider 시나리오", () => {
     expect(await reservationStatuses(userId)).toEqual(["CANCELLED"]);
   });
 
-  it("429 뒤 성공: 재시도로 회복되면 크레딧이 한 번만 소모된다", async () => {
+  it("429 뒤 성공: 폴백 모델로 재시도해 회복하고 크레딧은 한 번만 소모된다", async () => {
+    // 폴백을 심지 않으면 모델 후보가 하나뿐이라 재시도 자체가 일어나지 않는다.
+    await seedAiModelSettings(db, { withFallback: true });
     fixture.respondWith([{ status: 429 }, { text: SUCCESS_REPORT_TEXT }]);
     const userId = await seedUser(db);
 
     await postAnalyze(userId);
 
-    expect(fixture.calls.length).toBeGreaterThanOrEqual(2);
+    // 첫 호출은 gemini 가 429, 두 번째는 폴백인 openai 가 성공한다.
+    expect(fixture.calls.map((call) => call.provider)).toEqual(["gemini", "openai"]);
     expect(await reservationStatuses(userId)).toEqual(["CONSUMED"]);
-  });
+  }, 20_000);
 
   it("500: 크레딧이 소모되지 않는다", async () => {
     fixture.respondWith({ status: 500 });
