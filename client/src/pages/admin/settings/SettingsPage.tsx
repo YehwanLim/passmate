@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { adminApiFetch } from "@/lib/adminApi";
+import {
+  fetchPremiumSalesSettings,
+  updatePremiumSalesEnabled,
+} from "@/lib/admin-entitlements";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import {
   Card,
@@ -95,6 +99,32 @@ export default function SettingsPage() {
   const [admins, setAdmins] = useState<AdminUser[]>(DEFAULT_ADMINS);
 
   const [settingsUnavailable, setSettingsUnavailable] = useState(true);
+
+  // 프리미엄 판매 스위치 — 유일하게 서버에 실제 반영되는 설정
+  const [premiumEnabled, setPremiumEnabled] = useState<boolean | null>(null);
+  const [premiumSwitchBusy, setPremiumSwitchBusy] = useState(false);
+  const [premiumSwitchError, setPremiumSwitchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPremiumSalesSettings()
+      .then((result) => setPremiumEnabled(result.premiumEnabled))
+      .catch((error: unknown) =>
+        setPremiumSwitchError(error instanceof Error ? error.message : "결제 판매 상태를 불러오지 못했습니다."),
+      );
+  }, []);
+
+  const handlePremiumToggle = async (checked: boolean) => {
+    setPremiumSwitchBusy(true);
+    setPremiumSwitchError(null);
+    try {
+      const result = await updatePremiumSalesEnabled(checked);
+      setPremiumEnabled(result.premiumEnabled);
+    } catch (error: unknown) {
+      setPremiumSwitchError(error instanceof Error ? error.message : "결제 판매 상태를 변경하지 못했습니다.");
+    } finally {
+      setPremiumSwitchBusy(false);
+    }
+  };
 
   // 공지 추가 폼
   const [newNoticeTitle, setNewNoticeTitle] = useState("");
@@ -383,6 +413,24 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/10 transition-colors">
+                <div className="space-y-0.5">
+                  <span className="text-sm font-semibold">프리미엄 크레딧 판매</span>
+                  <p className="text-xs text-muted-foreground">
+                    켜면 구매 버튼과 Groble 결제가 열립니다. 끄면 신규 구매가 차단되고
+                    기구매 크레딧도 숨겨지므로, 결제 발생 후에는 비상시에만 끄세요. 토글 즉시 서버에 반영됩니다.
+                  </p>
+                  {premiumSwitchError ? (
+                    <p className="text-xs text-destructive">{premiumSwitchError}</p>
+                  ) : null}
+                </div>
+                <Switch
+                  checked={premiumEnabled === true}
+                  disabled={premiumEnabled === null || premiumSwitchBusy}
+                  onCheckedChange={handlePremiumToggle}
+                />
+              </div>
+
               <div className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/10 transition-colors">
                 <div className="space-y-0.5">
                   <span className="text-sm font-semibold">AI 상세 피드백 Beta</span>
