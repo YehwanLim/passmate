@@ -48,7 +48,7 @@ export function installProviderFixture() {
   const calls = [];
   let steps = [];
 
-  globalThis.fetch = async (input) => {
+  globalThis.fetch = async (input, options) => {
     const raw = typeof input === "string" ? input : input?.url;
     const url = new URL(raw);
     if (!PROVIDER_HOSTS.has(url.hostname)) {
@@ -56,7 +56,13 @@ export function installProviderFixture() {
     }
 
     const provider = url.hostname === OPENAI_HOST ? "openai" : "gemini";
-    calls.push({ provider, modelName: modelNameFrom(url, provider) });
+    let requestBody = null;
+    try {
+      requestBody = options?.body ? JSON.parse(options.body) : null;
+    } catch {
+      requestBody = null;
+    }
+    calls.push({ provider, modelName: modelNameFrom(url, provider), requestBody });
 
     if (steps.length === 0) {
       throw new Error("provider fixture: respondWith 로 응답 시나리오를 먼저 설정해야 한다");

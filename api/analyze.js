@@ -223,7 +223,11 @@ async function callGeminiOnce(prompt, apiKey, modelName) {
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: `${MASTER_SYSTEM_PROMPT}\n\n${prompt}` }] }] }),
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: `${MASTER_SYSTEM_PROMPT}\n\n${prompt}` }] }],
+        // JSON 출력을 API 수준에서 강제한다. 프롬프트 지시만으로는 코드펜스 등 잡음이 섞일 수 있다.
+        generationConfig: { responseMimeType: "application/json" },
+      }),
     },
   );
   if (!response.ok) {

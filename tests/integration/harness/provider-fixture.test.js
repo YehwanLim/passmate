@@ -26,7 +26,9 @@ describe("provider fixture", () => {
 
     expect(response.ok).toBe(true);
     expect(body.candidates[0].content.parts[0].text).toBe(SUCCESS_REPORT_TEXT);
-    expect(fixture.calls).toEqual([{ provider: "gemini", modelName: "gemini-2.5-flash-lite" }]);
+    expect(fixture.calls).toEqual([
+      { provider: "gemini", modelName: "gemini-2.5-flash-lite", requestBody: null },
+    ]);
   });
 
   it("HTTP 오류 상태를 그대로 돌려준다", async () => {

@@ -92,6 +92,7 @@ describe("provider 시나리오", () => {
 
     expect(res.statusCode).toBe(202);
     expect(fixture.calls).toHaveLength(1);
+    expect(fixture.calls[0].requestBody?.generationConfig?.responseMimeType).toBe("application/json");
     expect(await reservationStatuses(userId)).toEqual(["CONSUMED"]);
     const requests = await db.analysisRequest.findMany({ where: { userId } });
     expect(requests).toHaveLength(1);
