@@ -95,10 +95,10 @@ Data API(PostgREST)가 **켜져 있었다**. 공개 anon 키(설계상 클라이
 
 ### 0. 의존성 제거를 로컬·CI에 반영
 
-- [ ] `pnpm install` 실행 (`package.json`과 `pnpm-lock.yaml`은 이미 커밋되어 있고, `node_modules`만 오래된 상태다)
-- [ ] `pnpm check` 통과
-- [ ] `pnpm exec vitest run` 통과
-- [ ] `pnpm build` 성공
+- [x] `pnpm install` 실행 — **2026-08-29 수행**. 잠금파일 diff 없음. 그전까지 `node_modules`가 오래되어 `@testing-library/dom` 부재로 `pnpm check`가 거짓 실패하고 있었다
+- [x] `pnpm check` 통과 — 2026-08-29, 에러 0건
+- [x] `pnpm exec vitest run` 통과 — 2026-08-29, 73파일 328건 전부 통과. 단 `tests/security/deployment-security.test.js`가 6번에서 추가한 vercel.json rewrite 2건을 몰라 실패했고, 테스트를 실제 배포 구성(catch-all rewrite + SPA fallback 순서 고정)에 맞게 갱신했다
+- [x] `pnpm build` 성공 — 2026-08-29. 로컬 `.env`에 없는 `CRON_SECRET`은 해당 명령 한 번에만 더미 값을 인라인으로 주입 (`.env` 무변경). `pnpm audit --prod` high 8건 = 기준(8건 이하) 충족
 
 **완료 조건**: 위 네 명령이 모두 통과하고, `pnpm audit --prod`의 high가 8건 이하.
 
@@ -140,8 +140,12 @@ Data API(PostgREST)가 **켜져 있었다**. 공개 anon 키(설계상 클라이
 
 - [x] 로컬 `.env`의 `DIRECT_URL` 대상 확인 → Supabase `nygljwrlycnmnywwhpjg` (도쿄)
 - [x] `dist` 번들의 `VITE_SUPABASE_URL` 대조 → 동일 프로젝트
-- [ ] **Vercel Production 환경변수의 `DATABASE_URL`/`DIRECT_URL`/`VITE_SUPABASE_URL` 확인** — ref가 같은지 다른지
-- [ ] 운영이 별도 프로젝트라면, **그 프로젝트에도 아래 점검을 처음부터 반복**
+- [x] **Vercel Production 환경변수 확인 — 🔴 P0급 발견 후 수정 (2026-08-29)**. CLI(`vercel env ls`/`pull`)와 대시보드 눈검사로 대조한 결과:
+  - Production `DATABASE_URL`(38일 전 값)에 `nygljwrlycnmnywwhpjg` ref가 **없었고** 포트도 5432(직통)였다 → **정식 배포가 검증한 라이브 DB가 아닌 다른 DB를 보고 있었다**
+  - `VITE_SUPABASE_URL`·`CRON_SECRET`은 Production에 **아예 없었다** → main 병합 시 첫 정식 빌드가 prebuild 검증에서 실패했을 것
+  - 수정: 사용자가 `DATABASE_URL`(Session pooler)·`SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY` 3개를 passmate 프로젝트 값으로 교체, CLI로 `VITE_SUPABASE_URL`(공개 주소)과 새 `CRON_SECRET`(openssl rand) 추가. `vercel env ls production`으로 필수 6개 전부 존재 확인
+  - `VITE_SUPABASE_ANON_KEY`(48일 전, Production·Preview 공유)는 Preview 로그인 실증으로 올바름이 증명되어 유지. `DIRECT_URL`은 마이그레이션 전용이라 Vercel 런타임에 불필요
+- [x] ~~운영이 별도 프로젝트라면 반복~~ — 해당 없음. Vercel 프로젝트는 `passmate` 하나, Supabase 운영 프로젝트도 `nygljwrlycnmnywwhpjg` 하나로 확인 (2026-08-29)
 
 이게 끝나기 전에는 어떤 마이그레이션도 적용하지 않는다.
 
@@ -149,7 +153,7 @@ Data API(PostgREST)가 **켜져 있었다**. 공개 anon 키(설계상 클라이
 
 - [x] Data API 비활성화 — 진행 중이던 실데이터 노출 차단 (발견 C)
 - [x] 차단 실증 (4회 반복 프로브, 503 안정)
-- [ ] **2-c가 끝날 때까지 Data API를 다시 켜지 않는다** ← 켜는 순간 재노출
+- [x] **2-c 완료 후에도 Data API는 계속 끈 채로 유지하기로 결정** — 앱은 Prisma 직결이라 Data API가 필요 없고, 꺼 두는 편이 심층 방어상 낫다 (2026-08-29 확정)
 
 #### 2-c. 근본 수정 — 미적용 마이그레이션 9건
 
@@ -474,11 +478,11 @@ node scripts/verify-authz-matrix.mjs --base-url=<preview-url>
 
 저장소만으로는 검증할 수 없다.
 
-- [x] Supabase 대시보드의 OAuth redirect allowlist 실제 값 — **2026-08-29 발견·수정**: 프로덕션 프로젝트의 Site URL과 Redirect URLs가 옛 작업 브랜치 프리뷰 주소(`passmate-git-codex-security-remediation-...`)로 되어 있었다. 프로덕션 도메인에서 로그인하면 옛 배포로 리다이렉트되는 상태였다. Site URL을 `https://passmate.vercel.app`, Redirect URLs를 `https://passmate.vercel.app/**` + `http://127.0.0.1:5173/**` 두 개로 교체함 (사용자 수행)
+- [x] Supabase 대시보드의 OAuth redirect allowlist 실제 값 — **2026-08-29 발견·수정**: 프로덕션 프로젝트의 Site URL과 Redirect URLs가 옛 작업 브랜치 프리뷰 주소(`passmate-git-codex-security-remediation-...`)로 되어 있었다. 프로덕션 도메인에서 로그인하면 옛 배포로 리다이렉트되는 상태였다. 처음에 `https://passmate.vercel.app`으로 교정했으나 그 주소는 이 저장소가 아닌 옛 CRA 프로토타입 배포였다. 프로덕션 도메인을 **`https://preview-ai.vercel.app`** 으로 확정하고 (Vercel Domains 에 추가, Valid Configuration 확인), Site URL을 `https://preview-ai.vercel.app`, Redirect URLs를 `https://preview-ai.vercel.app/**` + `http://127.0.0.1:5173/**` 두 개로 최종 교체함 (사용자 수행, 2026-08-29). 처리방침 문의 이메일도 실수신 주소(hansitoring@gmail.com)로 교체
 - [x] ~~Data API 비활성 상태 유지 확인~~ → **켜져 있었고 실제 노출이 있었다.** 2026-08-27 비활성화함. 발견 C 참조. 2-c 완료 전까지 다시 켜지 말 것
 - [x] 로그·백업 보관 기간 정책 문서화 — **2026-08-29 작성**: `docs/security/2026-08-29-log-backup-retention.md`. 코드가 강제하는 값(감사 로그 90일, 탈퇴 유예 30일)은 확정. Supabase 백업·Vercel 로그 보관 기간은 대시보드 확인 후 표 갱신 필요
 - [x] 개인정보 처리방침에 30일 유예 삭제와 보관 기간 반영 — **2026-08-29 수정**: `client/src/pages/Privacy.tsx` 3조·8조가 "탈퇴 시 지체 없이 삭제"라고 되어 있어 실제 동작(30일 유예 후 파기, 유예 중 취소 가능)과 어긋났다. 30일 유예 절차를 명시하고 부칙에 개정 이력을 남겼다
-- [x] Vercel 환경변수에 `CRON_SECRET` 설정 확인 — **확인됨 (2026-08-27)**. Preview 첫 빌드가 "환경변수 없음"으로 실패했을 때 누락 목록에 `CRON_SECRET` 만 없었다 = 이미 설정돼 있다는 뜻이다. (다른 5개는 Production 에만 있어서 Preview 에 체크를 추가했다)
+- [x] Vercel 환경변수에 `CRON_SECRET` 설정 확인 — **2026-08-29 정정**: 2026-08-27의 "확인됨"은 **Preview 환경만** 본 것이었다. Production에는 없었고, 2-a 재점검에서 발견해 새 무작위 값으로 등록했다 (2-a 항목 참조)
 - [x] **신규 발견 — Vercel 이 `npm install --legacy-peer-deps` 로 설치한다.** → **2026-08-29 해결**: Install Command 를 `pnpm install --frozen-lockfile` 로 교체함 (사용자 수행). Deployment Protection 도 같은 날 재활성화함. 이 저장소는 pnpm 전용이고 `pnpm-lock.yaml` 로 버전을 고정하는데, npm 은 그 잠금파일을 무시하고 `package.json` 범위에서 버전을 새로 고른다. **0번에서 감사한 의존성 트리와 배포본의 트리가 다를 수 있다.** Vercel → Settings → Build & Development Settings 의 Install Command 를 비우거나 `pnpm install --frozen-lockfile` 로 바꿀 것. (Preview 첫 빌드 로그에서 발견)
 
 ---

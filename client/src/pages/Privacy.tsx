@@ -154,7 +154,7 @@ const privacySections = [
     title: "13. 개인정보 보호책임자 및 문의",
     body: [
       "서비스 이용 중 개인정보 관련 문의는 아래로 연락해 주시기 바랍니다.",
-      "이메일: support@passmate.ai",
+      "이메일: hansitoring@gmail.com",
     ],
   },
   {

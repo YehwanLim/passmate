@@ -67,9 +67,21 @@ describe("beta deployment security configuration", () => {
   it("keeps API requests out of the SPA fallback rewrite", () => {
     const config = JSON.parse(read("vercel.json"));
 
+    // 다중 세그먼트 API 경로(관리자 상세, 계정 삭제 취소)는 catch-all 함수로 명시
+    // rewrite 해야 한다. Vercel의 파일 기반 라우팅은 `[...route].js`에 단일 세그먼트만
+    // 매칭시켜, rewrite가 없으면 배포에서만 404가 났다 (2026-08-27 실배포에서 확인).
     expect(config.rewrites).toEqual([
+      { source: "/api/admin/:path*", destination: "/api/admin/[...route]?route=:path*" },
+      { source: "/api/account/:path*", destination: "/api/account/[...route]?route=:path*" },
       { source: "/((?!api/).*)", destination: "/index.html" },
     ]);
+
+    // API rewrite가 SPA fallback보다 먼저 와야 한다. fallback의 부정 lookahead가
+    // /api/ 를 걸러내긴 하지만, 순서까지 고정해 회귀를 막는다.
+    const fallbackIndex = config.rewrites.findIndex(
+      (rule) => rule.destination === "/index.html",
+    );
+    expect(fallbackIndex).toBe(config.rewrites.length - 1);
   });
 
   it("reserves a bounded background window for the analysis function only", () => {
