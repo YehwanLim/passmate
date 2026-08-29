@@ -1,4 +1,4 @@
-import { Calendar, FileText, Type, ChevronRight, Lock, PenLine } from "lucide-react";
+import { Calendar, FileText, ClipboardCheck } from "lucide-react";
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
 
@@ -39,32 +39,18 @@ export default function ProjectCard({
         {/* 1️⃣ [좌측] 상세 정보 영역 (col-span-3) */}
         {/* ───────────────────────────────────────────────────────────── */}
         <div className="lg:col-span-3 flex flex-col justify-center">
-          {/* 타이틀 영역 (수정 가능한 input 필드) */}
-          <div className="relative mb-3 group/title w-full flex items-center gap-2">
+          {/* 회사/직무 — 카드의 메인 타이틀 (한 번만, 크게, 직무는 오른쪽 태그) */}
+          <div className="flex items-center gap-2.5 mb-5 min-w-0 flex-wrap">
             {project.id === "mock-proj-1" && (
               <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 whitespace-nowrap">
                 샘플
               </span>
             )}
-            <div className="relative w-full">
-                <input
-                  type="text"
-                  defaultValue={project.title}
-                  className="w-full bg-transparent text-[18px] font-bold text-zinc-100 tracking-tight transition-colors focus:outline-none focus:border-b focus:border-zinc-500 pb-1 border-b border-transparent group-hover/title:border-zinc-700"
-                  placeholder="프로젝트 제목을 입력하세요"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <PenLine className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 opacity-0 group-hover/title:opacity-100 transition-opacity pointer-events-none" />
-            </div>
-          </div>
-
-          {/* 회사/직무 메타 정보 */}
-          <div className="flex flex-col gap-1 mb-5">
-            <span className="text-[14px] font-medium text-zinc-300">
-              {project.company_name || "기업 미지정"}
-            </span>
+            <h3 className="text-[20px] font-bold text-zinc-50 tracking-tight truncate">
+              {project.company_name || project.title || "기업 미지정"}
+            </h3>
             {project.job_role && (
-              <span className="text-[13px] text-zinc-500">
+              <span className="shrink-0 inline-flex items-center px-2.5 py-1 rounded-md bg-blue-500/10 border border-blue-400/20 text-[12px] font-semibold text-blue-300">
                 {project.job_role}
               </span>
             )}
@@ -78,7 +64,7 @@ export default function ProjectCard({
             </div>
             <div className="flex items-center gap-2">
               <FileText className="w-3.5 h-3.5" />
-              <span>{project.analysis_count}개 문항</span>
+              <span>{project.question_count ?? project.analysis_count}개 문항</span>
             </div>
           </div>
         </div>
@@ -87,8 +73,8 @@ export default function ProjectCard({
         {/* 2️⃣ [중앙] 피드백 대시보드 영역 (col-span-6) */}
         {/* ───────────────────────────────────────────────────────────── */}
         <div className="lg:col-span-6 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-5 lg:pt-0 lg:pl-8">
-          <span className="text-[13px] font-bold text-blue-400 mb-2.5 tracking-wider uppercase flex items-center gap-2">
-            AI One-liner
+          <span className="text-[12px] font-semibold text-zinc-500 mb-2.5 tracking-wide">
+            한줄 요약
           </span>
           <p className="text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-6 line-clamp-2">
             "{project.summary || "아직 분석이 완료되지 않았습니다."}"
@@ -115,53 +101,35 @@ export default function ProjectCard({
         </div>
 
         {/* ───────────────────────────────────────────────────────────── */}
-        {/* 3️⃣ [우측] 액션 그룹 및 BM 확장 영역 (col-span-3) */}
+        {/* 3️⃣ [우측] 액션 그룹 (col-span-3) */}
         {/* ───────────────────────────────────────────────────────────── */}
-        <div className="lg:col-span-3 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-6 lg:pt-0 lg:pl-8 relative">
-          
-          {/* 데스크탑: 케밥 메뉴를 우측 상단 정위치 */}
-          <div className="hidden lg:block absolute -top-2 -right-2">
+        <div className="lg:col-span-3 flex flex-col border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-6 lg:pt-0 lg:pl-8">
+
+          {/* 데스크탑: 케밥 메뉴를 버튼 위 전용 줄에 배치(절대위치 제거 → 버튼과 안 겹침) */}
+          <div className="hidden lg:flex justify-end -mt-2 -mr-2">
             {kebabItems.length > 0 && <KebabMenu items={kebabItems} />}
           </div>
 
-          <div className="flex flex-col gap-2.5 lg:mt-6">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewQuestions();
-              }}
-              className="w-full flex items-center justify-between px-4 h-10 rounded-xl border border-zinc-700/50 bg-zinc-800/30 text-[13px] font-medium text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200 transition-all duration-200"
-            >
-              <span>문항 상세 보기</span>
-              <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
-            </button>
+          <div className="flex flex-col gap-3 my-auto lg:py-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onViewReport();
               }}
-              className="w-full flex items-center justify-between px-4 h-10 rounded-xl border border-zinc-700/50 bg-zinc-800/50 text-[13px] font-medium text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 transition-all duration-200"
+              className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg bg-blue-600 text-[13px] font-semibold text-white hover:bg-blue-500 transition-all duration-200"
             >
-              <span>AI 리포트 보기</span>
-              <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+              <ClipboardCheck className="w-3.5 h-3.5" />
+              <span>리포트 보기</span>
             </button>
-          </div>
-
-          {/* BM Placeholder (멘토링 연결) */}
-          <div className="mt-5 lg:mt-auto pt-4 border-t border-zinc-800/50">
             <button
-              disabled
-              className="w-full flex flex-col items-center justify-center py-3.5 rounded-xl bg-gradient-to-br from-zinc-800/40 to-zinc-900/40 border border-zinc-700/50 border-dashed text-zinc-500 cursor-not-allowed group/bm relative overflow-hidden transition-colors hover:border-zinc-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewQuestions();
+              }}
+              className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg border border-zinc-700 bg-zinc-800/40 text-[13px] font-medium text-zinc-300 hover:bg-zinc-700/60 hover:text-zinc-100 transition-all duration-200"
             >
-              <div className="flex items-center gap-1.5 mb-1 z-10">
-                <span className="text-[13px] font-bold text-zinc-300 opacity-80 group-hover/bm:opacity-100 transition-opacity">
-                  🔥 1:1 현직자 멘토링
-                </span>
-                <Lock className="w-3.5 h-3.5 opacity-70" />
-              </div>
-              <span className="text-[11px] font-medium tracking-widest text-orange-400/70 z-10">
-                [🚀 준비 중]
-              </span>
+              <FileText className="w-3.5 h-3.5 text-zinc-500" />
+              <span>작성한 자소서 보기</span>
             </button>
           </div>
 

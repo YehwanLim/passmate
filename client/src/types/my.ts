@@ -17,6 +17,8 @@ export interface ProjectSummary {
   created_at: string;
   /** 해당 프로젝트의 분석 건수 (_count.analyses) */
   analysis_count: number;
+  /** 최신 분석 기준 실제 문항 수 (question_text의 [문항 N] 마커 수) */
+  question_count?: number;
   /** 최신 analysis id (리포트 재열람용) */
   latest_analysis_id?: string | null;
   /** 최신 analysis 기준 글자 수 (없으면 0) */

@@ -135,7 +135,7 @@ export default function MyAnalyses() {
               작성한 자소서
             </h1>
             <p className="text-[13px] text-zinc-500 font-light">
-              각 문항을 클릭하면 작성했던 내용을 확인할 수 있습니다.
+              작성한 문항과 내용을 한눈에 확인할 수 있습니다.
             </p>
           </motion.div>
         )}
@@ -173,7 +173,7 @@ export default function MyAnalyses() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.05 * idx }}
               >
-                <AnalysisCard analysis={analysis} index={idx} />
+                <AnalysisCard analysis={analysis} />
               </motion.div>
             ))}
           </motion.div>

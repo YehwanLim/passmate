@@ -61,6 +61,40 @@ describe("protected user APIs", () => {
     expect(JSON.stringify(res.body)).not.toContain("sensitive authorization detail");
   });
 
+  it("reports the real question count parsed from the latest analysis", async () => {
+    const handler = createProjectsHandler({
+      db: {
+        project: {
+          findMany: vi.fn(async () => [
+            {
+              id: "p1",
+              title: "카카오 기획 지원서",
+              company: "카카오",
+              jobKeyword: "기획",
+              createdAt: new Date("2026-08-20T00:00:00Z"),
+              _count: { analyses: 2 },
+              analyses: [
+                {
+                  id: "a1",
+                  totalChars: 100,
+                  aiResponseJson: null,
+                  questionText: "[문항 1] q1\n\n[문항 2] q2\n\n[문항 3] q3",
+                },
+              ],
+            },
+          ]),
+        },
+      },
+      requireUser: activeUser,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.body[0].analysis_count).toBe(2);
+    expect(res.body[0].question_count).toBe(3);
+  });
+
   it("looks up a project by both its ID and the verified user ID", async () => {
     const findFirst = vi.fn(async () => null);
     const handler = createProjectDetailHandler({
