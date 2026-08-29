@@ -21,16 +21,29 @@ describe("beta deployment security configuration", () => {
     expect(headers["X-Frame-Options"]).toBe("DENY");
   });
 
-  it("deploys only a read-only entitlement summary during beta", () => {
-    const config = JSON.parse(read("vercel.json"));
-    expect(config.rewrites.some((rewrite) => rewrite.source.includes("entitlements/purchase-intents"))).toBe(false);
-    expect(existsSync(`${root}/api/entitlements.js`)).toBe(true);
-    expect(read("api/entitlements.js")).not.toContain("createPurchaseIntent");
-    expect(read("api/entitlements.js")).not.toContain("groblePaymentUrl: settings");
+  it("keeps the payment pipeline inside the entitlements function with safe defaults", () => {
+    // 12함수 한도: 웹훅은 전용 api 파일이 아니라 rewrite 로 entitlements 에 합류한다.
     expect(existsSync(`${root}/api/webhooks/groble.js`)).toBe(false);
-    expect(existsSync(`${root}/client/src/components/PricingSection.tsx`)).toBe(false);
+    expect(existsSync(`${root}/api/entitlements.js`)).toBe(true);
+
+    const entitlements = read("api/entitlements.js");
+    // 웹훅 서명 검증은 원문이 필요하므로 bodyParser 를 끈 상태를 유지해야 한다.
+    expect(entitlements).toContain("bodyParser: false");
+    // 구매 의도는 판매 스위치가 꺼져 있으면 거부되어야 한다.
+    expect(entitlements).toContain("PREMIUM_SALES_DISABLED");
+
+    const config = JSON.parse(read("vercel.json"));
+    expect(config.rewrites).toContainEqual({
+      source: "/api/webhooks/groble",
+      destination: "/api/entitlements?grobleWebhook=1",
+    });
+    expect(config.rewrites).toContainEqual({
+      source: "/api/entitlements/purchase-intents",
+      destination: "/api/entitlements?purchaseIntent=1",
+    });
+
+    // 리포트 화면의 업셀 문구는 여전히 금지 (전환 루프는 별도 과제)
     expect(read("client/src/pages/ReportResult.tsx")).not.toContain("PREMIUM UPSELL");
-    expect(read("lib/admin-handlers/entitlements.js")).not.toContain('req.method === "PATCH"');
   });
 
   it("does not deploy administrator credit grants or coupon management during beta", () => {
@@ -73,6 +86,8 @@ describe("beta deployment security configuration", () => {
     expect(config.rewrites).toEqual([
       { source: "/api/admin/:path*", destination: "/api/admin/[...route]?route=:path*" },
       { source: "/api/account/:path*", destination: "/api/account/[...route]?route=:path*" },
+      { source: "/api/webhooks/groble", destination: "/api/entitlements?grobleWebhook=1" },
+      { source: "/api/entitlements/purchase-intents", destination: "/api/entitlements?purchaseIntent=1" },
       { source: "/((?!api/).*)", destination: "/index.html" },
     ]);
 

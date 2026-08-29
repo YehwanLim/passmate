@@ -12,6 +12,12 @@ const PROJECT_ROOT = import.meta.dirname;
 const IS_VITEST = process.env.VITEST === "true";
 function apiRoute(pathname: string) {
   if (pathname === "/api/analyze") return { file: "api/analyze.js", query: {} };
+  if (pathname === "/api/entitlements") return { file: "api/entitlements.js", query: {} };
+  if (pathname === "/api/entitlements/purchase-intents")
+    return { file: "api/entitlements.js", query: { purchaseIntent: "1" } };
+  // Groble 웹훅은 HMAC 서명을 원문으로 검증하므로 JSON 파싱 대신 원문을 전달한다
+  if (pathname === "/api/webhooks/groble")
+    return { file: "api/entitlements.js", query: { grobleWebhook: "1" }, raw: true };
   if (pathname === "/api/auth/me") return { file: "api/auth/me.js", query: {} };
   if (pathname === "/api/feedback") return { file: "api/feedback.js", query: {} };
   if (pathname === "/api/projects") return { file: "api/projects.js", query: {} };
@@ -36,22 +42,25 @@ function apiRoute(pathname: string) {
   return null;
 }
 
-function readJsonBody(req: IncomingMessage): Promise<unknown> {
+function readRawBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk.toString();
     });
     req.on("error", reject);
-    req.on("end", () => {
-      if (!body) return resolve(undefined);
-      try {
-        resolve(JSON.parse(body));
-      } catch {
-        reject(new Error("INVALID_JSON"));
-      }
-    });
+    req.on("end", () => resolve(body));
   });
+}
+
+async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+  const body = await readRawBody(req);
+  if (!body) return undefined;
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new Error("INVALID_JSON");
+  }
 }
 
 /** Routes Vite development traffic through exactly the Vercel API modules. */
@@ -65,7 +74,8 @@ function vitePluginApi(): Plugin {
         if (!route) return next();
 
         try {
-          const body = await readJsonBody(req);
+          const rawBody = route.raw ? await readRawBody(req) : undefined;
+          const body = route.raw ? undefined : await readJsonBody(req);
           const handlerUrl = pathToFileURL(path.join(PROJECT_ROOT, route.file)).href;
           const { default: handler } = await import(handlerUrl);
           const response = {
@@ -90,6 +100,7 @@ function vitePluginApi(): Plugin {
               headers: req.headers,
               method: req.method,
               query: { ...Object.fromEntries(requestUrl.searchParams.entries()), ...route.query },
+              rawBody,
               url: req.url,
             },
             response,
