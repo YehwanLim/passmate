@@ -233,7 +233,7 @@ Supabase의 표준 패턴이라 대개 통과하지만 **이번 작업에서 유
 - [x] `information_schema.role_table_grants`에서 `anon`·`authenticated` 권한 **0개**
 - [ ] Data API를 다시 켜도 위 프로브가 전부 차단되는 것을 실증 — **선택**. 이제 DB 자체가 막으므로 안전하게 확인 가능하나, Data API를 계속 끈 채로 두는 편이 심층 방어상 낫다 (앱은 Prisma 직결이라 Data API가 필요 없다)
 - [x] Prisma 런타임 경로 스모크 (모델 10종 조회 + seed 확인)
-- [ ] 핵심 흐름 E2E 스모크: 분석 접수(202) → 폴링 → 완료 — **RC 배포 후에 가능**
+- [x] 핵심 흐름 E2E 스모크: 분석 접수(202) → 폴링 → 완료 — 6번 검증에서 Preview 실배포로 완료 (2026-08-29)
 
 #### 2-e. 실행 기록 (2026-08-27)
 
@@ -425,15 +425,48 @@ node scripts/measure-analysis-slo.mjs --confirm-real-provider-calls --runs=10
 
 | 엔드포인트 | A 본인 | B가 A 대상 | 비로그인 |
 |---|---|---|---|
-| `DELETE /api/projects/:projectId` | [ ] 204 | [ ] 404 | [ ] 401 |
-| `GET /api/analysis/:id` | [ ] 200 | [ ] 404 | [ ] 401 |
-| `POST /api/feedback` | [ ] 200 | [ ] 404 | [ ] 401 |
-| `GET /api/projects/:projectId/analyses` | [ ] 200 | [ ] 404 | [ ] 401 |
-| `POST /api/account/deletion` | [ ] 202 | — | [ ] 401 |
+| `DELETE /api/projects/:projectId` | [x] 204 | [x] 404 | [x] 401 |
+| `GET /api/analysis/:id` | [x] 200 | [x] 404 | [x] 401 |
+| `POST /api/feedback` | [x] 200 | [x] 404 | [x] 401 |
+| `GET /api/projects/:projectId/analyses` | [x] 200 | [x] 404 | [x] 401 |
+| `POST /api/account/deletion` | [x] 202 | — | [x] 401 |
 
 **완료 조건**: 모든 셀이 기대 상태 코드로 확인되고, 응답 본문에 타인의 데이터가 포함되지 않는다.
 
 **주의**: 응답을 문서에 붙일 때 실제 사용자 ID, 이메일, 자소서 원문을 남기지 말 것.
+
+**완료 (2026-08-29)** — Preview 실환경(`codex/release-candidate` 배포)에 실제 요청으로 **19/19 통과**.
+`scripts/verify-authz-matrix.mjs` 로 재실행 가능:
+
+```bash
+node scripts/verify-authz-matrix.mjs --base-url=<preview-url>
+```
+
+- 토큰은 `tmp-token-a.txt`/`tmp-token-b.txt` 에서 읽는다 (gitignore, 1시간 만료).
+  service role 로 `generateLink(magiclink)` → `verifyOtp` 하면 브라우저 없이 발급된다.
+- 위 표 외에 추가로 검증됨: B 의 404 응답 본문에 A 데이터 없음(불투명 확인),
+  B 의 삭제 시도 후 A 데이터 생존, A 의 삭제→재조회 404,
+  계정 삭제 예약(202)→**취소(200)**→계정 정상 복귀(200).
+- **2-d 의 "핵심 흐름 E2E 스모크"도 여기서 함께 완료** — 실배포에서 분석
+  202 접수 → 폴링 → SUCCEEDED 확인.
+- 검증 데이터는 A 가 검증 중 스스로 삭제(204)해 잔여 0건. 검증용으로 켰던
+  `premium_enabled` 와 지급 크레딧은 원복함.
+
+##### 🔴 이 검증이 잡아낸 실제 배포 버그 (수정 완료)
+
+**catch-all 라우터(`[...route].js`)의 2단계 이상 하위 경로가 Vercel 배포에서 전부
+플랫폼 404 였다.** 로컬은 `vite.config.ts` 가 접두사 전체를 수동 매핑해서 정상 동작
+→ "로컬 통과 / 배포 실패" 사각지대.
+
+영향 범위 (전부 실측): `admin/analyses/:id`·`admin/users/:id`·`admin/prompts/:id`
+(관리자 상세 3종), `account/deletion/cancel` (계정 삭제 취소 — **사용자가 삭제를
+번복할 수 없었다**). 1단계(`admin/analyses` 목록)만 함수에 도달했다.
+
+수정: `vercel.json` 에 명시적 rewrite 추가 (`/api/admin/:path*`, `/api/account/:path*`
+→ 각 catch-all 함수). 수정 후 재배포에서 4개 경로 모두 앱 도달 확인, 전체 매트릭스
+19/19 재통과. **운영은 아직 구버전이므로 RC 배포 시 이 수정이 함께 나가야 한다.**
+
+교훈: 라우트 추가 시 로컬 매핑(함정 1번)만이 아니라 **Vercel 라우팅도 실배포로 확인할 것.**
 
 ---
 
