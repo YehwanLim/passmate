@@ -443,10 +443,14 @@ async function loadAiModelsData(): Promise<AiModelsData> {
     models.find((model) => model.isDefault) ??
     models[0] ??
     null;
-  const fallbackModel =
-    connectedModels.find((model) => model.id !== defaultModel?.id) ??
-    models.find((model) => model.id !== defaultModel?.id && model.enabled) ??
-    null;
+  // 폴백은 저장된 설정만 근거로 삼는다. 추측으로 채우면 저장되지 않은 값이
+  // 저장된 것처럼 보여, 같은 값을 다시 선택해도 저장이 실행되지 않는다.
+  const savedFallback = configPayload.settings?.fallbackModel ?? null;
+  const fallbackModel = savedFallback
+    ? models.find(
+        (model) => model.id === getModelKey(savedFallback.providerKey, savedFallback.modelName)
+      ) ?? null
+    : null;
 
   const todaysRequests = todayUsageRows.length || todayAnalysesRows.length;
   const todayCost = todayUsageRows.reduce((sum: number, row: any) => sum + (row.cost ?? 0), 0);
