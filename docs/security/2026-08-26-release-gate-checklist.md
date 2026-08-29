@@ -476,8 +476,8 @@ node scripts/verify-authz-matrix.mjs --base-url=<preview-url>
 
 - [ ] Supabase 대시보드의 OAuth redirect allowlist 실제 값
 - [x] ~~Data API 비활성 상태 유지 확인~~ → **켜져 있었고 실제 노출이 있었다.** 2026-08-27 비활성화함. 발견 C 참조. 2-c 완료 전까지 다시 켜지 말 것
-- [ ] 로그·백업 보관 기간 정책 문서화
-- [ ] 개인정보 처리방침에 30일 유예 삭제와 보관 기간 반영
+- [x] 로그·백업 보관 기간 정책 문서화 — **2026-08-29 작성**: `docs/security/2026-08-29-log-backup-retention.md`. 코드가 강제하는 값(감사 로그 90일, 탈퇴 유예 30일)은 확정. Supabase 백업·Vercel 로그 보관 기간은 대시보드 확인 후 표 갱신 필요
+- [x] 개인정보 처리방침에 30일 유예 삭제와 보관 기간 반영 — **2026-08-29 수정**: `client/src/pages/Privacy.tsx` 3조·8조가 "탈퇴 시 지체 없이 삭제"라고 되어 있어 실제 동작(30일 유예 후 파기, 유예 중 취소 가능)과 어긋났다. 30일 유예 절차를 명시하고 부칙에 개정 이력을 남겼다
 - [x] Vercel 환경변수에 `CRON_SECRET` 설정 확인 — **확인됨 (2026-08-27)**. Preview 첫 빌드가 "환경변수 없음"으로 실패했을 때 누락 목록에 `CRON_SECRET` 만 없었다 = 이미 설정돼 있다는 뜻이다. (다른 5개는 Production 에만 있어서 Preview 에 체크를 추가했다)
 - [ ] **신규 발견 — Vercel 이 `npm install --legacy-peer-deps` 로 설치한다.** 이 저장소는 pnpm 전용이고 `pnpm-lock.yaml` 로 버전을 고정하는데, npm 은 그 잠금파일을 무시하고 `package.json` 범위에서 버전을 새로 고른다. **0번에서 감사한 의존성 트리와 배포본의 트리가 다를 수 있다.** Vercel → Settings → Build & Development Settings 의 Install Command 를 비우거나 `pnpm install --frozen-lockfile` 로 바꿀 것. (Preview 첫 빌드 로그에서 발견)
 
