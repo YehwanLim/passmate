@@ -5,7 +5,11 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
 import { getLoginRedirectPath, useRequireAuth } from "@/hooks/useRequireAuth";
-import { fetchEntitlementSummary, type EntitlementSummary } from "@/lib/entitlements";
+import {
+  createPurchaseIntent,
+  fetchEntitlementSummary,
+  type EntitlementSummary,
+} from "@/lib/entitlements";
 import { supabase } from "@/lib/supabase";
 
 function CreditSkeleton() {
@@ -55,6 +59,9 @@ export default function Entitlements() {
   const [summary, setSummary] = useState<EntitlementSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchaseStarted, setPurchaseStarted] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   const getAccessToken = useCallback(async () => {
     const {
@@ -91,6 +98,25 @@ export default function Entitlements() {
       void loadEntitlements();
     }
   }, [authLoading, isAuthenticated, loadEntitlements]);
+
+  const handlePurchase = useCallback(async () => {
+    setIsPurchasing(true);
+    setPurchaseError(null);
+
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) return;
+
+      const intent = await createPurchaseIntent(accessToken);
+      // 결제는 Groble 체크아웃 새 탭에서 진행된다. ref 파라미터가 구매 의도를 연결한다.
+      window.open(intent.checkoutUrl, "_blank", "noopener,noreferrer");
+      setPurchaseStarted(true);
+    } catch {
+      setPurchaseError("구매를 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsPurchasing(false);
+    }
+  }, [getAccessToken]);
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28 text-white">
@@ -184,10 +210,42 @@ export default function Entitlements() {
                     </p>
                   </div>
 
-                  <p className="text-xs text-zinc-600">
-                    현재 추가 이용권 판매를 준비하고 있어요.
-                  </p>
+                  {summary.premiumEnabled && summary.groblePaymentUrl ? (
+                    <div className="shrink-0 text-right">
+                      <button
+                        type="button"
+                        onClick={() => void handlePurchase()}
+                        disabled={isPurchasing}
+                        className="inline-flex h-10 items-center rounded-xl bg-white px-4 text-sm font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+                      >
+                        {isPurchasing ? "여는 중..." : "이용권 구매하기"}
+                      </button>
+                      {purchaseError && (
+                        <p className="mt-2 text-xs text-red-200">{purchaseError}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-zinc-600">
+                      현재 추가 이용권 판매를 준비하고 있어요.
+                    </p>
+                  )}
                 </div>
+
+                {purchaseStarted && (
+                  <div className="flex items-center justify-between gap-4 border-t border-white/5 py-3">
+                    <p className="text-xs text-zinc-500">
+                      새 탭에서 결제를 완료하면 이용권이 곧 반영돼요. 반영까지 잠시 걸릴 수 있어요.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void loadEntitlements()}
+                      className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-white underline underline-offset-4"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      새로고침
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="divide-y divide-white/5">

@@ -95,3 +95,42 @@ export async function fetchEntitlementSummary(
 
   return parseEntitlementSummary(payload);
 }
+
+export type PurchaseIntent = {
+  purchaseIntentId: string;
+  checkoutUrl: string;
+};
+
+function parsePurchaseIntent(payload: unknown): PurchaseIntent {
+  if (
+    !isRecord(payload) ||
+    typeof payload.purchaseIntentId !== "string" ||
+    typeof payload.checkoutUrl !== "string"
+  ) {
+    throw new EntitlementApiError("Invalid purchase intent response");
+  }
+
+  return {
+    purchaseIntentId: payload.purchaseIntentId,
+    checkoutUrl: payload.checkoutUrl,
+  };
+}
+
+export async function createPurchaseIntent(
+  accessToken: string,
+  fetcher: typeof fetch = fetch
+): Promise<PurchaseIntent> {
+  const response = await fetcher("/api/entitlements/purchase-intents", {
+    method: "POST",
+    headers: getAuthorizationHeaders(accessToken),
+  });
+  const payload = await readPayload(response);
+
+  if (!response.ok) {
+    throw new EntitlementApiError(
+      readError(payload, "Unable to start a purchase")
+    );
+  }
+
+  return parsePurchaseIntent(payload);
+}

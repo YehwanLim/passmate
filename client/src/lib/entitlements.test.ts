@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   EntitlementApiError,
@@ -18,9 +18,10 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("entitlements client", () => {
-  it("does not ship beta checkout or purchase-intent code", () => {
-    expect(entitlementClientSource).not.toContain("createPurchaseIntent");
-    expect(entitlementClientSource).not.toContain("purchase-intents");
+  it("keeps checkout navigation out of the API client", () => {
+    // 체크아웃 URL 은 반환만 하고, 이동은 페이지가 새 탭으로 결정한다
+    expect(entitlementClientSource).not.toContain("window.open");
+    expect(entitlementClientSource).not.toContain("window.location");
   });
 
   it("returns the server-provided credit counts without recalculating them", async () => {
@@ -75,6 +76,44 @@ describe("entitlements client", () => {
 
     await expect(fetchEntitlementSummary("", fetcher)).rejects.toEqual(
       new EntitlementApiError("Authentication required")
+    );
+  });
+});
+
+describe("createPurchaseIntent", () => {
+  it("posts to the purchase-intents route and returns the stamped checkout URL", async () => {
+    const { createPurchaseIntent } = await import("./entitlements");
+    const fetcher = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          purchaseIntentId: "33333333-3333-4333-8333-333333333333",
+          checkoutUrl:
+            "https://www.groble.im/payment/4SGBV5?ref=33333333-3333-4333-8333-333333333333",
+        }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const intent = await createPurchaseIntent("token", fetcher as typeof fetch);
+
+    expect(fetcher).toHaveBeenCalledWith("/api/entitlements/purchase-intents", {
+      method: "POST",
+      headers: { Authorization: "Bearer token" },
+    });
+    expect(intent.checkoutUrl).toContain("ref=33333333");
+  });
+
+  it("surfaces the server error code when sales are disabled", async () => {
+    const { createPurchaseIntent } = await import("./entitlements");
+    const fetcher = vi.fn(async () =>
+      new Response(JSON.stringify({ error: "PREMIUM_SALES_DISABLED" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(createPurchaseIntent("token", fetcher as typeof fetch)).rejects.toThrow(
+      "PREMIUM_SALES_DISABLED",
     );
   });
 });
