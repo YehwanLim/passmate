@@ -202,6 +202,38 @@ export default function SettingsPage() {
         </Alert>
       )}
 
+      {/* 이 화면에서 유일하게 서버에 실제 반영되는 제어 — 읽기 전용 fieldset 밖에 둔다 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">프리미엄 크레딧 판매</CardTitle>
+          <CardDescription className="text-xs">
+            켜면 구매 버튼과 Groble 결제가 열립니다. 끄면 신규 구매가 차단되고 기구매
+            크레딧도 숨겨지므로, 결제 발생 후에는 비상시에만 끄세요. 토글 즉시 서버에 반영됩니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-3.5 border rounded-lg">
+            <div className="space-y-0.5">
+              <span className="text-sm font-semibold">
+                {premiumEnabled === null
+                  ? "판매 상태 불러오는 중..."
+                  : premiumEnabled
+                    ? "판매 중"
+                    : "판매 중지됨"}
+              </span>
+              {premiumSwitchError ? (
+                <p className="text-xs text-destructive">{premiumSwitchError}</p>
+              ) : null}
+            </div>
+            <Switch
+              checked={premiumEnabled === true}
+              disabled={premiumEnabled === null || premiumSwitchBusy}
+              onCheckedChange={handlePremiumToggle}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <fieldset disabled className="w-full opacity-60" aria-label="Settings are read-only">
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="grid grid-cols-4 w-full lg:w-[520px] mb-4">
@@ -413,24 +445,6 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/10 transition-colors">
-                <div className="space-y-0.5">
-                  <span className="text-sm font-semibold">프리미엄 크레딧 판매</span>
-                  <p className="text-xs text-muted-foreground">
-                    켜면 구매 버튼과 Groble 결제가 열립니다. 끄면 신규 구매가 차단되고
-                    기구매 크레딧도 숨겨지므로, 결제 발생 후에는 비상시에만 끄세요. 토글 즉시 서버에 반영됩니다.
-                  </p>
-                  {premiumSwitchError ? (
-                    <p className="text-xs text-destructive">{premiumSwitchError}</p>
-                  ) : null}
-                </div>
-                <Switch
-                  checked={premiumEnabled === true}
-                  disabled={premiumEnabled === null || premiumSwitchBusy}
-                  onCheckedChange={handlePremiumToggle}
-                />
-              </div>
-
               <div className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/10 transition-colors">
                 <div className="space-y-0.5">
                   <span className="text-sm font-semibold">AI 상세 피드백 Beta</span>
