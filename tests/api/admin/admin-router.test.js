@@ -11,7 +11,41 @@ function response() {
   };
 }
 
+/**
+ * 실제 Node IncomingMessage 는 `headers`/`method` 일부를 prototype 접근자로 노출한다.
+ * 평범한 객체 리터럴로는 spread 가 이를 잃는 회귀를 재현할 수 없으므로,
+ * 같은 형태(프로토타입 getter)로 요청을 만든다.
+ */
+function incomingMessageLike({ headers = {}, method = "GET", query }) {
+  const proto = {};
+  Object.defineProperty(proto, "headers", { get: () => headers, enumerable: false });
+  const req = Object.create(proto);
+  req.method = method;
+  req.query = query;
+  return req;
+}
+
 describe("admin catch-all router", () => {
+  it("keeps the authorization header visible to the dispatched handler on a real request shape", async () => {
+    const seen = {};
+    const users = vi.fn(async (req, res) => {
+      seen.authorization = req.headers?.authorization ?? null;
+      return res.status(200).json({ ok: true });
+    });
+    const handler = createAdminRouter({ handlers: { users } });
+    const res = response();
+
+    await handler(
+      incomingMessageLike({
+        headers: { authorization: "Bearer real-token" },
+        query: { route: ["users"] },
+      }),
+      res,
+    );
+
+    expect(seen.authorization).toBe("Bearer real-token");
+  });
+
   it("dispatches the users detail route while preserving the verified request", async () => {
     const usersDetail = vi.fn(async (req, res) => res.status(200).json({ id: req.query.id }));
     const handler = createAdminRouter({ handlers: { "user-detail": usersDetail } });

@@ -86,10 +86,10 @@ export function createAdminRouter({
     try {
       const target = targetFor(routeSegments(req), handlers);
       if (target) {
-        return await target.handler(
-          { ...req, query: { ...(req.query ?? {}), ...target.query } },
-          res,
-        );
+        // IncomingMessage 를 spread 하면 prototype 접근자인 `headers` 가 사라져
+        // 모든 핸들러가 인증 헤더를 잃는다. 원본 요청에 query 만 병합해 넘긴다.
+        req.query = { ...(req.query ?? {}), ...target.query };
+        return await target.handler(req, res);
       }
 
       await requireAdmin(req);
