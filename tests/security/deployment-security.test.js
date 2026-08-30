@@ -91,6 +91,7 @@ describe("beta deployment security configuration", () => {
       { source: "/api/account/:path*", destination: "/api/account/[...route]?route=:path*" },
       { source: "/api/webhooks/groble", destination: "/api/entitlements?grobleWebhook=1" },
       { source: "/api/entitlements/purchase-intents", destination: "/api/entitlements?purchaseIntent=1" },
+      { source: "/api/analyze/split", destination: "/api/analyze?split=1" },
       { source: "/((?!api/).*)", destination: "/index.html" },
     ]);
 

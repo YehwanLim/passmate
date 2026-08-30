@@ -27,6 +27,7 @@ import {
 import { ApiError, sendError, sendJson, withApiHandler } from "../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../lib/auth.js";
 import { consumeUserRateLimit, getAnalysisThroughputPolicy } from "../lib/rate-limit.js";
+import { createResumeSplitHandler } from "../lib/resume-split.js";
 import prisma from "../lib/prisma.js";
 import { MASTER_SYSTEM_PROMPT } from "../shared/prompts/reportPrompt.js";
 
@@ -576,4 +577,11 @@ export function createAnalyzeHandler({
 
 export const maxDuration = 120;
 
-export default createAnalyzeHandler();
+const analyzeHandler = createAnalyzeHandler();
+const resumeSplitHandler = createResumeSplitHandler();
+
+// /api/analyze/split은 rewrite로 ?split=1이 붙어 이 함수로 들어온다 (Hobby 12함수 제한).
+export default function handler(req, res) {
+  if (req.query?.split === "1") return resumeSplitHandler(req, res);
+  return analyzeHandler(req, res);
+}

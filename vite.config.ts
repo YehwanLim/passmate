@@ -12,6 +12,8 @@ const PROJECT_ROOT = import.meta.dirname;
 const IS_VITEST = process.env.VITEST === "true";
 function apiRoute(pathname: string) {
   if (pathname === "/api/analyze") return { file: "api/analyze.js", query: {} };
+  if (pathname === "/api/analyze/split")
+    return { file: "api/analyze.js", query: { split: "1" } };
   if (pathname === "/api/entitlements") return { file: "api/entitlements.js", query: {} };
   if (pathname === "/api/entitlements/purchase-intents")
     return { file: "api/entitlements.js", query: { purchaseIntent: "1" } };

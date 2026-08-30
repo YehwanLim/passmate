@@ -7,12 +7,6 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
   ArrowLeft,
   Plus,
   Trash2,
@@ -29,6 +23,7 @@ import {
   History,
   CalendarDays,
   BriefcaseBusiness,
+  FileUp,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import AuthButton from "@/components/AuthButton";
@@ -39,6 +34,7 @@ import { sanitizeText } from "@/utils/sanitize";
 import { checkDuplicateQuestions } from "@/utils/textSimilarity";
 import { UI_LABELS } from "@/constants/labels";
 import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
+import { filterJobRoleCategories } from "@/constants/jobRoles";
 import {
   trackResumeUpload,
   trackAnalysisStart,
@@ -50,6 +46,13 @@ import {
   analysisPendingPath,
   parseAnalysisReceipt,
 } from "@/lib/analysisRequest";
+import {
+  extractTextFromFile,
+  requestAiSplit,
+  splitResumeText,
+  ResumeImportError,
+  type ResumeImportPair,
+} from "@/lib/resumeFileImport";
 import type { ProjectSummary } from "@/types/my";
 
 /**
@@ -136,77 +139,6 @@ const LOADING_STEPS = {
     accent: "text-emerald-400",
   },
 } as const;
-
-export const JOB_ROLE_CATEGORIES = [
-  {
-    name: "기획·PM",
-    roles: [
-      "서비스 기획",
-      "제품/상품 기획",
-      "사업 기획",
-      "UX 기획",
-      "프로젝트 매니저",
-    ],
-  },
-  {
-    name: "마케팅·브랜딩",
-    roles: [
-      "브랜드 마케팅",
-      "디지털 마케팅",
-      "퍼포먼스 마케팅",
-      "콘텐츠 마케팅",
-      "CRM 마케팅",
-    ],
-  },
-  {
-    name: "경영·사업",
-    roles: ["경영전략", "사업전략", "신사업", "사업개발", "해외사업"],
-  },
-  {
-    name: "재무·회계",
-    roles: ["재무", "회계", "세무", "IR", "자금", "FP&A"],
-  },
-  {
-    name: "구매·SCM",
-    roles: ["구매", "전략구매", "SCM", "물류", "생산관리"],
-  },
-  {
-    name: "인사·총무",
-    roles: ["인사(HR)", "채용", "조직문화", "교육", "총무"],
-  },
-  {
-    name: "영업·고객",
-    roles: ["국내영업", "해외영업", "B2B 영업", "고객관리", "고객지원(CS)"],
-  },
-  {
-    name: "데이터·IT",
-    roles: [
-      "데이터 분석",
-      "데이터 사이언스",
-      "프론트엔드 개발",
-      "백엔드 개발",
-      "AI/ML 엔지니어",
-    ],
-  },
-  {
-    name: "디자인·콘텐츠",
-    roles: [
-      "UX/UI 디자인",
-      "프로덕트 디자인",
-      "그래픽 디자인",
-      "콘텐츠 기획",
-      "영상 콘텐츠",
-    ],
-  },
-] as const;
-
-const PRESET_JOB_ROLES = JOB_ROLE_CATEGORIES.flatMap(
-  category => category.roles
-);
-
-export function isPresetJobRole(jobRole: string) {
-  return PRESET_JOB_ROLES.some(role => role === jobRole);
-}
 
 interface QuestionItem {
   id: string;
@@ -328,6 +260,8 @@ function CompanyCombobox({
           value={value}
           onChange={e => onChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
+          // 목록에서 고른 뒤에도 포커스가 인풋에 남아 있어 onFocus가 다시 오지 않는다
+          onClick={() => setIsFocused(true)}
           maxLength={100}
           placeholder="회사명을 검색하거나 직접 입력하세요"
           className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
@@ -395,89 +329,117 @@ function CompanyCombobox({
 }
 
 /* ──────────────────────────────────────────
-   직무 선택 (Badge Selector + 직접 입력)
+   직무 선택 (검색 + 직접 입력)
 ────────────────────────────────────────── */
-function JobRoleSelector({
-  selected,
-  onSelect,
-  customValue,
-  onCustomChange,
+function JobRoleCombobox({
+  value,
+  onChange,
 }: {
-  selected: string | null;
-  onSelect: (role: string | null) => void;
-  customValue: string;
-  onCustomChange: (v: string) => void;
+  value: string;
+  onChange: (v: string) => void;
 }) {
-  const isCustomActive = selected === "__custom__";
+  const [isFocused, setIsFocused] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // 입력값으로 필터링된 카테고리별 직무 목록
+  const filtered = useMemo(() => filterJobRoleCategories(value), [value]);
+
+  const showDropdown =
+    isFocused && (filtered.length > 0 || value.trim() !== "");
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
+        setIsFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <div className="space-y-5">
-      <Accordion type="multiple" className="space-y-2">
-        {JOB_ROLE_CATEGORIES.map(category => (
-          <AccordionItem
-            key={category.name}
-            value={category.name}
-            className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4"
-          >
-            <AccordionTrigger className="py-3 text-zinc-300 hover:no-underline">
-              {category.name}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                {category.roles.map(role => {
-                  const isActive = selected === role;
-                  return (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => onSelect(isActive ? null : role)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
-                        isActive
-                          ? "bg-gradient-to-r from-blue-500/20 to-cyan-400/20 border-blue-400/40 text-cyan-300 shadow-sm shadow-blue-500/10"
-                          : "border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:border-white/[0.18] hover:bg-white/[0.07] hover:text-zinc-200"
-                      }`}
-                    >
-                      {role}
-                    </button>
-                  );
-                })}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-
-      {/* 직접 입력 태그 */}
-      {isCustomActive ? (
-        <div className="relative flex items-center">
-          <input
-            autoFocus
-            value={customValue}
-            onChange={e => onCustomChange(e.target.value)}
-            maxLength={100}
-            placeholder="직접 입력"
-            className="w-32 sm:w-40 px-4 py-2 rounded-full text-sm font-medium border border-blue-400/40 bg-gradient-to-r from-blue-500/10 to-cyan-400/10 text-white placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-          />
+    <div ref={wrapperRef} className="relative">
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+        <Input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          // 목록에서 고른 뒤에도 포커스가 인풋에 남아 있어 onFocus가 다시 오지 않는다
+          onClick={() => setIsFocused(true)}
+          maxLength={100}
+          placeholder="직무를 검색하거나 직접 입력하세요"
+          className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
+        />
+        {value && (
           <button
-            onClick={() => {
-              onSelect(null);
-              onCustomChange("");
-            }}
-            className="absolute right-2 p-0.5 rounded-full text-zinc-500 hover:text-zinc-200 transition-colors"
-            aria-label="직접 입력 취소"
+            onClick={() => onChange("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/10 transition-colors"
+            aria-label="입력 초기화"
           >
             <X className="w-3.5 h-3.5" />
           </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => onSelect("__custom__")}
-          className="px-4 py-2 rounded-full text-sm font-medium border border-dashed border-white/[0.12] bg-transparent text-zinc-500 hover:border-white/[0.22] hover:text-zinc-300 transition-all"
-        >
-          + 직접 입력
-        </button>
-      )}
+        )}
+      </div>
+
+      {/* 자동완성 드롭다운 */}
+      <AnimatePresence>
+        {showDropdown && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18 }}
+            className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-white/[0.1] bg-[#141414] backdrop-blur-xl shadow-2xl shadow-black/40 py-1.5"
+          >
+            {filtered.length > 0 ? (
+              filtered.map(category => (
+                <div key={category.name}>
+                  <p className="px-4 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-zinc-600">
+                    {category.name}
+                  </p>
+                  <ul>
+                    {category.roles.map(role => (
+                      <li key={role}>
+                        <button
+                          type="button"
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => {
+                            onChange(role);
+                            setIsFocused(false);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
+                            value === role
+                              ? "text-cyan-400 bg-cyan-400/[0.08]"
+                              : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                          }`}
+                        >
+                          <BriefcaseBusiness className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                          {role}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            ) : (
+              <button
+                type="button"
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => setIsFocused(false)}
+                className="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06]"
+              >
+                <Plus className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                <span className="font-medium">"{value}"</span> 직접 입력하기
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -571,12 +533,15 @@ function QuestionCard({
 ────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
-  const { user, isAuthenticated, isLoading: authLoading } = useRequireAuth({
+  const {
+    user,
+    isAuthenticated,
+    isLoading: authLoading,
+  } = useRequireAuth({
     redirectPath: "/analyze",
   });
   const [company, setCompany] = useState("");
-  const [selectedJob, setSelectedJob] = useState<string | null>(null);
-  const [customJob, setCustomJob] = useState("");
+  const [jobRole, setJobRole] = useState("");
   const [questions, setQuestions] = useState<QuestionItem[]>([
     createEmptyQuestion(),
   ]);
@@ -603,6 +568,13 @@ export default function Analyze() {
     string | null
   >(null);
   const [resumeLoaded, setResumeLoaded] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [fileImportStage, setFileImportStage] = useState<
+    "extracting" | "splitting" | null
+  >(null);
+  const [importPreview, setImportPreview] = useState<ResumeImportPair[] | null>(
+    null
+  );
   const analysisRequestRef = useRef<{
     fingerprint: string;
     idempotencyKey: string;
@@ -721,14 +693,9 @@ export default function Analyze() {
         throw new Error("저장된 문항을 찾을 수 없습니다.");
       }
 
-      const savedJob = analysis.job_role?.trim() || "";
-      const isSavedPresetJob = isPresetJobRole(savedJob);
       setCompany(analysis.company_name?.trim() || "");
       setQuestions(restoredQuestions);
-      setSelectedJob(
-        isSavedPresetJob ? savedJob : savedJob ? "__custom__" : null
-      );
-      setCustomJob(isSavedPresetJob ? "" : savedJob);
+      setJobRole(analysis.job_role?.trim() || "");
       setIsResumePickerOpen(false);
       setResumeLoaded(true);
       setTimeout(() => setResumeLoaded(false), 4000);
@@ -741,12 +708,65 @@ export default function Analyze() {
     }
   };
 
+  // ── PDF/Word 파일 불러오기 ──
+  const handleResumeFileSelected = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // 같은 파일 재선택 허용
+    if (!file || fileImportStage) return;
+
+    try {
+      setFileImportStage("extracting");
+      const text = await extractTextFromFile(file);
+
+      setFileImportStage("splitting");
+      let pairs: ResumeImportPair[];
+      try {
+        pairs = await requestAiSplit(text);
+      } catch {
+        // AI 분리 실패(레이트리밋·서버 오류 등) 시 로컬 휴리스틱으로 폴백
+        pairs = splitResumeText(text);
+      }
+      if (pairs.length === 0) {
+        throw new ResumeImportError(
+          "EMPTY_TEXT",
+          "파일에서 글자를 찾지 못했어요. 스캔·이미지 PDF는 텍스트 추출이 되지 않아요."
+        );
+      }
+      setImportPreview(pairs.slice(0, MAX_QUESTIONS));
+    } catch (error) {
+      setErrorModal({
+        title: "파일 불러오기 실패",
+        message:
+          error instanceof ResumeImportError
+            ? error.message
+            : "파일을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      });
+    } finally {
+      setFileImportStage(null);
+    }
+  };
+
+  const applyImportedPairs = () => {
+    if (!importPreview) return;
+    setQuestions(
+      importPreview.map(pair => ({
+        id: crypto.randomUUID(),
+        question: pair.question,
+        answer: pair.answer,
+      }))
+    );
+    setImportPreview(null);
+    setResumeLoaded(true);
+    setTimeout(() => setResumeLoaded(false), 4000);
+  };
+
   // ── 분석 제출 (모든 예외 처리 포함) ──
   const executeSubmit = async () => {
     setIsLoading(true);
 
-    const jobLabel =
-      selectedJob === "__custom__" ? customJob.trim() : (selectedJob ?? "");
+    const jobLabel = jobRole.trim();
 
     // XSS Sanitize + 구조화
     const structuredQuestions = questions.map((q, i) => ({
@@ -964,20 +984,57 @@ export default function Analyze() {
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
               자소서 분석
             </h1>
-            <p className="text-zinc-500 text-base md:text-lg leading-relaxed max-w-xl mx-auto">
-              문항별 자기소개서를 입력하면, AI가 항목별로 분석해 드립니다.
+            <p className="text-zinc-500 text-base md:text-lg leading-relaxed max-w-xl mx-auto break-keep">
+              제출 버튼을 누르기 전에,
+              <br className="hidden md:block" /> 채용 담당자의 눈으로 내
+              자소서의 <span className="whitespace-nowrap">현재 위치</span>를
+              파악해 보세요.
             </p>
-            {user?.id && (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              {user?.id && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={openPreviousResumePicker}
+                  className="h-10 border-white/[0.1] bg-white/[0.02] px-4 text-sm font-medium text-zinc-300 hover:border-cyan-400/30 hover:bg-cyan-400/[0.06] hover:text-cyan-200"
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  이전 지원서 불러오기
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
-                onClick={openPreviousResumePicker}
-                className="mt-6 h-10 border-white/[0.1] bg-white/[0.02] px-4 text-sm font-medium text-zinc-300 hover:border-cyan-400/30 hover:bg-cyan-400/[0.06] hover:text-cyan-200"
+                disabled={Boolean(fileImportStage)}
+                onClick={() => fileInputRef.current?.click()}
+                className="h-10 border-white/[0.1] bg-white/[0.02] px-4 text-sm font-medium text-zinc-300 hover:border-cyan-400/30 hover:bg-cyan-400/[0.06] hover:text-cyan-200 disabled:cursor-wait"
               >
-                <History className="mr-2 h-4 w-4" />
-                이전 지원서 불러오기
+                {fileImportStage ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-cyan-400" />
+                    {fileImportStage === "extracting"
+                      ? "파일 읽는 중..."
+                      : "문항 나누는 중..."}
+                  </>
+                ) : (
+                  <>
+                    <FileUp className="mr-2 h-4 w-4" />
+                    자소서 파일 올리기
+                  </>
+                )}
               </Button>
-            )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                className="hidden"
+                onChange={handleResumeFileSelected}
+                aria-label="자소서 PDF 또는 Word 파일 선택"
+              />
+            </div>
+            <p className="mt-2.5 text-xs text-zinc-600">
+              PDF·Word(.docx) 파일만 올릴 수 있어요
+            </p>
           </motion.div>
 
           {/* ── 목표 회사 및 직무 정보 ── */}
@@ -1010,12 +1067,7 @@ export default function Analyze() {
               <label className="block text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wider">
                 지원 직무
               </label>
-              <JobRoleSelector
-                selected={selectedJob}
-                onSelect={setSelectedJob}
-                customValue={customJob}
-                onCustomChange={setCustomJob}
-              />
+              <JobRoleCombobox value={jobRole} onChange={setJobRole} />
             </div>
           </motion.div>
 
@@ -1359,6 +1411,99 @@ export default function Analyze() {
                     })}
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ════════ FILE IMPORT PREVIEW ════════ */}
+      <AnimatePresence>
+        {importPreview && (
+          <motion.div
+            className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setImportPreview(null)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="file-import-title"
+              className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/[0.1] bg-[#141414] shadow-2xl"
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.18 }}
+              onClick={event => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between border-b border-white/[0.08] px-6 py-5">
+                <div>
+                  <p className="mb-1 text-xs font-medium tracking-wide text-cyan-300">
+                    파일 불러오기
+                  </p>
+                  <h2
+                    id="file-import-title"
+                    className="text-lg font-semibold text-white"
+                  >
+                    문항 나누기 미리보기
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setImportPreview(null)}
+                  className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-white/[0.07] hover:text-white"
+                  aria-label="미리보기 닫기"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="max-h-[min(55vh,480px)] space-y-3 overflow-y-auto p-4">
+                {importPreview.map((pair, index) => (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5"
+                  >
+                    <p className="mb-1.5 text-xs font-medium tracking-wide text-cyan-300">
+                      문항 {index + 1}
+                    </p>
+                    <p className="text-sm font-medium text-zinc-100">
+                      {pair.question || "질문 없음 — 채운 뒤 직접 입력해 주세요"}
+                    </p>
+                    <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-zinc-400 line-clamp-4">
+                      {pair.answer}
+                    </p>
+                    <p className="mt-2 text-right text-[11px] tabular-nums text-zinc-600">
+                      {pair.answer.length.toLocaleString()}자
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-white/[0.08] px-6 py-4">
+                <p className="mb-3 text-xs leading-relaxed text-zinc-500">
+                  나눈 결과가 어색하면 채운 뒤 자유롭게 고칠 수 있어요.
+                  {hasContent && " 적용하면 지금 입력된 문항을 덮어써요."}
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setImportPreview(null)}
+                    className="h-10 border-white/[0.1] bg-white/[0.02] px-4 text-sm font-medium text-zinc-300 hover:bg-white/[0.06]"
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={applyImportedPairs}
+                    className="h-10 bg-cyan-500 px-4 text-sm font-semibold text-black hover:bg-cyan-400"
+                  >
+                    이대로 채우기
+                  </Button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
