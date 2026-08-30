@@ -39,6 +39,10 @@ export const HOME_NAV_ITEMS = [
   { label: "내 지원서", type: "route", target: "/my" },
 ] as const;
 
+// 소셜 프루프(후기·지표·로고)는 실제 사용자 후기를 확보할 때까지 숨긴다.
+// 실후기로 교체한 뒤 true로 되돌리면 기존 위치에 그대로 복귀한다.
+const SHOW_SOCIAL_PROOF = false;
+
 const RESUME_READING_STEPS = [
   {
     label: "01",
@@ -536,7 +540,7 @@ export default function Home() {
           ══════════════════════════════════════════════════ */}
       <ReportShowcase />
 
-      <SocialProofSection />
+      {SHOW_SOCIAL_PROOF && <SocialProofSection />}
 
       {/* ── System Diagram ── */}
       <section className="relative py-28 md:py-36 overflow-hidden">

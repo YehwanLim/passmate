@@ -66,9 +66,13 @@ describe("HOME_NAV_ITEMS", () => {
     expect(cssSource).toContain(".mobile-nav-link:hover");
   });
 
-  it("places social proof directly after the report preview and before the analysis pipeline", () => {
+  it("keeps social proof hidden behind a flag until real testimonials replace the dummy data", () => {
     expect(homeSource).toContain('import SocialProofSection from "@/components/SocialProofSection"');
+    expect(homeSource).toContain("const SHOW_SOCIAL_PROOF = false;");
+    expect(homeSource).toContain("{SHOW_SOCIAL_PROOF && <SocialProofSection />}");
+  });
 
+  it("keeps the social proof slot after the report preview and before the analysis pipeline", () => {
     const reportShowcaseIndex = homeSource.indexOf("<ReportShowcase />");
     const socialProofIndex = homeSource.indexOf("<SocialProofSection />");
     const pipelineIndex = homeSource.indexOf("분석 파이프라인");

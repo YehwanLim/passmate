@@ -73,16 +73,17 @@ export default function FounderSection() {
                   왜 <BrandName />를 만들었나요?
                 </h2>
                 <p className="text-gray-400 font-light text-[16px] leading-[1.9] mb-5">
-                  합격하는 자소서는 글을 잘 쓰는 문서가 아니라, 읽는 사람이
-                  &ldquo;이 사람을 만나보고 싶다&rdquo;고 판단할 수 있는 근거가
-                  정리된 문서에 가깝습니다.
+                  커피챗에서 만난 취준생들은 대부분 좋은 경험을 가지고
+                  있었습니다. 그런데 자소서에는 그 모습이 담기지 않았고,
+                  탈락 메일은 이유를 말해주지 않았습니다.
                 </p>
                 <p className="text-gray-500 font-light text-[15px] leading-[1.9] mb-8">
-                  멘토링을 하다 보면 많은 지원자가 같은 문제에서 막혔습니다.
-                  경험은 있는데 직무와 연결되지 않고, 성과는 있는데 본인의
-                  판단이 보이지 않고, 문장은 매끄럽지만 면접 질문에는 약한
-                  상태였습니다. <BrandName />는 그 빈틈을 빠르게 발견하고 고칠
-                  순서를 알려주기 위해 만들었습니다.
+                  100번 넘는 멘토링에서 같은 장면을 반복해서 봤습니다. 경험은
+                  있는데 직무와 연결되지 않고, 성과는 있는데 본인의 판단이
+                  보이지 않는 상태. 옆에서 30분만 같이 읽으면 메울 수 있는
+                  빈틈인데, 그 30분이 없어서 계속 떨어지는 사람들이
+                  있었습니다. 모든 취준생 옆에 앉을 수는 없기에, 그 시선을
+                  대신 전하려고 <BrandName />를 만들었습니다.
                 </p>
 
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
@@ -90,9 +91,10 @@ export default function FounderSection() {
                     Founder note
                   </p>
                   <blockquote className="text-[15px] leading-[1.85] text-zinc-300">
-                    “자소서 첨삭은 예쁜 표현을 골라주는 일이 아니라, 지원자의
-                    경험이 회사의 기준에서 어떻게 읽히는지 번역해주는 일이라고
-                    생각합니다.”
+                    “떨어진 이유를 아무도 말해주지 않는 시간이 얼마나
+                    막막한지 압니다. 그 막막함 앞에 같이 앉아, 당신의 경험이
+                    회사의 기준에서 어떻게 읽히는지 짚어주는 한 사람이 되고
+                    싶었습니다.”
                   </blockquote>
                 </div>
               </div>

@@ -68,9 +68,8 @@ describe("home onboarding copy", () => {
 
   it("uses a founder note instead of a placeholder founder avatar", () => {
     expect(founderSource).toContain("BrandName");
-    expect(founderSource).toContain(
-      "합격하는 자소서는 글을 잘 쓰는 문서가 아니라"
-    );
+    expect(founderSource).toContain("커피챗에서 만난 취준생들은");
+    expect(founderSource).toContain("떨어진 이유를 아무도 말해주지 않는");
     expect(founderSource).toContain("founderSignals");
     expect(founderSource).not.toContain("파운더");
     expect(founderSource).not.toContain("<User");
