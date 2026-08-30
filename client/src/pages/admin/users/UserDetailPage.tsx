@@ -1,6 +1,7 @@
 import { useParams, Link } from "wouter";
 import { useUserDetail } from "@/hooks/admin/useUserDetail";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { UserCreditManagementCard } from "@/components/admin/users/UserCreditManagementCard";
 import { UserRoleBadge } from "@/components/admin/users/UserRoleBadge";
 import {
   Card,
@@ -383,6 +384,9 @@ export default function UserDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── 분석 크레딧 관리 ─────────────────────────────── */}
+      <UserCreditManagementCard userId={userId} />
 
       {/* ── 결제 정보 (추후 구현 예정) ───────────────────── */}
       <Card className="opacity-60">

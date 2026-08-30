@@ -46,11 +46,14 @@ describe("beta deployment security configuration", () => {
     expect(read("client/src/pages/ReportResult.tsx")).not.toContain("PREMIUM UPSELL");
   });
 
-  it("does not deploy administrator credit grants or coupon management during beta", () => {
+  it("serves admin credit grants from the consolidated router without reviving coupons", () => {
+    // 크레딧 지급은 12함수 한도 때문에 별도 서버리스 함수가 아니라 admin 라우터에 합류한다
     expect(existsSync(`${root}/api/admin/credit-management.js`)).toBe(false);
-    expect(existsSync(`${root}/client/src/lib/admin-credits.ts`)).toBe(false);
+    expect(existsSync(`${root}/lib/admin-handlers/credits.js`)).toBe(true);
+    expect(read("api/admin/[...route].js")).toContain("credits: creditsHandler");
+    // 쿠폰 기능은 여전히 미배포 상태를 유지한다
+    expect(existsSync(`${root}/client/src/components/admin/users/CreditCouponsDialog.tsx`)).toBe(false);
     expect(read("client/src/pages/admin/users/UsersPage.tsx")).not.toContain("무료 이용권 쿠폰 관리");
-    expect(read("client/src/pages/admin/users/UserDetailPage.tsx")).not.toContain("UserCreditManagementCard");
   });
 
   it("removes diagnostic AI routes and routes local runtimes through the secured analysis handler", () => {

@@ -2,6 +2,7 @@ import aiModelsHandler from "../../lib/admin-handlers/ai-models.js";
 import analysisReconciliationHandler from "../../lib/admin-handlers/analysis-reconciliation.js";
 import analysesHandler from "../../lib/admin-handlers/analyses.js";
 import analysisDetailHandler from "../../lib/admin-handlers/analysis-detail.js";
+import creditsHandler from "../../lib/admin-handlers/credits.js";
 import dashboardHandler from "../../lib/admin-handlers/dashboard.js";
 import entitlementsHandler from "../../lib/admin-handlers/entitlements.js";
 import promptDetailHandler from "../../lib/admin-handlers/prompt-detail.js";
@@ -20,6 +21,7 @@ const DEFAULT_HANDLERS = {
   "analysis-reconciliation": analysisReconciliationHandler,
   analyses: analysesHandler,
   "analysis-detail": analysisDetailHandler,
+  credits: creditsHandler,
   dashboard: dashboardHandler,
   entitlements: entitlementsHandler,
   "prompt-detail": promptDetailHandler,
