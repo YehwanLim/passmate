@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/Logo";
 import SubtleBackground from "@/components/SubtleBackground";
-import { Shield, Sparkles, AlertCircle } from "lucide-react";
+import { Shield, AlertCircle } from "lucide-react";
 
 // ============================================================
 // Google 아이콘 SVG
@@ -116,14 +116,6 @@ export default function Login() {
                 "0 0 0 1px rgba(255,255,255,0.05), 0 24px 64px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)",
             }}
           >
-            {/* 상단 뱃지 */}
-            <div className="flex justify-center mb-6">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 tracking-wider uppercase">
-                <Sparkles className="w-3 h-3" />
-                AI 자소서 분석 서비스
-              </span>
-            </div>
-
             {/* 타이틀 */}
             <h1 className="text-2xl font-bold text-center tracking-tight mb-2">
               시작하기
@@ -183,7 +175,7 @@ export default function Login() {
             <div className="mt-6 pt-6 border-t border-white/[0.06]">
               <div className="flex items-center justify-center gap-1.5 text-[12px] text-gray-500">
                 <Shield className="w-3.5 h-3.5 text-gray-600" />
-                <span>Google 계정 비밀번호는 PassMate에 저장되지 않습니다.</span>
+                <span>Google 계정 비밀번호는 Pre:View에 저장되지 않습니다.</span>
               </div>
             </div>
           </div>

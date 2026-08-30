@@ -8,8 +8,17 @@ const pageSource = readFileSync(
 const appSource = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
 
 describe("Entitlements page", () => {
-  it("protects the entitlement route and obtains the displayed balance from the API client", () => {
-    expect(pageSource).toContain('redirectPath: "/entitlements"');
+  it("shows guests the pricing guide and routes purchase through login instead of blocking the page", () => {
+    // 페이지 진입만으로 로그인을 강제하지 않는다
+    expect(pageSource).not.toContain("useRequireAuth(");
+    expect(pageSource).toContain('getLoginRedirectPath("/entitlements")');
+    expect(pageSource).toContain("무료로 분석하기");
+    expect(pageSource).toContain('navigate("/analyze")');
+    expect(pageSource).toContain("9,900원");
+    expect(pageSource).toContain("회당 3,300원");
+  });
+
+  it("obtains the displayed balance from the API client for signed-in users", () => {
     expect(pageSource).toContain("supabase.auth.getSession");
     expect(pageSource).toContain("session.access_token");
     expect(pageSource).toContain("fetchEntitlementSummary");

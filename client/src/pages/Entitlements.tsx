@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
-import { getLoginRedirectPath, useRequireAuth } from "@/hooks/useRequireAuth";
+import { useAuth } from "@/contexts/AuthContext";
+import { getLoginRedirectPath } from "@/hooks/useRequireAuth";
 import {
   createPurchaseIntent,
   fetchEntitlementSummary,
@@ -53,9 +54,8 @@ function CreditSummaryRow({
 
 export default function Entitlements() {
   const [, navigate] = useLocation();
-  const { isLoading: authLoading, isAuthenticated } = useRequireAuth({
-    redirectPath: "/entitlements",
-  });
+  // 게스트도 이용권 안내는 볼 수 있다. 로그인은 구매·잔여 조회 시점에만 요구한다.
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [summary, setSummary] = useState<EntitlementSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -149,7 +149,9 @@ export default function Entitlements() {
         </div>
       </motion.nav>
 
-      <main className="container max-w-3xl pt-10 pb-8">
+      <main
+        className={`container ${isAuthenticated ? "max-w-3xl" : "max-w-4xl"} pt-10 pb-8`}
+      >
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -159,12 +161,84 @@ export default function Entitlements() {
             이용권
           </h1>
           <p className="text-[14px] text-zinc-500 font-light">
-            현재 보유한 분석 이용권을 간단히 확인할 수 있어요.
+            {isAuthenticated
+              ? "현재 보유한 분석 이용권을 간단히 확인할 수 있어요."
+              : "무료 1회로 시작하고, 필요한 만큼만 이용권을 구매할 수 있어요."}
           </p>
         </motion.div>
 
         <section className="mt-8" aria-live="polite">
-          {authLoading || isLoading ? (
+          {authLoading ? (
+            <CreditSkeleton />
+          ) : !isAuthenticated ? (
+            <div className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* 무료 체험 */}
+                <div className="flex h-full flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 md:p-9">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+                    무료 체험
+                  </p>
+                  <p className="mt-5 text-[2rem] font-bold tracking-tight text-white">
+                    0원
+                    <span className="ml-1 text-[15px] font-medium text-zinc-500">
+                      / 1회
+                    </span>
+                  </p>
+                  <p className="mt-1.5 text-xs font-light text-zinc-500">
+                    가입하면 바로 제공돼요
+                  </p>
+                  <p className="mt-6 text-[14.5px] font-medium leading-relaxed text-zinc-200">
+                    지금 쓴 자소서, 어떻게 읽히는지 먼저 확인해 보세요.
+                  </p>
+                  <p className="mb-7 mt-2 flex-1 text-[13px] font-light leading-[1.8] text-zinc-500">
+                    첫 분석은 가입만 하면 무료예요. 리포트는 유료와 똑같이
+                    전체를 드립니다. 카드 등록도 필요 없어요.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/analyze")}
+                    className="h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
+                  >
+                    무료로 분석하기
+                  </button>
+                </div>
+
+                {/* 분석 이용권 */}
+                <div className="flex h-full flex-col rounded-2xl border border-blue-500/[0.25] bg-white/[0.02] p-8 md:p-9">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-blue-400">
+                    분석 이용권
+                  </p>
+                  <p className="mt-5 text-[2rem] font-bold tracking-tight text-white">
+                    9,900원
+                    <span className="ml-1 text-[15px] font-medium text-zinc-500">
+                      / 3회
+                    </span>
+                  </p>
+                  <p className="mt-1.5 text-xs font-light text-zinc-500">
+                    회당 3,300원
+                  </p>
+                  <p className="mt-6 text-[14.5px] font-medium leading-relaxed text-zinc-200">
+                    다음 지원, 다음 수정 때 꺼내 쓰세요.
+                  </p>
+                  <p className="mb-7 mt-2 flex-1 text-[13px] font-light leading-[1.8] text-zinc-500">
+                    지원하는 회사가 바뀌면 리포트의 기준도 바뀝니다. 고쳐 쓴
+                    자소서가 정말 나아졌는지도 다시 확인해 보세요.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate(getLoginRedirectPath("/entitlements"))}
+                    className="h-11 w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:from-blue-400 hover:to-cyan-300"
+                  >
+                    이용권 구매하기
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-center text-xs text-zinc-600">
+                로그인하면 보유한 이용권을 확인하고 바로 구매할 수 있어요.
+              </p>
+            </div>
+          ) : isLoading ? (
             <CreditSkeleton />
           ) : error && !summary ? (
             <div className="rounded-xl border border-red-400/[0.18] bg-red-400/[0.06] px-6 py-6 text-center">
