@@ -66,10 +66,6 @@ export default function ProcessSection() {
           transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
           viewport={{ once: true, margin: "-80px" }}
         >
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-600 tracking-widest uppercase mb-5">
-            <span className="w-4 h-px bg-gray-700" />
-            이용 프로세스
-          </span>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
             3단계로 완성되는 합격 리포트
           </h2>

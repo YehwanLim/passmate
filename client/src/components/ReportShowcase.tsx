@@ -77,7 +77,7 @@ export function getBoundedReportPreviewSceneIndex(
   return currentIndex;
 }
 
-const reportKeywords = [
+export const reportKeywords = [
   "데이터분석",
   "가설검증",
   "고객 중심",
@@ -85,14 +85,14 @@ const reportKeywords = [
   "협업",
 ];
 
-const hiringMemoryItems = [
+export const hiringMemoryItems = [
   { mark: "✓", text: "논리적으로 일할 것 같다" },
   { mark: "✓", text: "실행력이 좋아 보인다" },
   { mark: "✓", text: "숫자로 결과를 설명할 수 있다" },
   { mark: "△", text: "모빌리티 맥락은 더 필요하다" },
 ];
 
-const mentorCommentPreviews = [
+export const mentorCommentPreviews = [
   {
     title: "첫인상",
     numberClassName: "text-[#A7A8FF]",

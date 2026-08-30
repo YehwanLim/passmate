@@ -10,8 +10,22 @@ describe("HOME_NAV_ITEMS", () => {
     expect(HOME_NAV_ITEMS.map((item) => item.label)).toEqual([
       "서비스 소개",
       "자소서 분석",
+      "이용권 구매",
       "내 지원서",
     ]);
+  });
+
+  it("routes the purchase nav item to the standalone entitlements page", () => {
+    expect(HOME_NAV_ITEMS).toContainEqual({
+      label: "이용권 구매",
+      type: "route",
+      target: "/entitlements",
+    });
+  });
+
+  it("keeps pricing details on the entitlements page instead of a landing section", () => {
+    expect(homeSource).not.toContain('id="pricing"');
+    expect(homeSource).not.toContain("9,900원");
   });
 
   it("does not expose coming soon navigation states", () => {
@@ -75,7 +89,7 @@ describe("HOME_NAV_ITEMS", () => {
   it("keeps the social proof slot after the report preview and before the analysis pipeline", () => {
     const reportShowcaseIndex = homeSource.indexOf("<ReportShowcase />");
     const socialProofIndex = homeSource.indexOf("<SocialProofSection />");
-    const pipelineIndex = homeSource.indexOf("분석 파이프라인");
+    const pipelineIndex = homeSource.indexOf("자소서가 합격 리포트로 변하는 과정");
 
     expect(reportShowcaseIndex).toBeGreaterThan(-1);
     expect(socialProofIndex).toBeGreaterThan(reportShowcaseIndex);

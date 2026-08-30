@@ -65,10 +65,6 @@ export default function FounderSection() {
           >
             <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-600 tracking-widest uppercase mb-6">
-                  <span className="w-4 h-px bg-gray-700" />
-                  소개
-                </span>
                 <h2 className="text-2xl md:text-4xl font-bold leading-tight tracking-tight mb-6">
                   왜 <BrandName />를 만들었나요?
                 </h2>

@@ -5,6 +5,7 @@ import { BrandName } from "@/components/BrandName";
 import ProcessSection from "@/components/ProcessSection";
 import FounderSection from "@/components/FounderSection";
 import SubtleBackground from "@/components/SubtleBackground";
+import HeroReportCard from "@/components/HeroReportCard";
 import Logo from "@/components/Logo";
 import {
   ArrowRight,
@@ -36,6 +37,7 @@ import AuthButton from "@/components/AuthButton";
 export const HOME_NAV_ITEMS = [
   { label: "서비스 소개", type: "section", target: "service-intro" },
   { label: "자소서 분석", type: "route", target: "/analyze" },
+  { label: "이용권 구매", type: "route", target: "/entitlements" },
   { label: "내 지원서", type: "route", target: "/my" },
 ] as const;
 
@@ -287,7 +289,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           HERO  (Step 1 – Premium Centered Hero)
           ══════════════════════════════════════════════════ */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
+      <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 pt-24 md:pt-28 overflow-hidden">
 
         <div className="relative z-10 max-w-4xl mx-auto">
 
@@ -302,9 +304,14 @@ export default function Home() {
               ease: [0.21, 0.47, 0.32, 0.98],
             }}
           >
-            서류 탈락의 진짜 이유,
+            서류 탈락의 <br className="sm:hidden" />
+            진짜 이유,
             <br />
-            현직자는 10초면 압니다.
+            현직자는 <br className="sm:hidden" />
+            <span className="bg-gradient-to-r from-sky-300 via-blue-400 to-indigo-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(125,145,255,0.35)]">
+              10초면
+            </span>{" "}
+            압니다.
           </motion.h1>
 
           {/* Sub copy */}
@@ -337,10 +344,16 @@ export default function Home() {
               className="landing-primary-cta group"
               onClick={() => navigate("/analyze")}
             >
-              <span className="relative z-10">1회 무료로 진단 받기</span>
+              <span className="relative z-10">내 자소서 분석하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </button>
+            <p className="mt-3.5 text-[12.5px] text-zinc-500">
+              첫 분석 무료 <span className="text-zinc-700">·</span> 리포트는 1분
+              안에
+            </p>
           </motion.div>
+
+          <HeroReportCard />
         </div>
       </section>
 
@@ -397,10 +410,6 @@ export default function Home() {
       <section id="service-intro" className="relative py-28 md:py-36 border-t border-white/[0.04]">
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
           <ScrollReveal className="text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-600 tracking-widest uppercase mb-5">
-              <span className="w-4 h-px bg-gray-700" />
-              핵심 분석 기능
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
               <BrandName />는 자소서를 이렇게 읽습니다
             </h2>
@@ -555,10 +564,6 @@ export default function Home() {
 
         <div className="relative max-w-5xl mx-auto px-6 lg:px-10">
           <ScrollReveal className="text-center mb-20">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-600 tracking-widest uppercase mb-5">
-              <span className="w-4 h-px bg-gray-700" />
-              분석 파이프라인
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
               자소서가 합격 리포트로 변하는 과정
             </h2>
@@ -701,10 +706,6 @@ export default function Home() {
       <section className="py-28 md:py-36 border-t border-white/[0.04]">
         <div className="max-w-5xl mx-auto px-6 lg:px-10">
           <ScrollReveal className="text-center mb-16">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-600 tracking-widest uppercase mb-5">
-              <span className="w-4 h-px bg-gray-700" />
-              실제 사례
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
               합격하는 자소서는 구조부터 다릅니다.
             </h2>

@@ -444,7 +444,7 @@
   line-height: 1;
   letter-spacing: 0;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.105) 0%, rgba(148, 163, 184, 0.075) 46%, rgba(59, 130, 246, 0.115) 100%),
+    linear-gradient(135deg, rgba(96, 165, 250, 0.16) 0%, rgba(59, 130, 246, 0.09) 46%, rgba(59, 130, 246, 0.2) 100%),
     rgba(8, 12, 22, 0.26);
   background-size: 140% 140%;
   background-position: 0% 50%;
@@ -452,7 +452,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     inset 0 -1px 0 rgba(15, 23, 42, 0.1),
     0 10px 24px rgba(0, 0, 0, 0.18),
-    0 3px 10px rgba(59, 130, 246, 0.055);
+    0 0 26px rgba(59, 130, 246, 0.2);
   backdrop-filter: blur(18px);
   transform: translate3d(0, 0, 0);
   will-change: transform, filter;
@@ -508,7 +508,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     inset 0 -1px 0 rgba(15, 23, 42, 0.12),
     0 14px 32px rgba(0, 0, 0, 0.22),
-    0 6px 18px rgba(59, 130, 246, 0.08);
+    0 0 38px rgba(59, 130, 246, 0.3);
   transform: translate3d(0, -2px, 0);
 }
 
