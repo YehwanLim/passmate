@@ -3,11 +3,14 @@ import { readFileSync } from "node:fs";
 import { HOME_NAV_ITEMS } from "./Home";
 
 const homeSource = readFileSync(new URL("./Home.tsx", import.meta.url), "utf8");
-const cssSource = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const cssSource = readFileSync(
+  new URL("../index.css", import.meta.url),
+  "utf8"
+);
 
 describe("HOME_NAV_ITEMS", () => {
   it("shows only immediately usable top navigation items", () => {
-    expect(HOME_NAV_ITEMS.map((item) => item.label)).toEqual([
+    expect(HOME_NAV_ITEMS.map(item => item.label)).toEqual([
       "서비스 소개",
       "자소서 분석",
       "이용권 구매",
@@ -29,7 +32,9 @@ describe("HOME_NAV_ITEMS", () => {
   });
 
   it("does not expose coming soon navigation states", () => {
-    expect(HOME_NAV_ITEMS.every((item) => item.type !== "coming_soon")).toBe(true);
+    expect(HOME_NAV_ITEMS.every(item => item.type !== "coming_soon")).toBe(
+      true
+    );
   });
 
   it("uses premium motion affordances for landing navigation hover states", () => {
@@ -81,19 +86,33 @@ describe("HOME_NAV_ITEMS", () => {
   });
 
   it("keeps social proof hidden behind a flag until real testimonials replace the dummy data", () => {
-    expect(homeSource).toContain('import SocialProofSection from "@/components/SocialProofSection"');
+    expect(homeSource).toContain(
+      'import SocialProofSection from "@/components/SocialProofSection"'
+    );
     expect(homeSource).toContain("const SHOW_SOCIAL_PROOF = false;");
-    expect(homeSource).toContain("{SHOW_SOCIAL_PROOF && <SocialProofSection />}");
+    expect(homeSource).toContain(
+      "{SHOW_SOCIAL_PROOF && <SocialProofSection />}"
+    );
   });
 
-  it("keeps the social proof slot after the report preview and before the analysis pipeline", () => {
+  it("orders the narrative as pain, example, marquee, report preview, then trust and process", () => {
+    const painIndex = homeSource.indexOf("매끈하기만 한 자소서");
+    const beforeAfterIndex = homeSource.indexOf("합격하는 자소서는 구조부터");
+    const marqueeIndex = homeSource.indexOf("<CompanyMarqueeSection />");
     const reportShowcaseIndex = homeSource.indexOf("<ReportShowcase />");
     const socialProofIndex = homeSource.indexOf("<SocialProofSection />");
-    const pipelineIndex = homeSource.indexOf("자소서가 합격 리포트로 변하는 과정");
+    const founderNoteIndex = homeSource.indexOf("<FounderNoteSection />");
+    const processIndex = homeSource.indexOf("<ProcessSection />");
 
-    expect(reportShowcaseIndex).toBeGreaterThan(-1);
+    expect(painIndex).toBeGreaterThan(-1);
+    expect(beforeAfterIndex).toBeGreaterThan(painIndex);
+    expect(marqueeIndex).toBeGreaterThan(beforeAfterIndex);
+    expect(reportShowcaseIndex).toBeGreaterThan(marqueeIndex);
     expect(socialProofIndex).toBeGreaterThan(reportShowcaseIndex);
-    expect(pipelineIndex).toBeGreaterThan(socialProofIndex);
-    expect(homeSource).not.toContain('{ end: 1200, suffix: "+", label: "분석 완료" }');
+    expect(founderNoteIndex).toBeGreaterThan(socialProofIndex);
+    expect(processIndex).toBeGreaterThan(founderNoteIndex);
+    expect(homeSource).not.toContain(
+      '{ end: 1200, suffix: "+", label: "분석 완료" }'
+    );
   });
 });

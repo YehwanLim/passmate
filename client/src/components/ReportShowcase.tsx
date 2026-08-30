@@ -59,9 +59,11 @@ const DESKTOP_SCROLL_PREVIEW_QUERY =
 export function getReportPreviewSceneIndex(progress: number) {
   const clampedProgress = Math.min(1, Math.max(0, progress));
 
+  // 장면 수만큼 균등 분할한다. 마지막 장면에 여분 구간을 주면
+  // 다음 섹션으로 넘어가기까지 스크롤이 길어져 답답해진다.
   return Math.min(
     REPORT_PREVIEW_SCENES.length - 1,
-    Math.floor(clampedProgress * (REPORT_PREVIEW_SCENES.length + 1))
+    Math.floor(clampedProgress * REPORT_PREVIEW_SCENES.length)
   );
 }
 
@@ -128,6 +130,8 @@ const diagnosisPriorities = [
   "개발·디자인과의 의견 차이를 조정한 본인만의 판단 과정을 보강합니다.",
 ];
 
+// 실제 리포트처럼 원문은 이어지는 글로 보여주고,
+// 피드백이 달린 문장에만 하이라이트를 얹는다.
 const previewAnswer = [
   {
     text: "교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영했습니다.",
@@ -136,22 +140,26 @@ const previewAnswer = [
   {
     text: "직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다.",
     type: "praise",
+    mark: "02",
   },
   {
     text: "유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.",
     type: "improvement",
+    mark: "03",
   },
   {
     text: "메인 화면 이탈률을 35%에서 18%로 낮췄고, 일간 활성 사용자 수를 20% 늘렸습니다.",
-    type: "praise",
+    type: "improvement",
+    mark: "04",
   },
   {
     text: "이를 위해 신규 가입 후 3일 이내 이탈하는 고객군을 따로 분류하고, 첫 화면 진입 경로를 비교했습니다.",
-    type: "improvement",
+    type: "neutral",
   },
   {
     text: "분석 결과를 바탕으로 추천 콘텐츠의 노출 순서를 바꾸고, 개발자와 실험 기간 및 성공 기준을 합의했습니다.",
-    type: "neutral",
+    type: "praise",
+    mark: "06",
   },
 ] as const;
 
@@ -327,39 +335,51 @@ function FirstImpressionPreview() {
 function DiagnosisPreview() {
   return (
     <section className="flex flex-col py-3 lg:h-full lg:justify-between lg:overflow-hidden">
-      <h3 className="mb-1 text-xs font-medium uppercase tracking-[0.15em] text-zinc-500">
-        02. 핵심 진단
-      </h3>
-      <p className="mb-3 text-xl font-semibold tracking-tight text-white">
-        현대자동차 기준 강점과 보완점
-      </p>
+      <div>
+        <h3 className="mb-1 text-xs font-medium uppercase tracking-[0.15em] text-zinc-500">
+          02. 핵심 진단
+        </h3>
+        <p className="mb-4 text-[21px] font-semibold leading-[1.35] tracking-tight text-white md:text-[25px]">
+          강점은 이미 뚜렷합니다.{" "}
+          <span className="text-amber-200">현대자동차와 연결되는 한 장면</span>
+          이 아직 없습니다.
+        </p>
+      </div>
 
       <div className="mb-3 grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl border border-emerald-300/[0.08] bg-emerald-300/[0.025] p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-400/70">
+        <div className="rounded-xl border border-emerald-300/[0.14] bg-emerald-300/[0.035] p-3.5">
+          <p className="mb-2.5 flex items-center gap-1.5 text-[13px] font-bold text-emerald-300">
+            <Check className="h-3.5 w-3.5" />
             강점
           </p>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {strengths.map(item => (
               <p
                 key={item}
-                className="text-[12px] leading-[1.45] text-zinc-100"
+                className="grid grid-cols-[10px_1fr] gap-1.5 text-[12px] leading-[1.5] text-zinc-100"
               >
+                <span aria-hidden="true" className="text-emerald-300/60">
+                  ·
+                </span>
                 {item}
               </p>
             ))}
           </div>
         </div>
-        <div className="rounded-xl border border-amber-200/[0.08] bg-amber-200/[0.025] p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-amber-300/60">
+        <div className="rounded-xl border border-amber-200/[0.16] bg-amber-200/[0.04] p-3.5">
+          <p className="mb-2.5 flex items-center gap-1.5 text-[13px] font-bold text-amber-200">
+            <AlertTriangle className="h-3.5 w-3.5" />
             보완점
           </p>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {gaps.map(item => (
               <p
                 key={item}
-                className="text-[12px] leading-[1.45] text-zinc-300"
+                className="grid grid-cols-[10px_1fr] gap-1.5 text-[12px] leading-[1.5] text-zinc-100"
               >
+                <span aria-hidden="true" className="text-amber-200/60">
+                  ·
+                </span>
                 {item}
               </p>
             ))}
@@ -367,42 +387,44 @@ function DiagnosisPreview() {
         </div>
       </div>
 
-      <div className="mb-3 rounded-xl border border-white/[0.05] bg-white/[0.03] p-3">
-        <p className="mb-2 text-sm font-semibold text-white">우선 보완 순서</p>
+      <div className="mb-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5">
+        <p className="mb-2.5 text-sm font-semibold text-white">
+          우선 보완 순서
+        </p>
         <ol className="grid gap-2 md:grid-cols-3">
           {diagnosisPriorities.map((item, index) => (
             <li
               key={item}
-              className="flex gap-2 rounded-lg border border-white/[0.05] bg-black/20 p-2"
+              className="rounded-lg border border-white/[0.06] bg-black/20 p-2.5"
             >
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/[0.08] text-[9px] font-semibold text-zinc-300">
+              <span className="text-[18px] font-extrabold leading-none text-[#A7A8FF] opacity-70">
                 {index + 1}
               </span>
-              <p className="text-[11px] leading-[1.4] text-zinc-400">{item}</p>
+              <p className="mt-1.5 text-[11.5px] leading-[1.5] text-zinc-300">
+                {item}
+              </p>
             </li>
           ))}
         </ol>
       </div>
 
-      <div className="rounded-xl border border-white/[0.05] bg-white/[0.03] p-3">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">
-          전략적 포지셔닝
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5">
+        <div className="grid items-center gap-3 sm:grid-cols-[1fr_20px_1fr]">
           <div>
-            <span className="inline-block rounded-md border border-white/[0.05] bg-zinc-800/80 px-2 py-1 text-[10px] font-semibold text-zinc-300">
-              현재 위치
+            <span className="inline-block rounded-md border border-white/[0.05] bg-zinc-800/80 px-2 py-1 text-[10px] font-semibold text-zinc-400">
+              지금 읽히는 모습
             </span>
-            <p className="mt-1.5 text-[12px] leading-[1.45] text-zinc-400">
+            <p className="mt-1.5 text-[12px] leading-[1.5] text-zinc-400">
               데이터 툴 활용과 실행력은 검증되었으나, 모빌리티 비즈니스 이해가
               약한 주니어
             </p>
           </div>
+          <ArrowRight className="hidden h-4 w-4 text-zinc-600 sm:block" />
           <div>
-            <span className="inline-block rounded-md border border-white/[0.05] bg-zinc-800/80 px-2 py-1 text-[10px] font-semibold text-zinc-300">
-              목표 포지션
+            <span className="inline-block rounded-md border border-emerald-300/[0.2] bg-emerald-300/[0.06] px-2 py-1 text-[10px] font-semibold text-emerald-200">
+              보완하면 읽힐 모습
             </span>
-            <p className="mt-1.5 text-[12px] font-bold leading-[1.45] text-white">
+            <p className="mt-1.5 text-[12.5px] font-bold leading-[1.5] text-white">
               데이터 인사이트로 고객 경험을 높이는 모빌리티 PM
             </p>
           </div>
@@ -425,7 +447,7 @@ function LineAnalysisPreview() {
           </p>
         </div>
         <span className="hidden rounded-full border border-white/[0.06] bg-white/[0.025] px-3 py-1.5 text-[11px] font-medium text-zinc-500 sm:inline-flex">
-          문항 1 · 4개 피드백
+          문항 1 · 피드백이 필요한 문장 4곳
         </span>
       </div>
 
@@ -438,25 +460,34 @@ function LineAnalysisPreview() {
           <p className="mb-3 text-[12px] leading-[1.55] text-zinc-400">
             자신이 주도적으로 문제를 발견하고 해결한 경험에 대해 서술해 주세요.
           </p>
-          <div className="space-y-2 text-[12px] leading-[1.55] text-zinc-300">
-            {previewAnswer.map((line, index) => (
-              <p
-                key={line.text}
-                className={`rounded-md px-2.5 py-1.5 ${
-                  line.type === "praise"
-                    ? "border-l-2 border-emerald-300/60 bg-emerald-300/[0.06]"
-                    : line.type === "improvement"
-                      ? "border-l-2 border-amber-200/60 bg-amber-200/[0.055]"
-                      : "bg-white/[0.025]"
-                }`}
-              >
-                <span className="mr-2 text-[10px] font-semibold text-zinc-600">
-                  {String(index + 1).padStart(2, "0")}
+          <p className="text-[12.5px] leading-[2.05] text-zinc-400">
+            {previewAnswer.map(line =>
+              line.type === "neutral" ? (
+                <span key={line.text}>{line.text} </span>
+              ) : (
+                <span key={line.text}>
+                  <span
+                    className={`box-decoration-clone rounded-[4px] px-1 py-0.5 ${
+                      line.type === "praise"
+                        ? "bg-emerald-300/[0.13] text-emerald-100"
+                        : "bg-amber-200/[0.13] text-amber-100"
+                    }`}
+                  >
+                    <span
+                      className={`mr-1 text-[9.5px] font-bold ${
+                        line.type === "praise"
+                          ? "text-emerald-300"
+                          : "text-amber-200"
+                      }`}
+                    >
+                      {line.mark}
+                    </span>
+                    {line.text}
+                  </span>{" "}
                 </span>
-                {line.text}
-              </p>
-            ))}
-          </div>
+              )
+            )}
+          </p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:h-full lg:flex-col">
@@ -802,14 +833,14 @@ export default function ReportShowcase() {
             합격을 설계하는 인사이트 리포트
           </h2>
           <p className="text-[15px] md:text-[16px] text-gray-500 font-light leading-[1.8] max-w-2xl mx-auto">
-            강점은 더 선명하게, 빈틈은 더 꼼꼼하게. 자소서가 면접관에게 어떻게
-            읽힐지 리포트로 확인하세요.
+            실제 리포트 화면을 그대로 옮겨왔습니다. 내 자소서가 면접관에게
+            어떻게 읽힐지 미리 확인하세요.
           </p>
         </div>
 
         <div
           ref={scrollTrackRef}
-          className={isScrollDriven ? "relative h-[500vh]" : "relative"}
+          className={isScrollDriven ? "relative h-[400vh]" : "relative"}
         >
           <div
             className={

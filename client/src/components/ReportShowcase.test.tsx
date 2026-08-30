@@ -26,7 +26,7 @@ describe("ReportShowcase", () => {
 
   it("maps each scroll phase to its report scene", () => {
     expect(
-      [0, 0.199, 0.2, 0.4, 0.6, 1].map(getReportPreviewSceneIndex)
+      [0, 0.249, 0.25, 0.5, 0.75, 1].map(getReportPreviewSceneIndex)
     ).toEqual([0, 0, 1, 2, 3, 3]);
   });
 
@@ -48,7 +48,9 @@ describe("ReportShowcase", () => {
 
     const frame = screen
       .getAllByRole("img", { name: "Pre:View" })
-      .find(brand => brand.parentElement?.textContent?.includes("Report Preview"))
+      .find(brand =>
+        brand.parentElement?.textContent?.includes("Report Preview")
+      )
       ?.closest(".rounded-xl");
     const scrollTrack =
       frame?.parentElement?.parentElement?.parentElement?.parentElement;

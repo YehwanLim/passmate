@@ -3,34 +3,16 @@ import ReportShowcase from "@/components/ReportShowcase";
 import SocialProofSection from "@/components/SocialProofSection";
 import { BrandName } from "@/components/BrandName";
 import ProcessSection from "@/components/ProcessSection";
-import FounderSection from "@/components/FounderSection";
+import CompanyMarqueeSection from "@/components/CompanyMarqueeSection";
+import FounderSection, {
+  FounderNoteSection,
+} from "@/components/FounderSection";
 import SubtleBackground from "@/components/SubtleBackground";
 import HeroReportCard from "@/components/HeroReportCard";
 import Logo from "@/components/Logo";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Sparkles,
-  FileSearch,
-  Zap,
-  Shield,
-  FileText,
-  Cpu,
-  BarChart3,
-  User,
-  Rocket,
-  X,
-  Target,
-  MessageCircle,
-  Menu,
-} from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
-import {
-  motion,
-  useScroll,
-  useSpring,
-  AnimatePresence,
-} from "framer-motion";
+import { ArrowRight, CheckCircle2, Menu, X } from "lucide-react";
+import { useState, useCallback } from "react";
+import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import AuthButton from "@/components/AuthButton";
 
@@ -41,8 +23,10 @@ export const HOME_NAV_ITEMS = [
   { label: "내 지원서", type: "route", target: "/my" },
 ] as const;
 
-// 소셜 프루프(후기·지표·로고)는 실제 사용자 후기를 확보할 때까지 숨긴다.
+// 소셜 프루프(후기·지표)는 실제 사용자 후기를 확보할 때까지 숨긴다.
 // 실후기로 교체한 뒤 true로 되돌리면 기존 위치에 그대로 복귀한다.
+// 로고 마퀴는 CompanyMarqueeSection이 "분석 지원 기업" 프레임으로 상시
+// 노출 중이므로, 복원 시 SocialProofSection 쪽 마퀴와 중복을 정리할 것.
 const SHOW_SOCIAL_PROOF = false;
 
 const RESUME_READING_STEPS = [
@@ -124,52 +108,6 @@ function ScrollReveal({
   );
 }
 
-/** Character-by-character typing effect */
-function TypeWriter({
-  text,
-  delay = 0,
-}: {
-  text: string;
-  delay?: number;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [displayed, setDisplayed] = useState("");
-  const started = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true;
-          let i = 0;
-          setTimeout(() => {
-            const interval = setInterval(() => {
-              i++;
-              setDisplayed(text.slice(0, i));
-              if (i >= text.length) clearInterval(interval);
-            }, 40);
-          }, delay);
-        }
-      },
-      { threshold: 0.3 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [text, delay]);
-
-  return (
-    <span ref={ref}>
-      {displayed}
-      {displayed.length > 0 && displayed.length < text.length && (
-        <span className="animate-pulse">|</span>
-      )}
-    </span>
-  );
-}
-
-
 /* ─────────────────────────────────────────────────────────
    Main Component
    ───────────────────────────────────────────────────────── */
@@ -180,16 +118,19 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const readingStep = RESUME_READING_STEPS[activeReadingStep];
 
-  const handleNavClick = useCallback((target: string, type: string) => {
-    setIsMobileMenuOpen(false);
+  const handleNavClick = useCallback(
+    (target: string, type: string) => {
+      setIsMobileMenuOpen(false);
 
-    if (type === "section") {
-      document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
+      if (type === "section") {
+        document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
 
-    navigate(target);
-  }, [navigate]);
+      navigate(target);
+    },
+    [navigate]
+  );
 
   // Scroll progress
   const { scrollYProgress } = useScroll();
@@ -199,7 +140,10 @@ export default function Home() {
   });
   /* ─── Render ─── */
   return (
-    <div className="min-h-screen bg-[#050505] text-white" style={{ overflowX: "clip" }}>
+    <div
+      className="min-h-screen bg-[#050505] text-white"
+      style={{ overflowX: "clip" }}
+    >
       {/* ── Subtle Background (Cursor/Linear style) ── */}
       <SubtleBackground />
 
@@ -208,8 +152,7 @@ export default function Home() {
         className="fixed top-0 left-0 right-0 h-px z-[60] origin-left"
         style={{
           scaleX: smoothProgress,
-          background:
-            "linear-gradient(90deg, #3B82F6, #8B5CF6)",
+          background: "linear-gradient(90deg, #3B82F6, #8B5CF6)",
         }}
       />
 
@@ -250,7 +193,7 @@ export default function Home() {
               aria-label="모바일 메뉴 열기"
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-landing-nav"
-              onClick={() => setIsMobileMenuOpen((open) => !open)}
+              onClick={() => setIsMobileMenuOpen(open => !open)}
             >
               {isMobileMenuOpen ? (
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -290,9 +233,7 @@ export default function Home() {
           HERO  (Step 1 – Premium Centered Hero)
           ══════════════════════════════════════════════════ */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 pt-24 md:pt-28 overflow-hidden">
-
         <div className="relative z-10 max-w-4xl mx-auto">
-
           {/* H1 */}
           <motion.h1
             className="text-[2.75rem] md:text-[3.75rem] lg:text-[4.5rem] font-bold leading-[1.1] tracking-[-0.03em] mb-7"
@@ -327,7 +268,8 @@ export default function Home() {
           >
             강점은 더 선명하게, 빈틈은 더 꼼꼼하게.
             <br />
-            현직자의 시선으로 &lsquo;같이 일하고 싶은 사람&rsquo;으로 기억될 수 있도록 피드백합니다.
+            현직자의 시선으로 &lsquo;같이 일하고 싶은 사람&rsquo;으로 기억될 수
+            있도록 피드백합니다.
           </motion.p>
 
           {/* CTA */}
@@ -381,8 +323,7 @@ export default function Home() {
             }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            매끈하기만 한 자소서,{" "}
-            <br className="hidden md:inline" />
+            매끈하기만 한 자소서, <br className="hidden md:inline" />
             면접관 눈에는 다 똑같아 보입니다.
           </motion.h2>
 
@@ -397,17 +338,96 @@ export default function Home() {
             }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            글솜씨보다 중요한 건 &lsquo;직무에 대한 고민&rsquo;과
-            &lsquo;해결 능력&rsquo;입니다. 이 회사에 꼭 필요한 인재로 보일 수
-            있도록, 실무자의 기준으로 읽히는 방향을 다시 잡아야 합니다.
+            글솜씨보다 중요한 건 &lsquo;직무에 대한 고민&rsquo;과 &lsquo;해결
+            능력&rsquo;입니다. 이 회사에 꼭 필요한 인재로 보일 수 있도록,
+            실무자의 기준으로 읽히는 방향을 다시 잡아야 합니다.
+          </motion.p>
+
+          <motion.p
+            className="mt-6 text-[15px] md:text-[17px] text-gray-400 font-light leading-[1.85] max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{
+              duration: 0.9,
+              delay: 0.25,
+              ease: [0.21, 0.47, 0.32, 0.98],
+            }}
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            문장을 다듬어 주는 AI는 이미 많습니다. <BrandName />는 문장 대신,
+            지원한 회사의 채용 기준으로 자소서가 어떻게 읽히는지를 봅니다.
           </motion.p>
         </div>
       </section>
 
+      {/* ── Before & After ── */}
+      <section className="py-28 md:py-36 border-t border-white/[0.04]">
+        <div className="max-w-5xl mx-auto px-6 lg:px-10">
+          <ScrollReveal className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+              합격하는 자소서는 구조부터 다릅니다.
+            </h2>
+            <p className="text-gray-500 font-light text-[15px] max-w-xl mx-auto leading-[1.8]">
+              추상적인 표현이 데이터와 판단 과정으로 바뀌면 어떻게 읽히는지
+              보여주는 예시입니다. 리포트는 이 방향을 문장 단위로 짚어줍니다.
+            </p>
+          </ScrollReveal>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Before */}
+            <ScrollReveal>
+              <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm h-full hover:border-white/[0.1] transition-all duration-300">
+                <div className="flex items-center gap-2.5 mb-6">
+                  <div className="w-6 h-6 rounded-full bg-red-500/[0.08] flex items-center justify-center">
+                    <X className="w-3 h-3 text-red-400" />
+                  </div>
+                  <span className="text-[12px] font-medium text-red-400/80 uppercase tracking-wider">
+                    개선 전
+                  </span>
+                </div>
+                <p className="text-gray-500 text-[14px] leading-[1.9] font-light">
+                  &ldquo;프로젝트를 진행하면서 많은 것을 배웠고, 팀원들과
+                  협력하여 좋은 결과를 얻었습니다. 이러한 경험이 회사에서 도움이
+                  될 것 같습니다.&rdquo;
+                </p>
+              </div>
+            </ScrollReveal>
+
+            {/* After */}
+            <ScrollReveal delay={0.1}>
+              <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm h-full hover:border-blue-500/[0.15] transition-all duration-300">
+                <div className="flex items-center gap-2.5 mb-6">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500/[0.08] flex items-center justify-center">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  </div>
+                  <span className="text-[12px] font-medium text-emerald-400/80 uppercase tracking-wider">
+                    개선 후
+                  </span>
+                </div>
+                <p className="text-gray-400 text-[14px] leading-[1.9] font-light">
+                  &ldquo;신규 사용자의 온보딩 이탈률이 35%까지 높아진 원인을
+                  찾기 위해 클릭 로그 3,000건을 세그먼트별로 분석했습니다. 핵심
+                  기능을 처음 접하는 시점에서 이탈이 집중된다는 점을 확인했고,
+                  개발팀과 함께 첫 화면 안내 문구와 추천 흐름을 A/B
+                  테스트했습니다. 그 결과 이탈률을 18%로 낮추고, 일간 활성
+                  사용자 수를 20% 늘렸습니다.&rdquo;
+                </p>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Company Marquee ── */}
+      <CompanyMarqueeSection />
+
       {/* ══════════════════════════════════════════════════
           STEP 2-B: How PreView Reads
           ══════════════════════════════════════════════════ */}
-      <section id="service-intro" className="relative py-28 md:py-36 border-t border-white/[0.04]">
+      <section
+        id="service-intro"
+        className="relative py-28 md:py-36 border-t border-white/[0.04]"
+      >
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
           <ScrollReveal className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
@@ -428,7 +448,9 @@ export default function Home() {
                     key={step.label}
                     type="button"
                     className={`group w-full border-b border-white/[0.06] py-5 text-left transition-colors ${
-                      active ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+                      active
+                        ? "text-white"
+                        : "text-zinc-500 hover:text-zinc-300"
                     }`}
                     onClick={() => setActiveReadingStep(index)}
                   >
@@ -470,12 +492,16 @@ export default function Home() {
                     >
                       <span
                         className={`block h-1 transition-colors ${
-                          active ? "bg-emerald-300/80" : "bg-white/[0.08] group-hover:bg-white/[0.18]"
+                          active
+                            ? "bg-emerald-300/80"
+                            : "bg-white/[0.08] group-hover:bg-white/[0.18]"
                         }`}
                       />
                       <span
                         className={`mt-3 block text-[11px] font-medium tracking-[0.08em] ${
-                          active ? "text-white" : "text-zinc-600 group-hover:text-zinc-400"
+                          active
+                            ? "text-white"
+                            : "text-zinc-600 group-hover:text-zinc-400"
                         }`}
                       >
                         {step.label}
@@ -528,7 +554,7 @@ export default function Home() {
                       "경험보다 연결 맥락",
                       "첨삭보다 다음 질문",
                       "전체 수정보다 우선순위",
-                    ].map((item) => (
+                    ].map(item => (
                       <div
                         key={item}
                         className="border-t border-white/[0.06] pt-3 text-[13px] text-zinc-500"
@@ -551,213 +577,11 @@ export default function Home() {
 
       {SHOW_SOCIAL_PROOF && <SocialProofSection />}
 
-      {/* ── System Diagram ── */}
-      <section className="relative py-28 md:py-36 overflow-hidden">
-        <div className="absolute inset-0 dot-grid-dark" />
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[400px]"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(59,130,246,0.04) 0%, transparent 60%)",
-          }}
-        />
-
-        <div className="relative max-w-5xl mx-auto px-6 lg:px-10">
-          <ScrollReveal className="text-center mb-20">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              자소서가 합격 리포트로 변하는 과정
-            </h2>
-            <p className="text-gray-500 font-light text-[15px] leading-[1.8] max-w-lg mx-auto">
-              지원 직무와 회사 맥락을 기준으로 자소서의 강점과 빈틈을
-              정리합니다.
-            </p>
-          </ScrollReveal>
-
-          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-0">
-            {/* Input */}
-            <ScrollReveal delay={0} className="flex-1 w-full">
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-7 text-center backdrop-blur-sm hover:border-white/[0.1] transition-all duration-300">
-                <div className="w-12 h-12 bg-blue-500/[0.08] rounded-xl flex items-center justify-center mx-auto mb-5">
-                  <FileText className="w-6 h-6 text-blue-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">
-                  자소서 입력
-                </h3>
-                <p className="text-[13px] text-gray-500 font-light leading-[1.7]">
-                  자소서 본문, 지원 직무,
-                  <br />
-                  기업 정보를 입력합니다
-                </p>
-                <div className="mt-5 bg-white/[0.03] rounded-lg p-3 text-left">
-                  <div className="h-1.5 bg-white/[0.06] rounded-full w-3/4 mb-2" />
-                  <div className="h-1.5 bg-white/[0.06] rounded-full w-1/2 mb-2" />
-                  <div className="h-1.5 bg-white/[0.06] rounded-full w-2/3" />
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Connector */}
-            <div className="hidden md:flex items-center justify-center w-20 lg:w-28 flex-shrink-0">
-              <div className="relative w-full h-[1px] bg-white/[0.06] overflow-hidden">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="flow-dot absolute w-1.5 h-1.5 rounded-full bg-blue-500 top-1/2 -translate-y-1/2"
-                    style={{
-                      animationDelay: `${i * 0.7}s`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="md:hidden">
-              <ArrowRight className="w-5 h-5 text-gray-600 rotate-90" />
-            </div>
-
-            {/* Process */}
-            <ScrollReveal delay={0.15} className="flex-1 w-full">
-              <div className="relative bg-white/[0.03] border border-blue-500/[0.12] rounded-2xl p-7 text-center backdrop-blur-sm hover:border-blue-500/[0.2] transition-all duration-300">
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-blue-500/[0.04] to-purple-500/[0.04] blur-sm pointer-events-none" />
-                <div className="relative">
-                  <div className="w-12 h-12 bg-blue-500/[0.1] rounded-xl flex items-center justify-center mx-auto mb-5">
-                    <Cpu className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    맥락 정리
-                  </h3>
-                  <p className="text-[13px] text-gray-500 font-light leading-[1.7]">
-                    지원 직무와 회사 기준을
-                    <br />
-                    함께 대조합니다
-                  </p>
-                  <div className="mt-5 flex items-center justify-center gap-1.5">
-                    {[0, 1, 2, 3].map((i) => (
-                      <motion.div
-                        key={i}
-                        className="w-1 rounded-full bg-blue-500/40"
-                        animate={{ height: [20, 8, 20] }}
-                        transition={{
-                          duration: 1.2,
-                          repeat: Infinity,
-                          delay: i * 0.2,
-                          ease: "easeInOut",
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Connector */}
-            <div className="hidden md:flex items-center justify-center w-20 lg:w-28 flex-shrink-0">
-              <div className="relative w-full h-[1px] bg-white/[0.06] overflow-hidden">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="flow-dot absolute w-1.5 h-1.5 rounded-full bg-blue-500 top-1/2 -translate-y-1/2"
-                    style={{
-                      animationDelay: `${i * 0.7 + 1}s`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="md:hidden">
-              <ArrowRight className="w-5 h-5 text-gray-600 rotate-90" />
-            </div>
-
-            {/* Output */}
-            <ScrollReveal delay={0.3} className="flex-1 w-full">
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-7 text-center backdrop-blur-sm hover:border-white/[0.1] transition-all duration-300">
-                <div className="w-12 h-12 bg-emerald-500/[0.08] rounded-xl flex items-center justify-center mx-auto mb-5">
-                  <BarChart3 className="w-6 h-6 text-emerald-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">
-                  리포트 생성
-                </h3>
-                <p className="text-[13px] text-gray-500 font-light leading-[1.7]">
-                  첫인상, 강점/약점,
-                  <br />
-                  문장 피드백과 예상 질문 포함
-                </p>
-                <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-                  {["첫인상", "강점/약점", "예상 질문"].map(
-                    (chip) => (
-                      <span
-                        key={chip}
-                        className="px-2.5 py-1 bg-emerald-500/[0.08] text-emerald-400 text-[10px] font-medium rounded-full border border-emerald-500/[0.12]"
-                      >
-                        {chip}
-                      </span>
-                    )
-                  )}
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
+      {/* ── Founder Note ── */}
+      <FounderNoteSection />
 
       {/* ── Process Section ── */}
       <ProcessSection />
-
-      {/* ── Before & After ── */}
-      <section className="py-28 md:py-36 border-t border-white/[0.04]">
-        <div className="max-w-5xl mx-auto px-6 lg:px-10">
-          <ScrollReveal className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              합격하는 자소서는 구조부터 다릅니다.
-            </h2>
-            <p className="text-gray-500 font-light text-[15px] max-w-xl mx-auto leading-[1.8]">
-              추상적인 표현을 구체적인 데이터와 의사결정 과정으로
-              바꿔낸 실제 사례
-            </p>
-          </ScrollReveal>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Before */}
-            <ScrollReveal>
-              <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm h-full hover:border-white/[0.1] transition-all duration-300">
-                <div className="flex items-center gap-2.5 mb-6">
-                  <div className="w-6 h-6 rounded-full bg-red-500/[0.08] flex items-center justify-center">
-                    <X className="w-3 h-3 text-red-400" />
-                  </div>
-                  <span className="text-[12px] font-medium text-red-400/80 uppercase tracking-wider">
-                    개선 전
-                  </span>
-                </div>
-                <p className="text-gray-500 text-[14px] leading-[1.9] font-light">
-                  &ldquo;프로젝트를 진행하면서 많은 것을 배웠고,
-                  팀원들과 협력하여 좋은 결과를 얻었습니다. 이러한
-                  경험이 회사에서 도움이 될 것 같습니다.&rdquo;
-                </p>
-              </div>
-            </ScrollReveal>
-
-            {/* After */}
-            <ScrollReveal delay={0.1}>
-              <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm h-full hover:border-blue-500/[0.15] transition-all duration-300">
-                <div className="flex items-center gap-2.5 mb-6">
-                  <div className="w-6 h-6 rounded-full bg-emerald-500/[0.08] flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                  </div>
-                  <span className="text-[12px] font-medium text-emerald-400/80 uppercase tracking-wider">
-                    개선 후
-                  </span>
-                </div>
-                <p className="text-gray-400 text-[14px] leading-[1.9] font-light">
-                  &ldquo;신규 사용자의 온보딩 이탈률이 35%까지 높아진 원인을 찾기 위해
-                  클릭 로그 3,000건을 세그먼트별로 분석했습니다. 핵심 기능을
-                  처음 접하는 시점에서 이탈이 집중된다는 점을 확인했고, 개발팀과
-                  함께 첫 화면 안내 문구와 추천 흐름을 A/B 테스트했습니다. 그 결과
-                  이탈률을 18%로 낮추고, 일간 활성 사용자 수를 20% 늘렸습니다.&rdquo;
-                </p>
-              </div>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
 
       {/* ── Founder + CTA + Footer ── */}
       <FounderSection />

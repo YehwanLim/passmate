@@ -184,23 +184,6 @@
 
 /* ── Landing Page Animations ── */
 
-@keyframes flowRight {
-  0% {
-    left: -6px;
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    left: 100%;
-    opacity: 0;
-  }
-}
-
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
@@ -254,21 +237,12 @@
   }
 }
 
-.flow-dot {
-  animation: flowRight 2.5s ease-in-out infinite;
-}
-
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 
 .animate-float-delayed {
   animation: float-delayed 8s ease-in-out infinite;
-}
-
-.dot-grid-dark {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 32px 32px;
 }
 
 .gradient-border-hover {
