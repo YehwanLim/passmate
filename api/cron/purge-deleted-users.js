@@ -16,14 +16,13 @@ function authorizedCronRequest(req, cronSecret) {
   return timingSafeEqual(Buffer.from(authorization), Buffer.from(expected));
 }
 
+// 진단에 길이를 남기면 로그 접근자가 CRON_SECRET 의 키스페이스를 알게 되므로
+// 존재 여부(boolean)만 기록한다.
 function rejectedCronAuthorizationDiagnostic(req, cronSecret) {
   const authorization = req.headers?.authorization ?? req.headers?.Authorization;
-  const expected = cronSecret ? `Bearer ${cronSecret}` : "";
   return {
-    authorizationHeaderLength: typeof authorization === "string" ? authorization.length : 0,
     authorizationHeaderPresent: typeof authorization === "string",
     cronSecretConfigured: Boolean(cronSecret),
-    expectedAuthorizationHeaderLength: expected.length,
   };
 }
 

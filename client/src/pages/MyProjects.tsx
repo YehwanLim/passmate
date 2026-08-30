@@ -11,7 +11,7 @@ import SubtleBackground from "@/components/SubtleBackground";
 import Logo from "@/components/Logo";
 import AuthButton from "@/components/AuthButton";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { getAuthorizationHeader } from "@/lib/apiAuth";
+import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 
 // =============================================================================
 // Page Component
@@ -30,12 +30,16 @@ export default function MyProjects() {
       try {
         setLoadError(null);
         const response = await fetch("/api/projects", { headers: await getAuthorizationHeader() });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) throw new Error("지원서를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
         const data: ProjectSummary[] = await response.json();
         setProjects(data);
       } catch (e) {
         setProjects([]);
-        setLoadError(e instanceof Error ? e.message : "지원서를 불러오지 못했습니다.");
+        if (e instanceof AuthenticationRequiredError) {
+          setLoadError("로그인이 만료되었어요. 다시 로그인해 주세요.");
+        } else {
+          setLoadError(e instanceof Error ? e.message : "지원서를 불러오지 못했습니다.");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -58,10 +62,14 @@ export default function MyProjects() {
         method: "DELETE",
         headers: await getAuthorizationHeader(),
       });
-      if (!response.ok) throw new Error("Delete failed");
+      if (!response.ok) throw new Error("프로젝트를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "프로젝트를 삭제하지 못했습니다.");
+      if (e instanceof AuthenticationRequiredError) {
+        setLoadError("로그인이 만료되었어요. 다시 로그인해 주세요.");
+      } else {
+        setLoadError(e instanceof Error ? e.message : "프로젝트를 삭제하지 못했습니다.");
+      }
     }
   };
 

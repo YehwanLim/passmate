@@ -39,6 +39,8 @@ describe("Entitlements page", () => {
     // 체크아웃은 새 탭으로 연다 — 현재 페이지를 결제 도메인으로 넘기지 않는다
     expect(pageSource).toContain('window.open(intent.checkoutUrl, "_blank", "noopener,noreferrer")');
     expect(pageSource).not.toContain("window.location.assign");
-    expect(pageSource).toContain("반영까지 잠시 걸릴 수 있어요");
+    expect(pageSource).toContain("결제를 완료하면 이용권이 곧 반영돼요");
+    // 팝업 차단 시 사용자가 직접 여는 폴백 링크가 있어야 한다.
+    expect(pageSource).toContain("결제 창이 열리지 않았다면");
   });
 });

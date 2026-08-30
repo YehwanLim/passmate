@@ -53,6 +53,11 @@ export default function CompanyMarqueeSection() {
           ))}
         </ul>
       </div>
+
+      <p className="mt-4 px-6 text-center text-[11px] text-zinc-500">
+        각 로고는 해당 기업의 상표이며, Pre:View와의 제휴·보증 관계를 의미하지
+        않습니다.
+      </p>
     </section>
   );
 }

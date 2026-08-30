@@ -32,7 +32,8 @@ describe("admin catch-all router", () => {
       seen.authorization = req.headers?.authorization ?? null;
       return res.status(200).json({ ok: true });
     });
-    const handler = createAdminRouter({ handlers: { users } });
+    const requireAdmin = vi.fn(async () => undefined);
+    const handler = createAdminRouter({ handlers: { users }, requireAdmin });
     const res = response();
 
     await handler(
@@ -43,12 +44,16 @@ describe("admin catch-all router", () => {
       res,
     );
 
+    expect(requireAdmin).toHaveBeenCalled();
     expect(seen.authorization).toBe("Bearer real-token");
   });
 
   it("dispatches the users detail route while preserving the verified request", async () => {
     const usersDetail = vi.fn(async (req, res) => res.status(200).json({ id: req.query.id }));
-    const handler = createAdminRouter({ handlers: { "user-detail": usersDetail } });
+    const handler = createAdminRouter({
+      handlers: { "user-detail": usersDetail },
+      requireAdmin: async () => undefined,
+    });
     const res = response();
 
     await handler({ method: "GET", query: { route: ["users", "user-1"] } }, res);
@@ -59,7 +64,10 @@ describe("admin catch-all router", () => {
 
   it("dispatches a reconciliation action through the admin-only catch-all route", async () => {
     const reconcile = vi.fn(async (req, res) => res.status(200).json({ id: req.query.id }));
-    const handler = createAdminRouter({ handlers: { "analysis-reconciliation": reconcile } });
+    const handler = createAdminRouter({
+      handlers: { "analysis-reconciliation": reconcile },
+      requireAdmin: async () => undefined,
+    });
     const res = response();
 
     await handler({ method: "POST", query: { route: ["analysis-reconciliation", "request-1"] } }, res);
@@ -113,7 +121,10 @@ describe("admin catch-all router", () => {
     const failing = vi.fn(async () => {
       throw Object.assign(new Error("resume text must never leak"), { statusCode: 500 });
     });
-    const handler = createAdminRouter({ handlers: { users: failing } });
+    const handler = createAdminRouter({
+      handlers: { users: failing },
+      requireAdmin: async () => undefined,
+    });
     const res = response();
 
     await handler({ headers: {}, method: "GET", query: { route: ["users"] } }, res);

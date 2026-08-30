@@ -83,7 +83,15 @@ function normalizeRequest(body) {
   if (body.jobKeyword !== undefined && typeof body.jobKeyword !== "string") {
     throw new ApiError("INVALID_REQUEST", 400);
   }
-  if (body.questions.length === 0 || body.questions.length > 20) {
+  // 클라이언트 MAX_QUESTIONS(5)와 동일한 상한. 문항 질문·기업·직무 텍스트도
+  // 프롬프트에 그대로 들어가므로 길이를 제한해 비용 부풀리기를 막는다.
+  if (body.questions.length === 0 || body.questions.length > 5) {
+    throw new ApiError("INVALID_REQUEST", 400);
+  }
+  if (body.company !== undefined && body.company.length > 100) {
+    throw new ApiError("INVALID_REQUEST", 400);
+  }
+  if (body.jobKeyword !== undefined && body.jobKeyword.length > 100) {
     throw new ApiError("INVALID_REQUEST", 400);
   }
 
@@ -92,6 +100,9 @@ function normalizeRequest(body) {
       throw new ApiError("INVALID_REQUEST", 400);
     }
     if (!Object.keys(question).every((key) => key === "question" || key === "answer")) {
+      throw new ApiError("INVALID_REQUEST", 400);
+    }
+    if (question.question.length > 300) {
       throw new ApiError("INVALID_REQUEST", 400);
     }
     return { question: sanitizeInput(question.question), answer: sanitizeInput(question.answer) };

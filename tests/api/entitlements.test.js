@@ -1,24 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-  authenticatedUser: { id: "11111111-1111-4111-8111-111111111111" },
-  getEntitlementSummary: vi.fn(),
-  grobleWebhookHandler: vi.fn(),
-  prisma: {
-    $transaction: vi.fn(),
-    entitlementSetting: { findUnique: vi.fn() },
-    purchaseIntent: { create: vi.fn() },
-  },
-  requireAuthenticatedUser: vi.fn(),
-  transaction: {},
-}));
+const mocks = vi.hoisted(() => {
+  class AuthorizationError extends Error {
+    constructor(code, statusCode, message) {
+      super(message);
+      this.name = "AuthorizationError";
+      this.code = code;
+      this.statusCode = statusCode;
+    }
+  }
+
+  return {
+    AuthorizationError,
+    authenticatedUser: { id: "11111111-1111-4111-8111-111111111111" },
+    getEntitlementSummary: vi.fn(),
+    grobleWebhookHandler: vi.fn(),
+    prisma: {
+      $transaction: vi.fn(),
+      entitlementSetting: { findUnique: vi.fn() },
+      purchaseIntent: { create: vi.fn() },
+    },
+    requireActiveApplicationUser: vi.fn(),
+    transaction: {},
+  };
+});
 
 vi.mock("../../lib/analysis-entitlements.js", () => ({
   getEntitlementSummary: mocks.getEntitlementSummary,
 }));
 
 vi.mock("../../lib/auth.js", () => ({
-  requireAuthenticatedUser: mocks.requireAuthenticatedUser,
+  AuthorizationError: mocks.AuthorizationError,
+  requireActiveApplicationUser: mocks.requireActiveApplicationUser,
 }));
 
 vi.mock("../../lib/groble-webhook-handler.js", () => ({
@@ -67,7 +80,10 @@ async function invokeEntitlements({
 describe("entitlement APIs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireAuthenticatedUser.mockResolvedValue(mocks.authenticatedUser);
+    mocks.requireActiveApplicationUser.mockResolvedValue({
+      authenticatedUser: mocks.authenticatedUser,
+      applicationUser: { id: mocks.authenticatedUser.id, deletionRequestedAt: null, role: "user" },
+    });
     mocks.prisma.$transaction.mockImplementation((callback) => callback(mocks.transaction));
     mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
       groblePaymentUrl: CHECKOUT_URL,
@@ -123,11 +139,32 @@ describe("entitlement APIs", () => {
   });
 
   it("rejects requests without a valid token", async () => {
-    mocks.requireAuthenticatedUser.mockResolvedValue(null);
+    mocks.requireActiveApplicationUser.mockRejectedValue(
+      new mocks.AuthorizationError("AUTHENTICATION_REQUIRED", 401, "Unauthorized"),
+    );
 
     const response = await invokeEntitlements({ authorization: "Bearer invalid-token" });
 
     expect(response.statusCode).toBe(401);
+    expect(response.body).toEqual({ error: "AUTHENTICATION_REQUIRED" });
+  });
+
+  it("rejects deletion-pending accounts from every entitlement action", async () => {
+    mocks.requireActiveApplicationUser.mockRejectedValue(
+      new mocks.AuthorizationError("ACCOUNT_DELETION_PENDING", 403, "Account unavailable"),
+    );
+
+    const summaryResponse = await invokeEntitlements();
+    expect(summaryResponse.statusCode).toBe(403);
+    expect(summaryResponse.body).toEqual({ error: "ACCOUNT_DELETION_PENDING" });
+
+    const purchaseResponse = await invokeEntitlements({
+      method: "POST",
+      path: "/api/entitlements/purchase-intents",
+    });
+    expect(purchaseResponse.statusCode).toBe(403);
+    expect(purchaseResponse.body).toEqual({ error: "ACCOUNT_DELETION_PENDING" });
+    expect(mocks.prisma.purchaseIntent.create).not.toHaveBeenCalled();
   });
 
   it("refuses purchase intents while premium sales are disabled", async () => {
@@ -202,7 +239,7 @@ describe("entitlement APIs", () => {
 
     expect(response.statusCode).toBe(200);
     expect(mocks.grobleWebhookHandler).toHaveBeenCalled();
-    expect(mocks.requireAuthenticatedUser).not.toHaveBeenCalled();
+    expect(mocks.requireActiveApplicationUser).not.toHaveBeenCalled();
   });
 
   it("returns the documented JSON 405 for unsupported entitlement subpaths", async () => {

@@ -195,7 +195,7 @@ export default function Privacy() {
           </h1>
           <div className="mt-6 space-y-3 text-[15px] leading-7 text-gray-300">
             <p>
-              PassMate(이하 "회사")는 「개인정보 보호법」 등 관련 법령을
+              Pre:View(이하 "회사")는 「개인정보 보호법」 등 관련 법령을
               준수하며, 이용자의 개인정보를 안전하게 보호하기 위해 최선을
               다합니다.
             </p>

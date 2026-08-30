@@ -31,13 +31,19 @@ class ErrorBoundary extends Component<Props, State> {
               className="text-destructive mb-6 flex-shrink-0"
             />
 
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
-
-            <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
-              <pre className="text-sm text-muted-foreground whitespace-break-spaces">
-                {this.state.error?.stack}
-              </pre>
-            </div>
+            <h2 className="text-xl mb-3 font-semibold">
+              일시적인 오류가 발생했어요
+            </h2>
+            <p className="mb-6 text-center text-sm text-muted-foreground leading-relaxed">
+              페이지를 새로고침하면 대부분 해결돼요. 문제가 계속되면{" "}
+              <a
+                href="mailto:hansitoring@gmail.com"
+                className="underline underline-offset-4"
+              >
+                hansitoring@gmail.com
+              </a>
+              으로 알려주세요.
+            </p>
 
             <button
               onClick={() => window.location.reload()}
@@ -48,7 +54,7 @@ class ErrorBoundary extends Component<Props, State> {
               )}
             >
               <RotateCcw size={16} />
-              Reload Page
+              새로고침
             </button>
           </div>
         </div>

@@ -84,6 +84,10 @@ export function createAdminRouter({
     const requestId = requestIdFor(req);
 
     try {
+      // 개별 핸들러도 각자 requireAdministrator 를 호출하지만, 라우터 차원에서
+      // 먼저 강제해 내부 체크를 빠뜨린 핸들러가 추가되어도 무인증 노출이 없게 한다.
+      await requireAdmin(req);
+
       const target = targetFor(routeSegments(req), handlers);
       if (target) {
         // IncomingMessage 를 spread 하면 prototype 접근자인 `headers` 가 사라져
@@ -92,7 +96,6 @@ export function createAdminRouter({
         return await target.handler(req, res);
       }
 
-      await requireAdmin(req);
       return sendRequestError(res, 404, requestId);
     } catch (error) {
       return handleRequestError(res, error, requestId, "api/admin");

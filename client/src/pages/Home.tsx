@@ -457,7 +457,7 @@ export default function Home() {
                     <div className="grid grid-cols-[42px_1fr] gap-4">
                       <span
                         className={`text-[12px] font-semibold tracking-[0.18em] ${
-                          active ? "text-emerald-300/80" : "text-zinc-700"
+                          active ? "text-emerald-300/80" : "text-zinc-500"
                         }`}
                       >
                         {step.label}

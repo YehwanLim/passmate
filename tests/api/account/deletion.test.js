@@ -119,13 +119,13 @@ describe("deleted account purge cron", () => {
       expect(warn).toHaveBeenCalledWith(
         "[api/cron/purge] authorization rejected",
         {
-          authorizationHeaderLength: 0,
           authorizationHeaderPresent: false,
           cronSecretConfigured: true,
-          expectedAuthorizationHeaderLength: "Bearer cron-secret".length,
         },
       );
+      // 시크릿 값은 물론 길이조차 진단에 남기지 않는다.
       expect(JSON.stringify(warn.mock.calls)).not.toContain("cron-secret");
+      expect(JSON.stringify(warn.mock.calls)).not.toContain("Length");
     } finally {
       warn.mockRestore();
     }

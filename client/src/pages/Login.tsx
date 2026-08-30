@@ -181,7 +181,7 @@ export default function Login() {
           </div>
 
           {/* 하단 안내 */}
-          <p className="text-center text-[12px] text-gray-600 mt-5 leading-relaxed">
+          <p className="text-center text-[12px] text-gray-500 mt-5 leading-relaxed">
             로그인 시{" "}
             <Link
               href="/terms"

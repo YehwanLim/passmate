@@ -62,6 +62,8 @@ export default function Entitlements() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseStarted, setPurchaseStarted] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  // 팝업 차단 시 사용자가 직접 클릭해 열 수 있도록 체크아웃 URL을 보관한다.
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   const getAccessToken = useCallback(async () => {
     const {
@@ -109,7 +111,10 @@ export default function Entitlements() {
 
       const intent = await createPurchaseIntent(accessToken);
       // 결제는 Groble 체크아웃 새 탭에서 진행된다. ref 파라미터가 구매 의도를 연결한다.
+      // 클릭 이후 await를 거치면 브라우저가 사용자 제스처로 보지 않아 팝업을 차단할 수 있어,
+      // open 실패 시 사용자가 직접 여는 링크를 함께 제공한다.
       window.open(intent.checkoutUrl, "_blank", "noopener,noreferrer");
+      setCheckoutUrl(intent.checkoutUrl);
       setPurchaseStarted(true);
     } catch {
       setPurchaseError("구매를 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -286,6 +291,12 @@ export default function Entitlements() {
 
                   {summary.premiumEnabled && summary.groblePaymentUrl ? (
                     <div className="shrink-0 text-right">
+                      <p className="mb-1.5 text-sm font-semibold text-white">
+                        9,900원
+                        <span className="ml-1 text-xs font-medium text-zinc-500">
+                          / 분석 3회
+                        </span>
+                      </p>
                       <button
                         type="button"
                         onClick={() => void handlePurchase()}
@@ -294,6 +305,17 @@ export default function Entitlements() {
                       >
                         {isPurchasing ? "여는 중..." : "이용권 구매하기"}
                       </button>
+                      <p className="mt-1.5 text-[11px] text-zinc-500">
+                        환불 기준은{" "}
+                        <button
+                          type="button"
+                          onClick={() => navigate("/terms")}
+                          className="underline underline-offset-2 hover:text-zinc-300"
+                        >
+                          이용약관
+                        </button>
+                        을 확인해 주세요.
+                      </p>
                       {purchaseError && (
                         <p className="mt-2 text-xs text-red-200">{purchaseError}</p>
                       )}
@@ -308,7 +330,20 @@ export default function Entitlements() {
                 {purchaseStarted && (
                   <div className="flex items-center justify-between gap-4 border-t border-white/5 py-3">
                     <p className="text-xs text-zinc-500">
-                      새 탭에서 결제를 완료하면 이용권이 곧 반영돼요. 반영까지 잠시 걸릴 수 있어요.
+                      결제 창이 열리지 않았다면{" "}
+                      {checkoutUrl ? (
+                        <a
+                          href={checkoutUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-white underline underline-offset-4"
+                        >
+                          여기를 눌러 결제 페이지를 열어 주세요
+                        </a>
+                      ) : (
+                        "잠시 후 다시 시도해 주세요"
+                      )}
+                      . 결제를 완료하면 이용권이 곧 반영돼요.
                     </p>
                     <button
                       type="button"

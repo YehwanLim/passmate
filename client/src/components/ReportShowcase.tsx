@@ -235,7 +235,7 @@ function FirstImpressionPreview() {
         <span>
           <BrandName /> Report
         </span>
-        <span>First Read · 현대자동차</span>
+        <span>First Read · 현대자동차 (예시)</span>
       </div>
 
       <div className="py-2 text-center lg:py-3">
@@ -454,7 +454,7 @@ function LineAnalysisPreview() {
       <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
         <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
           <div className="mb-3 flex items-center justify-between border-b border-white/[0.06] pb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">
-            <span>현대자동차 · 김민지</span>
+            <span>현대자동차 · 김민지 (예시)</span>
             <span>자소서 문항 1</span>
           </div>
           <p className="mb-3 text-[12px] leading-[1.55] text-zinc-400">
@@ -703,7 +703,7 @@ function ReportPreviewFrame({
                 <BrandName /> Report Preview
               </p>
               <p className="text-[15px] text-zinc-200 font-medium">
-                현대자동차 · 서비스 기획
+                현대자동차 · 서비스 기획 <span className="text-[12px] text-zinc-500">(예시 리포트)</span>
               </p>
             </div>
             <div className="flex flex-wrap gap-2 xl:hidden">

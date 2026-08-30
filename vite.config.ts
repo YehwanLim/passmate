@@ -39,6 +39,13 @@ function apiRoute(pathname: string) {
   const analysis = pathname.match(/^\/api\/analysis\/([^/]+)$/);
   if (analysis) return { file: "api/analysis/[id].js", query: { id: analysis[1] } };
 
+  const analysisRequest = pathname.match(/^\/api\/analysis-requests\/([^/]+)$/);
+  if (analysisRequest)
+    return { file: "api/analysis-requests/[id].js", query: { id: analysisRequest[1] } };
+
+  if (pathname === "/api/cron/purge-deleted-users")
+    return { file: "api/cron/purge-deleted-users.js", query: {} };
+
   return null;
 }
 

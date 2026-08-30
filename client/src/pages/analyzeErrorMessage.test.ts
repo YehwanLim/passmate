@@ -44,9 +44,10 @@ describe("getAnalyzeErrorMessage", () => {
     expect(analyzeSource).toContain('trackAnalysisFailed("cover_letter", "analysis_concurrency_limited")');
   });
 
-  it("explains the beta free-analysis limit without treating it as a server failure", () => {
-    expect(getAnalyzeErrorMessage({ error: "ANALYSIS_CREDITS_EXHAUSTED" }))
-      .toContain("무료 분석");
+  it("points exhausted users to the entitlements page instead of a beta dead end", () => {
+    const message = getAnalyzeErrorMessage({ error: "ANALYSIS_CREDITS_EXHAUSTED" });
+    expect(message).toContain("이용권");
+    expect(message).not.toContain("베타");
   });
 
   it("uses the shared auth profile button instead of a hard-coded login button in the header", () => {

@@ -77,7 +77,7 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
   if (error === "ANALYSIS_DISABLED")
     return "분석 기능이 일시적으로 중단되었습니다. 잠시 후 다시 시도해 주세요.";
   if (error === "ANALYSIS_CREDITS_EXHAUSTED") {
-    return "이 계정의 무료 분석 1회를 모두 사용했어요. 베타 기간에는 추가 분석을 제공하지 않습니다.";
+    return "보유한 분석 이용권을 모두 사용했어요. 이용권 페이지에서 남은 횟수와 추가 이용권을 확인할 수 있어요.";
   }
   if (error === "ANALYSIS_CONCURRENCY_LIMITED") {
     return "진행 중인 분석이 끝난 뒤 다시 시도해 주세요.";
@@ -87,6 +87,15 @@ export function getAnalyzeErrorMessage(errorData: unknown): string {
     error === "ANALYSIS_IN_PROGRESS"
   ) {
     return "분석 결과를 안전하게 저장하고 있어요. 잠시 후 같은 내용으로 다시 시도해 주세요.";
+  }
+  if (
+    error === "ANALYSIS_RETRY_WITH_NEW_KEY" ||
+    error === "INVALID_IDEMPOTENCY_KEY"
+  ) {
+    return "이전 요청 정보가 만료되었어요. 분석 시작을 한 번 더 눌러 주세요.";
+  }
+  if (error === "IDEMPOTENCY_KEY_REUSED") {
+    return "같은 요청이 이미 접수되어 있어요. 내용을 수정했다면 잠시 후 다시 시도해 주세요.";
   }
   if (error === "AUTHENTICATION_REQUIRED")
     return "로그인 후 분석을 시작할 수 있어요.";
@@ -319,6 +328,7 @@ function CompanyCombobox({
           value={value}
           onChange={e => onChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
+          maxLength={100}
           placeholder="회사명을 검색하거나 직접 입력하세요"
           className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
         />
@@ -444,6 +454,7 @@ function JobRoleSelector({
             autoFocus
             value={customValue}
             onChange={e => onCustomChange(e.target.value)}
+            maxLength={100}
             placeholder="직접 입력"
             className="w-32 sm:w-40 px-4 py-2 rounded-full text-sm font-medium border border-blue-400/40 bg-gradient-to-r from-blue-500/10 to-cyan-400/10 text-white placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
           />
@@ -528,6 +539,7 @@ function QuestionCard({
         <Input
           value={item.question}
           onChange={e => onUpdate(item.id, "question", e.target.value)}
+          maxLength={300}
           placeholder="예) 지원 동기를 작성해 주세요."
           className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 px-4 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
         />
@@ -573,6 +585,8 @@ export default function Analyze() {
   const [errorModal, setErrorModal] = useState<{
     title: string;
     message: string;
+    actionLabel?: string;
+    actionHref?: string;
   } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     message: string;
@@ -792,6 +806,16 @@ export default function Analyze() {
           setErrorModal({
             title: "내용 확인 필요",
             message: UI_LABELS.CONTEXT_IRRELEVANT,
+          });
+          return;
+        }
+        if (errorData?.error === "ANALYSIS_CREDITS_EXHAUSTED") {
+          trackAnalysisFailed("cover_letter", "credits_exhausted");
+          setErrorModal({
+            title: "이용권 소진",
+            message: getAnalyzeErrorMessage(errorData),
+            actionLabel: "이용권 확인하기",
+            actionHref: "/entitlements",
           });
           return;
         }
@@ -1369,6 +1393,18 @@ export default function Analyze() {
               <p className="text-sm text-zinc-400 leading-relaxed mb-6">
                 {errorModal.message}
               </p>
+              {errorModal.actionHref && errorModal.actionLabel && (
+                <Button
+                  onClick={() => {
+                    const href = errorModal.actionHref;
+                    setErrorModal(null);
+                    if (href) navigate(href);
+                  }}
+                  className="w-full mb-2 bg-white hover:bg-zinc-200 text-black rounded-xl h-11 text-sm font-semibold transition-colors"
+                >
+                  {errorModal.actionLabel}
+                </Button>
+              )}
               <Button
                 onClick={() => setErrorModal(null)}
                 className="w-full bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl h-11 text-sm font-medium transition-colors"

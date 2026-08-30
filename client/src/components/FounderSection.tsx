@@ -272,21 +272,28 @@ export default function FounderSection() {
             <div className="flex items-center justify-center mb-4">
               <Logo className="h-3.5 w-auto opacity-60" />
             </div>
-            <p className="text-[12px] text-gray-700">
+            <p className="text-[12px] text-gray-500">
               &copy; 2026 <BrandName />. All rights reserved.{" "}
               <Link
                 href="/privacy"
-                className="text-gray-500 hover:text-white transition-colors ml-1"
+                className="text-gray-400 hover:text-white transition-colors ml-1"
               >
                 개인정보처리방침
               </Link>{" "}
               &middot;{" "}
               <Link
                 href="/terms"
-                className="text-gray-500 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-white transition-colors"
               >
                 이용약관
-              </Link>
+              </Link>{" "}
+              &middot;{" "}
+              <a
+                href="mailto:hansitoring@gmail.com"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                문의 hansitoring@gmail.com
+              </a>
             </p>
           </div>
         </div>
