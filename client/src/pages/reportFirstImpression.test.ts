@@ -9,6 +9,7 @@ import {
   limitSectionHighlights,
   limitReportText,
   parseHighlightedText,
+  resolveHiringMemoryItems,
   splitPersonaForHeroLines,
   splitMentorComment,
   tokenizeCommentKeywords,
@@ -37,11 +38,19 @@ describe("report first impression editorial helpers", () => {
     )).toBe("디스플레이 시장 신호를 읽는 마케터")
   })
 
-  it("replaces a truncated legacy summary with a complete domain narrative", () => {
-    expect(getHeroSummary(
+  it("keeps a specific evidence summary intact instead of swapping in a template", () => {
+    expect(getHeroSummary("경쟁사 수율 이슈 소문 하나로 고객사 시나리오를 먼저 짜둔 사람은 흔치 않습니다"))
+      .toBe("경쟁사 수율 이슈 소문 하나로 고객사 시나리오를 먼저 짜둔 사람은 흔치 않습니다")
+  })
+
+  it("truncates an overlong summary at a word boundary instead of replacing it", () => {
+    const summary = getHeroSummary(
       "국제 경험과 비즈니스 통찰력을 바탕으로 식량 산업 변화를 분석하고 새로운 사업 기회로 연결하려는 지원자입니다.",
-      ["#식량산업", "#신사업개발"],
-    )).toBe("식량산업의 성장 기회를 사업으로 연결하려는 지원자")
+    )
+
+    expect(summary.endsWith("…")).toBe(true)
+    expect(summary.startsWith("국제 경험과 비즈니스 통찰력을 바탕으로")).toBe(true)
+    expect(summary).not.toContain("성장 기회를 사업으로 연결하려는 지원자")
   })
 
   it("emphasizes the core expression in the hero summary copy", () => {
@@ -70,6 +79,50 @@ describe("report first impression editorial helpers", () => {
     })
 
     expect(keywords).toEqual(["데이터분석", "가설검증", "글로벌잠재력", "고객 중심", "빠른 실행력", "협업"])
+  })
+
+  it("keeps a short unique keyword set instead of padding with generic chips", () => {
+    expect(buildEditorialKeywords({
+      hashtags: ["#폐기데이터", "#편의점발주"],
+      talentKeywords: ["상품기획"],
+    })).toEqual(["폐기데이터", "편의점발주", "상품기획"])
+  })
+
+  it("uses model-provided hiring memory when it has the expected shape", () => {
+    const items = resolveHiringMemoryItems({
+      hiringMemory: [
+        { mark: "✓", text: "폐기 데이터를 3개월 적은 그 알바생" },
+        { mark: "✓", text: "발주량을 숫자로 밀어붙인 점" },
+        { mark: "✓", text: "폐기율을 직접 검증한 실행" },
+        { mark: "△", text: "식품 외 카테고리 경험은 확인 필요" },
+      ],
+      strengths: [],
+      gaps: [],
+    })
+
+    expect(items).toEqual([
+      { mark: "✓", text: "폐기 데이터를 3개월 적은 그 알바생" },
+      { mark: "✓", text: "발주량을 숫자로 밀어붙인 점" },
+      { mark: "✓", text: "폐기율을 직접 검증한 실행" },
+      { mark: "△", text: "식품 외 카테고리 경험은 확인 필요" },
+    ])
+  })
+
+  it("falls back to legacy hiring memory when the model field is missing or malformed", () => {
+    const legacy = resolveHiringMemoryItems({
+      strengths: ["고객 데이터를 분석해 문제를 정의하고 개선안을 실행한 경험이 분명합니다."],
+      gaps: ["산업 전문성이 조금 더 드러나면 좋겠습니다."],
+    })
+    const malformed = resolveHiringMemoryItems({
+      hiringMemory: [{ mark: "✓", text: "" }, { mark: "?", text: "이상한 마크" }],
+      strengths: ["고객 데이터를 분석해 문제를 정의하고 개선안을 실행한 경험이 분명합니다."],
+      gaps: ["산업 전문성이 조금 더 드러나면 좋겠습니다."],
+    })
+
+    for (const items of [legacy, malformed]) {
+      expect(items).toHaveLength(4)
+      expect(items[3].mark).toBe("△")
+    }
   })
 
   it("creates impression-style memory items without numeric scoring language", () => {

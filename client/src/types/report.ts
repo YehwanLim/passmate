@@ -77,12 +77,22 @@ export interface QuestionTab {
   feedbackCards: FeedbackCard[]
 }
 
+/** 채용담당자가 기억할 모습 항목 */
+export interface HiringMemoryEntry {
+  mark: "✓" | "△"
+  text: string
+}
+
 /** 첫인상 */
 export interface FirstImpression {
-  /** 이 회사 기준 한줄 평가 */
+  /** persona 인상의 근거가 되는 실제 경험 한 문장 */
   summaryOneLiner: string
   persona: string
   hashtags: string[]
+  /** ✓ 3개 + △ 1개. 구버전 리포트에는 없음 */
+  hiringMemory?: HiringMemoryEntry[]
+  /** 경험 흐름 서술 1~2문장. 구버전 리포트에는 없음 */
+  profileNote?: string
 }
 
 /** 최종 리포트 데이터 */

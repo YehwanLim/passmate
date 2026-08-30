@@ -13,8 +13,8 @@ export type HiringMemoryItem = {
   text: string
 }
 
-const MIN_KEYWORDS = 4
 const MAX_KEYWORDS = 6
+const HERO_SUMMARY_MAX_LENGTH = 55
 const MENTOR_COMMENT_TITLES = ["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"]
 const BLAND_PERSONA_PATTERN = /^(분석가이자\s*기획자|기획자이자\s*분석가|분석형\s*기획자|전략형\s*기획자|실행형\s*기획자)$/
 
@@ -111,12 +111,8 @@ export function getHeroIdentity(persona: string, hashtags: string[]): string {
   return limitReportText(compressed, 28)
 }
 
-export function getHeroSummary(summary: string, hashtags: string[]): string {
-  const normalized = summary.replace(/\s+/g, " ").trim()
-  if (normalized.length <= 42) return normalized
-
-  const domain = hashtags.map((hashtag) => hashtag.replace(/^#/, "").trim()).find(Boolean)
-  return domain ? `${domain}의 성장 기회를 사업으로 연결하려는 지원자` : limitReportText(normalized, 42)
+export function getHeroSummary(summary: string): string {
+  return limitReportText(summary, HERO_SUMMARY_MAX_LENGTH)
 }
 
 export function emphasizeHeroSummaryCopy(summary: string): string {
@@ -159,16 +155,27 @@ export function buildEditorialKeywords({ hashtags, talentKeywords }: KeywordInpu
     .filter((keyword) => keyword.length <= 8)
 
   const unique = Array.from(new Set(normalized))
-  const selected = unique.reduce<string[]>((acc, keyword) => {
+  return unique.reduce<string[]>((acc, keyword) => {
     if (acc.length >= MAX_KEYWORDS) return acc
     const isDataDuplicate = keyword.includes("데이터") && acc.some((item) => item.includes("데이터"))
     if (isDataDuplicate) return acc
     return [...acc, keyword]
   }, [])
+}
 
-  if (selected.length >= MIN_KEYWORDS) return selected
+export function resolveHiringMemoryItems({ hiringMemory, strengths, gaps }: MemoryInput & {
+  hiringMemory?: Array<{ mark?: string; text?: string }>
+}): HiringMemoryItem[] {
+  const modelItems = (hiringMemory ?? [])
+    .filter((item): item is { mark: HiringMemoryItem["mark"]; text: string } =>
+      (item?.mark === "✓" || item?.mark === "△") && typeof item?.text === "string" && item.text.trim().length > 0)
+    .map((item) => ({ mark: item.mark, text: item.text.trim() }))
 
-  return Array.from(new Set([...selected, "문제 해결", "고객 중심", "실행력", "협업"])).slice(0, MAX_KEYWORDS)
+  const positives = modelItems.filter((item) => item.mark === "✓").slice(0, 3)
+  const cautions = modelItems.filter((item) => item.mark === "△").slice(0, 1)
+  if (positives.length >= 2 && cautions.length === 1) return [...positives, ...cautions]
+
+  return buildHiringMemoryItems({ strengths, gaps })
 }
 
 export function buildHiringMemoryItems({ strengths, gaps }: MemoryInput): HiringMemoryItem[] {

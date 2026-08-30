@@ -9,11 +9,11 @@ import AuthButton from "../components/AuthButton"
 import { BrandName } from "@/components/BrandName"
 import { ReportAccessGate } from "../components/report/ReportAccessGate"
 import { useAuth } from "../contexts/AuthContext"
-import { getAuthorizationHeader } from "@/lib/apiAuth"
+import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth"
 import { REPORT_NAV_SECTIONS } from "./reportNavigation"
 import {
     buildEditorialKeywords,
-    buildHiringMemoryItems,
+    resolveHiringMemoryItems,
     getHeroIdentity,
     getHeroSummary,
     limitSectionHighlights,
@@ -97,6 +97,25 @@ function MiniNavigator({ activeSection }: { activeSection: string }) {
     )
 }
 
+// ReportContent가 역참조하는 최상위 필드를 렌더 전에 확인한다.
+// 과거 스키마·불완전 생성 리포트가 TypeError(화이트스크린)로 이어지는 것을 막는다.
+function isRenderableReport(payload: unknown): payload is ReportData {
+    if (!payload || typeof payload !== "object") return false
+    const report = payload as Record<string, unknown>
+    const companyInsight = report.companyInsight as Record<string, unknown> | null | undefined
+    return (
+        Array.isArray(report.questionTabs) &&
+        Array.isArray(report.actionPlan) &&
+        Array.isArray(report.strengths) &&
+        Array.isArray(report.gaps) &&
+        !!report.firstImpression &&
+        typeof report.firstImpression === "object" &&
+        !!companyInsight &&
+        typeof companyInsight === "object" &&
+        Array.isArray(companyInsight.talentKeywords)
+    )
+}
+
 function AuthenticatedReport() {
     const { user } = useAuth()
     const requestedAnalysisId = new URLSearchParams(window.location.search).get("analysisId")
@@ -131,7 +150,7 @@ function AuthenticatedReport() {
                     throw new Error(payload?.message || payload?.error || "분석 리포트를 불러오지 못했습니다.")
                 }
 
-                if (!payload?.ai_response_json || !Array.isArray(payload.ai_response_json.questionTabs)) {
+                if (!isRenderableReport(payload?.ai_response_json)) {
                     throw new Error("저장된 분석 리포트 형식이 올바르지 않습니다.")
                 }
 
@@ -140,7 +159,11 @@ function AuthenticatedReport() {
                 setTargetCompany(payload.company_name ?? "")
             } catch (error) {
                 if (!cancelled) {
-                    setReportError(error instanceof Error ? error.message : "분석 리포트를 불러오지 못했습니다.")
+                    if (error instanceof AuthenticationRequiredError) {
+                        setReportError("로그인이 만료되었어요. 다시 로그인한 뒤 리포트를 열어 주세요.")
+                    } else {
+                        setReportError(error instanceof Error ? error.message : "분석 리포트를 불러오지 못했습니다.")
+                    }
                 }
             } finally {
                 if (!cancelled) setIsReportLoading(false)
@@ -274,8 +297,8 @@ function ReportContent({
     )
     const heroPersonaLines = useMemo(() => splitPersonaForHeroLines(heroPersona), [heroPersona])
     const heroSummary = useMemo(
-        () => getHeroSummary(reportData.firstImpression.summaryOneLiner, reportData.firstImpression.hashtags),
-        [reportData.firstImpression.hashtags, reportData.firstImpression.summaryOneLiner]
+        () => getHeroSummary(reportData.firstImpression.summaryOneLiner),
+        [reportData.firstImpression.summaryOneLiner]
     )
     const editorialKeywords = useMemo(
         () => buildEditorialKeywords({
@@ -285,11 +308,12 @@ function ReportContent({
         [reportData.companyInsight.talentKeywords, reportData.firstImpression.hashtags]
     )
     const hiringMemoryItems = useMemo(
-        () => buildHiringMemoryItems({
+        () => resolveHiringMemoryItems({
+            hiringMemory: reportData.firstImpression.hiringMemory,
             strengths: reportData.strengths,
             gaps: reportData.gaps,
         }),
-        [reportData.gaps, reportData.strengths]
+        [reportData.firstImpression.hiringMemory, reportData.gaps, reportData.strengths]
     )
     const strengthHighlights = useMemo(
         () => limitSectionHighlights(reportData.strengths),
@@ -470,7 +494,9 @@ function ReportContent({
                             <div className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
                                 <p className="mb-3 text-sm font-semibold text-white">{UI_LABELS.APPLICANT_PROFILE}</p>
                                 <p className="text-sm leading-[1.82] text-zinc-400">
-                                    {heroPersona}라는 인상이 먼저 남습니다. 경험의 흐름은 문제를 발견하고 근거를 모아 실행으로 옮기는 방향으로 읽힙니다.
+                                    {reportData.firstImpression.profileNote?.trim()
+                                        ? renderCleanText(reportData.firstImpression.profileNote)
+                                        : `${heroPersona}라는 인상이 먼저 남습니다. 경험의 흐름은 문제를 발견하고 근거를 모아 실행으로 옮기는 방향으로 읽힙니다.`}
                                 </p>
                             </div>
 
