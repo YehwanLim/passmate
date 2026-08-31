@@ -686,42 +686,42 @@ html {
   }
 }
 
-/* ── Annotation Highlight: Highlighter Pen Effect ── */
+/* ── Annotation Highlight: Soft Ink Tint ── */
 .annotation-hl {
   position: relative;
   display: inline;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
-  border-radius: 2px;
-  padding: 2px 0;
-  color: rgba(220, 220, 220, 0.95);
+  border-radius: 4px;
+  padding: 2px 4px;
+  color: #e4e4e7;
 }
 
-/* Default: light translucent highlighter (praise = green, improvement = yellow) */
+/* Default: soft translucent tint (praise = emerald, improvement = amber) */
 .annotation-hl.praise-hl {
-  background: rgba(74, 222, 128, 0.25);
+  background: rgba(52, 211, 153, 0.11);
 }
 .annotation-hl.improvement-hl {
-  background: rgba(251, 191, 36, 0.25);
+  background: rgba(252, 211, 77, 0.10);
 }
 
 .annotation-hl:hover {
   color: #fff;
 }
 .annotation-hl.praise-hl:hover {
-  background: rgba(74, 222, 128, 0.22);
+  background: rgba(52, 211, 153, 0.15);
 }
 .annotation-hl.improvement-hl:hover {
-  background: rgba(251, 191, 36, 0.18);
+  background: rgba(252, 211, 77, 0.13);
 }
 
-/* Active: deeper highlighter fill */
+/* Active: slightly deeper tint */
 .annotation-hl.active.praise-hl {
-  background: rgba(74, 222, 128, 0.28);
+  background: rgba(52, 211, 153, 0.18);
   color: #fff;
 }
 .annotation-hl.active.improvement-hl {
-  background: rgba(251, 191, 36, 0.22);
+  background: rgba(252, 211, 77, 0.16);
   color: #fff;
 }
 
@@ -731,18 +731,18 @@ html {
   transition: all 0.3s ease-in-out;
 }
 .original-text-dimmed .annotation-hl.praise-hl:not(.active) {
-  background: rgba(74, 222, 128, 0.15);
+  background: rgba(52, 211, 153, 0.07);
 }
 .original-text-dimmed .annotation-hl.improvement-hl:not(.active) {
-  background: rgba(251, 191, 36, 0.15);
+  background: rgba(252, 211, 77, 0.06);
 }
-/* Hover in dimmed state: brighten the highlighter */
+/* Hover in dimmed state: brighten the tint */
 .original-text-dimmed .annotation-hl.praise-hl:not(.active):hover {
-  background: rgba(74, 222, 128, 0.20);
+  background: rgba(52, 211, 153, 0.11);
   color: #ddd;
 }
 .original-text-dimmed .annotation-hl.improvement-hl:not(.active):hover {
-  background: rgba(251, 191, 36, 0.16);
+  background: rgba(252, 211, 77, 0.10);
   color: #ddd;
 }
 .original-text-dimmed p {
@@ -751,39 +751,38 @@ html {
 }
 .original-text-dimmed .annotation-hl.active.praise-hl {
   color: #fff;
-  background: rgba(74, 222, 128, 0.28);
+  background: rgba(52, 211, 153, 0.18);
   transition: all 0.3s ease-in-out;
 }
 .original-text-dimmed .annotation-hl.active.improvement-hl {
   color: #fff;
-  background: rgba(251, 191, 36, 0.22);
+  background: rgba(252, 211, 77, 0.16);
   transition: all 0.3s ease-in-out;
 }
 
+/* Number badge: always visible, inline before the sentence */
 .annotation-badge {
-  position: absolute;
-  top: -12px;
-  left: -2px;
-  width: 16px;
-  height: 16px;
+  display: inline-flex;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
-  background: #333;
-  color: #999;
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 700;
-  display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  margin-right: 5px;
+  position: relative;
+  top: -1.5px;
+  transition: background 0.2s ease, color 0.2s ease;
   pointer-events: none;
 }
-
-.annotation-hl:hover .annotation-badge,
-.annotation-hl.active .annotation-badge {
-  opacity: 1;
-  transform: scale(1);
+.annotation-hl.praise-hl .annotation-badge {
+  background: rgba(52, 211, 153, 0.3);
+  color: #bbf7d0;
+}
+.annotation-hl.improvement-hl .annotation-badge {
+  background: rgba(252, 211, 77, 0.26);
+  color: #fef08a;
 }
 .annotation-hl.active.praise-hl .annotation-badge {
   background: #4ADE80;
@@ -792,10 +791,6 @@ html {
 .annotation-hl.active.improvement-hl .annotation-badge {
   background: #FBBF24;
   color: #111;
-}
-.annotation-hl:hover:not(.active) .annotation-badge {
-  background: rgba(200, 200, 200, 0.3);
-  color: #ddd;
 }
 
 /* ── Fade-in ── */
@@ -845,9 +840,21 @@ html {
 }
 .section-tab:last-child { margin-right: 0; }
 .section-tab:hover { color: rgba(200, 200, 200, 0.8); }
+.section-tab .tab-num {
+  margin-right: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: #52525b;
+  transition: color 0.25s ease;
+}
 .section-tab.active {
   color: #E5E5E5;
   font-weight: 500;
+}
+.section-tab.active .tab-num {
+  color: #a1a1aa;
 }
 .section-tab.active::after {
   content: '';
@@ -856,7 +863,7 @@ html {
   left: 0;
   right: 0;
   height: 2px;
-  background: #4ADE80;
+  background: rgba(255, 255, 255, 0.55);
   border-radius: 1px;
 }
 
@@ -874,18 +881,6 @@ html {
 }
 .source-text-body p:last-child {
   margin-bottom: 0;
-}
-
-/* ── Question Prompt ── */
-.question-prompt {
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(220, 220, 220, 0.9);
-  line-height: 1.7;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border-left: 3px solid rgba(220, 220, 220, 0.25);
-  border-radius: 0 4px 4px 0;
 }
 
 /* ── Character Count Metadata ── */

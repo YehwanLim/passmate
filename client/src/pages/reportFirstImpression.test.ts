@@ -8,6 +8,7 @@ import {
   getHeroSummary,
   limitSectionHighlights,
   limitReportText,
+  normalizeDiagnosisEntries,
   parseHighlightedText,
   resolveHiringMemoryItems,
   splitPersonaForHeroLines,
@@ -45,7 +46,7 @@ describe("report first impression editorial helpers", () => {
 
   it("truncates an overlong summary at a word boundary instead of replacing it", () => {
     const summary = getHeroSummary(
-      "국제 경험과 비즈니스 통찰력을 바탕으로 식량 산업 변화를 분석하고 새로운 사업 기회로 연결하려는 지원자입니다.",
+      "국제 경험과 비즈니스 통찰력을 바탕으로 식량 산업 변화를 분석하고 새로운 사업 기회로 연결하려는 지원자입니다. 경험의 폭도 눈에 띄게 넓습니다.",
     )
 
     expect(summary.endsWith("…")).toBe(true)
@@ -123,6 +124,37 @@ describe("report first impression editorial helpers", () => {
       expect(items).toHaveLength(4)
       expect(items[3].mark).toBe("△")
     }
+  })
+
+  it("normalizes headline diagnosis objects and legacy strings into one display shape", () => {
+    expect(normalizeDiagnosisEntries([
+      { headline: "폐기 데이터로 증명한 실행력", text: "매장에서 버려지는 것을 기록으로 바꿨습니다." },
+      "레거시 문자열 강점입니다.",
+    ])).toEqual([
+      { headline: "폐기 데이터로 증명한 실행력", text: "매장에서 버려지는 것을 기록으로 바꿨습니다." },
+      { headline: null, text: "레거시 문자열 강점입니다." },
+    ])
+  })
+
+  it("drops malformed diagnosis entries instead of rendering empty rows", () => {
+    expect(normalizeDiagnosisEntries([
+      { headline: "제목만 있는 항목" },
+      { headline: "", text: "  헤드라인이 비면 본문만 남깁니다.  " },
+      "",
+      null,
+    ])).toEqual([
+      { headline: null, text: "헤드라인이 비면 본문만 남깁니다." },
+    ])
+  })
+
+  it("builds fallback hiring memory from headline-shaped strengths and gaps", () => {
+    const items = buildHiringMemoryItems({
+      strengths: [{ headline: "고객 관찰", text: "고객 데이터를 분석해 개선안을 실행한 경험이 분명합니다." }],
+      gaps: [{ headline: "산업 연결", text: "산업 전문성이 조금 더 드러나면 좋겠습니다." }],
+    })
+
+    expect(items).toHaveLength(4)
+    expect(items[3]).toEqual({ mark: "△", text: "산업 전문성이 더 드러나면 좋겠다" })
   })
 
   it("creates impression-style memory items without numeric scoring language", () => {

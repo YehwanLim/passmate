@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react"
 import { useLocation } from "wouter"
-import { Check, ChevronDown, ArrowRight, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X, MessageSquareText, Type, ListChecks } from "lucide-react"
+import { Check, ChevronDown, ArrowRight, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X } from "lucide-react"
 import type { ReportData } from "../types/report"
 import { UI_LABELS } from "../constants/labels"
 import { isReportSectionLocked } from "../utils/reportAccess"
@@ -13,6 +13,7 @@ import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAu
 import { REPORT_NAV_SECTIONS } from "./reportNavigation"
 import {
     buildEditorialKeywords,
+    normalizeDiagnosisEntries,
     resolveHiringMemoryItems,
     getHeroIdentity,
     getHeroSummary,
@@ -21,6 +22,11 @@ import {
     splitPersonaForHeroLines,
     splitMentorComment,
 } from "./reportFirstImpression"
+
+// 섹션 제목 앞의 흐린 번호. 잡지 폴리오처럼 제목과 같은 크기, 낮은 명도로 순서만 남긴다.
+function SectionNumber({ value }: { value: string }) {
+    return <span className="mr-3.5 font-semibold tabular-nums text-zinc-700">{value}</span>
+}
 
 const MENTOR_COMMENT_STYLES = [
     { title: "첫인상", numberClassName: "text-[#A7A8FF]" },
@@ -315,13 +321,21 @@ function ReportContent({
         }),
         [reportData.firstImpression.hiringMemory, reportData.gaps, reportData.strengths]
     )
-    const strengthHighlights = useMemo(
-        () => limitSectionHighlights(reportData.strengths),
+    const strengthEntries = useMemo(
+        () => normalizeDiagnosisEntries(reportData.strengths),
         [reportData.strengths]
     )
-    const gapHighlights = useMemo(
-        () => limitSectionHighlights(reportData.gaps),
+    const gapEntries = useMemo(
+        () => normalizeDiagnosisEntries(reportData.gaps),
         [reportData.gaps]
+    )
+    const strengthHighlights = useMemo(
+        () => limitSectionHighlights(strengthEntries.map((entry) => entry.text)),
+        [strengthEntries]
+    )
+    const gapHighlights = useMemo(
+        () => limitSectionHighlights(gapEntries.map((entry) => entry.text)),
+        [gapEntries]
     )
     const mentorCommentBlocks = useMemo(
         () => splitMentorComment(reportData.pmComment),
@@ -529,8 +543,7 @@ function ReportContent({
                 {/* ACT 1.5: COMPANY INSIGHT */}
                 {/* ================================================================= */}
                 <section id="section-company-insight" className="py-24 section-divider">
-                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.COMPANY_ANALYSIS}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.HIRING_CRITERIA(targetCompany)}</h3>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value="02" />{UI_LABELS.HIRING_CRITERIA(targetCompany)}</h3>
                     <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.75]">{renderRichText(reportData.companyInsight.summary)}</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -590,26 +603,45 @@ function ReportContent({
                     onLogin={handleLoginToUnlock}
                 >
                     <section id="section-core-diagnosis" className="py-24 section-divider">
-                        <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.CORE_DIAGNOSIS}</h2>
-                        <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-14 tracking-tight">{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
+                        <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-14 tracking-tight"><SectionNumber value="03" />{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-14 mb-16">
                         <div>
-                            <p className="text-sm text-emerald-400/70 uppercase tracking-[0.12em] mb-6 font-semibold">{UI_LABELS.STRENGTHS}</p>
-                            <div className="space-y-5">
-                                {reportData.strengths.map((s, i) => (
-                                    <div key={i} className="pl-0 py-0">
-                                        <p className="text-[16px] text-zinc-100 leading-[1.8] font-normal">{renderTextSegments(strengthHighlights[i], "strength")}</p>
+                            <p className="text-[15px] font-bold text-emerald-300/90 mb-6">{UI_LABELS.STRENGTHS}</p>
+                            <div>
+                                {strengthEntries.map((entry, i) => (
+                                    <div key={i} className={i > 0 ? "mt-7 border-t border-white/[0.05] pt-7" : ""}>
+                                        {entry.headline ? (
+                                            <>
+                                                <p className="mb-2.5 flex items-center gap-2.5 text-[17px] font-semibold leading-[1.45] tracking-[-0.01em] text-zinc-50">
+                                                    <span aria-hidden="true" className="mx-[3px] inline-block size-[7px] shrink-0 rounded-full bg-emerald-400/85 shadow-[0_0_8px_rgba(52,211,153,0.35)]" />
+                                                    {entry.headline}
+                                                </p>
+                                                <p className="pl-[23px] text-[15px] leading-[1.85] text-zinc-400">{renderTextSegments(strengthHighlights[i], "strength")}</p>
+                                            </>
+                                        ) : (
+                                            <p className="text-[16px] leading-[1.8] text-zinc-100">{renderTextSegments(strengthHighlights[i], "strength")}</p>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         </div>
                         <div>
-                            <p className="text-sm text-amber-300/60 uppercase tracking-[0.12em] mb-6 font-semibold">{UI_LABELS.GAPS}</p>
-                            <div className="space-y-5">
-                                {reportData.gaps.map((g, i) => (
-                                    <div key={i} className="pl-0 py-0">
-                                        <p className="text-[16px] text-zinc-300 leading-[1.8] font-normal">{renderTextSegments(gapHighlights[i], "gap")}</p>
+                            <p className="text-[15px] font-bold text-amber-300/80 mb-6">{UI_LABELS.GAPS}</p>
+                            <div>
+                                {gapEntries.map((entry, i) => (
+                                    <div key={i} className={i > 0 ? "mt-7 border-t border-white/[0.05] pt-7" : ""}>
+                                        {entry.headline ? (
+                                            <>
+                                                <p className="mb-2.5 flex items-baseline gap-2.5 text-[17px] font-semibold leading-[1.45] tracking-[-0.01em] text-zinc-50">
+                                                    <span aria-hidden="true" className="w-[13px] shrink-0 text-[13px] text-amber-300/70">△</span>
+                                                    {entry.headline}
+                                                </p>
+                                                <p className="pl-[23px] text-[15px] leading-[1.85] text-zinc-400">{renderTextSegments(gapHighlights[i], "gap")}</p>
+                                            </>
+                                        ) : (
+                                            <p className="text-[16px] leading-[1.8] text-zinc-300">{renderTextSegments(gapHighlights[i], "gap")}</p>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -617,27 +649,26 @@ function ReportContent({
                     </div>
 
                     {/* Positioning */}
-                    <div className="bg-white/[0.03] border border-white/[0.05] p-8 rounded-xl backdrop-blur-sm">
-                        <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-7 font-semibold">{UI_LABELS.STRATEGIC_POSITIONING}</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-7">
+                    <div className="bg-white/[0.03] border border-white/[0.05] p-6 sm:p-9 rounded-xl">
+                        <p className="text-[17px] font-semibold tracking-[-0.01em] text-zinc-50 mb-8">{UI_LABELS.STRATEGIC_POSITIONING}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_40px_1fr] gap-5 items-stretch mb-9">
                             <div>
-                                <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_CURRENT}</span>
-                                <p className="text-base text-zinc-400 leading-[1.7] mt-1">{renderRichText(reportData.positioning.current)}</p>
+                                <span className="inline-block rounded-md border border-white/[0.07] bg-white/[0.04] px-3 py-1.5 text-xs font-semibold tracking-[0.02em] text-zinc-400 mb-3.5">{UI_LABELS.POSITION_CURRENT}</span>
+                                <p className="text-[15px] text-zinc-400 leading-[1.8]">{renderRichText(reportData.positioning.current)}</p>
                             </div>
+                            <div aria-hidden="true" className="flex items-center justify-center text-xl text-zinc-700 rotate-90 sm:rotate-0 -my-1 sm:my-0">→</div>
                             <div>
-                                <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_TARGET}</span>
-                                <p className="text-[17px] text-white font-bold leading-[1.7] mt-1">{renderRichText(reportData.positioning.target)}</p>
+                                <span className="inline-block rounded-md border border-sky-300/20 bg-sky-300/[0.08] px-3 py-1.5 text-xs font-semibold tracking-[0.02em] text-sky-300 mb-3.5">{UI_LABELS.POSITION_TARGET}</span>
+                                <p className="text-[15px] text-zinc-100 leading-[1.8]">{renderRichText(reportData.positioning.target)}</p>
                             </div>
                         </div>
-                        <div className="border-t border-white/[0.04] pt-6 space-y-7">
-                            <div>
-                                <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_GAP}</span>
-                                <p className="text-base text-amber-300 font-semibold leading-[1.7] mt-1">{renderRichText(reportData.positioning.gap)}</p>
-                            </div>
-                            <div>
-                                <span className="inline-block px-3 py-1.5 bg-zinc-800/80 border border-white/[0.05] rounded-md text-xs font-semibold text-zinc-300 mb-3">{UI_LABELS.POSITION_STRATEGY}</span>
-                                <p className="text-[15px] text-zinc-300 leading-[1.7] mt-1">{renderRichText(reportData.positioning.strategy)}</p>
-                            </div>
+                        <div className="border-t border-white/[0.05] pt-7 mb-7">
+                            <p className="text-sm font-semibold text-amber-300/80 mb-2.5">{UI_LABELS.POSITION_GAP}</p>
+                            <p className="text-[15px] text-zinc-200 leading-[1.8] max-w-2xl">{renderRichText(reportData.positioning.gap)}</p>
+                        </div>
+                        <div className="border-t border-white/[0.05] pt-7">
+                            <p className="text-sm font-semibold text-emerald-300/85 mb-2.5">{UI_LABELS.POSITION_STRATEGY}</p>
+                            <p className="text-[15px] text-zinc-200 leading-[1.8] max-w-2xl">{renderRichText(reportData.positioning.strategy)}</p>
                         </div>
                     </div>
                     </section>
@@ -659,8 +690,7 @@ function ReportContent({
                     setFocusedCardIndex(null)
                     setExpandedCards(new Set())
                 }}>
-                <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.DETAILED_DIAGNOSIS}</h2>
-                <h3 className="text-xl sm:text-2xl font-semibold text-white mb-10 tracking-tight">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
+                <h3 className="text-xl sm:text-2xl font-semibold text-white mb-10 tracking-tight"><SectionNumber value="04" />{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
 
                 {/* Split View: Source (Left) + Commentary (Right) */}
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-0 lg:items-start">
@@ -679,6 +709,7 @@ function ReportContent({
                             {reportData.questionTabs.map((tab, index) => (
                                 <button key={tab.id} onClick={() => handleTabChange(index)}
                                     className={`section-tab ${activeTab === index ? 'active' : ''}`}>
+                                    <span className="tab-num">{String(index + 1).padStart(2, "0")}</span>
                                     {tab.title}
                                 </button>
                             ))}
@@ -686,7 +717,8 @@ function ReportContent({
 
                         {/* Question Prompt */}
                         <div className="mb-8">
-                            <p className="question-prompt">{currentTab.prompt}</p>
+                            <p className="mb-2.5 text-xs font-bold tracking-[0.02em] text-zinc-500">{UI_LABELS.QUESTION} {String(activeTab + 1).padStart(2, "0")}</p>
+                            <p className="border-b border-white/[0.05] pb-6 text-[15.5px] font-medium leading-[1.65] text-zinc-300">{currentTab.prompt}</p>
                         </div>
 
                         {/* Source Text Body */}
@@ -752,7 +784,7 @@ function ReportContent({
                     <div ref={commentaryRef} className="lg:sticky lg:top-[10vh] lg:self-start lg:h-[85vh] flex flex-col lg:border-l border-white/[0.06] lg:pl-8 mt-10 lg:mt-0">
                         {/* Panel Header + View Mode Toggle */}
                         <div className="flex items-center justify-between mb-6 shrink-0">
-                            <p className="text-xs text-zinc-500 uppercase tracking-[0.15em] font-semibold">{UI_LABELS.AI_COMMENTARY}</p>
+                            <p className="text-[15.5px] font-semibold tracking-[-0.01em] text-zinc-50">{UI_LABELS.AI_COMMENTARY}</p>
                             <div className="view-mode-toggle">
                                 <button onClick={() => setViewMode('list')}
                                     className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}>
@@ -769,52 +801,43 @@ function ReportContent({
                         <div className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10">
 
                         {/* Overview — Collapsible */}
-                        <div className="mb-4 bg-zinc-900/40 border border-white/[0.06] rounded-2xl p-5 hover:bg-zinc-900/60 transition-colors">
+                        <div className="border-t border-white/[0.06] py-5">
                             <button onClick={() => setShowOverview(!showOverview)}
-                                className="w-full flex items-center justify-between text-left group">
-                                <span className="commentary-section-label panel-header flex items-center gap-3 text-zinc-50" style={{ margin: 0, border: 'none', padding: 0 }}><MessageSquareText className="w-5 h-5 text-zinc-300" />{UI_LABELS.OVERVIEW}</span>
-                                <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${showOverview ? 'rotate-180' : ''}`} />
+                                className="w-full flex items-baseline gap-3 text-left">
+                                <span className="text-[11px] font-bold tabular-nums tracking-[0.08em] text-zinc-600">01</span>
+                                <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.OVERVIEW}</span>
+                                <ChevronDown className={`w-4 h-4 self-center text-zinc-600 transition-transform ${showOverview ? 'rotate-180' : ''}`} />
                             </button>
                             {showOverview && (
-                                <div className="pt-4 mt-4 border-t border-white/[0.04]">
-                                    <p className="text-[14px] text-zinc-300 leading-[1.8]">{renderRichText(currentTab.overview)}</p>
+                                <div className="pt-4">
+                                    <p className="text-[14px] text-zinc-300 leading-[1.85]">{renderRichText(currentTab.overview)}</p>
                                 </div>
                             )}
                         </div>
 
                         {/* Subtitle Diagnosis — Collapsible */}
-                        <div className="mb-4 bg-zinc-900/40 border border-white/[0.06] rounded-2xl p-5 hover:bg-zinc-900/60 transition-colors">
+                        <div className="border-t border-white/[0.06] py-5">
                             <button onClick={() => setShowSubtitle(!showSubtitle)}
-                                className="w-full flex items-center justify-between text-left group">
-                                <span className="commentary-section-label panel-header flex items-center gap-3 text-zinc-50" style={{ margin: 0, border: 'none', padding: 0 }}><Type className="w-5 h-5 text-zinc-300" />{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
-                                <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${showSubtitle ? 'rotate-180' : ''}`} />
+                                className="w-full flex items-baseline gap-3 text-left">
+                                <span className="text-[11px] font-bold tabular-nums tracking-[0.08em] text-zinc-600">02</span>
+                                <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
+                                <ChevronDown className={`w-4 h-4 self-center text-zinc-600 transition-transform ${showSubtitle ? 'rotate-180' : ''}`} />
                             </button>
                             {showSubtitle && (
-                                <div className="pt-4 mt-4 border-t border-white/[0.04]">
-                                    {currentTab.subtitleDiagnosis.exists ? (
-                                        <div className="space-y-0">
-                                            <p className="commentary-body-text mb-4">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
+                                <div className="pt-4">
+                                    <p className="commentary-body-text mb-1">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
 
-                                            <p className="commentary-label">소제목 수정 제안</p>
-                                            <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-0">
-                                            <p className="commentary-body-text mb-4">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
-
-                                            <p className="commentary-label" style={{ marginTop: '0' }}>소제목 수정 제안</p>
-                                            <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
-                                        </div>
-                                    )}
+                                    <p className="commentary-label">소제목 수정 제안</p>
+                                    <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
                                 </div>
                             )}
                         </div>
 
                         {/* Section Header: 문장 진단 */}
-                        <div className="bg-zinc-900/40 border border-white/[0.06] rounded-2xl p-5">
-                            <div className="flex items-center gap-3 mb-6">
-                                <ListChecks className="w-5 h-5 text-zinc-300" />
-                                <span className="commentary-section-label panel-header text-zinc-50" style={{ margin: 0, border: 'none', padding: 0 }}>{UI_LABELS.SENTENCE_DIAGNOSIS}</span>
+                        <div className="border-t border-white/[0.06] py-5">
+                            <div className="flex items-baseline gap-3 mb-4">
+                                <span className="text-[11px] font-bold tabular-nums tracking-[0.08em] text-zinc-600">03</span>
+                                <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.SENTENCE_DIAGNOSIS}</span>
                             </div>
 
                         {/* ── Focus Mode: Full content for focused card ── */}
@@ -841,7 +864,7 @@ function ReportContent({
                                             {card.interviewLink && (
                                                 <>
                                                     <p className="commentary-label">예상 면접 질문</p>
-                                                    <p className="commentary-headline">"{renderRichText(card.interviewLink.question)}"</p>
+                                                    <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-sky-300/80">Q.</span>{renderRichText(card.interviewLink.question)}</p>
                                                     <p className="commentary-meta mb-4">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
                                                 </>
                                             )}
@@ -881,7 +904,12 @@ function ReportContent({
                                             {/* Trigger */}
                                             <button className="commentary-trigger" onClick={() => handleAccordionToggle(realIdx)}>
                                                 <span className="commentary-num">{displayNum}</span>
-                                                <span className="commentary-preview flex-1 min-w-0">{renderRichText(previewText)}</span>
+                                                <span className="flex-1 min-w-0">
+                                                    <span className={`mb-1 block text-[11px] font-semibold tracking-[0.02em] ${card.type === 'praise' ? 'text-emerald-300/85' : 'text-amber-300/75'}`}>
+                                                        {card.type === 'praise' ? UI_LABELS.FEEDBACK_TYPE_PRAISE : UI_LABELS.FEEDBACK_TYPE_IMPROVEMENT}
+                                                    </span>
+                                                    <span className="commentary-preview">{renderRichText(previewText)}</span>
+                                                </span>
                                                 <ChevronDown className="commentary-chevron" />
                                             </button>
 
@@ -894,7 +922,7 @@ function ReportContent({
                                                 {card.interviewLink && (
                                                     <>
                                                         <p className="commentary-label">예상 면접 질문</p>
-                                                        <p className="commentary-headline">"{renderRichText(card.interviewLink.question)}"</p>
+                                                        <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-sky-300/80">Q.</span>{renderRichText(card.interviewLink.question)}</p>
                                                         <p className="commentary-meta mt-1">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
                                                     </>
                                                 )}
@@ -931,8 +959,7 @@ function ReportContent({
                 {/* ACT 4: INTERVIEW DRILL */}
                 {/* ================================================================= */}
                 <section id="section-interview-drill" className="pt-24 pb-24 section-divider">
-                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.INTERVIEW_DRILL}</h2>
-                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
+                    <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value="05" />{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
                     <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.7]">{UI_LABELS.INTERVIEW_DRILL_DESC}</p>
 
                     <div className="space-y-0">
@@ -971,8 +998,7 @@ function ReportContent({
                 {/* ACT 5: ACTION PLAN */}
                 {/* ================================================================= */}
                 <section id="section-action-plan" className="py-24 section-divider">
-                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.ACTION_PLAN}</h2>
-                    <h3 className="text-xl sm:text-2xl font-semibold text-white mb-6 tracking-tight">{UI_LABELS.ACTION_PLAN_TITLE}</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value="06" />{UI_LABELS.ACTION_PLAN_TITLE}</h3>
 
                     <div className="flex items-center gap-5 mb-14 mt-10">
                         <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
@@ -1004,8 +1030,7 @@ function ReportContent({
                 {/* ACT 6: PM COMMENT */}
                 {/* ================================================================= */}
                 <section id="section-pm-comment" className="pt-24 pb-20 section-divider">
-                    <h2 className="text-sm uppercase tracking-[0.15em] text-zinc-500 mb-4 font-medium">{UI_LABELS.PM_VERDICT}</h2>
-                    <h3 className="text-xl sm:text-2xl font-medium text-white mb-10 tracking-tight">{UI_LABELS.PM_VERDICT_TITLE}</h3>
+                    <h3 className="text-xl sm:text-2xl font-medium text-white mb-10 tracking-tight"><SectionNumber value="07" />{UI_LABELS.PM_VERDICT_TITLE}</h3>
                     <div className="mentor-comment-thread relative">
                         {mentorCommentBlocks.map((block, index) => (
                             <article

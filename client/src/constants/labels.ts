@@ -8,7 +8,6 @@ export const UI_LABELS = {
   APPLICANT_PROFILE: "지원자 프로필",
 
   // Act 1.5: Company Insight
-  COMPANY_ANALYSIS: "02. 합격 기준",
   HIRING_CRITERIA: (company: string) => `${company}는 이런 지원자를 찾고 있어요`,
   TALENT_PROFILE: "인재상",
   ACCEPTANCE_CRITERIA: "합격 기준",
@@ -16,18 +15,16 @@ export const UI_LABELS = {
   CULTURE_SIGNALS: "조직 문화 특징",
 
   // Act 2: Core Diagnosis
-  CORE_DIAGNOSIS: "03. 핵심 진단",
   STRENGTHS_AND_GAPS: (company: string) => `이 자소서는 이렇게 읽히고 있어요`,
   STRENGTHS: "강점",
   GAPS: "보완점",
-  STRATEGIC_POSITIONING: "전략적 포지셔닝",
-  POSITION_CURRENT: "현재 자소서가 주는 인상",
+  STRATEGIC_POSITIONING: "합격까지의 거리",
+  POSITION_CURRENT: "지금 읽히는 모습",
   POSITION_TARGET: "면접관이 기대하는 방향",
   POSITION_GAP: "지금 가장 아쉬운 부분",
-  POSITION_STRATEGY: "조금 더 설득력 있게 만들려면",
+  POSITION_STRATEGY: "이렇게 좁히세요",
 
   // Act 3: Line-by-line Analysis
-  DETAILED_DIAGNOSIS: "04. 문장 분석",
   LINE_BY_LINE_ANALYSIS: "문장별로 더 다듬어볼 수 있어요",
   AI_COMMENTARY: "문장별 코멘트",
   OVERVIEW: "총평",
@@ -46,21 +43,20 @@ export const UI_LABELS = {
   INTERVIEWER_PERSPECTIVE: "면접관 관점",
   QUESTION_INTENT: "출제 의도",
   SENTENCE_DIAGNOSIS: "문장 진단",
+  FEEDBACK_TYPE_PRAISE: "좋은 문장",
+  FEEDBACK_TYPE_IMPROVEMENT: "보완 제안",
 
   // Act 4: Interview Drill
-  INTERVIEW_DRILL: "05. 예상 질문",
   INTERVIEW_DRILL_TITLE: "면접에서는 이런 질문이 나올 수 있어요",
   INTERVIEW_DRILL_DESC: "제출 전, 아래 질문들에 대해 방어할 수 있는지 스스로 점검해보세요.",
   FOLLOW_UP_QUESTIONS: "꼬리 질문",
   MODEL_ANSWER: "모범 답변",
 
   // Act 5: Action Plan
-  ACTION_PLAN: "06. 다음 단계",
   ACTION_PLAN_TITLE: "이 부분부터 보완해보면 좋아요",
   EXPECTED_IMPACT: "기대 효과",
 
   // Act 6: PM Comment
-  PM_VERDICT: "07. 실무자 코멘트",
   PM_VERDICT_TITLE: "실무자 입장에서는 이런 부분이 보였어요",
   JUST_NOW: "방금 전",
 

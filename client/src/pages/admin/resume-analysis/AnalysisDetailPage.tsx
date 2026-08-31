@@ -98,6 +98,25 @@ function stringList(value: unknown): string[] {
     : [];
 }
 
+// strengths/gaps는 구버전 문자열 배열과 신버전 {headline, text} 객체 배열이 섞여 온다.
+function diagnosisTextList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object") {
+        const { headline, text } = item as { headline?: unknown; text?: unknown };
+        if (typeof text === "string") {
+          return typeof headline === "string" && headline.trim()
+            ? `${headline.trim()} — ${text}`
+            : text;
+        }
+      }
+      return "";
+    })
+    .filter(item => item.trim().length > 0);
+}
+
 function textValue(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
@@ -124,9 +143,9 @@ function calculateInsightSummary(detail: any, report: ReportObject | null) {
     successCount,
     hasUserPreview: reportSections >= 3,
     hasCompanyFit:
-      Boolean(report?.companyInsight) || stringList(report?.strengths).length > 0,
+      Boolean(report?.companyInsight) || diagnosisTextList(report?.strengths).length > 0,
     hasActionableFeedback:
-      Array.isArray(report?.questionTabs) || stringList(report?.gaps).length > 0,
+      Array.isArray(report?.questionTabs) || diagnosisTextList(report?.gaps).length > 0,
   };
 }
 
@@ -484,8 +503,8 @@ export default function AnalysisDetailPage() {
                     <CardTitle className="text-sm">강점</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {stringList(report?.strengths).length > 0 ? (
-                      stringList(report?.strengths).map(item => (
+                    {diagnosisTextList(report?.strengths).length > 0 ? (
+                      diagnosisTextList(report?.strengths).map(item => (
                         <p key={item} className="flex gap-2 text-sm leading-6">
                           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
                           <span>{item}</span>
@@ -504,8 +523,8 @@ export default function AnalysisDetailPage() {
                     <CardTitle className="text-sm">보완점</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {stringList(report?.gaps).length > 0 ? (
-                      stringList(report?.gaps).map(item => (
+                    {diagnosisTextList(report?.gaps).length > 0 ? (
+                      diagnosisTextList(report?.gaps).map(item => (
                         <p key={item} className="flex gap-2 text-sm leading-6">
                           <Zap className="mt-0.5 size-4 shrink-0 text-amber-600" />
                           <span>{item}</span>

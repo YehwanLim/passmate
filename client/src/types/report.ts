@@ -95,14 +95,20 @@ export interface FirstImpression {
   profileNote?: string
 }
 
+/** 강점/보완점 항목. 구버전 리포트는 문자열, 신버전은 headline+text 객체 */
+export interface DiagnosisEntry {
+  headline: string
+  text: string
+}
+
 /** 최종 리포트 데이터 */
 export interface ReportData {
   companyInsight: CompanyInsight
   firstImpression: FirstImpression
   /** 회사 기준 강점 */
-  strengths: string[]
+  strengths: Array<string | DiagnosisEntry>
   /** 회사 기준 부족한 부분 */
-  gaps: string[]
+  gaps: Array<string | DiagnosisEntry>
   /** 전략적 포지셔닝 */
   positioning: Positioning
   questionTabs: QuestionTab[]

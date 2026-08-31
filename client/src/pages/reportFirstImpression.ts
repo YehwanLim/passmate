@@ -3,9 +3,16 @@ type KeywordInput = {
   talentKeywords: string[]
 }
 
+type DiagnosisInput = string | { headline?: unknown; text?: unknown } | null | undefined
+
 type MemoryInput = {
-  strengths: string[]
-  gaps: string[]
+  strengths: DiagnosisInput[]
+  gaps: DiagnosisInput[]
+}
+
+export type DiagnosisDisplayItem = {
+  headline: string | null
+  text: string
 }
 
 export type HiringMemoryItem = {
@@ -14,7 +21,7 @@ export type HiringMemoryItem = {
 }
 
 const MAX_KEYWORDS = 6
-const HERO_SUMMARY_MAX_LENGTH = 55
+const HERO_SUMMARY_MAX_LENGTH = 70
 const MENTOR_COMMENT_TITLES = ["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"]
 const BLAND_PERSONA_PATTERN = /^(분석가이자\s*기획자|기획자이자\s*분석가|분석형\s*기획자|전략형\s*기획자|실행형\s*기획자)$/
 
@@ -163,6 +170,25 @@ export function buildEditorialKeywords({ hashtags, talentKeywords }: KeywordInpu
   }, [])
 }
 
+/** 구버전 문자열 배열과 신버전 {headline, text} 객체 배열을 하나의 표시 형태로 정규화한다. */
+export function normalizeDiagnosisEntries(entries: DiagnosisInput[]): DiagnosisDisplayItem[] {
+  return entries
+    .map((entry) => {
+      if (typeof entry === "string") {
+        const text = entry.trim()
+        return text ? { headline: null, text } : null
+      }
+      if (entry && typeof entry === "object") {
+        const text = typeof entry.text === "string" ? entry.text.trim() : ""
+        if (!text) return null
+        const headline = typeof entry.headline === "string" && entry.headline.trim() ? entry.headline.trim() : null
+        return { headline, text }
+      }
+      return null
+    })
+    .filter((entry): entry is DiagnosisDisplayItem => entry !== null)
+}
+
 export function resolveHiringMemoryItems({ hiringMemory, strengths, gaps }: MemoryInput & {
   hiringMemory?: Array<{ mark?: string; text?: string }>
 }): HiringMemoryItem[] {
@@ -179,8 +205,8 @@ export function resolveHiringMemoryItems({ hiringMemory, strengths, gaps }: Memo
 }
 
 export function buildHiringMemoryItems({ strengths, gaps }: MemoryInput): HiringMemoryItem[] {
-  const joinedStrengths = strengths.join(" ")
-  const joinedGaps = gaps.join(" ")
+  const joinedStrengths = normalizeDiagnosisEntries(strengths).map((entry) => entry.text).join(" ")
+  const joinedGaps = normalizeDiagnosisEntries(gaps).map((entry) => entry.text).join(" ")
 
   const positiveItems: HiringMemoryItem[] = [
     { mark: "✓", text: joinedStrengths.includes("논리") ? "논리적으로 일할 것 같다" : "논리적으로 일할 것 같다" },

@@ -42,11 +42,14 @@ describe("report prompt single source", () => {
     expect(sharedPrompt).toContain("서로 다른 관점");
     expect(sharedPrompt).toContain("feedbackCards의 original 필드");
     expect(sharedPrompt).toContain("공백 포함 28자 이내");
-    expect(sharedPrompt).toContain("공백 포함 55자 이내");
+    expect(sharedPrompt).toContain("공백 포함 70자 이내");
     expect(sharedPrompt).toContain("다른 지원자의 리포트에 그대로 옮겨도 말이 되는 문장은 실패한 출력");
     expect(sharedPrompt).toContain('"hiringMemory"');
     expect(sharedPrompt).toContain('"profileNote"');
     expect(sharedPrompt).toContain("✓ 3개 + △ 1개");
+    expect(sharedPrompt).toContain("회사명을 가렸을 때");
+    expect(sharedPrompt).toContain('"headline"');
+    expect(sharedPrompt).toContain("strengths와 gaps의 headline은");
     expect(sharedPrompt).toContain("명함형 제목 금지");
     expect(sharedPrompt).toContain("시장 신호를 읽는 마케터");
     expect(sharedPrompt).toContain("firstImpression.persona에는 굵게 표시나 HTML span을 절대 사용하지 않는다");
