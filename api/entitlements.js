@@ -67,6 +67,9 @@ async function getEntitlements(res, user) {
   });
 }
 
+// TODO(유료 오픈): premiumEnabled 를 켜기 전에 전자상거래법상 판매자 정보
+// (상호·대표자·사업자등록번호·통신판매업신고번호·주소·연락처)를 푸터에 표기해야 한다.
+// Groble 이 판매 주체라면 대신 결제 주체 안내와 Groble 판매자 정보 링크를 노출한다.
 async function createPurchaseIntent(res, user) {
   const settings = await prisma.entitlementSetting.findUnique({
     where: { id: SETTINGS_ID },

@@ -21,6 +21,10 @@ describe("AnalysisPending", () => {
     expect(source).not.toContain("providerResult");
   });
 
+  it("gives a contact route out of the failure view", () => {
+    expect(source).toContain('href="mailto:hansitoring@gmail.com"');
+  });
+
   it("registers the pending route before the report route", () => {
     expect(appSource.indexOf('path={"/analysis-pending"}'))
       .toBeLessThan(appSource.indexOf('path={"/report-new"}'));

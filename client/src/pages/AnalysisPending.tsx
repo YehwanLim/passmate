@@ -162,6 +162,16 @@ export default function AnalysisPending() {
               이번 분석의 이용권은 차감되지 않았어요.
             </p>
             <Button className="mt-7" onClick={() => navigate("/analyze")}>새 분석 시작</Button>
+            <p className="mt-5 text-xs leading-5 text-zinc-500">
+              문제가 반복되면{" "}
+              <a
+                href="mailto:hansitoring@gmail.com"
+                className="text-zinc-300 underline underline-offset-2 transition-colors hover:text-white"
+              >
+                hansitoring@gmail.com
+              </a>
+              으로 알려 주세요.
+            </p>
           </>
         )}
       </section>
