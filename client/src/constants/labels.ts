@@ -1,3 +1,11 @@
+// 받침 유무에 따라 은/는을 고른다. 한글이 아닌 글자로 끝나면(영문 사명 등) '는'으로 둔다.
+function topicParticle(word: string): "은" | "는" {
+  const lastChar = word.trim().charAt(word.trim().length - 1)
+  const code = lastChar.charCodeAt(0)
+  if (code < 0xac00 || code > 0xd7a3) return "는"
+  return (code - 0xac00) % 28 === 0 ? "는" : "은"
+}
+
 export const UI_LABELS = {
   // Navigation & Actions
   BACK: "뒤로 가기",
@@ -8,7 +16,7 @@ export const UI_LABELS = {
   APPLICANT_PROFILE: "지원자 프로필",
 
   // Act 1.5: Company Insight
-  HIRING_CRITERIA: (company: string) => `${company}는 이런 지원자를 찾고 있어요`,
+  HIRING_CRITERIA: (company: string) => `${company}${topicParticle(company)} 이런 지원자를 찾고 있어요`,
   TALENT_PROFILE: "인재상",
   ACCEPTANCE_CRITERIA: "합격 기준",
   REJECTION_TRIGGERS: "탈락 요인",

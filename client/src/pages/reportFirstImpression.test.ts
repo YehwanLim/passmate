@@ -249,24 +249,18 @@ describe("report first impression editorial helpers", () => {
     ])
   })
 
-  it("keeps at most twenty percent of a long section emphasized", () => {
+  it("keeps one emphasized sentence per diagnosis item", () => {
     const sections = limitSectionHighlights([
       "**첫 결론입니다.** 근거입니다. **추가 결론입니다.**",
-      "**두 번째 근거입니다.** 다음 설명입니다.",
-      "**세 번째 근거입니다.** 마무리입니다.",
+      "**두 번째 결론입니다.** 다음 설명입니다.",
+      "설명만 있는 항목입니다.",
     ])
 
-    expect(sections.flat().filter((segment) => segment.kind === "bold").map((segment) => segment.text))
+    expect(sections[0].filter((segment) => segment.kind === "bold").map((segment) => segment.text))
       .toEqual(["첫 결론입니다."])
-  })
-
-  it("does not force emphasis into a section shorter than five sentences", () => {
-    const sections = limitSectionHighlights([
-      "**첫 문장입니다.** **둘째 문장입니다.**",
-      "**셋째 문장입니다.** **넷째 문장입니다.**",
-    ])
-
-    expect(sections.flat().some((segment) => segment.kind === "bold")).toBe(false)
+    expect(sections[1].filter((segment) => segment.kind === "bold").map((segment) => segment.text))
+      .toEqual(["두 번째 결론입니다."])
+    expect(sections[2].some((segment) => segment.kind === "bold")).toBe(false)
   })
 
   it("expands keyword emphasis to its containing sentence", () => {

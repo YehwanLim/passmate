@@ -369,6 +369,10 @@ function ReportContent({
     const renderCleanText = useCallback((text: string) => {
         return renderTextSegments(parseHighlightedText(text), "interview", false)
     }, [renderTextSegments])
+    const renderEmphasizedText = useCallback(
+        (text: string, tone: HighlightTone = "interview") => renderTextSegments(parseHighlightedText(text), tone, true),
+        [renderTextSegments]
+    )
 
     // 원문 텍스트 위치 기준으로 번호 재배정 (위에서부터 1, 2, 3...)
     const cardDisplayNumbers = useMemo(() => {
@@ -398,6 +402,7 @@ function ReportContent({
 
     const sourceTextRef = useRef<HTMLDivElement>(null)
     const commentaryRef = useRef<HTMLDivElement>(null)
+    const commentaryScrollRef = useRef<HTMLDivElement>(null)
 
     // Toggle accordion (multi-expand) and scroll source text to matching sentence
     const handleAccordionToggle = useCallback((cardIdx: number) => {
@@ -421,11 +426,22 @@ function ReportContent({
             next.add(cardIdx)
             return next
         })
-        // Use setTimeout to allow the accordion to expand before scrolling
+        // Use setTimeout to allow the accordion to expand before scrolling.
+        // 코멘트 패널 내부만 스크롤해서 페이지 전체가 딸려 내려가지 않게 한다.
         setTimeout(() => {
             const el = document.getElementById(`commentary-item-${cardIdx}`)
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            if (!el) return
+
+            const container = commentaryScrollRef.current
+            if (container && container.scrollHeight > container.clientHeight) {
+                const elRect = el.getBoundingClientRect()
+                const containerRect = container.getBoundingClientRect()
+                const target = container.scrollTop
+                    + (elRect.top - containerRect.top)
+                    - (container.clientHeight - Math.min(el.clientHeight, container.clientHeight)) / 2
+                container.scrollTo({ top: Math.max(0, target), behavior: 'smooth' })
+            } else {
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
             }
         }, 50)
     }, [])
@@ -686,7 +702,7 @@ function ReportContent({
             <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10"
                 onClick={(e) => {
                     // Click-outside: reset highlight if clicking empty area
-                    if ((e.target as HTMLElement).closest('.annotation-hl') || (e.target as HTMLElement).closest('.commentary-trigger') || (e.target as HTMLElement).closest('.commentary-body') || (e.target as HTMLElement).closest('.view-mode-toggle')) return
+                    if ((e.target as HTMLElement).closest('.annotation-hl') || (e.target as HTMLElement).closest('.subtitle-hl') || (e.target as HTMLElement).closest('.commentary-trigger') || (e.target as HTMLElement).closest('.commentary-body') || (e.target as HTMLElement).closest('.view-mode-toggle')) return
                     setFocusedCardIndex(null)
                     setExpandedCards(new Set())
                 }}>
@@ -726,7 +742,9 @@ function ReportContent({
                             {currentTab.fullAnswer.split('\n').map((paragraph: string, pIdx: number) => (
                                 <p key={pIdx}>
                                     {(() => {
+                                        const SUBTITLE_MATCH = -2
                                         const highlights = currentTab.feedbackCards.map((c: any) => c.original)
+                                        const subtitleOriginal = currentTab.subtitleDiagnosis?.original?.trim() ?? ''
                                         let result: React.ReactNode[] = []
                                         let remaining = paragraph
                                         let keyCounter = 0
@@ -742,26 +760,47 @@ function ReportContent({
                                                     matchedCardIdx = hIdx
                                                 }
                                             })
+                                            if (subtitleOriginal) {
+                                                const pos = remaining.indexOf(subtitleOriginal)
+                                                if (pos !== -1 && pos < earliestIdx) {
+                                                    earliestIdx = pos
+                                                    matchedHighlight = subtitleOriginal
+                                                    matchedCardIdx = SUBTITLE_MATCH
+                                                }
+                                            }
                                             if (matchedHighlight) {
                                                 if (earliestIdx > 0) result.push(remaining.slice(0, earliestIdx))
-                                                const isActive = focusedCardIndex === matchedCardIdx
-                                                const cardType = currentTab.feedbackCards[matchedCardIdx]?.type
-                                                const typeClass = cardType === 'praise' ? 'praise-hl' : 'improvement-hl'
-                                                const displayNum = cardDisplayNumbers[matchedCardIdx] ?? (matchedCardIdx + 1)
-                                                result.push(
-                                                    <span key={`hl-${pIdx}-${keyCounter++}`}
-                                                        id={`source-sentence-${matchedCardIdx}`}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            handleSourceHighlightClick(matchedCardIdx)
-                                                        }}
-                                                        className={`annotation-hl ${typeClass} ${isActive ? 'active' : ''}`}>
-                                                        <span className="annotation-badge">
-                                                            {displayNum}
+                                                if (matchedCardIdx === SUBTITLE_MATCH) {
+                                                    result.push(
+                                                        <span key={`subtitle-hl-${pIdx}-${keyCounter++}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setShowSubtitle(true)
+                                                            }}
+                                                            className={`subtitle-hl ${showSubtitle ? 'watching' : ''}`}>
+                                                            {matchedHighlight}
                                                         </span>
-                                                        {matchedHighlight}
-                                                    </span>
-                                                )
+                                                    )
+                                                } else {
+                                                    const isActive = focusedCardIndex === matchedCardIdx
+                                                    const cardType = currentTab.feedbackCards[matchedCardIdx]?.type
+                                                    const typeClass = cardType === 'praise' ? 'praise-hl' : 'improvement-hl'
+                                                    const displayNum = cardDisplayNumbers[matchedCardIdx] ?? (matchedCardIdx + 1)
+                                                    result.push(
+                                                        <span key={`hl-${pIdx}-${keyCounter++}`}
+                                                            id={`source-sentence-${matchedCardIdx}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleSourceHighlightClick(matchedCardIdx)
+                                                            }}
+                                                            className={`annotation-hl ${typeClass} ${isActive ? 'active' : ''}`}>
+                                                            <span className="annotation-badge">
+                                                                {displayNum}
+                                                            </span>
+                                                            {matchedHighlight}
+                                                        </span>
+                                                    )
+                                                }
                                                 remaining = remaining.slice(earliestIdx + matchedHighlight.length)
                                             } else {
                                                 result.push(remaining)
@@ -798,7 +837,7 @@ function ReportContent({
                         </div>
 
                         {/* Scrolling Content Area */}
-                        <div className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10">
+                        <div ref={commentaryScrollRef} className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10">
 
                         {/* Overview — Collapsible */}
                         <div className="border-t border-white/[0.06] py-5">
@@ -808,11 +847,13 @@ function ReportContent({
                                 <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.OVERVIEW}</span>
                                 <ChevronDown className={`w-4 h-4 self-center text-zinc-600 transition-transform ${showOverview ? 'rotate-180' : ''}`} />
                             </button>
-                            {showOverview && (
-                                <div className="pt-4">
-                                    <p className="text-[14px] text-zinc-300 leading-[1.85]">{renderRichText(currentTab.overview)}</p>
+                            <div className={`panel-collapse ${showOverview ? 'open' : ''}`}>
+                                <div>
+                                    <div className="pt-4">
+                                        <p className="text-[14px] text-zinc-300 leading-[1.85]">{renderRichText(currentTab.overview)}</p>
+                                    </div>
                                 </div>
-                            )}
+                            </div>
                         </div>
 
                         {/* Subtitle Diagnosis — Collapsible */}
@@ -823,14 +864,16 @@ function ReportContent({
                                 <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
                                 <ChevronDown className={`w-4 h-4 self-center text-zinc-600 transition-transform ${showSubtitle ? 'rotate-180' : ''}`} />
                             </button>
-                            {showSubtitle && (
-                                <div className="pt-4">
-                                    <p className="commentary-body-text mb-1">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
+                            <div className={`panel-collapse ${showSubtitle ? 'open' : ''}`}>
+                                <div>
+                                    <div className="pt-4">
+                                        <p className="commentary-body-text mb-1">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
 
-                                    <p className="commentary-label">소제목 수정 제안</p>
-                                    <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
+                                        <p className="commentary-label">소제목 수정 제안</p>
+                                        <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
+                                    </div>
                                 </div>
-                            )}
+                            </div>
                         </div>
 
                         {/* Section Header: 문장 진단 */}
@@ -986,7 +1029,7 @@ function ReportContent({
                                             </div>
                                         )}
                                         <p className="text-xs uppercase tracking-[0.12em] text-zinc-500 mb-3 font-medium">{UI_LABELS.MODEL_ANSWER}</p>
-                                        <p className="text-[15px] text-zinc-400 leading-[1.8]">{renderRichText(item.modelAnswer)}</p>
+                                        <p className="text-[15px] text-zinc-400 leading-[1.8]">{renderEmphasizedText(item.modelAnswer)}</p>
                                     </div>
                                 )}
                             </div>
@@ -1049,7 +1092,7 @@ function ReportContent({
                                         <span className="text-xs text-zinc-600">{UI_LABELS.JUST_NOW}</span>
                                     </div>
                                     <h4 className="mb-3 text-[18px] font-semibold tracking-tight text-zinc-100">{block.title}</h4>
-                                    <p className="text-[17px] font-normal leading-[1.8] text-zinc-200">{renderCleanText(block.text)}</p>
+                                    <p className="text-[17px] font-normal leading-[1.8] text-zinc-200">{renderEmphasizedText(block.text)}</p>
                                 </div>
                             </article>
                         ))}

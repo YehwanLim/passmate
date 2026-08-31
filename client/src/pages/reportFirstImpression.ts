@@ -384,21 +384,18 @@ export function parseHighlightedText(text: string): HighlightedTextSegment[] {
   return segments
 }
 
+// 강점·보완점은 항목마다 핵심 결론 1문장씩 강조를 유지하고, 그 이상은 일반 텍스트로 되돌린다.
 export function limitSectionHighlights(texts: string[]): HighlightedTextSegment[][] {
-  const parsedSections = texts.map((text) => parseHighlightedText(text))
-  const sentenceCount = parsedSections.reduce(
-    (total, segments) => total + getSentenceRanges(segments.map((segment) => segment.text).join("")).length,
-    0,
-  )
-  let remainingHighlights = Math.floor(sentenceCount * 0.2)
+  return texts.map((text) => {
+    let hasHighlight = false
+    return parseHighlightedText(text).map((segment) => {
+      if (segment.kind !== "bold") return segment
+      if (hasHighlight) return { ...segment, kind: "text" as const }
 
-  return parsedSections.map((segments) => segments.map((segment) => {
-    if (segment.kind !== "bold") return segment
-    if (remainingHighlights <= 0) return { ...segment, kind: "text" as const }
-
-    remainingHighlights -= 1
-    return segment
-  }))
+      hasHighlight = true
+      return segment
+    })
+  })
 }
 
 function expandSelectionToSentence(text: string, selection: { start: number; end: number }) {
