@@ -38,7 +38,7 @@ type HighlightTone = "strength" | "gap" | "interview"
 
 const HIGHLIGHT_UNDERLINE_STYLES: Record<HighlightTone, CSSProperties> = {
     strength: {
-        backgroundImage: "linear-gradient(to top, rgba(105, 211, 177, 0.22) 0 4px, transparent 4px)",
+        backgroundImage: "linear-gradient(to top, rgba(105, 211, 177, 0.34) 0 6px, transparent 6px)",
         backgroundPosition: "0 100%",
         backgroundRepeat: "no-repeat",
         backgroundSize: "100% 100%",
@@ -47,7 +47,7 @@ const HIGHLIGHT_UNDERLINE_STYLES: Record<HighlightTone, CSSProperties> = {
         WebkitBoxDecorationBreak: "clone",
     },
     gap: {
-        backgroundImage: "linear-gradient(to top, rgba(217, 185, 75, 0.22) 0 4px, transparent 4px)",
+        backgroundImage: "linear-gradient(to top, rgba(217, 185, 75, 0.32) 0 6px, transparent 6px)",
         backgroundPosition: "0 100%",
         backgroundRepeat: "no-repeat",
         backgroundSize: "100% 100%",
@@ -56,7 +56,7 @@ const HIGHLIGHT_UNDERLINE_STYLES: Record<HighlightTone, CSSProperties> = {
         WebkitBoxDecorationBreak: "clone",
     },
     interview: {
-        backgroundImage: "linear-gradient(to top, rgba(123, 184, 255, 0.2) 0 4px, transparent 4px)",
+        backgroundImage: "linear-gradient(to top, rgba(123, 184, 255, 0.3) 0 6px, transparent 6px)",
         backgroundPosition: "0 100%",
         backgroundRepeat: "no-repeat",
         backgroundSize: "100% 100%",
@@ -351,7 +351,7 @@ function ReportContent({
                 return (
                     <strong
                         key={`${segment.text}-${index}`}
-                        className="rounded-[2px] font-semibold text-inherit"
+                        className="rounded-[2px] font-semibold text-zinc-100"
                         style={HIGHLIGHT_UNDERLINE_STYLES[tone]}
                     >
                         {segment.text}
@@ -957,26 +957,30 @@ function ReportContent({
                                             </button>
 
                                             {/* Body */}
-                                            <div className="commentary-body pt-2">
-                                                {/* Detailed Analysis */}
-                                                <p className="commentary-body-text mb-4">{renderRichText(card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint))}</p>
+                                            <div className="commentary-body">
+                                                <div className="commentary-body-inner">
+                                                    <div className="pt-2 pb-5">
+                                                        {/* Detailed Analysis */}
+                                                        <p className="commentary-body-text mb-4">{renderRichText(card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint))}</p>
 
-                                                {/* Interview perspective */}
-                                                {card.interviewLink && (
-                                                    <>
-                                                        <p className="commentary-label">예상 면접 질문</p>
-                                                        <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-sky-300/80">Q.</span>{renderRichText(card.interviewLink.question)}</p>
-                                                        <p className="commentary-meta mt-1">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
-                                                    </>
-                                                )}
+                                                        {/* Interview perspective */}
+                                                        {card.interviewLink && (
+                                                            <>
+                                                                <p className="commentary-label">예상 면접 질문</p>
+                                                                <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-sky-300/80">Q.</span>{renderRichText(card.interviewLink.question)}</p>
+                                                                <p className="commentary-meta mt-1">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
+                                                            </>
+                                                        )}
 
-                                                {/* Improvement suggestion */}
-                                                {card.type === 'improvement' && card.suggestion && (
-                                                    <>
-                                                        <p className="commentary-label">개선한 문장</p>
-                                                        <p className="commentary-headline">{renderRichText(card.suggestion)}</p>
-                                                    </>
-                                                )}
+                                                        {/* Improvement suggestion */}
+                                                        {card.type === 'improvement' && card.suggestion && (
+                                                            <>
+                                                                <p className="commentary-label">개선한 문장</p>
+                                                                <p className="commentary-headline">{renderRichText(card.suggestion)}</p>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     )

@@ -922,55 +922,24 @@ html {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Commentary Accordion Item ── */
+/* ── Commentary Accordion Item: hairline list, soft panel when open ── */
 .commentary-item {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.25s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.28s ease, border-radius 0.28s ease,
+              padding 0.28s ease, margin 0.28s ease;
 }
 .commentary-item:last-child {
   border-bottom: none;
 }
-
-/* Focused state: glass outline */
+.commentary-item.expanded {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  border-bottom-color: transparent;
+  padding: 2px 16px;
+  margin: 8px 0;
+}
 .commentary-item.focused {
-  --commentary-focus-accent: rgba(255, 255, 255, 0.22);
-  position: relative;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.035));
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 4px 12px;
-  margin: 4px -12px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 10px 24px rgba(0, 0, 0, 0.20);
-}
-.commentary-item.focused::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 12px;
-  right: 12px;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, var(--commentary-focus-accent), transparent);
-}
-.commentary-item.praise.focused {
-  --commentary-focus-accent: rgba(187, 247, 208, 0.34);
-}
-.commentary-item.improvement.focused {
-  --commentary-focus-accent: rgba(253, 230, 138, 0.32);
-}
-.commentary-item.focused .commentary-num {
-  color: #fff;
-}
-.commentary-item.praise.focused .commentary-num {
-  background: rgba(187, 247, 208, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(187, 247, 208, 0.24);
-}
-.commentary-item.improvement.focused .commentary-num {
-  background: rgba(253, 230, 138, 0.15);
-  box-shadow: inset 0 0 0 1px rgba(253, 230, 138, 0.22);
+  background: rgba(255, 255, 255, 0.045);
 }
 .commentary-item.focused .commentary-preview {
   color: #fff;
@@ -993,10 +962,10 @@ html {
   opacity: 0.85;
 }
 
-/* Commentary number: bright white by default, colored on expand */
+/* Commentary number: translucent, colored by feedback type */
 .commentary-num {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1009,15 +978,15 @@ html {
   background: rgba(255, 255, 255, 0.10);
   color: rgba(230, 230, 230, 0.9);
 }
-
-/* Expanded: colored by type */
-.commentary-item.praise.expanded .commentary-num {
-  background: #4ADE80;
-  color: #111;
+.commentary-item.praise .commentary-num {
+  background: rgba(52, 211, 153, 0.14);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.3);
 }
-.commentary-item.improvement.expanded .commentary-num {
-  background: #FBBF24;
-  color: #111;
+.commentary-item.improvement .commentary-num {
+  background: rgba(252, 211, 77, 0.12);
+  color: #fcd34d;
+  border: 1px solid rgba(252, 211, 77, 0.28);
 }
 
 .commentary-preview {
@@ -1036,48 +1005,45 @@ html {
   overflow: visible;
 }
 
+/* grid-template-rows 0fr→1fr는 실제 콘텐츠 높이만큼만 움직여서
+   max-height 트릭처럼 닫힐 때 멈칫하는 구간이 없다. */
 .commentary-body {
-  overflow: hidden;
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease 0.05s,
-              padding 0.3s ease;
-  padding: 0 0 0 36px;
+  padding-left: 36px;
+  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.24s ease;
 }
 .commentary-item.expanded .commentary-body {
-  max-height: 800px;
+  grid-template-rows: 1fr;
   opacity: 1;
-  padding: 0 0 20px 36px;
+}
+.commentary-body-inner {
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* ═══ Commentary Typography Hierarchy ═══ */
 
 /*
- * TIER 1 — Panel Section Headers (총평, 소제목 진단, 문장 진단)
- * The biggest, most prominent. Navigation landmarks.
- */
-.panel-header {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  color: #ffffff;
-}
-
-/*
- * TIER 2 — Structure Labels (원본 문장, 상세 분석, 면접관 관점, 개선안)
- * Small, quiet, uppercase-ish. Just markers, not content.
+ * TIER 2 — Block Labels (예상 면접 질문, 개선한 문장)
+ * A hairline above each label marks the start of a new block,
+ * so visibility comes from position rather than size.
  */
 .commentary-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: none;
-  color: rgba(160, 160, 160, 0.55);
-  margin-top: 28px;
-  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #d4d4d8;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 16px;
+  margin-top: 18px;
+  margin-bottom: 10px;
 }
 .commentary-label:first-child {
+  border-top: none;
+  padding-top: 0;
   margin-top: 4px;
 }
 
@@ -1128,16 +1094,6 @@ html {
   line-height: 1.75;
   color: rgba(180, 180, 180, 0.65);
   margin-bottom: 20px;
-}
-
-/* Legacy — keep for backward compat with collapsible section buttons */
-.commentary-section-label {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: rgba(200, 200, 200, 0.8);
-  margin-bottom: 8px;
-  margin-top: 16px;
 }
 
 /* ── Commentary Chevron ── */
