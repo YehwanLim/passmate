@@ -25,15 +25,16 @@ import {
 } from "@/components/ui/pagination";
 import {
   useFeedbackData,
-  type FeedbackRatingFilter,
+  type FeedbackSegment,
 } from "@/hooks/admin/useFeedbackData";
+import { UI_LABELS } from "@/constants/labels";
 import {
   AlertCircle,
+  ClipboardList,
+  Gauge,
   MessageSquare,
   RefreshCw,
   Search,
-  ThumbsDown,
-  ThumbsUp,
 } from "lucide-react";
 
 const PAGE_SIZE = 15;
@@ -58,15 +59,21 @@ function getPageNumbers(
   return pages;
 }
 
-const RATING_OPTIONS: { value: FeedbackRatingFilter; label: string }[] = [
-  { value: "ALL", label: "전체 평가" },
-  { value: "THUMBS_UP", label: "👍 만족" },
-  { value: "THUMBS_DOWN", label: "👎 불만족" },
+// 추천 의향 점수로 나눈 구간. 기준은 NPS 관례(9~10 추천 / 6 이하 비추천)를 따른다.
+const SEGMENT_OPTIONS: { value: FeedbackSegment; label: string }[] = [
+  { value: "ALL", label: "전체 응답" },
+  { value: "DETRACTOR", label: "추천 의향 낮음 (≤6)" },
+  { value: "PROMOTER", label: "추천 의향 높음 (≥9)" },
+  { value: "LEGACY", label: "과거 👍/👎 응답" },
 ];
+
+function formatAverage(value: number | null | undefined): string {
+  return typeof value === "number" ? value.toFixed(1) : "–";
+}
 
 export default function FeedbackPage() {
   const [search, setSearch] = useState("");
-  const [rating, setRating] = useState<FeedbackRatingFilter>("ALL");
+  const [segment, setSegment] = useState<FeedbackSegment>("ALL");
   const [commentsOnly, setCommentsOnly] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -75,8 +82,8 @@ export default function FeedbackPage() {
     setPage(1);
   }, []);
 
-  const handleRatingChange = useCallback((value: FeedbackRatingFilter) => {
-    setRating(value);
+  const handleSegmentChange = useCallback((value: FeedbackSegment) => {
+    setSegment(value);
     setPage(1);
   }, []);
 
@@ -96,18 +103,22 @@ export default function FeedbackPage() {
     lastRefreshed,
   } = useFeedbackData({
     search,
-    rating,
+    segment,
     commentsOnly,
     page,
     pageSize: PAGE_SIZE,
   });
 
   const pageNumbers = getPageNumbers(page, totalPages);
-  const ratedTotal = summary.thumbsUp + summary.thumbsDown;
-  const satisfactionLabel =
-    ratedTotal > 0
-      ? `만족률 ${Math.round((summary.thumbsUp / ratedTotal) * 100)}%`
-      : undefined;
+  const averages = summary.questionAverages ?? {};
+  const answeredAverages = UI_LABELS.FEEDBACK_SURVEY_QUESTIONS.map(
+    item => averages[item.key]
+  ).filter((value): value is number => typeof value === "number");
+  const overallAverage =
+    answeredAverages.length > 0
+      ? answeredAverages.reduce((sum, value) => sum + value, 0) /
+        answeredAverages.length
+      : null;
   const refreshLabel = `${lastRefreshed.getHours().toString().padStart(2, "0")}:${lastRefreshed
     .getMinutes()
     .toString()
@@ -117,7 +128,7 @@ export default function FeedbackPage() {
     <div className="space-y-5">
       <AdminPageHeader
         title="Feedback"
-        description="리포트에 남은 사용자 평가와 코멘트를 확인합니다."
+        description="리포트 만족도 설문 응답을 확인합니다."
         actions={
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground hidden sm:block">
@@ -150,23 +161,42 @@ export default function FeedbackPage() {
       {/* 요약 통계 (필터와 무관한 전체 기준) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <AdminStatCard
-          title="만족"
-          value={summary.thumbsUp.toLocaleString("ko-KR")}
-          description={satisfactionLabel}
-          icon={ThumbsUp}
+          title="설문 응답"
+          value={summary.surveyCount.toLocaleString("ko-KR")}
+          description="5문항을 모두 채운 건"
+          icon={ClipboardList}
         />
         <AdminStatCard
-          title="불만족"
-          value={summary.thumbsDown.toLocaleString("ko-KR")}
-          description="원인 파악이 필요한 건"
-          icon={ThumbsDown}
+          title="전체 평균"
+          value={formatAverage(overallAverage)}
+          description="10점 만점, 문항 평균의 평균"
+          icon={Gauge}
         />
         <AdminStatCard
-          title="코멘트"
+          title="주관식"
           value={summary.withComment.toLocaleString("ko-KR")}
           description="사용자가 직접 남긴 글"
           icon={MessageSquare}
         />
+      </div>
+
+      {/* 문항별 평균 (필터와 무관한 전체 기준) */}
+      <div className="rounded-lg border p-4">
+        <p className="text-xs font-semibold text-muted-foreground mb-3">
+          문항별 평균
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {UI_LABELS.FEEDBACK_SURVEY_QUESTIONS.map(item => (
+            <div key={item.key} className="min-w-0">
+              <p className="text-lg font-semibold tabular-nums leading-tight">
+                {formatAverage(averages[item.key])}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                {item.question}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* 검색 및 필터 */}
@@ -175,7 +205,7 @@ export default function FeedbackPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             id="feedback-search"
-            placeholder="코멘트, 사용자 메일, 기업명 검색..."
+            placeholder="주관식, 사용자 메일, 기업명 검색..."
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
             className="pl-9 h-9"
@@ -183,14 +213,14 @@ export default function FeedbackPage() {
         </div>
 
         <Select
-          value={rating}
-          onValueChange={v => handleRatingChange(v as FeedbackRatingFilter)}
+          value={segment}
+          onValueChange={v => handleSegmentChange(v as FeedbackSegment)}
         >
-          <SelectTrigger id="feedback-rating-filter" className="h-9 w-[150px]">
+          <SelectTrigger id="feedback-segment-filter" className="h-9 w-[190px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {RATING_OPTIONS.map(o => (
+            {SEGMENT_OPTIONS.map(o => (
               <SelectItem key={o.value} value={o.value}>
                 {o.label}
               </SelectItem>
@@ -210,7 +240,7 @@ export default function FeedbackPage() {
             htmlFor="feedback-comments-only"
             className="text-sm text-muted-foreground whitespace-nowrap cursor-pointer"
           >
-            코멘트만 보기
+            주관식만 보기
           </Label>
         </div>
 

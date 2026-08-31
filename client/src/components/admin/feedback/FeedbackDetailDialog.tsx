@@ -7,8 +7,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FeedbackScoreBadge } from "./FeedbackScoreBadge";
+import { UI_LABELS } from "@/constants/labels";
 import { Building2, Clock, Cpu, FileText, User } from "lucide-react";
 import type { FeedbackItem } from "@/hooks/admin/useFeedbackData";
 
@@ -17,6 +18,8 @@ interface FeedbackDetailDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const SCORE_MAX = UI_LABELS.FEEDBACK_SCORE_MAX;
 
 function formatDate(iso: string | null): string {
   if (!iso) return "–";
@@ -37,35 +40,22 @@ export function FeedbackDetailDialog({
   const [, navigate] = useLocation();
   if (!feedback) return null;
 
-  const isPositive = feedback.rating === "THUMBS_UP";
-  const target = [feedback.company, feedback.jobKeyword]
-    .filter(Boolean)
-    .join(" · ");
+  const target = [feedback.company, feedback.jobKeyword].filter(Boolean).join(" · ");
 
   return (
-    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6 gap-4">
         <DialogHeader className="pb-2 border-b">
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <Badge
-              variant={isPositive ? "secondary" : "destructive"}
-              className="font-semibold text-xs"
-            >
-              {isPositive ? "👍 만족" : "👎 불만족"}
-            </Badge>
-            {feedback.comment && (
-              <Badge variant="outline" className="text-xs">
-                코멘트 있음
-              </Badge>
-            )}
+          <div className="flex items-center gap-2 mb-1.5">
+            <FeedbackScoreBadge item={feedback} />
+            <span className="text-xs text-muted-foreground">평균 (10점 만점)</span>
           </div>
-          <DialogTitle className="text-lg font-bold">피드백 상세</DialogTitle>
+          <DialogTitle className="text-lg font-bold">설문 응답 상세</DialogTitle>
           <DialogDescription className="text-xs">
             {formatDate(feedback.createdAt)} 접수
           </DialogDescription>
         </DialogHeader>
 
-        {/* 요약 메타 */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-muted/40 p-3 rounded-lg border">
           <div className="flex items-center gap-2 min-w-0">
             <User className="size-3.5 text-muted-foreground flex-shrink-0" />
@@ -85,13 +75,41 @@ export function FeedbackDetailDialog({
 
         <ScrollArea className="flex-1 min-h-0 pr-3">
           <div className="space-y-4">
-            {/* 남긴 코멘트 */}
+            {/* 문항별 점수 */}
+            <section>
+              <h3 className="text-xs font-semibold text-muted-foreground mb-2">
+                문항별 점수
+              </h3>
+              <div className="space-y-2.5">
+                {UI_LABELS.FEEDBACK_SURVEY_QUESTIONS.map((item) => {
+                  const score = feedback.scores?.[item.key] ?? null;
+                  return (
+                    <div key={item.key}>
+                      <div className="flex items-baseline justify-between gap-3 mb-1">
+                        <span className="text-xs text-foreground">{item.question}</span>
+                        <span className="text-xs font-semibold tabular-nums shrink-0">
+                          {score == null ? "–" : `${score}/${SCORE_MAX}`}
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-foreground/70 rounded-full"
+                          style={{ width: `${((score ?? 0) / SCORE_MAX) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* 주관식 */}
             <section>
               <h3 className="text-xs font-semibold text-muted-foreground mb-1.5">
-                남긴 코멘트
+                주관식 답변
               </h3>
               <p className="text-sm whitespace-pre-wrap rounded-lg border bg-background p-3 leading-relaxed">
-                {feedback.comment || "코멘트 없이 평가만 남겼습니다."}
+                {feedback.comment || "답변 없음"}
               </p>
             </section>
 

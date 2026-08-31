@@ -82,23 +82,35 @@ export const UI_LABELS = {
   DIAGNOSIS_DETAIL: "진단 상세",
   ORIGINAL_ANALYSIS: "원본 분석",
 
-  // Feedback (만족도)
-  FEEDBACK_TITLE: "이 리포트, 실제로 도움이 됐나요?",
-  FEEDBACK_SUBTITLE: "더 나은 분석을 위해 의견을 남겨주세요.",
-  FEEDBACK_THUMBS_UP: "도움됐어요",
-  FEEDBACK_THUMBS_DOWN: "아쉬워요",
-  FEEDBACK_REASON_TITLE: "어떤 부분이 아쉬웠나요?",
-  FEEDBACK_REASONS: [
-    "피드백이 너무 일반적이에요",
-    "내 자소서와 맞지 않는 분석이에요",
-    "개선안이 도움이 안 돼요",
-    "기업 분석이 부정확해요",
-    "기타",
-  ] as string[],
-  FEEDBACK_SUBMIT: "의견 보내기",
+  // Feedback (리포트 만족도 설문)
+  // 문항 키·점수 범위·주관식 최소 길이의 정본은 서버(lib/feedback-survey.js)다.
+  // 여기 값은 화면 문구를 맞추기 위한 사본이며, 두 쪽이 어긋나면
+  // feedbackSurvey.singleSource.test.ts 가 실패한다.
+  FEEDBACK_TITLE: "이 리포트, 얼마나 도움이 됐나요?",
+  FEEDBACK_SUBTITLE:
+    "3개 문항과 짧은 의견을 남겨주시면 분석 1회를 더 드려요. 계정당 한 번입니다.",
+  FEEDBACK_SCORE_MIN: 1,
+  FEEDBACK_SCORE_MAX: 10,
+  FEEDBACK_SCORE_LOW_HINT: "전혀 아니다",
+  FEEDBACK_SCORE_HIGH_HINT: "매우 그렇다",
+  FEEDBACK_SURVEY_QUESTIONS: [
+    { key: "reflection", question: "리포트에 나의 자소서 내용이 잘 반영되었나요?" },
+    { key: "improvement", question: "실제로 자소서를 고치는 데 도움이 되었나요?" },
+    { key: "recommend", question: "취업 준비 중인 친구에게 추천하시겠나요?" },
+  ] as ReadonlyArray<{ key: string; question: string }>,
+  FEEDBACK_MIN_COMMENT_LENGTH: 50,
+  FEEDBACK_COMMENT_TITLE: "가장 아쉬웠던 점을 알려주세요",
+  FEEDBACK_COMMENT_PLACEHOLDER:
+    "어떤 부분이 기대와 달랐는지, 무엇이 더 있었으면 했는지 적어주세요. 구체적일수록 다음 리포트가 좋아집니다.",
+  FEEDBACK_SUBMIT: "설문 마치고 1회 받기",
+  FEEDBACK_SUBMITTING: "보내는 중...",
+  FEEDBACK_PROGRESS_HINT: "3문항 중 {answered}문항 응답",
   FEEDBACK_THANKS_TITLE: "소중한 의견 감사합니다",
   FEEDBACK_THANKS_DESC: "더 나은 리포트를 위해 활용하겠습니다.",
-  FEEDBACK_ALREADY_VOTED: "이미 의견을 보내주셨어요",
+  FEEDBACK_REWARD_GRANTED_TITLE: "분석 1회를 넣어드렸어요",
+  FEEDBACK_REWARD_GRANTED_DESC: "남겨주신 의견은 다음 리포트 개선에 그대로 씁니다.",
+  FEEDBACK_ALREADY_REWARDED:
+    "의견 잘 받았습니다. 추가 분석 1회는 계정당 한 번이라 이번에는 지급되지 않았어요.",
   FEEDBACK_ERROR: "의견 전송에 실패했어요. 잠시 후 다시 시도해주세요.",
 
   // API Test Messages

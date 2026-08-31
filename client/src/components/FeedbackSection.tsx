@@ -1,17 +1,28 @@
 import { useState } from "react"
-import { ThumbsUp, ThumbsDown, Check, Send } from "lucide-react"
+import { Check, Send } from "lucide-react"
 import { UI_LABELS } from "../constants/labels"
 import { getAuthorizationHeader } from "@/lib/apiAuth"
 
 // =============================================================================
-// FeedbackSection — 리포트 만족도 컴포넌트
+// FeedbackSection — 리포트 만족도 설문
 // =============================================================================
 // 위치: ReportResult 하단
-// 상태 흐름: idle → selected → (reason panel) → submitted
+// 상태 흐름: filling → submitting → submitted
+//
+// 설문은 전부 채워야 제출된다. 5문항 점수와 주관식이 같이 있어야 응답 하나가
+// 의미를 갖고, 제출 조건과 보상 조건이 갈리면 "다 썼는데 왜 안 주냐"가 생긴다.
+// 서버(api/feedback.js)도 같은 조건으로 검사하므로 여기 검사는 안내용이다.
 // =============================================================================
 
-type FeedbackState = "idle" | "selected" | "submitting" | "submitted"
-type Rating = "THUMBS_UP" | "THUMBS_DOWN"
+type SurveyState = "filling" | "submitting" | "submitted"
+
+const QUESTIONS = UI_LABELS.FEEDBACK_SURVEY_QUESTIONS
+const MIN_COMMENT_LENGTH = UI_LABELS.FEEDBACK_MIN_COMMENT_LENGTH
+const MAX_COMMENT_LENGTH = 2000
+const SCALE = Array.from(
+  { length: UI_LABELS.FEEDBACK_SCORE_MAX - UI_LABELS.FEEDBACK_SCORE_MIN + 1 },
+  (_, index) => UI_LABELS.FEEDBACK_SCORE_MIN + index
+)
 
 interface FeedbackSectionProps {
   /** DB Analysis ID (없으면 Feedback 비활성화) */
@@ -19,16 +30,23 @@ interface FeedbackSectionProps {
 }
 
 export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
-  const [state, setState] = useState<FeedbackState>("idle")
-  const [selectedRating, setSelectedRating] = useState<Rating | null>(null)
-  const [selectedReason, setSelectedReason] = useState<string | null>(null)
+  const [state, setState] = useState<SurveyState>("filling")
+  const [scores, setScores] = useState<Record<string, number>>({})
+  const [comment, setComment] = useState("")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [creditGranted, setCreditGranted] = useState(false)
 
   // ── analysisId 없으면 UI 숨김 ──
   if (!analysisId) return null
 
-  // ── API 호출 ──
-  const submitFeedback = async (rating: Rating, comment?: string) => {
+  const answered = QUESTIONS.filter(q => scores[q.key] != null).length
+  const written = comment.trim().length
+  const isComplete = answered === QUESTIONS.length && written >= MIN_COMMENT_LENGTH
+  const canSubmit = isComplete && state === "filling"
+
+  const submitSurvey = async () => {
+    if (!canSubmit) return
+
     setState("submitting")
     setErrorMessage(null)
 
@@ -39,42 +57,23 @@ export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
           "Content-Type": "application/json",
           ...(await getAuthorizationHeader()),
         },
-        body: JSON.stringify({
-          analysisId,
-          rating,
-          comment: comment || null,
-        }),
+        body: JSON.stringify({ analysisId, scores, comment: comment.trim() }),
       })
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`)
       }
 
-      setSelectedRating(rating)
+      const payload = (await res.json().catch(() => null)) as {
+        credit_granted?: boolean
+      } | null
+
+      setCreditGranted(Boolean(payload?.credit_granted))
       setState("submitted")
     } catch {
       setErrorMessage(UI_LABELS.FEEDBACK_ERROR)
-      setState("selected")
+      setState("filling")
     }
-  }
-
-  // ── 👍 클릭 ──
-  const handleThumbsUp = () => {
-    setSelectedRating("THUMBS_UP")
-    submitFeedback("THUMBS_UP")
-  }
-
-  // ── 👎 클릭 → 사유 선택 패널 ──
-  const handleThumbsDown = () => {
-    setSelectedRating("THUMBS_DOWN")
-    setSelectedReason(null)
-    setState("selected")
-  }
-
-  // ── 사유 선택 후 제출 ──
-  const handleReasonSubmit = () => {
-    if (!selectedReason) return
-    submitFeedback("THUMBS_DOWN", selectedReason)
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -88,10 +87,14 @@ export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
             <Check className="w-5 h-5 text-emerald-400" />
           </div>
           <p className="text-sm text-white font-medium mb-1">
-            {UI_LABELS.FEEDBACK_THANKS_TITLE}
+            {creditGranted
+              ? UI_LABELS.FEEDBACK_REWARD_GRANTED_TITLE
+              : UI_LABELS.FEEDBACK_THANKS_TITLE}
           </p>
           <p className="text-xs text-zinc-500">
-            {UI_LABELS.FEEDBACK_THANKS_DESC}
+            {creditGranted
+              ? UI_LABELS.FEEDBACK_REWARD_GRANTED_DESC
+              : UI_LABELS.FEEDBACK_ALREADY_REWARDED}
           </p>
         </div>
       </section>
@@ -99,119 +102,139 @@ export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // RENDER: 기본 상태 (idle) + 사유 선택 패널 (selected)
+  // RENDER: 설문 작성
   // ═══════════════════════════════════════════════════════════
+  const isBusy = state === "submitting"
+
   return (
     <section className="py-12">
-      <div className="bg-zinc-900/40 border border-white/[0.06] rounded-2xl px-8 py-8">
+      <div className="bg-zinc-900/40 border border-white/[0.06] rounded-2xl px-6 sm:px-8 py-8">
         {/* 제목 */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <p className="text-base text-white font-medium mb-1">
             {UI_LABELS.FEEDBACK_TITLE}
           </p>
-          <p className="text-xs text-zinc-500">
-            {UI_LABELS.FEEDBACK_SUBTITLE}
+          <p className="text-xs text-zinc-500">{UI_LABELS.FEEDBACK_SUBTITLE}</p>
+        </div>
+
+        {/* 점수 문항 5개 */}
+        <div className="space-y-6">
+          {QUESTIONS.map((item, index) => {
+            const selected = scores[item.key]
+            return (
+              <div key={item.key}>
+                <p className="text-sm text-zinc-200 mb-3">
+                  <span className="text-zinc-600 tabular-nums mr-2">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  {item.question}
+                </p>
+
+                <div
+                  role="radiogroup"
+                  aria-label={item.question}
+                  className="flex gap-1 sm:gap-1.5"
+                >
+                  {SCALE.map(score => {
+                    const active = selected === score
+                    return (
+                      <button
+                        key={score}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        aria-label={`${score}점`}
+                        disabled={isBusy}
+                        onClick={() =>
+                          setScores(prev => ({ ...prev, [item.key]: score }))
+                        }
+                        className={`
+                          flex-1 h-9 rounded-lg text-xs font-medium tabular-nums
+                          border transition-all duration-150
+                          ${
+                            active
+                              ? "bg-white text-black border-white"
+                              : "bg-zinc-800/40 text-zinc-500 border-white/[0.06] hover:text-zinc-200 hover:border-white/20"
+                          }
+                          disabled:opacity-50 disabled:cursor-not-allowed
+                        `}
+                      >
+                        {score}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="flex justify-between mt-1.5 text-[11px] text-zinc-600">
+                  <span>{UI_LABELS.FEEDBACK_SCORE_LOW_HINT}</span>
+                  <span>{UI_LABELS.FEEDBACK_SCORE_HIGH_HINT}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* 주관식 */}
+        <div className="mt-8 pt-8 border-t border-white/[0.06]">
+          <p className="text-sm text-zinc-200 mb-3">
+            <span className="text-zinc-600 tabular-nums mr-2">
+              {String(QUESTIONS.length + 1).padStart(2, "0")}
+            </span>
+            {UI_LABELS.FEEDBACK_COMMENT_TITLE}
+          </p>
+
+          <textarea
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            disabled={isBusy}
+            rows={5}
+            maxLength={MAX_COMMENT_LENGTH}
+            placeholder={UI_LABELS.FEEDBACK_COMMENT_PLACEHOLDER}
+            className="w-full resize-none rounded-xl bg-zinc-800/40 border border-white/[0.08] px-4 py-3 text-sm text-white leading-6 placeholder:text-zinc-600 focus:outline-none focus:border-white/20 disabled:opacity-50"
+          />
+
+          <p
+            className={`mt-2 text-xs tabular-nums ${
+              written >= MIN_COMMENT_LENGTH ? "text-emerald-400" : "text-zinc-600"
+            }`}
+          >
+            {written}/{MIN_COMMENT_LENGTH}자
           </p>
         </div>
 
-        {/* 👍 / 👎 버튼 */}
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <button
-            onClick={handleThumbsUp}
-            disabled={state === "submitting" || state === "selected"}
-            className={`
-              group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium
-              transition-all duration-200
-              ${
-                selectedRating === "THUMBS_UP"
-                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 border"
-                  : "bg-zinc-800/60 border border-white/[0.08] text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/20 hover:bg-emerald-500/[0.06]"
-              }
-              disabled:opacity-50 disabled:cursor-not-allowed
-            `}
-          >
-            <ThumbsUp className={`w-4 h-4 transition-transform ${selectedRating !== "THUMBS_UP" ? "group-hover:scale-110" : ""}`} />
-            <span>{UI_LABELS.FEEDBACK_THUMBS_UP}</span>
-          </button>
+        {/* 제출 */}
+        <div className="mt-6 pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="text-xs text-zinc-600">
+            {UI_LABELS.FEEDBACK_PROGRESS_HINT.replace(
+              "{answered}",
+              String(answered)
+            )}
+          </span>
 
           <button
-            onClick={handleThumbsDown}
-            disabled={state === "submitting"}
+            onClick={submitSurvey}
+            disabled={!canSubmit}
             className={`
-              group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium
-              transition-all duration-200
+              sm:ml-auto inline-flex items-center justify-center gap-2
+              px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
               ${
-                selectedRating === "THUMBS_DOWN"
-                  ? "bg-red-500/15 border-red-500/30 text-red-400 border"
-                  : "bg-zinc-800/60 border border-white/[0.08] text-zinc-400 hover:text-red-400 hover:border-red-500/20 hover:bg-red-500/[0.06]"
+                canSubmit
+                  ? "bg-white text-black hover:bg-gray-200"
+                  : "bg-zinc-800/40 text-zinc-600 border border-white/[0.04] cursor-not-allowed"
               }
-              disabled:opacity-50 disabled:cursor-not-allowed
             `}
           >
-            <ThumbsDown className={`w-4 h-4 transition-transform ${selectedRating !== "THUMBS_DOWN" ? "group-hover:scale-110" : ""}`} />
-            <span>{UI_LABELS.FEEDBACK_THUMBS_DOWN}</span>
+            <Send className="w-3.5 h-3.5" />
+            <span>
+              {isBusy ? UI_LABELS.FEEDBACK_SUBMITTING : UI_LABELS.FEEDBACK_SUBMIT}
+            </span>
           </button>
         </div>
 
-        {/* 에러 메시지 */}
         {errorMessage && (
-          <p className="text-xs text-red-400 text-center mt-3 animate-fade-in">
+          <p className="text-xs text-red-400 mt-3 animate-fade-in">
             {errorMessage}
           </p>
-        )}
-
-        {/* ─── 👎 사유 선택 패널 ─── */}
-        {state === "selected" && selectedRating === "THUMBS_DOWN" && (
-          <div className="mt-6 pt-6 border-t border-white/[0.06] animate-fade-in">
-            <p className="text-sm text-zinc-300 font-medium mb-4 text-center">
-              {UI_LABELS.FEEDBACK_REASON_TITLE}
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-2 mb-5">
-              {UI_LABELS.FEEDBACK_REASONS.map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => setSelectedReason(reason)}
-                  className={`
-                    px-4 py-2 text-xs rounded-lg border transition-all duration-150
-                    ${
-                      selectedReason === reason
-                        ? "bg-white/[0.08] border-white/20 text-white font-medium"
-                        : "bg-zinc-800/40 border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.12]"
-                    }
-                  `}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex justify-center">
-              <button
-                onClick={handleReasonSubmit}
-                disabled={!selectedReason}
-                className={`
-                  inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium
-                  transition-all duration-200
-                  ${
-                    selectedReason
-                      ? "bg-white/[0.08] text-white border border-white/[0.15] hover:bg-white/[0.12]"
-                      : "bg-zinc-800/40 text-zinc-600 border border-white/[0.04] cursor-not-allowed"
-                  }
-                `}
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>{UI_LABELS.FEEDBACK_SUBMIT}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* 제출 중 로딩 */}
-        {state === "submitting" && (
-          <div className="mt-4 flex justify-center">
-            <div className="w-5 h-5 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
-          </div>
         )}
       </div>
     </section>

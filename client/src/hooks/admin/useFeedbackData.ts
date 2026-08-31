@@ -2,12 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 
 import { adminApiFetch } from "@/lib/adminApi";
 
-export type FeedbackRatingFilter = "ALL" | "THUMBS_UP" | "THUMBS_DOWN";
+export type FeedbackSegment = "ALL" | "PROMOTER" | "DETRACTOR" | "LEGACY";
+
+export type SurveyScores = Record<string, number | null>;
 
 export interface FeedbackItem {
   id: string;
   analysisId: string;
-  rating: "THUMBS_UP" | "THUMBS_DOWN";
+  scores: SurveyScores;
+  averageScore: number | null;
+  legacyRating: "THUMBS_UP" | "THUMBS_DOWN" | null;
   comment: string | null;
   createdAt: string;
   userEmail: string | null;
@@ -20,28 +24,28 @@ export interface FeedbackItem {
 }
 
 export interface FeedbackSummary {
-  thumbsUp: number;
-  thumbsDown: number;
+  surveyCount: number;
   withComment: number;
+  questionAverages: Record<string, number | null>;
 }
 
 export interface UseFeedbackDataParams {
   search: string;
-  rating: FeedbackRatingFilter;
+  segment: FeedbackSegment;
   commentsOnly: boolean;
   page: number;
   pageSize: number;
 }
 
 const EMPTY_SUMMARY: FeedbackSummary = {
-  thumbsUp: 0,
-  thumbsDown: 0,
+  surveyCount: 0,
   withComment: 0,
+  questionAverages: {},
 };
 
 export function useFeedbackData({
   search,
-  rating,
+  segment,
   commentsOnly,
   page,
   pageSize,
@@ -64,7 +68,7 @@ export function useFeedbackData({
       try {
         const params = new URLSearchParams({
           search,
-          rating,
+          segment,
           commentsOnly: String(commentsOnly),
           page: String(page),
           pageSize: String(pageSize),
@@ -94,7 +98,7 @@ export function useFeedbackData({
     return () => {
       cancelled = true;
     };
-  }, [commentsOnly, page, pageSize, rating, search, tick]);
+  }, [commentsOnly, page, pageSize, search, segment, tick]);
 
   return {
     items,

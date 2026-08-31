@@ -37,6 +37,7 @@ model User {
   analysisRequests AnalysisRequest[]
   purchaseIntents PurchaseIntent[]
   paymentEntitlements PaymentEntitlement[]
+  feedbackCreditGrant FeedbackCreditGrant?
   receivedAdminCreditGrants AdminCreditGrant[] @relation("AdminCreditGrantRecipient")
   issuedAdminCreditGrants   AdminCreditGrant[] @relation("AdminCreditGrantAdministrator")
 
@@ -514,14 +515,22 @@ model Feedback {
   userId     String @map("user_id") @db.Uuid
 
   // ── 평가 ──
-  rating  Rating
-  comment String? @db.Text   // 선택적 코멘트
+  // rating 은 👍/👎 시절의 응답을 보존하기 위해 남긴 레거시 컬럼이다.
+  // 신규 응답은 1~10 점수 5문항(score*)과 주관식(comment)으로 들어온다.
+  rating  Rating?
+  comment String? @db.Text
+
+  // ── 설문 점수 (1~10). 문항 정의는 lib/feedback-survey.js 가 정본 ──
+  scoreReflection  Int? @map("score_reflection")
+  scoreImprovement Int? @map("score_improvement")
+  scoreRecommend   Int? @map("score_recommend")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   // Relations
   analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditGrants FeedbackCreditGrant[]
 
   // 동일 유저가 동일 분석에 중복 투표 불가
   @@unique([analysisId, userId], map: "uq_feedback_analysis_user")
@@ -529,4 +538,28 @@ model Feedback {
   @@index([userId])
   @@index([rating])
   @@map("feedbacks")
+}
+
+// =============================================================================
+// FeedbackCreditGrant — 피드백 보상 크레딧 지급 이력
+// =============================================================================
+// user_id 의 유니크 제약이 "계정당 평생 1회"를 DB 차원에서 보장한다.
+// 애플리케이션 조건문으로만 막으면 같은 사용자의 동시 요청 두 건이 모두
+// 통과해 크레딧이 두 번 나갈 수 있다.
+//
+// feedbackId 는 nullable + SetNull 이다. 분석이 지워져 피드백이 함께 사라져도
+// 지급 이력은 남아야 하기 때문 — 이력이 사라지면 같은 계정이 보상을 다시 받는다.
+model FeedbackCreditGrant {
+  id             String @id @default(uuid()) @db.Uuid
+  userId         String @unique @map("user_id") @db.Uuid
+  feedbackId     String? @map("feedback_id") @db.Uuid
+  creditsGranted Int    @map("credits_granted")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback Feedback? @relation(fields: [feedbackId], references: [id], onDelete: SetNull)
+
+  @@index([feedbackId])
+  @@map("feedback_credit_grants")
 }

@@ -8,6 +8,10 @@ import { createProjectsHandler } from "../../api/projects.js";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 
+// 설문은 5문항 점수와 100자 이상 주관식이 모두 있어야 접수된다.
+const SURVEY_SCORES = { reflection: 8, improvement: 8, recommend: 8 };
+const SURVEY_COMMENT = "가".repeat(50);
+
 function request(overrides = {}) {
   return {
     body: undefined,
@@ -156,7 +160,8 @@ describe("protected user APIs", () => {
     await handler(request({
       body: {
         analysisId: "analysis-1",
-        rating: "THUMBS_UP",
+        scores: SURVEY_SCORES,
+        comment: SURVEY_COMMENT,
         userId: "attacker-controlled-user",
       },
       method: "POST",
@@ -179,7 +184,11 @@ describe("protected user APIs", () => {
     const res = response();
 
     await handler(request({
-      body: { analysisId: "another-users-analysis", rating: "THUMBS_DOWN" },
+      body: {
+        analysisId: "another-users-analysis",
+        scores: SURVEY_SCORES,
+        comment: SURVEY_COMMENT,
+      },
       method: "POST",
     }), res);
 
@@ -191,31 +200,51 @@ describe("protected user APIs", () => {
     expect(res.body.error).toBe("NOT_FOUND");
   });
 
-  it("accepts a null optional comment and still upserts feedback for the verified user", async () => {
+  it("stores the survey scores against the verified user, not a client-sent id", async () => {
     const upsert = vi.fn(async () => ({
       id: "feedback-1",
-      rating: "THUMBS_UP",
-      comment: null,
+      comment: SURVEY_COMMENT,
       createdAt: "2026-07-23T00:00:00.000Z",
     }));
     const handler = createFeedbackHandler({
       db: {
         analysis: { findFirst: vi.fn(async () => ({ id: "analysis-1" })) },
-        feedback: { upsert },
+        // 피드백 저장과 보상 지급은 한 트랜잭션에서 일어난다.
+        $transaction: vi.fn(async (fn) => fn({
+          feedback: { upsert },
+          analysisEntitlement: {
+            upsert: vi.fn(async () => ({ userId: USER_ID })),
+            findUnique: vi.fn(async () => ({ userId: USER_ID })),
+            update: vi.fn(async () => ({ userId: USER_ID })),
+          },
+          feedbackCreditGrant: {
+            findUnique: vi.fn(async () => null),
+            create: vi.fn(async () => ({})),
+          },
+          $queryRaw: vi.fn(async () => []),
+        })),
       },
       requireUser: activeUser,
     });
     const res = response();
 
     await handler(request({
-      body: { analysisId: "analysis-1", rating: "THUMBS_UP", comment: null },
+      body: {
+        analysisId: "analysis-1",
+        scores: SURVEY_SCORES,
+        comment: SURVEY_COMMENT,
+      },
       method: "POST",
     }), res);
 
     expect(res.statusCode).toBe(200);
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
-      create: expect.objectContaining({ comment: null, userId: USER_ID }),
-      update: expect.objectContaining({ comment: null }),
+      create: expect.objectContaining({
+        comment: SURVEY_COMMENT,
+        scoreRecommend: 8,
+        userId: USER_ID,
+      }),
+      update: expect.objectContaining({ comment: SURVEY_COMMENT, scoreRecommend: 8 }),
     }));
   });
 });
