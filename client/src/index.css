@@ -887,30 +887,10 @@ html {
 .subtitle-hl {
   border-radius: 4px;
   padding: 2px 4px;
-  cursor: pointer;
-  transition: background 0.25s ease, color 0.25s ease;
-}
-.subtitle-hl:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
 }
 .subtitle-hl.watching {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
-}
-
-/* ── Panel Collapse: 총평/소제목 진단 여닫이 애니메이션 ── */
-.panel-collapse {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.3s ease;
-}
-.panel-collapse.open {
-  grid-template-rows: 1fr;
-}
-.panel-collapse > div {
-  overflow: hidden;
-  min-height: 0;
 }
 
 /* ── Character Count Metadata ── */
@@ -931,12 +911,14 @@ html {
 .commentary-item:last-child {
   border-bottom: none;
 }
+/* 펼친 패널은 좌우로만 넓어진다(패딩을 음수 마진으로 상쇄) —
+   행의 위치가 토글 전후에 전혀 움직이지 않게. */
 .commentary-item.expanded {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 14px;
   border-bottom-color: transparent;
-  padding: 2px 16px;
-  margin: 8px 0;
+  padding: 0 12px;
+  margin: 0 -12px;
 }
 .commentary-item.focused {
   background: rgba(255, 255, 255, 0.045);

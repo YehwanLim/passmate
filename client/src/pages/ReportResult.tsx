@@ -233,8 +233,6 @@ function ReportContent({
     const [focusedCardIndex, setFocusedCardIndex] = useState<number | null>(null)
     const [viewMode, setViewMode] = useState<'focus' | 'list'>('list')
     const [activeSection, setActiveSection] = useState(REPORT_NAV_SECTIONS[0].id)
-    const [showOverview, setShowOverview] = useState(true)
-    const [showSubtitle, setShowSubtitle] = useState(true)
 
     const isLockedFromSection = (sectionIndex: number) =>
         isReportSectionLocked({
@@ -273,8 +271,6 @@ function ReportContent({
 
     const handleTabChange = (index: number) => {
         setActiveTab(index)
-        setShowOverview(true)
-        setShowSubtitle(true)
     }
 
     // 아무것도 클릭하지 않은 상태에서도 1번 문장이 디폴트로 선택되어 있게 처리
@@ -772,12 +768,7 @@ function ReportContent({
                                                 if (earliestIdx > 0) result.push(remaining.slice(0, earliestIdx))
                                                 if (matchedCardIdx === SUBTITLE_MATCH) {
                                                     result.push(
-                                                        <span key={`subtitle-hl-${pIdx}-${keyCounter++}`}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setShowSubtitle(true)
-                                                            }}
-                                                            className={`subtitle-hl ${showSubtitle ? 'watching' : ''}`}>
+                                                        <span key={`subtitle-hl-${pIdx}-${keyCounter++}`} className="subtitle-hl watching">
                                                             {matchedHighlight}
                                                         </span>
                                                     )
@@ -839,40 +830,28 @@ function ReportContent({
                         {/* Scrolling Content Area */}
                         <div ref={commentaryScrollRef} className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10">
 
-                        {/* Overview — Collapsible */}
+                        {/* Overview — 항상 펼쳐진 고정 섹션 (여닫이가 아래 헤더 위치를 흔들지 않게) */}
                         <div className="border-t border-white/[0.06] py-5">
-                            <button onClick={() => setShowOverview(!showOverview)}
-                                className="w-full flex items-baseline gap-3 text-left">
+                            <div className="flex items-baseline gap-3">
                                 <span className="text-[11px] font-bold tabular-nums tracking-[0.08em] text-zinc-600">01</span>
                                 <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.OVERVIEW}</span>
-                                <ChevronDown className={`w-4 h-4 self-center text-zinc-600 transition-transform ${showOverview ? 'rotate-180' : ''}`} />
-                            </button>
-                            <div className={`panel-collapse ${showOverview ? 'open' : ''}`}>
-                                <div>
-                                    <div className="pt-4">
-                                        <p className="text-[14px] text-zinc-300 leading-[1.85]">{renderRichText(currentTab.overview)}</p>
-                                    </div>
-                                </div>
+                            </div>
+                            <div className="pt-4">
+                                <p className="text-[14px] text-zinc-300 leading-[1.85]">{renderRichText(currentTab.overview)}</p>
                             </div>
                         </div>
 
-                        {/* Subtitle Diagnosis — Collapsible */}
+                        {/* Subtitle Diagnosis — 항상 펼쳐진 고정 섹션 */}
                         <div className="border-t border-white/[0.06] py-5">
-                            <button onClick={() => setShowSubtitle(!showSubtitle)}
-                                className="w-full flex items-baseline gap-3 text-left">
+                            <div className="flex items-baseline gap-3">
                                 <span className="text-[11px] font-bold tabular-nums tracking-[0.08em] text-zinc-600">02</span>
                                 <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
-                                <ChevronDown className={`w-4 h-4 self-center text-zinc-600 transition-transform ${showSubtitle ? 'rotate-180' : ''}`} />
-                            </button>
-                            <div className={`panel-collapse ${showSubtitle ? 'open' : ''}`}>
-                                <div>
-                                    <div className="pt-4">
-                                        <p className="commentary-body-text mb-1">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
+                            </div>
+                            <div className="pt-4">
+                                <p className="commentary-body-text mb-1">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
 
-                                        <p className="commentary-label">소제목 수정 제안</p>
-                                        <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
-                                    </div>
-                                </div>
+                                <p className="commentary-label">소제목 수정 제안</p>
+                                <p className="commentary-headline mb-0">{renderRichText(currentTab.subtitleDiagnosis.suggestion)}</p>
                             </div>
                         </div>
 
