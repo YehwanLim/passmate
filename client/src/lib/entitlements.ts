@@ -4,6 +4,7 @@ export type EntitlementSummary = {
   premiumRemaining: number;
   remaining: number;
   groblePaymentUrl: string | null;
+  feedbackRewardClaimed: boolean;
 };
 
 export class EntitlementApiError extends Error {
@@ -67,6 +68,8 @@ function parseEntitlementSummary(payload: unknown): EntitlementSummary {
     ),
     remaining: readNonNegativeInteger(payload.remaining, "remaining"),
     groblePaymentUrl: payload.groblePaymentUrl,
+    // 구버전 서버 응답에도 화면이 깨지지 않도록 없으면 "아직 안 받음"으로 본다.
+    feedbackRewardClaimed: payload.feedbackRewardClaimed === true,
   };
 }
 

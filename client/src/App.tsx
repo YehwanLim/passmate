@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import FeedbackSurvey from "@/pages/FeedbackSurvey";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -33,6 +34,7 @@ function Router() {
       <Route path={"/analyze"} component={Analyze} />
       <Route path={"/analysis-pending"} component={AnalysisPending} />
       <Route path={"/report-new"} component={ReportResult} />
+      <Route path={"/feedback"} component={FeedbackSurvey} />
       <Route path={"/entitlements"} component={Entitlements} />
       <Route path={"/my"} component={MyProjects} />
       <Route path={"/my/:projectId"} component={MyAnalyses} />

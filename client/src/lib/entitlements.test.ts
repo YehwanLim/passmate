@@ -45,6 +45,8 @@ describe("entitlements client", () => {
       premiumRemaining: 0,
       remaining: 1,
       groblePaymentUrl: null,
+      // 응답에 없으면 "아직 안 받음"으로 읽는다
+      feedbackRewardClaimed: false,
     });
     expect(calls).toEqual([
       [

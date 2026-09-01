@@ -1,4 +1,7 @@
-import { getEntitlementSummary } from "../lib/analysis-entitlements.js";
+import {
+  getEntitlementSummary,
+  hasClaimedFeedbackReward,
+} from "../lib/analysis-entitlements.js";
 import { AuthorizationError, requireActiveApplicationUser } from "../lib/auth.js";
 import grobleWebhookHandler from "../lib/groble-webhook-handler.js";
 import prisma from "../lib/prisma.js";
@@ -52,18 +55,20 @@ async function getAuthenticatedUser(req, res) {
 }
 
 async function getEntitlements(res, user) {
-  const [summary, settings] = await Promise.all([
+  const [summary, settings, feedbackRewardClaimed] = await Promise.all([
     prisma.$transaction((tx) => getEntitlementSummary(tx, user.id)),
     prisma.entitlementSetting.findUnique({
       where: { id: SETTINGS_ID },
       select: { groblePaymentUrl: true, premiumEnabled: true },
     }),
+    hasClaimedFeedbackReward(prisma, user.id),
   ]);
 
   return res.status(200).json({
     ...summary,
     groblePaymentUrl:
       settings?.premiumEnabled && settings.groblePaymentUrl ? settings.groblePaymentUrl : null,
+    feedbackRewardClaimed,
   });
 }
 

@@ -86,6 +86,13 @@ export const UI_LABELS = {
   // 문항 키·점수 범위·주관식 최소 길이의 정본은 서버(lib/feedback-survey.js)다.
   // 여기 값은 화면 문구를 맞추기 위한 사본이며, 두 쪽이 어긋나면
   // feedbackSurvey.singleSource.test.ts 가 실패한다.
+  FEEDBACK_TEASER_TITLE: "이 리포트, 도움이 됐나요?",
+  FEEDBACK_TEASER_DESC_REWARD:
+    "3문항과 짧은 의견을 남겨주시면 분석 1회를 더 드려요. 계정당 한 번입니다.",
+  FEEDBACK_TEASER_DESC_PLAIN:
+    "남겨주신 의견은 다음 리포트를 고치는 데 그대로 씁니다.",
+  FEEDBACK_TEASER_CTA_REWARD: "의견 작성하고 분석 1회 받기",
+  FEEDBACK_TEASER_CTA_PLAIN: "의견 남기기",
   FEEDBACK_TITLE: "이 리포트, 얼마나 도움이 됐나요?",
   FEEDBACK_SUBTITLE:
     "3개 문항과 짧은 의견을 남겨주시면 분석 1회를 더 드려요. 계정당 한 번입니다.",
@@ -99,9 +106,9 @@ export const UI_LABELS = {
     { key: "recommend", question: "취업 준비 중인 친구에게 추천하시겠나요?" },
   ] as ReadonlyArray<{ key: string; question: string }>,
   FEEDBACK_MIN_COMMENT_LENGTH: 50,
-  FEEDBACK_COMMENT_TITLE: "가장 아쉬웠던 점을 알려주세요",
+  FEEDBACK_COMMENT_TITLE: "리포트에 대해 자유롭게 남겨주세요",
   FEEDBACK_COMMENT_PLACEHOLDER:
-    "어떤 부분이 기대와 달랐는지, 무엇이 더 있었으면 했는지 적어주세요. 구체적일수록 다음 리포트가 좋아집니다.",
+    "좋았던 점, 아쉬웠던 점, 더 있었으면 하는 것 — 무엇이든 편하게 적어주세요.",
   FEEDBACK_SUBMIT: "설문 마치고 1회 받기",
   FEEDBACK_SUBMITTING: "보내는 중...",
   FEEDBACK_PROGRESS_HINT: "3문항 중 {answered}문항 응답",
@@ -112,6 +119,8 @@ export const UI_LABELS = {
   FEEDBACK_ALREADY_REWARDED:
     "의견 잘 받았습니다. 추가 분석 1회는 계정당 한 번이라 이번에는 지급되지 않았어요.",
   FEEDBACK_ERROR: "의견 전송에 실패했어요. 잠시 후 다시 시도해주세요.",
+  FEEDBACK_BACK_TO_REPORT: "리포트로 돌아가기",
+  FEEDBACK_MISSING_ANALYSIS: "어떤 리포트에 대한 의견인지 확인할 수 없어요.",
 
   // API Test Messages
   API_TEST_SENDING: "API 테스트 요청 중...",

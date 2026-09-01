@@ -11,8 +11,16 @@ const entitlementsSource = readFileSync(
   new URL("../../../lib/analysis-entitlements.js", import.meta.url),
   "utf8"
 );
-const sectionSource = readFileSync(
+const formSource = readFileSync(
+  new URL("../components/FeedbackSurveyForm.tsx", import.meta.url),
+  "utf8"
+);
+const teaserSource = readFileSync(
   new URL("../components/FeedbackSection.tsx", import.meta.url),
+  "utf8"
+);
+const appSource = readFileSync(
+  new URL("../App.tsx", import.meta.url),
   "utf8"
 );
 
@@ -58,9 +66,23 @@ describe("feedback survey definition", () => {
   });
 
   it("derives the survey shape from the labels rather than hardcoding it", () => {
-    expect(sectionSource).toContain("UI_LABELS.FEEDBACK_SURVEY_QUESTIONS");
-    expect(sectionSource).toContain("UI_LABELS.FEEDBACK_MIN_COMMENT_LENGTH");
-    expect(sectionSource).toContain("UI_LABELS.FEEDBACK_SCORE_MAX");
+    expect(formSource).toContain("UI_LABELS.FEEDBACK_SURVEY_QUESTIONS");
+    expect(formSource).toContain("UI_LABELS.FEEDBACK_MIN_COMMENT_LENGTH");
+    expect(formSource).toContain("UI_LABELS.FEEDBACK_SCORE_MAX");
+  });
+
+  it("keeps the survey off the report page and behind its own route", () => {
+    // 리포트 하단에는 안내만 둔다. 설문 본문이 다시 새어 들어오면 실패한다.
+    expect(teaserSource).not.toContain("FEEDBACK_SURVEY_QUESTIONS");
+    expect(teaserSource).toContain("/feedback?analysisId=");
+    expect(appSource).toContain('path={"/feedback"}');
+  });
+
+  it("only promises the credit while the account can still receive it", () => {
+    // 계정당 1회라, 이미 받은 사람에게 보상 문구를 띄우면 지키지 못할 약속이 된다.
+    expect(teaserSource).toContain("feedbackRewardClaimed");
+    expect(teaserSource).toContain("FEEDBACK_TEASER_CTA_REWARD");
+    expect(teaserSource).toContain("FEEDBACK_TEASER_CTA_PLAIN");
   });
 
   it("keeps every question wired to a stored column", () => {

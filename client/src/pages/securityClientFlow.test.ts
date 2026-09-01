@@ -5,7 +5,9 @@ const analyzeSource = readFileSync(new URL("./Analyze.tsx", import.meta.url), "u
 const projectsSource = readFileSync(new URL("./MyProjects.tsx", import.meta.url), "utf8");
 const analysesSource = readFileSync(new URL("./MyAnalyses.tsx", import.meta.url), "utf8");
 const reportSource = readFileSync(new URL("./ReportResult.tsx", import.meta.url), "utf8");
-const feedbackSource = readFileSync(new URL("../components/FeedbackSection.tsx", import.meta.url), "utf8");
+// 설문 제출은 FeedbackSurveyForm 이 한다. FeedbackSection 은 리포트 하단 안내일 뿐이다.
+const feedbackSource = readFileSync(new URL("../components/FeedbackSurveyForm.tsx", import.meta.url), "utf8");
+const feedbackTeaserSource = readFileSync(new URL("../components/FeedbackSection.tsx", import.meta.url), "utf8");
 const authSource = readFileSync(new URL("../contexts/AuthContext.tsx", import.meta.url), "utf8");
 const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.url), "utf8");
 const supabaseSource = readFileSync(new URL("../lib/supabase.ts", import.meta.url), "utf8");
@@ -36,6 +38,9 @@ describe("authenticated client flow", () => {
     expect(reportSource).toContain("useState<ReportData | null>(null)");
     expect(feedbackSource).not.toContain("userId,");
     expect(feedbackSource).not.toContain("getAnonymousUserId");
+    // 안내 카드는 아무것도 제출하지 않는다.
+    expect(feedbackTeaserSource).not.toContain("/api/feedback");
+    expect(feedbackTeaserSource).not.toContain("getAnonymousUserId");
   });
 
   it("keeps the report DOM empty of report data until authentication resolves successfully", () => {

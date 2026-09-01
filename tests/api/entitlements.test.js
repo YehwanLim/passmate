@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
     AuthorizationError,
     authenticatedUser: { id: "11111111-1111-4111-8111-111111111111" },
     getEntitlementSummary: vi.fn(),
+    hasClaimedFeedbackReward: vi.fn(),
     grobleWebhookHandler: vi.fn(),
     prisma: {
       $transaction: vi.fn(),
@@ -27,6 +28,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("../../lib/analysis-entitlements.js", () => ({
   getEntitlementSummary: mocks.getEntitlementSummary,
+  hasClaimedFeedbackReward: mocks.hasClaimedFeedbackReward,
 }));
 
 vi.mock("../../lib/auth.js", () => ({
@@ -90,6 +92,7 @@ describe("entitlement APIs", () => {
       premiumEnabled: false,
     });
     mocks.prisma.purchaseIntent.create.mockResolvedValue({ id: INTENT_ID });
+    mocks.hasClaimedFeedbackReward.mockResolvedValue(false);
     mocks.getEntitlementSummary.mockResolvedValue({
       freeRemaining: 1,
       bonusRemaining: 0,
@@ -112,6 +115,7 @@ describe("entitlement APIs", () => {
       premiumEnabled: false,
       premiumRemaining: 0,
       remaining: 1,
+      feedbackRewardClaimed: false,
     });
     expect(mocks.getEntitlementSummary).toHaveBeenCalledWith(
       mocks.transaction,
