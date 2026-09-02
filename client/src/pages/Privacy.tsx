@@ -1,5 +1,5 @@
 import Logo from "@/components/Logo";
-import SubtleBackground from "@/components/SubtleBackground";
+import MoodShiftBackground from "@/components/MoodShiftBackground";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
@@ -169,7 +169,7 @@ const privacySections = [
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-[#050505] text-white">
-      <SubtleBackground />
+      <MoodShiftBackground />
       <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#050505]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-4xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2">

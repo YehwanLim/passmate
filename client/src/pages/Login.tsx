@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/Logo";
-import SubtleBackground from "@/components/SubtleBackground";
+import MoodShiftBackground from "@/components/MoodShiftBackground";
 import { Shield, AlertCircle } from "lucide-react";
 
 // ============================================================
@@ -86,7 +86,7 @@ export default function Login() {
       style={{ overflowX: "clip" }}
     >
       {/* 배경 */}
-      <SubtleBackground />
+      <MoodShiftBackground />
 
       {/* 상단 로고 영역 */}
       <motion.header

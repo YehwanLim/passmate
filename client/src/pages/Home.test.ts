@@ -39,7 +39,8 @@ describe("HOME_NAV_ITEMS", () => {
 
   it("uses premium motion affordances for landing navigation hover states", () => {
     expect(homeSource).toContain("landing-nav-link");
-    expect(homeSource).toContain("bg-[#050505]/35");
+    // GNB는 배경 그라데이션이 비치도록 얕은 틴트만 쓴다
+    expect(homeSource).toContain("bg-[#050505]/10");
     expect(cssSource).toContain("translateY(-2px)");
     expect(cssSource).toContain("rgba(96, 165, 250, 0.1)");
     expect(cssSource).toContain("color: rgba(219, 234, 254, 0.98)");

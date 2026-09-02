@@ -7,7 +7,7 @@ import CompanyMarqueeSection from "@/components/CompanyMarqueeSection";
 import FounderSection, {
   FounderNoteSection,
 } from "@/components/FounderSection";
-import SubtleBackground from "@/components/SubtleBackground";
+import MoodShiftBackground from "@/components/MoodShiftBackground";
 import HeroReportCard from "@/components/HeroReportCard";
 import Logo from "@/components/Logo";
 import { ArrowRight, CheckCircle2, Menu, X } from "lucide-react";
@@ -144,8 +144,8 @@ export default function Home() {
       className="min-h-screen bg-[#050505] text-white"
       style={{ overflowX: "clip" }}
     >
-      {/* ── Subtle Background (Cursor/Linear style) ── */}
-      <SubtleBackground />
+      {/* ── Mood Shift Background (마우스 반응형) ── */}
+      <MoodShiftBackground />
 
       {/* ── Scroll Progress ── */}
       <motion.div
@@ -160,7 +160,7 @@ export default function Home() {
           GNB
           ══════════════════════════════════════════════════ */}
       <motion.nav
-        className="sticky top-0 z-50 bg-[#050505]/35 backdrop-blur-2xl border-b border-white/[0.045]"
+        className="sticky top-0 z-50 bg-[#050505]/10 backdrop-blur-2xl border-b border-white/[0.045]"
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
