@@ -233,6 +233,17 @@ function ReportContent({
     const [focusedCardIndex, setFocusedCardIndex] = useState<number | null>(null)
     const [viewMode, setViewMode] = useState<'focus' | 'list'>('list')
     const [activeSection, setActiveSection] = useState(REPORT_NAV_SECTIONS[0].id)
+    const [isPrinting, setIsPrinting] = useState(false)
+
+    // 접힌 항목을 모두 펼쳐 렌더한 다음 프레임에 브라우저 인쇄(→ PDF 저장)를 연다.
+    useEffect(() => {
+        if (!isPrinting) return
+        const raf = requestAnimationFrame(() => {
+            window.print()
+            setIsPrinting(false)
+        })
+        return () => cancelAnimationFrame(raf)
+    }, [isPrinting])
 
     const isLockedFromSection = (sectionIndex: number) =>
         isReportSectionLocked({
@@ -447,7 +458,7 @@ function ReportContent({
             <MiniNavigator activeSection={activeSection} />
 
             {/* TOP NAV (Global Sticky) */}
-            <div className="sticky top-0 z-50 w-full bg-[#09090B]/95 backdrop-blur-md border-b border-white/[0.05]">
+            <div className="print:hidden sticky top-0 z-50 w-full bg-[#09090B]/95 backdrop-blur-md border-b border-white/[0.05]">
                 <div className="max-w-4xl mx-auto px-6 md:px-8 pt-6 pb-4 flex items-center justify-between">
                     <button onClick={() => window.history.back()} className="inline-flex items-center gap-2.5 text-sm text-zinc-500 hover:text-white transition-colors group">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -815,7 +826,7 @@ function ReportContent({
                         {/* Panel Header + View Mode Toggle */}
                         <div className="flex items-center justify-between mb-6 shrink-0">
                             <p className="text-[15.5px] font-semibold tracking-[-0.01em] text-zinc-50">{UI_LABELS.AI_COMMENTARY}</p>
-                            <div className="view-mode-toggle">
+                            <div className="view-mode-toggle print:hidden">
                                 <button onClick={() => setViewMode('list')}
                                     className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}>
                                     {UI_LABELS.VIEW_MODE_LIST}
@@ -863,7 +874,7 @@ function ReportContent({
                             </div>
 
                         {/* ── Focus Mode: Full content for focused card ── */}
-                        {viewMode === 'focus' && (
+                        {viewMode === 'focus' && !isPrinting && (
                             <div>
                                 {focusedCardIndex !== null ? (() => {
                                     const card = currentTab.feedbackCards[focusedCardIndex] as any
@@ -909,7 +920,7 @@ function ReportContent({
                         )}
 
                         {/* ── List Mode: Accordion ── */}
-                        {viewMode === 'list' && (
+                        {(viewMode === 'list' || isPrinting) && (
                             <div>
                                 {sortedCards.map((card: any) => {
                                     const realIdx = card._origIdx
@@ -997,7 +1008,7 @@ function ReportContent({
                                     <span className="flex-1 text-[17px] text-zinc-300 group-hover:text-white transition-colors leading-[1.6]">{renderRichText(item.question)}</span>
                                     <ChevronDown className={`w-5 h-5 text-zinc-600 transition-transform mt-0.5 ${openQuestionIndex === index ? "rotate-180" : ""}`} />
                                 </button>
-                                {openQuestionIndex === index && (
+                                {(openQuestionIndex === index || isPrinting) && (
                                     <div className="pb-8 pl-[70px] space-y-4">
                                         {item.followUps && item.followUps.length > 0 && (
                                             <div className="mb-4">
@@ -1085,10 +1096,12 @@ function ReportContent({
                 {/* ================================================================= */}
                 {/* FEEDBACK SECTION */}
                 {/* ================================================================= */}
-                <FeedbackSection analysisId={activeAnalysisId} />
+                <div className="print:hidden">
+                    <FeedbackSection analysisId={activeAnalysisId} />
+                </div>
 
                 {/* NEXT STEP */}
-                <section className="py-16 mt-10 bg-white/[0.02] rounded-xl border border-white/[0.04] px-6 md:px-10 text-center">
+                <section className="print:hidden py-16 mt-10 bg-white/[0.02] rounded-xl border border-white/[0.04] px-6 md:px-10 text-center">
                     <h3 className="text-xl font-medium text-white mb-8">{UI_LABELS.WHATS_NEXT}</h3>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button onClick={() => navigate("/analyze")} className="w-full sm:w-auto px-6 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2">
@@ -1097,7 +1110,7 @@ function ReportContent({
                         <button onClick={() => navigate("/")} className="w-full sm:w-auto px-6 py-3.5 bg-zinc-800 text-white font-medium rounded-lg hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2">
                             <PlusCircle className="w-4 h-4" /><span>{UI_LABELS.ANALYZE_NEW}</span>
                         </button>
-                        <button className="w-full sm:w-auto px-6 py-3.5 bg-transparent border border-white/10 text-zinc-300 font-medium rounded-lg hover:bg-white/[0.02] transition-colors flex items-center justify-center gap-2">
+                        <button onClick={() => setIsPrinting(true)} className="w-full sm:w-auto px-6 py-3.5 bg-transparent border border-white/10 text-zinc-300 font-medium rounded-lg hover:bg-white/[0.02] transition-colors flex items-center justify-center gap-2">
                             <Download className="w-4 h-4" /><span>{UI_LABELS.SAVE_REPORT}</span>
                         </button>
                     </div>
