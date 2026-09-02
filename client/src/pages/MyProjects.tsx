@@ -175,6 +175,17 @@ export default function MyProjects() {
       </div>
 
       {/* ════════ 향후 확장 영역 (멘토링 BM 등) ════════ */}
+
+      {/* ════════ 회원 탈퇴 — 의도적으로 눈에 띄지 않게 우측 하단에 둔다 ════════ */}
+      <div className="container mt-16 flex justify-end">
+        <button
+          id="my-account-deletion-link"
+          onClick={() => navigate("/account/deletion")}
+          className="text-[11px] text-zinc-700 hover:text-zinc-500 transition-colors"
+        >
+          회원 탈퇴
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, ChevronDown, User, FileText, Ticket, UserX } from "lucide-react";
+import { LogOut, ChevronDown, User, FileText, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
@@ -43,7 +43,7 @@ export default function AuthButton() {
     }
   };
 
-  const handleNavigate = (path: "/my" | "/entitlements" | "/account/deletion") => {
+  const handleNavigate = (path: "/my" | "/entitlements") => {
     setDropdownOpen(false);
     navigate(path);
   };
@@ -149,7 +149,7 @@ export default function AuthButton() {
               </button>
             </div>
 
-            {/* 로그아웃 · 회원 탈퇴 */}
+            {/* 로그아웃 — 회원 탈퇴는 내 지원서 화면 하단에서만 제공한다 */}
             <div className="p-1.5">
               <button
                 id="header-logout-btn"
@@ -163,14 +163,6 @@ export default function AuthButton() {
                   <LogOut className="w-4 h-4 text-gray-500" />
                 )}
                 {isSigningOut ? "로그아웃 중..." : "로그아웃"}
-              </button>
-              <button
-                id="header-account-deletion-btn"
-                onClick={() => handleNavigate("/account/deletion")}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-500 hover:text-red-300 hover:bg-white/10 transition-colors duration-150"
-              >
-                <UserX className="w-4 h-4 text-gray-600" />
-                회원 탈퇴
               </button>
             </div>
           </motion.div>
