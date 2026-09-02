@@ -43,4 +43,10 @@ describe("Entitlements page", () => {
     // 팝업 차단 시 사용자가 직접 여는 폴백 링크가 있어야 한다.
     expect(pageSource).toContain("결제 창이 열리지 않았다면");
   });
+
+  it("offers a payment inquiry channel", () => {
+    // 환불을 포함한 결제 문의 채널: 메일 링크 (숨김 톤이지만 존재해야 한다)
+    expect(pageSource).toContain("mailto:hansitoring@gmail.com");
+    expect(pageSource).toContain("이메일로 문의하기");
+  });
 });

@@ -13,6 +13,13 @@ import {
 } from "@/lib/entitlements";
 import { supabase } from "@/lib/supabase";
 
+// 환불을 포함한 결제 문의는 메일로 받는다 — Groble이 부분 환불을 지원하지 않아 수동 처리가 전제다.
+const PAYMENT_INQUIRY_MAILTO = `mailto:hansitoring@gmail.com?subject=${encodeURIComponent(
+  "[Pre:View] 결제 문의"
+)}&body=${encodeURIComponent(
+  "아래 내용을 채워 보내주시면 영업일 기준 3일 이내에 안내드릴게요.\n\n- 결제일:\n- 결제 확인 정보(주문번호 또는 결제 이메일):\n- 문의 내용(환불 요청 시 사유 포함):\n"
+)}`;
+
 function CreditSkeleton() {
   return (
     <div
@@ -305,17 +312,6 @@ export default function Entitlements() {
                       >
                         {isPurchasing ? "여는 중..." : "이용권 구매하기"}
                       </button>
-                      <p className="mt-1.5 text-[11px] text-zinc-500">
-                        환불 기준은{" "}
-                        <button
-                          type="button"
-                          onClick={() => navigate("/terms")}
-                          className="underline underline-offset-2 hover:text-zinc-300"
-                        >
-                          이용약관
-                        </button>
-                        을 확인해 주세요.
-                      </p>
                       {purchaseError && (
                         <p className="mt-2 text-xs text-red-200">{purchaseError}</p>
                       )}
@@ -369,6 +365,16 @@ export default function Entitlements() {
                   remaining={summary.premiumRemaining}
                 />
               </div>
+
+              <p className="pt-2 text-right text-[11px] text-zinc-700">
+                결제에 문제가 있나요?{" "}
+                <a
+                  href={PAYMENT_INQUIRY_MAILTO}
+                  className="underline underline-offset-2 hover:text-zinc-500"
+                >
+                  이메일로 문의하기
+                </a>
+              </p>
             </div>
           ) : null}
         </section>
