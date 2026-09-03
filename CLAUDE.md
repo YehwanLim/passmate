@@ -7,8 +7,8 @@
 
 **Pre:View**(구 Passmate) — 취준생 자소서를 AI가 진단해 정성 리포트를 주는 서비스.
 기업/직무 + 문항(최대 5개, 200~6,000자) 입력 → Gemini가 채용 담당자 시선의 리포트 생성.
-점수·퍼센트는 쓰지 않는다. 분석은 **계정 크레딧**으로 통제(무료 1회 / 관리자 지급 / 유료).
-현재 비공개 베타(RC), 작업 브랜치는 `codex/*`.
+점수·퍼센트는 쓰지 않는다. 분석은 **계정 크레딧**으로 통제(무료 1회 / 피드백 보상 1회 / 관리자 지급 / 유료).
+현재 공개 베타 운영 중(결제 오픈). 작업은 기본적으로 `main`에서 한다.
 
 ## 스택
 
@@ -80,8 +80,10 @@ Prisma 7 + Supabase Postgres · Supabase Auth(Google) · Gemini · Vitest · **p
 **권한**: `requireAuthenticatedUser` → `requireActiveApplicationUser` → `requireAdministrator`.
 소유권·권한은 **항상 서버 핸들러에서** 확인한다. 클라이언트 가드·브라우저 스토리지·Supabase 세션 상태는 편의 계층일 뿐 근거가 아니다.
 
-**기타**: 계정 삭제는 예약 후 일일 크론(`CRON_SECRET` Bearer)이 purge. 결제(Groble) 웹훅 로직은
-`lib/`에 남아 있으나 현재 마운트된 라우트가 없고 `/api/entitlements`도 결제 URL을 `null`로 반환한다.
+**기타**: 계정 삭제는 예약 후 일일 크론(`CRON_SECRET` Bearer)이 purge. 결제(Groble)는
+`api/entitlements.js` 한 함수가 이용권 요약·구매 의도 생성·웹훅(`/api/webhooks/groble`, HMAC 검증)을
+모두 처리하며, DB `entitlementSetting`의 `premiumEnabled` + `groblePaymentUrl`로 켜고 끈다
+(꺼져 있으면 결제 URL은 `null`). 피드백 설문(`api/feedback.js`) 제출 시 크레딧 1회를 계정당 한 번 지급한다.
 
 ## 프론트엔드 규약
 
@@ -109,8 +111,8 @@ Prisma 7 + Supabase Postgres · Supabase Auth(Google) · Gemini · Vitest · **p
 
 ## 함정
 
-1. **로컬 API 라우팅은 수동 매핑**이다 — `vite.config.ts`의 `apiRoute()`. 현재 `/api/entitlements`,
-   `/api/analysis-requests/:id`, `/api/cron/*`는 빠져 있다.
+1. **로컬 API 라우팅은 수동 매핑**이다 — `vite.config.ts`의 `apiRoute()`. 라우트를 추가·이동하면
+   이 매핑도 같이 고쳐야 로컬에서 재현된다.
 2. **Vercel Hobby 12함수 제한** (`scripts/vercel-function-limit.test.js`). 새 엔드포인트는 기존 라우터에 얹기.
 3. **`.vercel/output/`·`dist/`는 옛 빌드 산출물** — 소스로 착각하지 말 것.
 4. **타임아웃 3형제는 한 세트**: 모델 100s < TTL 125s, `maxDuration` 120s.
