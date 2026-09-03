@@ -1,53 +1,26 @@
-import { useEffect, useState } from "react"
 import { useLocation } from "wouter"
 import { ArrowRight, MessageSquareQuote } from "lucide-react"
 
 import { UI_LABELS } from "../constants/labels"
-import { useAuth } from "@/contexts/AuthContext"
-import { fetchEntitlementSummary } from "@/lib/entitlements"
-import { supabase } from "@/lib/supabase"
 
 // =============================================================================
 // FeedbackSection — 리포트 하단 설문 안내 카드
 // =============================================================================
 // 설문 본문은 /feedback 페이지에 있다. 리포트 화면에는 짧은 안내와 버튼만 둔다.
 //
-// 보상은 계정당 1회라, 이미 받은 계정에 "1회 더 드려요"를 계속 띄우면 지키지
-// 못할 약속이 된다. 엔타이틀먼트에서 수령 여부를 받아 문구를 바꾼다.
-// 조회에 실패하면 보상 문구 없이 담백한 쪽으로 떨어뜨린다 — 없는 약속을
-// 하느니 안 하는 편이 낫다.
+// 보상 수령 여부(rewardAvailable)는 부모가 useFeedbackRewardAvailable 로 한 번만
+// 조회해 상단 배너(FeedbackRewardBanner)와 이 카드에 나눠 준다.
 // =============================================================================
 
 interface FeedbackSectionProps {
   /** DB Analysis ID (없으면 안내 숨김) */
   analysisId?: string | null
+  /** 보상 미수령 여부 — 이미 받은 계정에는 담백한 문구로 떨어뜨린다 */
+  rewardAvailable: boolean
 }
 
-export default function FeedbackSection({ analysisId }: FeedbackSectionProps) {
+export default function FeedbackSection({ analysisId, rewardAvailable }: FeedbackSectionProps) {
   const [, navigate] = useLocation()
-  const { isAuthenticated } = useAuth()
-  const [rewardAvailable, setRewardAvailable] = useState(false)
-
-  useEffect(() => {
-    if (!isAuthenticated) return
-
-    let cancelled = false
-    const load = async () => {
-      try {
-        const { data } = await supabase.auth.getSession()
-        const token = data.session?.access_token
-        if (!token) return
-        const summary = await fetchEntitlementSummary(token)
-        if (!cancelled) setRewardAvailable(!summary.feedbackRewardClaimed)
-      } catch {
-        // 조회 실패 시 보상 문구를 띄우지 않는다.
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated])
 
   if (!analysisId) return null
 

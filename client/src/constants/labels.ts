@@ -86,6 +86,8 @@ export const UI_LABELS = {
   // 문항 키·점수 범위·주관식 최소 길이의 정본은 서버(lib/feedback-survey.js)다.
   // 여기 값은 화면 문구를 맞추기 위한 사본이며, 두 쪽이 어긋나면
   // feedbackSurvey.singleSource.test.ts 가 실패한다.
+  FEEDBACK_BANNER_TEXT: "짧은 의견을 남겨주시면 분석 1회를 더 드려요. 계정당 한 번입니다.",
+  FEEDBACK_BANNER_CTA: "의견 남기고 1회 받기",
   FEEDBACK_TEASER_TITLE: "이 리포트, 도움이 됐나요?",
   FEEDBACK_TEASER_DESC_REWARD:
     "3문항과 짧은 의견을 남겨주시면 분석 1회를 더 드려요. 계정당 한 번입니다.",

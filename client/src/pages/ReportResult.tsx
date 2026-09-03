@@ -5,7 +5,9 @@ import type { ReportData } from "../types/report"
 import { UI_LABELS } from "../constants/labels"
 import { isReportSectionLocked } from "../utils/reportAccess"
 import FeedbackSection from "../components/FeedbackSection"
+import FeedbackRewardBanner from "../components/FeedbackRewardBanner"
 import AuthButton from "../components/AuthButton"
+import { useFeedbackRewardAvailable } from "@/hooks/useFeedbackRewardAvailable"
 import { BrandName } from "@/components/BrandName"
 import { ReportAccessGate } from "../components/report/ReportAccessGate"
 import { useAuth } from "../contexts/AuthContext"
@@ -224,6 +226,7 @@ function ReportContent({
 }: ReportContentProps) {
     const [, navigate] = useLocation()
     const { isAuthenticated } = useAuth()
+    const feedbackRewardAvailable = useFeedbackRewardAvailable()
 
     const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
     const [activeTab, setActiveTab] = useState(0)
@@ -477,6 +480,11 @@ function ReportContent({
             </div>
 
             <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10 pt-4">
+
+                <FeedbackRewardBanner
+                    analysisId={activeAnalysisId}
+                    rewardAvailable={feedbackRewardAvailable}
+                />
 
                 {/* ================================================================= */}
                 {/* ACT 1: FIRST IMPRESSION */}
@@ -1097,7 +1105,10 @@ function ReportContent({
                 {/* FEEDBACK SECTION */}
                 {/* ================================================================= */}
                 <div className="print:hidden">
-                    <FeedbackSection analysisId={activeAnalysisId} />
+                    <FeedbackSection
+                        analysisId={activeAnalysisId}
+                        rewardAvailable={feedbackRewardAvailable}
+                    />
                 </div>
 
                 {/* NEXT STEP */}

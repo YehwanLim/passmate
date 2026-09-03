@@ -19,6 +19,10 @@ const teaserSource = readFileSync(
   new URL("../components/FeedbackSection.tsx", import.meta.url),
   "utf8"
 );
+const rewardHookSource = readFileSync(
+  new URL("../hooks/useFeedbackRewardAvailable.ts", import.meta.url),
+  "utf8"
+);
 const appSource = readFileSync(
   new URL("../App.tsx", import.meta.url),
   "utf8"
@@ -80,7 +84,9 @@ describe("feedback survey definition", () => {
 
   it("only promises the credit while the account can still receive it", () => {
     // 계정당 1회라, 이미 받은 사람에게 보상 문구를 띄우면 지키지 못할 약속이 된다.
-    expect(teaserSource).toContain("feedbackRewardClaimed");
+    // 수령 여부 조회는 훅이 맡고, 카드는 그 결과(rewardAvailable)로 문구를 가른다.
+    expect(rewardHookSource).toContain("feedbackRewardClaimed");
+    expect(teaserSource).toContain("rewardAvailable");
     expect(teaserSource).toContain("FEEDBACK_TEASER_CTA_REWARD");
     expect(teaserSource).toContain("FEEDBACK_TEASER_CTA_PLAIN");
   });
