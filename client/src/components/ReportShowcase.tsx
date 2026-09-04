@@ -138,28 +138,44 @@ const previewAnswer = [
     type: "neutral",
   },
   {
+    text: "서비스 오픈 후 두 달이 지나도 재방문율이 기대에 미치지 못했고, 감이 아니라 데이터로 원인을 찾아야 한다고 판단했습니다.",
+    type: "neutral",
+  },
+  {
     text: "직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다.",
     type: "praise",
-    mark: "02",
+    mark: "03",
+  },
+  {
+    text: "화면별 로그를 정리해 사용자가 어느 단계에서 오래 머무르고 어디에서 떠나는지 흐름으로 기록했습니다.",
+    type: "neutral",
   },
   {
     text: "유저의 클릭 패턴과 체류 시간을 분석한 결과, 개인화가 부족하다는 점을 파악했습니다.",
     type: "improvement",
-    mark: "03",
+    mark: "05",
   },
   {
-    text: "메인 화면 이탈률을 35%에서 18%로 낮췄고, 일간 활성 사용자 수를 20% 늘렸습니다.",
-    type: "improvement",
-    mark: "04",
-  },
-  {
-    text: "이를 위해 신규 가입 후 3일 이내 이탈하는 고객군을 따로 분류하고, 첫 화면 진입 경로를 비교했습니다.",
+    text: "가설을 세운 뒤에는 팀원들과 우선순위를 정해 개선 항목을 두 가지로 좁혔습니다.",
     type: "neutral",
   },
   {
     text: "분석 결과를 바탕으로 추천 콘텐츠의 노출 순서를 바꾸고, 개발자와 실험 기간 및 성공 기준을 합의했습니다.",
     type: "praise",
-    mark: "06",
+    mark: "07",
+  },
+  {
+    text: "2주 단위로 실험을 반복했고, 가설이 틀렸을 때도 원인을 기록해 다음 실험의 기준으로 삼았습니다.",
+    type: "neutral",
+  },
+  {
+    text: "메인 화면 이탈률을 35%에서 18%로 낮췄고, 일간 활성 사용자 수를 20% 늘렸습니다.",
+    type: "improvement",
+    mark: "09",
+  },
+  {
+    text: "이 경험을 통해 문제를 정의하는 기준이 명확해야 팀 전체가 같은 방향으로 움직인다는 것을 배웠습니다.",
+    type: "neutral",
   },
 ] as const;
 
@@ -436,7 +452,7 @@ function DiagnosisPreview() {
 
 function LineAnalysisPreview() {
   return (
-    <section className="flex flex-col gap-4 py-1 lg:h-full lg:overflow-hidden">
+    <section className="flex flex-col gap-3 py-1 lg:h-full lg:overflow-hidden">
       <div className="flex items-end justify-between gap-4">
         <div className="flex flex-col">
           <h3 className="text-xs font-medium uppercase tracking-[0.15em] text-zinc-500">
@@ -460,7 +476,7 @@ function LineAnalysisPreview() {
           <p className="mb-3 text-[12px] leading-[1.55] text-zinc-400">
             자신이 주도적으로 문제를 발견하고 해결한 경험에 대해 서술해 주세요.
           </p>
-          <p className="text-[12.5px] leading-[2.05] text-zinc-400">
+          <p className="text-[12.5px] leading-[1.82] text-zinc-400">
             {previewAnswer.map(line =>
               line.type === "neutral" ? (
                 <span key={line.text}>{line.text} </span>
@@ -469,8 +485,8 @@ function LineAnalysisPreview() {
                   <span
                     className={`box-decoration-clone rounded-[4px] px-1 py-0.5 ${
                       line.type === "praise"
-                        ? "bg-emerald-300/[0.13] text-emerald-100"
-                        : "bg-amber-200/[0.13] text-amber-100"
+                        ? "bg-emerald-300/[0.18] text-emerald-100"
+                        : "bg-amber-200/[0.18] text-amber-100"
                     }`}
                   >
                     <span
@@ -491,64 +507,73 @@ function LineAnalysisPreview() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:h-full lg:flex-col">
-          <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5 lg:flex-1">
+          <div className="rounded-xl border border-white/[0.1] bg-white/[0.04] p-3.5 lg:flex-1">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-xs font-semibold text-white">소제목 진단</p>
-              <span className="rounded-full bg-amber-200/10 px-2 py-0.5 text-[10px] font-medium text-amber-100/80">
+              <span className="rounded-full bg-amber-200/15 px-2 py-0.5 text-[10px] font-semibold text-amber-100">
                 보완
               </span>
             </div>
-            <p className="text-[12px] leading-[1.55] text-zinc-400">
+            <p className="text-[12px] leading-[1.55] text-zinc-300">
               성과는 드러나지만, 어떤 비즈니스 문제를 해결했는지 목적을 먼저
               보여주면 좋습니다.
             </p>
             <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
               수정 방향
             </p>
-            <p className="mt-1 text-[12px] font-medium leading-[1.5] text-zinc-200">
+            <p className="mt-1 text-[12px] font-medium leading-[1.5] text-zinc-100">
               서비스 탐색 이탈률 방어를 위한 3,000건의 고객 데이터 분석
             </p>
           </div>
 
-          <div className="rounded-xl border border-amber-200/[0.12] bg-amber-200/[0.035] p-3.5 lg:flex-1">
+          <div className="rounded-xl border border-amber-200/[0.3] bg-amber-200/[0.07] p-3.5 lg:flex-1">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-semibold text-white">
-                문장 04 · 수정 제안
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                <span className="inline-flex items-center rounded-[4px] bg-amber-200/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-200">
+                  문장 05
+                </span>
+                수정 제안
               </p>
-              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-amber-200/70">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200">
                 Why
               </span>
             </div>
-            <p className="text-[12px] leading-[1.55] text-zinc-300">
+            <p className="text-[12.5px] font-medium leading-[1.55] text-amber-50">
               고객군을 나눈 기준을 문장 안에 넣어야 합니다.
             </p>
-            <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/65">
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/80">
               판단 근거
             </p>
-            <p className="mt-1 text-[11px] leading-[1.5] text-zinc-400">
+            <p className="mt-1 text-[11px] leading-[1.5] text-zinc-300">
               분석 기준이 보이면, 성과가 재현 가능한 판단으로 읽힙니다.
             </p>
-            <p className="mt-2.5 border-t border-white/[0.06] pt-2.5 text-[11px] leading-[1.5] text-zinc-500">
+            <p className="mt-2 border-t border-amber-200/[0.14] pt-2 text-[11px] leading-[1.5] text-zinc-400">
+              <span className="mr-1 font-semibold text-amber-200/80">
+                수정 예시
+              </span>
               신규 가입 후 3일 이내 이탈한 고객군에서 추천 콘텐츠 진입률이
               낮다는 점을 확인했습니다.
             </p>
           </div>
 
-          <div className="rounded-xl border border-emerald-300/[0.11] bg-emerald-300/[0.03] p-3.5 sm:col-span-2 lg:flex-1">
+          <div className="rounded-xl border border-emerald-300/[0.28] bg-emerald-300/[0.06] p-3.5 sm:col-span-2 lg:flex-1">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-semibold text-white">
-                문장 02 · 강점으로 유지
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                <span className="inline-flex items-center rounded-[4px] bg-emerald-300/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200">
+                  문장 03
+                </span>
+                강점으로 유지
               </p>
-              <Check className="h-3.5 w-3.5 text-emerald-200/80" />
+              <Check className="h-3.5 w-3.5 text-emerald-200" />
             </div>
-            <p className="text-[12px] leading-[1.55] text-zinc-400">
+            <p className="text-[12.5px] font-medium leading-[1.55] text-emerald-50">
               직접 수집한 데이터 규모가 실행력을 설득합니다. 이 수치는 그대로
               남기고, 수집 기준만 한 줄 덧붙이세요.
             </p>
-            <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200/65">
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200/80">
               면접에서 이어질 질문
             </p>
-            <p className="mt-1 text-[11px] leading-[1.5] text-zinc-500">
+            <p className="mt-1 text-[11px] leading-[1.5] text-zinc-300">
               어떤 기준으로 데이터를 정제했고, 그 기준이 다음 실험에 어떻게
               반영됐는지까지 준비하세요.
             </p>
