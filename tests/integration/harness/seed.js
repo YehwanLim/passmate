@@ -16,6 +16,7 @@ export async function seedEntitlementSettings(
       premiumEnabled,
       analysisEnabled,
       groblePaymentUrl: "https://payments.invalid/checkout",
+      grobleSinglePaymentUrl: "https://payments.invalid/checkout-single",
     },
   });
 }

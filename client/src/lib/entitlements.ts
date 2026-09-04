@@ -4,8 +4,12 @@ export type EntitlementSummary = {
   premiumRemaining: number;
   remaining: number;
   groblePaymentUrl: string | null;
+  grobleSinglePaymentUrl: string | null;
   feedbackRewardClaimed: boolean;
 };
+
+/** 구매 의도 생성 시 상품 구분(1회권/3회권). 서버 쿼리스트링 값과 동일하다. */
+export type PurchaseProductKey = "single" | "triple";
 
 export class EntitlementApiError extends Error {
   constructor(message: string) {
@@ -56,6 +60,14 @@ function parseEntitlementSummary(payload: unknown): EntitlementSummary {
     throw new EntitlementApiError("Invalid groblePaymentUrl response");
   }
 
+  if (
+    payload.grobleSinglePaymentUrl !== null &&
+    payload.grobleSinglePaymentUrl !== undefined &&
+    typeof payload.grobleSinglePaymentUrl !== "string"
+  ) {
+    throw new EntitlementApiError("Invalid grobleSinglePaymentUrl response");
+  }
+
   return {
     premiumEnabled: payload.premiumEnabled,
     freeRemaining: readNonNegativeInteger(
@@ -68,6 +80,8 @@ function parseEntitlementSummary(payload: unknown): EntitlementSummary {
     ),
     remaining: readNonNegativeInteger(payload.remaining, "remaining"),
     groblePaymentUrl: payload.groblePaymentUrl,
+    // 구버전 서버 응답에도 화면이 깨지지 않도록 없으면 "미설정"으로 본다.
+    grobleSinglePaymentUrl: payload.grobleSinglePaymentUrl ?? null,
     // 구버전 서버 응답에도 화면이 깨지지 않도록 없으면 "아직 안 받음"으로 본다.
     feedbackRewardClaimed: payload.feedbackRewardClaimed === true,
   };
@@ -121,12 +135,16 @@ function parsePurchaseIntent(payload: unknown): PurchaseIntent {
 
 export async function createPurchaseIntent(
   accessToken: string,
+  product: PurchaseProductKey,
   fetcher: typeof fetch = fetch
 ): Promise<PurchaseIntent> {
-  const response = await fetcher("/api/entitlements/purchase-intents", {
-    method: "POST",
-    headers: getAuthorizationHeaders(accessToken),
-  });
+  const response = await fetcher(
+    `/api/entitlements/purchase-intents?product=${product}`,
+    {
+      method: "POST",
+      headers: getAuthorizationHeaders(accessToken),
+    }
+  );
   const payload = await readPayload(response);
 
   if (!response.ok) {

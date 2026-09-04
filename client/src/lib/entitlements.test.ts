@@ -45,6 +45,8 @@ describe("entitlements client", () => {
       premiumRemaining: 0,
       remaining: 1,
       groblePaymentUrl: null,
+      // 구버전 서버 응답에 없으면 "미설정"으로 읽는다
+      grobleSinglePaymentUrl: null,
       // 응답에 없으면 "아직 안 받음"으로 읽는다
       feedbackRewardClaimed: false,
     });
@@ -96,13 +98,40 @@ describe("createPurchaseIntent", () => {
       ),
     );
 
-    const intent = await createPurchaseIntent("token", fetcher as typeof fetch);
+    const intent = await createPurchaseIntent(
+      "token",
+      "triple",
+      fetcher as typeof fetch
+    );
 
-    expect(fetcher).toHaveBeenCalledWith("/api/entitlements/purchase-intents", {
-      method: "POST",
-      headers: { Authorization: "Bearer token" },
-    });
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/entitlements/purchase-intents?product=triple",
+      {
+        method: "POST",
+        headers: { Authorization: "Bearer token" },
+      }
+    );
     expect(intent.checkoutUrl).toContain("ref=33333333");
+  });
+
+  it("stamps the requested product onto the purchase-intent query string", async () => {
+    const { createPurchaseIntent } = await import("./entitlements");
+    const fetcher = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          purchaseIntentId: "33333333-3333-4333-8333-333333333333",
+          checkoutUrl: "https://www.groble.im/payment/SINGLE?ref=33333333-3333-4333-8333-333333333333",
+        }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await createPurchaseIntent("token", "single", fetcher as typeof fetch);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/entitlements/purchase-intents?product=single",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("surfaces the server error code when sales are disabled", async () => {
@@ -114,8 +143,8 @@ describe("createPurchaseIntent", () => {
       }),
     );
 
-    await expect(createPurchaseIntent("token", fetcher as typeof fetch)).rejects.toThrow(
-      "PREMIUM_SALES_DISABLED",
-    );
+    await expect(
+      createPurchaseIntent("token", "triple", fetcher as typeof fetch),
+    ).rejects.toThrow("PREMIUM_SALES_DISABLED");
   });
 });

@@ -47,6 +47,7 @@ vi.mock("../../lib/prisma.js", () => ({
 const { default: entitlementsHandler } = await import("../../api/entitlements.js");
 
 const CHECKOUT_URL = "https://www.groble.im/payment/4SGBV5";
+const SINGLE_CHECKOUT_URL = "https://www.groble.im/payment/SINGLE";
 const INTENT_ID = "33333333-3333-4333-8333-333333333333";
 
 function createResponse() {
@@ -89,6 +90,7 @@ describe("entitlement APIs", () => {
     mocks.prisma.$transaction.mockImplementation((callback) => callback(mocks.transaction));
     mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
       groblePaymentUrl: CHECKOUT_URL,
+      grobleSinglePaymentUrl: SINGLE_CHECKOUT_URL,
       premiumEnabled: false,
     });
     mocks.prisma.purchaseIntent.create.mockResolvedValue({ id: INTENT_ID });
@@ -112,6 +114,7 @@ describe("entitlement APIs", () => {
       freeRemaining: 1,
       bonusRemaining: 0,
       groblePaymentUrl: null,
+      grobleSinglePaymentUrl: null,
       premiumEnabled: false,
       premiumRemaining: 0,
       remaining: 1,
@@ -123,9 +126,10 @@ describe("entitlement APIs", () => {
     );
   });
 
-  it("exposes the checkout URL only while premium sales are enabled", async () => {
+  it("exposes the checkout URLs only while premium sales are enabled", async () => {
     mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
       groblePaymentUrl: CHECKOUT_URL,
+      grobleSinglePaymentUrl: SINGLE_CHECKOUT_URL,
       premiumEnabled: true,
     });
     mocks.getEntitlementSummary.mockResolvedValue({
@@ -140,6 +144,21 @@ describe("entitlement APIs", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body.groblePaymentUrl).toBe(CHECKOUT_URL);
+    expect(response.body.grobleSinglePaymentUrl).toBe(SINGLE_CHECKOUT_URL);
+  });
+
+  it("hides an unconfigured single-plan checkout URL even while sales are enabled", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      groblePaymentUrl: CHECKOUT_URL,
+      grobleSinglePaymentUrl: "",
+      premiumEnabled: true,
+    });
+
+    const response = await invokeEntitlements();
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.groblePaymentUrl).toBe(CHECKOUT_URL);
+    expect(response.body.grobleSinglePaymentUrl).toBeNull();
   });
 
   it("rejects requests without a valid token", async () => {
@@ -185,6 +204,7 @@ describe("entitlement APIs", () => {
   it("refuses purchase intents when no checkout URL is configured", async () => {
     mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
       groblePaymentUrl: "",
+      grobleSinglePaymentUrl: "",
       premiumEnabled: true,
     });
 
@@ -200,6 +220,7 @@ describe("entitlement APIs", () => {
   it("creates a purchase intent for the token user and stamps its id on the checkout URL", async () => {
     mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
       groblePaymentUrl: CHECKOUT_URL,
+      grobleSinglePaymentUrl: SINGLE_CHECKOUT_URL,
       premiumEnabled: true,
     });
 
@@ -214,9 +235,64 @@ describe("entitlement APIs", () => {
       purchaseIntentId: INTENT_ID,
       checkoutUrl: `${CHECKOUT_URL}?ref=${INTENT_ID}`,
     });
+    // product 파라미터가 없으면 기존 클라이언트 하위호환으로 3회권이다.
     expect(mocks.prisma.purchaseIntent.create).toHaveBeenCalledWith({
-      data: { status: "PENDING", userId: mocks.authenticatedUser.id },
+      data: { product: "TRIPLE", status: "PENDING", userId: mocks.authenticatedUser.id },
     });
+  });
+
+  it("creates a single-plan purchase intent against the single checkout URL", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      groblePaymentUrl: CHECKOUT_URL,
+      grobleSinglePaymentUrl: SINGLE_CHECKOUT_URL,
+      premiumEnabled: true,
+    });
+
+    const response = await invokeEntitlements({
+      method: "POST",
+      path: "/api/entitlements/purchase-intents?product=single",
+      query: { product: "single" },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.body).toEqual({
+      purchaseIntentId: INTENT_ID,
+      checkoutUrl: `${SINGLE_CHECKOUT_URL}?ref=${INTENT_ID}`,
+    });
+    expect(mocks.prisma.purchaseIntent.create).toHaveBeenCalledWith({
+      data: { product: "SINGLE", status: "PENDING", userId: mocks.authenticatedUser.id },
+    });
+  });
+
+  it("refuses a single-plan purchase while its checkout URL is unconfigured", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      groblePaymentUrl: CHECKOUT_URL,
+      grobleSinglePaymentUrl: "",
+      premiumEnabled: true,
+    });
+
+    const response = await invokeEntitlements({
+      method: "POST",
+      path: "/api/entitlements/purchase-intents?product=single",
+      query: { product: "single" },
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.body).toEqual({ error: "PREMIUM_CHECKOUT_NOT_CONFIGURED" });
+    expect(mocks.prisma.purchaseIntent.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects unknown purchase products before touching settings or the database", async () => {
+    const response = await invokeEntitlements({
+      method: "POST",
+      path: "/api/entitlements/purchase-intents?product=decade",
+      query: { product: "decade" },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toEqual({ error: "INVALID_PURCHASE_PRODUCT" });
+    expect(mocks.prisma.entitlementSetting.findUnique).not.toHaveBeenCalled();
+    expect(mocks.prisma.purchaseIntent.create).not.toHaveBeenCalled();
   });
 
   it("routes the rewritten purchase-intents query through the same gate", async () => {

@@ -26,8 +26,12 @@ describe("HOME_NAV_ITEMS", () => {
     });
   });
 
-  it("keeps pricing details on the entitlements page instead of a landing section", () => {
-    expect(homeSource).not.toContain('id="pricing"');
+  it("shows pricing on the landing page through the shared PricingSection component", () => {
+    // 가격 숫자는 lib/pricing.ts 단일 정의처에 있고, 랜딩은 컴포넌트로만 노출한다.
+    expect(homeSource).toContain(
+      'import PricingSection from "@/components/PricingSection"'
+    );
+    expect(homeSource).toContain("<PricingSection />");
     expect(homeSource).not.toContain("9,900원");
   });
 
@@ -97,21 +101,26 @@ describe("HOME_NAV_ITEMS", () => {
   });
 
   it("orders the narrative as pain, example, marquee, report preview, then trust and process", () => {
-    const painIndex = homeSource.indexOf("매끈하기만 한 자소서");
+    const painIndex = homeSource.indexOf("아직도 AI로 만든 자소서");
     const beforeAfterIndex = homeSource.indexOf("합격하는 자소서는 구조부터");
     const marqueeIndex = homeSource.indexOf("<CompanyMarqueeSection />");
     const reportShowcaseIndex = homeSource.indexOf("<ReportShowcase />");
     const socialProofIndex = homeSource.indexOf("<SocialProofSection />");
     const founderNoteIndex = homeSource.indexOf("<FounderNoteSection />");
     const processIndex = homeSource.indexOf("<ProcessSection />");
+    const pricingIndex = homeSource.indexOf("<PricingSection />");
+    const founderCtaIndex = homeSource.indexOf("<FounderSection />");
 
     expect(painIndex).toBeGreaterThan(-1);
     expect(beforeAfterIndex).toBeGreaterThan(painIndex);
     expect(marqueeIndex).toBeGreaterThan(beforeAfterIndex);
     expect(reportShowcaseIndex).toBeGreaterThan(marqueeIndex);
-    expect(socialProofIndex).toBeGreaterThan(reportShowcaseIndex);
+    // 가격은 리포트 실물을 본 직후 — "이 리포트가 커피 한 잔 값"의 대비가 가장 강한 지점이다.
+    expect(pricingIndex).toBeGreaterThan(reportShowcaseIndex);
+    expect(socialProofIndex).toBeGreaterThan(pricingIndex);
     expect(founderNoteIndex).toBeGreaterThan(socialProofIndex);
     expect(processIndex).toBeGreaterThan(founderNoteIndex);
+    expect(founderCtaIndex).toBeGreaterThan(processIndex);
     expect(homeSource).not.toContain(
       '{ end: 1200, suffix: "+", label: "분석 완료" }'
     );

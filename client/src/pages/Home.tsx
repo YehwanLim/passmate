@@ -3,6 +3,7 @@ import ReportShowcase from "@/components/ReportShowcase";
 import SocialProofSection from "@/components/SocialProofSection";
 import { BrandName } from "@/components/BrandName";
 import ProcessSection from "@/components/ProcessSection";
+import PricingSection from "@/components/PricingSection";
 import CompanyMarqueeSection from "@/components/CompanyMarqueeSection";
 import FounderSection, {
   FounderNoteSection,
@@ -323,8 +324,8 @@ export default function Home() {
             }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            매끈하기만 한 자소서, <br className="hidden md:inline" />
-            면접관 눈에는 다 똑같아 보입니다.
+            아직도 AI로 만든 자소서, <br className="hidden md:inline" />
+            그대로 복붙하세요?
           </motion.h2>
 
           <motion.p
@@ -338,9 +339,11 @@ export default function Home() {
             }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            글솜씨보다 중요한 건 &lsquo;직무에 대한 고민&rsquo;과 &lsquo;해결
-            능력&rsquo;입니다. 이 회사에 꼭 필요한 인재로 보일 수 있도록,
-            실무자의 기준으로 읽히는 방향을 다시 잡아야 합니다.
+            매끈한 문장은 이제 누구나 씁니다. 서류를 읽는 실무자 눈에는 다
+            비슷해 보일 뿐이에요.
+            <br />
+            합격자를 가려내는 건 글솜씨가 아니라, 직무에 대한 고민과 문제를
+            해결해 본 경험입니다.
           </motion.p>
 
           <motion.p
@@ -354,8 +357,12 @@ export default function Home() {
             }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            문장을 다듬어 주는 AI는 이미 많습니다. <BrandName />는 문장 대신,
-            지원한 회사의 채용 기준으로 자소서가 어떻게 읽히는지를 봅니다.
+            문장을 다듬어 주는 AI는 이미 많습니다.
+            <br />
+            <BrandName />는 문장만 만들어주지 않습니다.
+            <br />
+            지원한 회사의 채용 기준으로 당신의 자소서가 어떻게 읽히는지
+            알려드립니다.
           </motion.p>
         </div>
       </section>
@@ -574,6 +581,9 @@ export default function Home() {
           STEP 3: Report Showcase — Sticky Scroll Deep-Dive
           ══════════════════════════════════════════════════ */}
       <ReportShowcase />
+
+      {/* ── Pricing Section — 리포트를 본 직후 가격 대비가 가장 강하게 남는다 ── */}
+      <PricingSection />
 
       {SHOW_SOCIAL_PROOF && <SocialProofSection />}
 

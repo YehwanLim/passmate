@@ -3,6 +3,7 @@ import {
   hasClaimedFeedbackReward,
 } from "../lib/analysis-entitlements.js";
 import { AuthorizationError, requireActiveApplicationUser } from "../lib/auth.js";
+import { parsePurchaseProductQuery } from "../lib/entitlement-products.js";
 import grobleWebhookHandler from "../lib/groble-webhook-handler.js";
 import prisma from "../lib/prisma.js";
 import { handleRequestError, requestIdFor } from "../lib/request-errors.js";
@@ -59,7 +60,7 @@ async function getEntitlements(res, user) {
     prisma.$transaction((tx) => getEntitlementSummary(tx, user.id)),
     prisma.entitlementSetting.findUnique({
       where: { id: SETTINGS_ID },
-      select: { groblePaymentUrl: true, premiumEnabled: true },
+      select: { groblePaymentUrl: true, grobleSinglePaymentUrl: true, premiumEnabled: true },
     }),
     hasClaimedFeedbackReward(prisma, user.id),
   ]);
@@ -68,6 +69,10 @@ async function getEntitlements(res, user) {
     ...summary,
     groblePaymentUrl:
       settings?.premiumEnabled && settings.groblePaymentUrl ? settings.groblePaymentUrl : null,
+    grobleSinglePaymentUrl:
+      settings?.premiumEnabled && settings.grobleSinglePaymentUrl
+        ? settings.grobleSinglePaymentUrl
+        : null,
     feedbackRewardClaimed,
   });
 }
@@ -75,27 +80,36 @@ async function getEntitlements(res, user) {
 // TODO(유료 오픈): premiumEnabled 를 켜기 전에 전자상거래법상 판매자 정보
 // (상호·대표자·사업자등록번호·통신판매업신고번호·주소·연락처)를 푸터에 표기해야 한다.
 // Groble 이 판매 주체라면 대신 결제 주체 안내와 Groble 판매자 정보 링크를 노출한다.
-async function createPurchaseIntent(res, user) {
+async function createPurchaseIntent(req, res, user) {
+  // bodyParser 가 꺼져 있어(웹훅 원문 검증) 상품 구분은 쿼리스트링으로 받는다.
+  const product = parsePurchaseProductQuery(req.query?.product);
+  if (!product) {
+    return res.status(400).json({ error: "INVALID_PURCHASE_PRODUCT" });
+  }
+
   const settings = await prisma.entitlementSetting.findUnique({
     where: { id: SETTINGS_ID },
-    select: { groblePaymentUrl: true, premiumEnabled: true },
+    select: { groblePaymentUrl: true, grobleSinglePaymentUrl: true, premiumEnabled: true },
   });
 
   if (!settings?.premiumEnabled) {
     return res.status(403).json({ error: "PREMIUM_SALES_DISABLED" });
   }
 
-  if (!settings.groblePaymentUrl) {
+  const paymentUrl =
+    product === "SINGLE" ? settings.grobleSinglePaymentUrl : settings.groblePaymentUrl;
+  if (!paymentUrl) {
     return res.status(503).json({ error: "PREMIUM_CHECKOUT_NOT_CONFIGURED" });
   }
 
   const purchaseIntent = await prisma.purchaseIntent.create({
     data: {
+      product,
       status: "PENDING",
       userId: user.id,
     },
   });
-  const checkoutUrl = new URL(settings.groblePaymentUrl);
+  const checkoutUrl = new URL(paymentUrl);
   checkoutUrl.searchParams.set("ref", purchaseIntent.id);
 
   return res.status(201).json({
@@ -121,7 +135,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST" && isPurchaseIntentPath(req)) {
-      return createPurchaseIntent(res, user);
+      return createPurchaseIntent(req, res, user);
     }
 
     return res.status(405).json({ error: "Method Not Allowed" });

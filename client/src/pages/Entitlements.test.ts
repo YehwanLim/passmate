@@ -14,8 +14,21 @@ describe("Entitlements page", () => {
     expect(pageSource).toContain('getLoginRedirectPath("/entitlements")');
     expect(pageSource).toContain("무료로 분석하기");
     expect(pageSource).toContain('navigate("/analyze")');
-    expect(pageSource).toContain("9,900원");
-    expect(pageSource).toContain("회당 3,300원");
+  });
+
+  it("renders every plan card from the shared pricing constants for guests and signed-in users alike", () => {
+    // 가격 숫자는 pricing.ts 단일 정의처에서 온다 — 페이지에 하드코딩하지 않는다.
+    expect(pageSource).toContain('from "@/lib/pricing"');
+    expect(pageSource).toContain("PRICING[product]");
+    expect(pageSource).toContain("TRIPLE_PER_USE_PRICE");
+    expect(pageSource).not.toContain("9,900원");
+    // 무료 체험 + 1회권 + 3회권 카드는 로그인 여부와 무관하게 렌더된다.
+    expect(pageSource).toContain("무료 체험");
+    expect(pageSource).toContain('renderPaidPlanCard("single")');
+    expect(pageSource).toContain('renderPaidPlanCard("triple")');
+    // 정가는 취소선으로, 할인율 배지와 함께 보여준다.
+    expect(pageSource).toContain("line-through");
+    expect(pageSource).toContain("plan.discountLabel");
   });
 
   it("obtains the displayed balance from the API client for signed-in users", () => {
@@ -34,7 +47,10 @@ describe("Entitlements page", () => {
     expect(pageSource).toContain("다시 시도");
     // 판매 스위치가 꺼져 있으면 준비 안내만 보인다
     expect(pageSource).toContain("현재 추가 이용권 판매를 준비하고 있어요.");
-    expect(pageSource).toContain("summary.premiumEnabled && summary.groblePaymentUrl");
+    // 상품별 결제 URL과 판매 스위치를 함께 확인한다.
+    expect(pageSource).toContain("summary.premiumEnabled && paymentUrl");
+    expect(pageSource).toContain("summary.grobleSinglePaymentUrl");
+    expect(pageSource).toContain("summary.groblePaymentUrl");
     expect(pageSource).toContain("createPurchaseIntent");
     // 체크아웃은 새 탭으로 연다 — 현재 페이지를 결제 도메인으로 넘기지 않는다
     expect(pageSource).toContain('window.open(intent.checkoutUrl, "_blank", "noopener,noreferrer")');

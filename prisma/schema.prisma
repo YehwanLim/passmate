@@ -106,6 +106,13 @@ enum PurchaseIntentStatus {
   @@map("purchase_intent_status")
 }
 
+enum PurchaseProduct {
+  SINGLE
+  TRIPLE
+
+  @@map("purchase_product")
+}
+
 enum AnalysisRequestStatus {
   PENDING
   CALLING
@@ -122,6 +129,7 @@ model EntitlementSetting {
   premiumEnabled            Boolean @default(false) @map("premium_enabled")
   premiumCreditsPerPurchase Int     @default(3) @map("premium_credits_per_purchase")
   groblePaymentUrl          String  @map("groble_payment_url") @db.Text
+  grobleSinglePaymentUrl    String  @default("") @map("groble_single_payment_url") @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -204,9 +212,10 @@ model ApiRateLimitBucket {
 }
 
 model PurchaseIntent {
-  id     String               @id @default(uuid()) @db.Uuid
-  userId String               @map("user_id") @db.Uuid
-  status PurchaseIntentStatus @default(PENDING)
+  id      String               @id @default(uuid()) @db.Uuid
+  userId  String               @map("user_id") @db.Uuid
+  status  PurchaseIntentStatus @default(PENDING)
+  product PurchaseProduct      @default(TRIPLE)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
