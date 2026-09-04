@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  CheckCircle2,
-  MessageSquareText,
-  PenLine,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { BrandName } from "@/components/BrandName";
 import Logo from "@/components/Logo";
@@ -24,24 +19,6 @@ const founderSignals = [
   "현직 PM 관점의 JD-경험 연결 기준 반영",
   "좋은 문장보다 면접에서 방어 가능한 논리 우선",
   "첫 분석은 무료, 이후 필요한 만큼만 이용",
-];
-
-const reviewPrinciples = [
-  {
-    icon: MessageSquareText,
-    title: "면접관이 기억할 첫인상",
-    text: "지원자가 어떤 사람으로 읽히는지 먼저 정리합니다.",
-  },
-  {
-    icon: PenLine,
-    title: "문장별 논리와 근거",
-    text: "모호한 표현보다 실제 행동, 판단, 결과가 보이는지 봅니다.",
-  },
-  {
-    icon: CheckCircle2,
-    title: "바로 고칠 우선순위",
-    text: "전부 뜯어고치기보다 합격 가능성에 영향이 큰 부분부터 제안합니다.",
-  },
 ];
 
 export function FounderNoteSection() {
@@ -87,48 +64,25 @@ export function FounderNoteSection() {
 
             <div className="rounded-xl border border-white/[0.08] bg-[#0A0A0A] p-6 md:p-7">
               <p className="text-[15px] font-semibold text-white">
-                그 시선은 리포트에서 이렇게 작동합니다
+                이 기준이 나온 곳
               </p>
               <p className="mb-6 mt-1.5 text-[13px] leading-[1.7] text-zinc-500">
-                멘토링에서 반복해 짚던 것들을, <BrandName />는 모든 리포트에서
-                똑같은 순서로 봅니다.
+                <BrandName />가 자소서를 읽는 기준은 위 리포트 미리보기에서
+                보신 그대로입니다. 그 기준은 여기서 나왔습니다.
               </p>
-              <div className="space-y-4">
-                {reviewPrinciples.map(({ icon: Icon, title, text }) => (
-                  <div key={title} className="flex items-start gap-4">
-                    <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-white/[0.07] bg-white/[0.03]">
-                      <Icon className="h-4 w-4 text-zinc-400" />
-                    </div>
-                    <div>
-                      <p className="mb-1 text-[14px] font-semibold text-zinc-100">
-                        {title}
-                      </p>
-                      <p className="text-[13px] leading-[1.7] text-zinc-500">
-                        {text}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 border-t border-white/[0.06] pt-4">
-                <p className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-600">
-                  이 기준이 나온 곳
-                </p>
-                <ul className="space-y-1.5">
-                  {founderSignals.map(signal => (
-                    <li
-                      key={signal}
-                      className="grid grid-cols-[10px_1fr] gap-1.5 text-[12.5px] leading-[1.6] text-zinc-500"
-                    >
-                      <span aria-hidden="true" className="text-zinc-700">
-                        ·
-                      </span>
+              <ul className="space-y-4">
+                {founderSignals.map(signal => (
+                  <li key={signal} className="flex items-start gap-3">
+                    <CheckCircle2
+                      aria-hidden="true"
+                      className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300/70"
+                    />
+                    <span className="text-[14px] leading-[1.7] text-zinc-300">
                       {signal}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </motion.div>
