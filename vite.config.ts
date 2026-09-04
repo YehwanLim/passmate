@@ -164,7 +164,8 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 5173,
+    // PORT env로 오버라이드 가능 (기본 5173) — 병렬 세션 프리뷰용
+    port: Number(process.env.PORT) || 5173,
     strictPort: true,
     host: "127.0.0.1",
     allowedHosts: [
