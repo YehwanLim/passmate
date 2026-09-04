@@ -119,6 +119,10 @@ temp/
 .claude/skills/
 .claude/settings.local.json
 
+# 스레드 계정 운영 자산 — 브랜드 전략과 비공개 멘토링 기록에서 파생된 소재라
+# 공개 저장소에 올리지 않는다
+.agents/threads-*.md
+
 # 일회성 점검·디버깅 스크립트
 tmp-*
 
