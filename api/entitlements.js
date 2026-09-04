@@ -1,5 +1,5 @@
 import {
-  getEntitlementSummary,
+  getEntitlementSummaryReadOnly,
   hasClaimedFeedbackReward,
 } from "../lib/analysis-entitlements.js";
 import { AuthorizationError, requireActiveApplicationUser } from "../lib/auth.js";
@@ -56,8 +56,9 @@ async function getAuthenticatedUser(req, res) {
 }
 
 async function getEntitlements(res, user) {
+  // 표시용 조회라 잠금 트랜잭션 대신 조회 전용 요약을 쓴다 — 왕복이 병렬화되어 빠르다.
   const [summary, settings, feedbackRewardClaimed] = await Promise.all([
-    prisma.$transaction((tx) => getEntitlementSummary(tx, user.id)),
+    getEntitlementSummaryReadOnly(prisma, user.id),
     prisma.entitlementSetting.findUnique({
       where: { id: SETTINGS_ID },
       select: { groblePaymentUrl: true, grobleSinglePaymentUrl: true, premiumEnabled: true },

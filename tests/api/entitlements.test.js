@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => {
   return {
     AuthorizationError,
     authenticatedUser: { id: "11111111-1111-4111-8111-111111111111" },
-    getEntitlementSummary: vi.fn(),
+    getEntitlementSummaryReadOnly: vi.fn(),
     hasClaimedFeedbackReward: vi.fn(),
     grobleWebhookHandler: vi.fn(),
     prisma: {
@@ -27,7 +27,7 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock("../../lib/analysis-entitlements.js", () => ({
-  getEntitlementSummary: mocks.getEntitlementSummary,
+  getEntitlementSummaryReadOnly: mocks.getEntitlementSummaryReadOnly,
   hasClaimedFeedbackReward: mocks.hasClaimedFeedbackReward,
 }));
 
@@ -95,7 +95,7 @@ describe("entitlement APIs", () => {
     });
     mocks.prisma.purchaseIntent.create.mockResolvedValue({ id: INTENT_ID });
     mocks.hasClaimedFeedbackReward.mockResolvedValue(false);
-    mocks.getEntitlementSummary.mockResolvedValue({
+    mocks.getEntitlementSummaryReadOnly.mockResolvedValue({
       freeRemaining: 1,
       bonusRemaining: 0,
       premiumEnabled: false,
@@ -120,10 +120,12 @@ describe("entitlement APIs", () => {
       remaining: 1,
       feedbackRewardClaimed: false,
     });
-    expect(mocks.getEntitlementSummary).toHaveBeenCalledWith(
-      mocks.transaction,
+    // 조회 전용 요약 — 잠금 트랜잭션을 거치지 않고 prisma 로 바로 읽는다.
+    expect(mocks.getEntitlementSummaryReadOnly).toHaveBeenCalledWith(
+      mocks.prisma,
       mocks.authenticatedUser.id,
     );
+    expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it("exposes the checkout URLs only while premium sales are enabled", async () => {
@@ -132,7 +134,7 @@ describe("entitlement APIs", () => {
       grobleSinglePaymentUrl: SINGLE_CHECKOUT_URL,
       premiumEnabled: true,
     });
-    mocks.getEntitlementSummary.mockResolvedValue({
+    mocks.getEntitlementSummaryReadOnly.mockResolvedValue({
       freeRemaining: 0,
       bonusRemaining: 0,
       premiumEnabled: true,
