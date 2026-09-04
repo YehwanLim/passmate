@@ -24,17 +24,18 @@ describe("home onboarding copy", () => {
     expect(homeSource).not.toContain("점수 82점");
   });
 
-  it("presents core analysis as a reading flow instead of abstract feature cards", () => {
+  it("presents the reading flow as scene lenses inside the report showcase", () => {
+    // 구 "이렇게 읽습니다" 독립 섹션은 쇼케이스 장면별 lens 문구로 병합됐다.
     expect(homeSource).toContain("BrandName");
-    expect(homeSource).toContain("먼저, 어떤 사람으로 기억되는지 봅니다");
-    expect(homeSource).toContain("경험이 회사 기준과 만나는지 봅니다");
-    expect(homeSource).toContain("문장마다 근거가 충분한지 봅니다");
-    expect(homeSource).toContain("면접에서 방어 가능한지 봅니다");
-    expect(homeSource).toContain("reading-flow-track");
-    expect(homeSource).toContain("reading-stage-panel");
-    expect(homeSource).not.toContain(
-      "onMouseEnter={() => setActiveReadingStep(index)}"
+    expect(reportShowcaseSource).toContain(
+      "먼저, 어떤 사람으로 기억되는지 봅니다"
     );
+    expect(reportShowcaseSource).toContain("경험이 회사 기준과 만나는지 봅니다");
+    expect(reportShowcaseSource).toContain("문장마다 근거가 충분한지 봅니다");
+    expect(reportShowcaseSource).toContain("면접에서 방어 가능한지 봅니다");
+    // GNB "서비스 소개"가 쇼케이스로 이동하도록 앵커도 함께 옮겼다.
+    expect(reportShowcaseSource).toContain('id="service-intro"');
+    expect(homeSource).not.toContain("RESUME_READING_STEPS");
     expect(homeSource).not.toContain("현직자 기준으로 설계된 6가지 분석 엔진");
     expect(homeSource).not.toContain("직무 적합도 (JD Fit) 매칭");
     expect(homeSource).not.toContain("분석 엔진");
@@ -57,7 +58,7 @@ describe("home onboarding copy", () => {
     expect(reportShowcaseSource).toContain("ActiveReportScene");
     expect(reportShowcaseSource).toContain("AnimatePresence");
     expect(reportShowcaseSource).toContain("LineAnalysisPreview");
-    expect(reportShowcaseSource).toContain("문장 04 · 수정 제안");
+    expect(reportShowcaseSource).toContain("수정 제안");
     expect(reportShowcaseSource).not.toContain("캡처가 아닌");
     expect(reportShowcaseSource).not.toContain("미니 리포트입니다");
     expect(reportShowcaseSource).not.toContain("grid-cols-4 gap-2");
@@ -80,6 +81,10 @@ describe("home onboarding copy", () => {
   it("uses the Pre:View brand component consistently across landing-page copy", () => {
     for (const source of [homeSource, reportShowcaseSource, founderSource]) {
       expect(source).not.toContain("PassMate");
+    }
+
+    // 쇼케이스 프레임은 브랜드 라벨 대신 "이런 리포트를 받게 됩니다"를 쓴다.
+    for (const source of [homeSource, founderSource]) {
       expect(source).toContain("BrandName");
     }
 

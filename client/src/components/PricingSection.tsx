@@ -149,7 +149,7 @@ export default function PricingSection() {
           transition={{ duration: 0.8, ease: EASE }}
           viewport={{ once: true, margin: "-80px" }}
         >
-          <p className="text-lg md:text-xl font-bold tracking-[0.04em] text-sky-300">
+          <p className="seasonal-discount-label mx-auto w-fit text-lg md:text-xl font-bold">
             {SEASONAL_DISCOUNT_LABEL}
           </p>
           <h2 className="mt-5 text-3xl md:text-4xl font-bold tracking-tight leading-snug">

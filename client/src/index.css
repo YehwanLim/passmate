@@ -587,6 +587,35 @@
   }
 }
 
+/* 시즌 할인 라벨 — 좁은 자간의 그라데이션 텍스트 위로 광택이 은은하게 지나간다 */
+.seasonal-discount-label {
+  letter-spacing: 0.02em;
+  background: linear-gradient(
+    100deg,
+    #7dd3fc 0%,
+    #60a5fa 30%,
+    #e0f2fe 50%,
+    #60a5fa 70%,
+    #a5b4fc 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 14px rgba(125, 145, 255, 0.32));
+  animation: seasonal-label-shimmer 3.6s ease-in-out infinite;
+}
+
+@keyframes seasonal-label-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-nav-link,
   .header-action-link,
@@ -596,7 +625,8 @@
   .mobile-nav-toggle,
   .mobile-nav-link,
   .social-proof-marquee-track,
-  .social-proof-logo {
+  .social-proof-logo,
+  .seasonal-discount-label {
     animation: none;
     transition-duration: 1ms;
   }

@@ -30,45 +30,6 @@ export const HOME_NAV_ITEMS = [
 // 노출 중이므로, 복원 시 SocialProofSection 쪽 마퀴와 중복을 정리할 것.
 const SHOW_SOCIAL_PROOF = false;
 
-const RESUME_READING_STEPS = [
-  {
-    label: "01",
-    title: "먼저, 어떤 사람으로 기억되는지 봅니다",
-    body: "문장을 고치기 전에 지원자가 어떤 인상으로 남는지부터 정리합니다.",
-    sampleLabel: "첫인상",
-    sample:
-      "데이터를 근거로 문제를 찾고 실행하는 사람으로 읽힙니다. 다만 자동차 서비스와 연결되는 장면은 아직 약합니다.",
-    note: "이 한 줄이 리포트의 기준점이 됩니다.",
-  },
-  {
-    label: "02",
-    title: "경험이 회사 기준과 만나는지 봅니다",
-    body: "좋은 경험인지보다, 지원 회사가 찾는 기준과 어디에서 맞물리는지 확인합니다.",
-    sampleLabel: "회사 맥락",
-    sample:
-      "3,000건의 행동 데이터 분석은 강점입니다. 이 경험이 현대자동차의 커넥티드 서비스 개선과 어떻게 이어지는지 보강하면 더 선명해집니다.",
-    note: "경험과 회사 사이의 빈칸을 찾습니다.",
-  },
-  {
-    label: "03",
-    title: "문장마다 근거가 충분한지 봅니다",
-    body: "성과를 말하는 문장에 판단 과정, 수치, 본인 역할이 함께 있는지 봅니다.",
-    sampleLabel: "문장 피드백",
-    sample:
-      "‘개인화가 부족했다’는 결론은 좋지만, 어떤 고객군에서 어떤 행동이 보였는지 한 줄 더 필요합니다.",
-    note: "고쳐야 할 문장을 바로 짚습니다.",
-  },
-  {
-    label: "04",
-    title: "면접에서 방어 가능한지 봅니다",
-    body: "자소서에 쓴 경험이 꼬리 질문으로 이어졌을 때 흔들리지 않는지 확인합니다.",
-    sampleLabel: "예상 질문",
-    sample:
-      "왜 클릭 패턴과 체류 시간을 가장 중요한 지표로 봤나요? 다른 지표는 검토하지 않았나요?",
-    note: "서류 이후의 질문까지 미리 봅니다.",
-  },
-] as const;
-
 /**
  * PreView – Premium Dark SaaS Landing Page
  *
@@ -115,9 +76,7 @@ function ScrollReveal({
 
 export default function Home() {
   const [, navigate] = useLocation();
-  const [activeReadingStep, setActiveReadingStep] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const readingStep = RESUME_READING_STEPS[activeReadingStep];
 
   const handleNavClick = useCallback(
     (target: string, type: string) => {
@@ -324,7 +283,7 @@ export default function Home() {
             }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            아직도 AI로 만든 자소서, <br className="hidden md:inline" />
+            아직도 AI로 만든 자소서 <br className="hidden md:inline" />
             그대로 복붙하세요?
           </motion.h2>
 
@@ -339,30 +298,13 @@ export default function Home() {
             }}
             viewport={{ once: true, margin: "-80px" }}
           >
-            매끈한 문장은 이제 누구나 씁니다. 서류를 읽는 실무자 눈에는 다
-            비슷해 보일 뿐이에요.
+            매끈한 문장은 이제 누구나 씁니다.
             <br />
-            합격자를 가려내는 건 글솜씨가 아니라, 직무에 대한 고민과 문제를
-            해결해 본 경험입니다.
-          </motion.p>
-
-          <motion.p
-            className="mt-6 text-[15px] md:text-[17px] text-gray-400 font-light leading-[1.85] max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{
-              duration: 0.9,
-              delay: 0.25,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
-            viewport={{ once: true, margin: "-80px" }}
-          >
-            문장을 다듬어 주는 AI는 이미 많습니다.
+            서류를 읽는 실무자 눈에는 다 비슷해 보일 뿐이에요.
             <br />
-            <BrandName />는 문장만 만들어주지 않습니다.
+            <BrandName />는 문장을 다듬는 대신, 지원한 회사의 채용 기준으로
             <br />
-            지원한 회사의 채용 기준으로 당신의 자소서가 어떻게 읽히는지
-            알려드립니다.
+            당신의 자소서가 어떻게 읽히는지 알려드립니다.
           </motion.p>
         </div>
       </section>
@@ -429,156 +371,8 @@ export default function Home() {
       <CompanyMarqueeSection />
 
       {/* ══════════════════════════════════════════════════
-          STEP 2-B: How PreView Reads
-          ══════════════════════════════════════════════════ */}
-      <section
-        id="service-intro"
-        className="relative py-28 md:py-36 border-t border-white/[0.04]"
-      >
-        <div className="max-w-6xl mx-auto px-6 lg:px-10">
-          <ScrollReveal className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              <BrandName />는 자소서를 이렇게 읽습니다
-            </h2>
-            <p className="text-gray-500 font-light text-[15px] leading-[1.8] max-w-xl mx-auto">
-              점수를 매기기보다, 면접관이 실제로 판단하는 흐름에 맞춰 읽습니다.
-              첫인상부터 문장 근거, 회사 맥락, 면접 질문까지 이어서 봅니다.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-stretch">
-            <div className="space-y-0 border-t border-white/[0.06]">
-              {RESUME_READING_STEPS.map((step, index) => {
-                const active = index === activeReadingStep;
-                return (
-                  <button
-                    key={step.label}
-                    type="button"
-                    className={`group w-full border-b border-white/[0.06] py-5 text-left transition-colors ${
-                      active
-                        ? "text-white"
-                        : "text-zinc-500 hover:text-zinc-300"
-                    }`}
-                    onClick={() => setActiveReadingStep(index)}
-                  >
-                    <div className="grid grid-cols-[42px_1fr] gap-4">
-                      <span
-                        className={`text-[12px] font-semibold tracking-[0.18em] ${
-                          active ? "text-emerald-300/80" : "text-zinc-500"
-                        }`}
-                      >
-                        {step.label}
-                      </span>
-                      <div>
-                        <h3 className="text-[17px] font-semibold leading-[1.45] tracking-tight">
-                          {step.title}
-                        </h3>
-                        <p
-                          className={`mt-2 text-[14px] font-light leading-[1.75] ${
-                            active ? "text-zinc-300" : "text-zinc-600"
-                          }`}
-                        >
-                          {step.body}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-
-              <div className="reading-flow-track mt-7 grid grid-cols-4 gap-2">
-                {RESUME_READING_STEPS.map((step, index) => {
-                  const active = index === activeReadingStep;
-                  return (
-                    <button
-                      key={`${step.label}-track`}
-                      type="button"
-                      aria-label={`${step.label} ${step.sampleLabel}`}
-                      onClick={() => setActiveReadingStep(index)}
-                      className="group text-left"
-                    >
-                      <span
-                        className={`block h-1 transition-colors ${
-                          active
-                            ? "bg-emerald-300/80"
-                            : "bg-white/[0.08] group-hover:bg-white/[0.18]"
-                        }`}
-                      />
-                      <span
-                        className={`mt-3 block text-[11px] font-medium tracking-[0.08em] ${
-                          active
-                            ? "text-white"
-                            : "text-zinc-600 group-hover:text-zinc-400"
-                        }`}
-                      >
-                        {step.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <motion.div
-              key={readingStep.label}
-              initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-              className="reading-stage-panel relative min-h-[420px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0A0A0A] p-6 md:p-9"
-            >
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_48%_at_50%_0%,rgba(16,185,129,0.09),transparent_70%)]" />
-              <div className="relative flex h-full flex-col">
-                <div className="mb-9 flex items-start justify-between gap-5 border-b border-white/[0.06] pb-6">
-                  <div>
-                    <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-600">
-                      리포트에는 이렇게 남습니다
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[12px] font-semibold tracking-[0.18em] text-emerald-300/70">
-                        {readingStep.label}
-                      </span>
-                      <span className="text-[13px] text-zinc-500">
-                        {readingStep.sampleLabel}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="hidden text-right text-[12px] leading-[1.7] text-zinc-600 sm:block">
-                    클릭해서 단계별로 보기
-                  </div>
-                </div>
-
-                <blockquote className="text-[22px] md:text-[28px] font-semibold leading-[1.55] tracking-tight text-white">
-                  “{readingStep.sample}”
-                </blockquote>
-                <p className="mt-7 max-w-xl text-[14px] leading-[1.8] text-zinc-500">
-                  {readingStep.note}
-                </p>
-
-                <div className="mt-auto pt-10">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {[
-                      "표현보다 판단 기준",
-                      "경험보다 연결 맥락",
-                      "첨삭보다 다음 질문",
-                      "전체 수정보다 우선순위",
-                    ].map(item => (
-                      <div
-                        key={item}
-                        className="border-t border-white/[0.06] pt-3 text-[13px] text-zinc-500"
-                      >
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════
           STEP 3: Report Showcase — Sticky Scroll Deep-Dive
+          (구 "이렇게 읽습니다" 방법론은 장면별 lens 문구로 병합)
           ══════════════════════════════════════════════════ */}
       <ReportShowcase />
 

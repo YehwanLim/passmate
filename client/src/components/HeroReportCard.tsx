@@ -20,7 +20,6 @@ export default function HeroReportCard() {
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.95, duration: 1, ease: [0.21, 0.47, 0.32, 0.98] }}
-      style={{ perspective: 1400 }}
     >
       <div
         className="pointer-events-none absolute -inset-x-[10%] -inset-y-[6%] -z-10 blur-2xl"
@@ -30,13 +29,7 @@ export default function HeroReportCard() {
         }}
       />
 
-      <motion.div
-        className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0A0A0A]/95 shadow-[0_24px_80px_rgba(0,0,0,0.6)]"
-        style={{ transformOrigin: "top center", transformPerspective: 1400 }}
-        animate={{ rotateX: 7 }}
-        whileHover={{ rotateX: 3 }}
-        transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
-      >
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0A0A0A]/95 shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
         <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4 md:px-7">
           <div className="absolute inset-x-[8%] top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
           <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-zinc-500">
@@ -121,7 +114,7 @@ export default function HeroReportCard() {
                 현직자 코멘트
               </p>
               <div className="space-y-3">
-                {mentorCommentPreviews.slice(0, 2).map((comment, index) => (
+                {mentorCommentPreviews.map((comment, index) => (
                   <blockquote key={comment.title} className="min-w-0">
                     <div className="mb-1 flex items-center gap-2">
                       <span
@@ -142,7 +135,7 @@ export default function HeroReportCard() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

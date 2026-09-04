@@ -47,13 +47,9 @@ describe("ReportShowcase", () => {
     render(<ReportShowcase />);
 
     const frame = screen
-      .getAllByRole("img", { name: "Pre:View" })
-      .find(brand =>
-        brand.parentElement?.textContent?.includes("Report Preview")
-      )
-      ?.closest(".rounded-xl");
-    const scrollTrack =
-      frame?.parentElement?.parentElement?.parentElement?.parentElement;
+      .getByText("이런 리포트를 받게 됩니다")
+      .closest(".rounded-xl");
+    const scrollTrack = frame?.closest('[class*="400vh"]');
 
     if (!scrollTrack)
       throw new Error("Report preview scroll track was not found");
@@ -102,9 +98,6 @@ describe("ReportShowcase", () => {
       )
     ).toBeTruthy();
     expect(screen.getByText("현직자 코멘트")).toBeTruthy();
-    expect(
-      screen.getByText("스크롤하면 핵심 진단으로 이어집니다")
-    ).toBeTruthy();
 
     const next = () =>
       fireEvent.click(
@@ -130,8 +123,5 @@ describe("ReportShowcase", () => {
     await waitFor(() =>
       expect(screen.getAllByText("답변에서 설명할 근거")).toHaveLength(3)
     );
-    expect(
-      screen.getByText("스크롤하면 다음 섹션으로 이어집니다")
-    ).toBeTruthy();
   });
 });

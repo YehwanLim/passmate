@@ -4,15 +4,9 @@ import {
   useMotionValueEvent,
   useScroll,
 } from "framer-motion";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ChevronDown,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { BrandName } from "@/components/BrandName";
+import { useLocation } from "wouter";
 
 type PreviewScene = {
   id: string;
@@ -20,6 +14,8 @@ type PreviewScene = {
   tab: string;
   eyebrow: string;
   title: string;
+  // 구 "이렇게 읽습니다" 섹션의 단계별 읽기 기준을 장면 위에 얹는다.
+  lens: string;
 };
 
 export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
@@ -29,6 +25,7 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
     tab: "첫인상",
     eyebrow: "First Read",
     title: "데이터 기반 실행형 PM",
+    lens: "먼저, 어떤 사람으로 기억되는지 봅니다",
   },
   {
     id: "diagnosis",
@@ -36,6 +33,7 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
     tab: "핵심 진단",
     eyebrow: "Core Diagnosis",
     title: "강점은 뚜렷하지만 회사 맥락이 약합니다",
+    lens: "경험이 회사 기준과 만나는지 봅니다",
   },
   {
     id: "line",
@@ -43,6 +41,7 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
     tab: "문장 피드백",
     eyebrow: "Line-by-line",
     title: "원문 옆에서 문장별 피드백을 바로 확인합니다",
+    lens: "문장마다 근거가 충분한지 봅니다",
   },
   {
     id: "interview",
@@ -50,11 +49,18 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
     tab: "예상 질문",
     eyebrow: "Interview Drill",
     title: "면접에서 이어질 질문까지 미리 점검합니다",
+    lens: "면접에서 방어 가능한지 봅니다",
   },
 ];
 
 const DESKTOP_SCROLL_PREVIEW_QUERY =
   "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
+
+// 빠르게 스크롤해도 장면은 한 번에 하나씩만 넘어가도록 스텝 사이에 두는
+// 최소 간격. AnimatePresence(mode="wait")의 퇴장 450ms + 등장 450ms가 다
+// 끝나고도 장면이 잠깐 머무를 만큼 잡는다 — 이보다 짧으면 등장 중인 장면을
+// 다음 스텝이 끊어서 두 장면씩 휙휙 넘어가는 것처럼 보인다.
+const SCENE_STEP_INTERVAL_MS = 1300;
 
 export function getReportPreviewSceneIndex(progress: number) {
   const clampedProgress = Math.min(1, Math.max(0, progress));
@@ -247,13 +253,7 @@ function MiniReportNavigator({
 function FirstImpressionPreview() {
   return (
     <section className="relative py-1 lg:h-full lg:overflow-hidden">
-      <div className="flex flex-col gap-2 border-b border-white/[0.06] pb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-        <span>
-          <BrandName /> Report
-        </span>
-        <span>First Read · 현대자동차 (예시)</span>
-      </div>
-
+      {/* 회사·직무 컨텍스트는 프레임 헤더가 이미 보여주므로 별도 헤더를 두지 않는다 */}
       <div className="py-2 text-center lg:py-3">
         <p className="mb-2 text-[13px] text-zinc-300">김민지님은</p>
         <h3 className="mx-auto max-w-2xl text-3xl font-semibold leading-[1.05] tracking-tight text-white sm:text-[2.35rem] md:text-[2.7rem]">
@@ -355,9 +355,12 @@ function DiagnosisPreview() {
         <h3 className="mb-1 text-xs font-medium uppercase tracking-[0.15em] text-zinc-500">
           02. 핵심 진단
         </h3>
-        <p className="mb-4 text-[21px] font-semibold leading-[1.35] tracking-tight text-white md:text-[25px]">
-          강점은 이미 뚜렷합니다.{" "}
-          <span className="text-amber-200">현대자동차와 연결되는 한 장면</span>
+        <p className="mb-4 break-keep text-[21px] font-semibold leading-[1.35] tracking-tight text-white md:text-[25px]">
+          강점은 이미 뚜렷합니다.
+          <br />
+          <span className="text-amber-200">
+            현대자동차와 연결되는 한 장면
+          </span>
           이 아직 없습니다.
         </p>
       </div>
@@ -692,117 +695,104 @@ function ReportPreviewFrame({
   goToPreviousScene: () => void;
   goToNextScene: () => void;
 }) {
-  const isLastScene = activeIndex === REPORT_PREVIEW_SCENES.length - 1;
+  const activeScene = REPORT_PREVIEW_SCENES[activeIndex];
 
   return (
     <div className="relative mx-auto w-full min-w-0 max-w-7xl lg:h-[min(42rem,calc(100svh-4rem))]">
-      <button
-        type="button"
-        aria-label="이전 리포트 미리보기"
-        className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
-        onClick={goToPreviousScene}
-      >
-        <ArrowLeft className="h-5 w-5" />
-      </button>
-
-      <button
-        type="button"
-        aria-label="다음 리포트 미리보기"
-        className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
-        onClick={goToNextScene}
-      >
-        <ArrowRight className="h-5 w-5" />
-      </button>
-
       <div className="flex w-full gap-8 lg:h-full">
         <MiniReportNavigator
           activeIndex={activeIndex}
           onSelectScene={onSelectScene}
         />
 
-        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/[0.1] bg-[#070707] p-4 shadow-2xl shadow-black/40 md:p-5">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
-          <div className="mb-4 flex flex-col gap-3 border-b border-white/[0.07] pb-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-[11px] text-gray-600 tracking-widest uppercase mb-1">
-                <BrandName /> Report Preview
-              </p>
-              <p className="text-[15px] text-zinc-200 font-medium">
-                현대자동차 · 서비스 기획 <span className="text-[12px] text-zinc-500">(예시 리포트)</span>
-              </p>
+        {/* 화살표는 목차 컬럼이 아니라 프레임 양 끝에 붙도록 이 래퍼를 기준으로 띄운다 */}
+        <div className="relative min-w-0 flex-1 lg:h-full">
+          <button
+            type="button"
+            aria-label="이전 리포트 미리보기"
+            className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
+            onClick={goToPreviousScene}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+
+          <button
+            type="button"
+            aria-label="다음 리포트 미리보기"
+            className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
+            onClick={goToNextScene}
+          >
+            <ArrowRight className="h-5 w-5" />
+          </button>
+
+          <div className="relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-white/[0.1] bg-[#070707] p-4 shadow-2xl shadow-black/40 md:p-5 lg:h-full">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+            <div className="mb-4 flex flex-col gap-3 border-b border-white/[0.07] pb-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <p className="text-[17px] md:text-[19px] font-semibold tracking-tight text-white">
+                    이런 리포트를 받게 됩니다
+                  </p>
+                  <span className="inline-flex items-baseline gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.05] px-3 py-1 text-[12px] font-semibold text-zinc-200">
+                    현대자동차 · 서비스 기획
+                    <span className="font-normal text-zinc-500">예시</span>
+                  </span>
+                </div>
+                {/* 리포트 본문의 문장 하이라이트와 같은 형광펜 표현으로 현재 장면의 읽기 기준을 보여준다 */}
+                <p className="text-[13px] font-medium text-emerald-100">
+                  <span className="box-decoration-clone rounded-[4px] bg-emerald-300/[0.13] px-1.5 py-1">
+                    {activeScene.indexLabel}. {activeScene.lens}
+                  </span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 xl:hidden">
+                {REPORT_PREVIEW_SCENES.map((scene, index) => (
+                  <button
+                    key={scene.id}
+                    type="button"
+                    className={`h-8 rounded-md border px-3 text-[12px] font-medium transition-colors ${
+                      index === activeIndex
+                        ? "border-blue-500/[0.28] bg-blue-500/[0.12] text-blue-200"
+                        : "border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200"
+                    }`}
+                    onClick={() => onSelectScene(index)}
+                  >
+                    {scene.indexLabel}. {scene.tab}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2 xl:hidden">
-              {REPORT_PREVIEW_SCENES.map((scene, index) => (
+
+            <div className="lg:min-h-0 lg:flex-1">
+              <ActiveReportScene activeIndex={activeIndex} />
+            </div>
+
+            <div className="mt-3 flex shrink-0 items-center justify-between gap-4 border-t border-white/[0.07] pt-3">
+              <div className="flex min-w-0 items-center gap-2 text-[11px] text-zinc-500">
+                <span className="font-medium tabular-nums text-zinc-400">
+                  {String(activeIndex + 1).padStart(2, "0")} /{" "}
+                  {String(REPORT_PREVIEW_SCENES.length).padStart(2, "0")}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 lg:hidden">
                 <button
-                  key={scene.id}
                   type="button"
-                  className={`h-8 rounded-md border px-3 text-[12px] font-medium transition-colors ${
-                    index === activeIndex
-                      ? "border-blue-500/[0.28] bg-blue-500/[0.12] text-blue-200"
-                      : "border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200"
-                  }`}
-                  onClick={() => onSelectScene(index)}
+                  aria-label="이전 리포트 미리보기"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black"
+                  onClick={goToPreviousScene}
                 >
-                  {scene.indexLabel}. {scene.tab}
+                  <ArrowLeft className="h-4 w-4" />
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="lg:min-h-0 lg:flex-1">
-            <ActiveReportScene activeIndex={activeIndex} />
-          </div>
-
-          <div className="mt-3 flex shrink-0 items-center justify-between gap-4 border-t border-white/[0.07] pt-3">
-            <div className="flex min-w-0 items-center gap-2 text-[11px] text-zinc-500">
-              <span className="font-medium tabular-nums text-zinc-400">
-                {String(activeIndex + 1).padStart(2, "0")} /{" "}
-                {String(REPORT_PREVIEW_SCENES.length).padStart(2, "0")}
-              </span>
-              <span className="h-px w-6 bg-white/[0.12]" />
-              <p className="hidden truncate lg:block">
-                {isLastScene ? (
-                  "스크롤하면 다음 섹션으로 이어집니다"
-                ) : (
-                  <>
-                    스크롤하면{" "}
-                    {
-                      REPORT_PREVIEW_SCENES[
-                        (activeIndex + 1) % REPORT_PREVIEW_SCENES.length
-                      ].tab
-                    }
-                    으로 이어집니다
-                  </>
-                )}
-              </p>
-              <p className="truncate lg:hidden">
-                다음 장면:{" "}
-                {
-                  REPORT_PREVIEW_SCENES[
-                    (activeIndex + 1) % REPORT_PREVIEW_SCENES.length
-                  ].tab
-                }
-              </p>
-              <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-zinc-600 lg:block" />
-            </div>
-
-            <div className="flex items-center gap-2 lg:hidden">
-              <button
-                type="button"
-                aria-label="이전 리포트 미리보기"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black"
-                onClick={goToPreviousScene}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="다음 리포트 미리보기"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black"
-                onClick={goToNextScene}
-              >
-                <ArrowRight className="h-4 w-4" />
-              </button>
+                <button
+                  type="button"
+                  aria-label="다음 리포트 미리보기"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black"
+                  onClick={goToNextScene}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -812,6 +802,7 @@ function ReportPreviewFrame({
 }
 
 export default function ReportShowcase() {
+  const [, navigate] = useLocation();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isScrollDriven, setIsScrollDriven] = useState(false);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
@@ -830,24 +821,70 @@ export default function ReportShowcase() {
     return () => mediaQuery.removeEventListener("change", updateScrollMode);
   }, []);
 
+  // 스크롤 위치가 한 번에 두 장면 이상 건너뛰더라도, 화면은 스텝 간격을
+  // 지키며 한 장면씩 따라간다. 스크롤이 멈춘 뒤에도 목표 장면까지 마저 간다.
+  const activeIndexRef = useRef(activeIndex);
+  activeIndexRef.current = activeIndex;
+  const targetProgressRef = useRef(0);
+  const lastStepAtRef = useRef(0);
+  const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const stepSceneTowardScroll = () => {
+    stepTimerRef.current = null;
+
+    const nextIndex = getBoundedReportPreviewSceneIndex(
+      activeIndexRef.current,
+      targetProgressRef.current
+    );
+    if (nextIndex === activeIndexRef.current) return;
+
+    lastStepAtRef.current = Date.now();
+    activeIndexRef.current = nextIndex;
+    setActiveIndex(nextIndex);
+    scheduleSceneStep();
+  };
+
+  const scheduleSceneStep = () => {
+    if (stepTimerRef.current !== null) return;
+
+    const wait = Math.max(
+      0,
+      SCENE_STEP_INTERVAL_MS - (Date.now() - lastStepAtRef.current)
+    );
+    stepTimerRef.current = setTimeout(stepSceneTowardScroll, wait);
+  };
+
   useMotionValueEvent(scrollYProgress, "change", progress => {
     if (!isScrollDriven) return;
 
-    setActiveIndex(index => getBoundedReportPreviewSceneIndex(index, progress));
+    targetProgressRef.current = progress;
+    scheduleSceneStep();
   });
 
+  useEffect(() => {
+    return () => {
+      if (stepTimerRef.current !== null) clearTimeout(stepTimerRef.current);
+    };
+  }, []);
+
   const goToPreviousScene = () => {
+    // 수동 이동 직후에는 스크롤 보정이 바로 덮어쓰지 않도록 간격을 초기화한다.
+    lastStepAtRef.current = Date.now();
     setActiveIndex(index =>
       index === 0 ? REPORT_PREVIEW_SCENES.length - 1 : index - 1
     );
   };
 
   const goToNextScene = () => {
+    lastStepAtRef.current = Date.now();
     setActiveIndex(index => (index + 1) % REPORT_PREVIEW_SCENES.length);
   };
 
   return (
-    <section className="py-24 md:py-40 border-t border-white/[0.04]">
+    <section
+      id="service-intro"
+      className="py-24 md:py-40 border-t border-white/[0.04]"
+    >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="text-center mb-14 md:mb-20">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-600 tracking-widest uppercase mb-4">
@@ -858,8 +895,8 @@ export default function ReportShowcase() {
             합격을 설계하는 인사이트 리포트
           </h2>
           <p className="text-[15px] md:text-[16px] text-gray-500 font-light leading-[1.8] max-w-2xl mx-auto">
-            실제 리포트 화면을 그대로 옮겨왔습니다. 내 자소서가 면접관에게
-            어떻게 읽힐지 미리 확인하세요.
+            점수를 매기기보다, 면접관이 실제로 판단하는 흐름대로 읽습니다. 실제
+            리포트 화면 그대로 — 첫인상부터 문장 근거, 예상 질문까지 확인하세요.
           </p>
         </div>
 
@@ -881,6 +918,21 @@ export default function ReportShowcase() {
               goToNextScene={goToNextScene}
             />
           </div>
+        </div>
+
+        {/* 리포트를 다 본 직후가 설득이 가장 뜨거운 지점 — 중간 CTA */}
+        <div className="mt-14 text-center md:mt-16">
+          <button
+            className="landing-primary-cta group"
+            onClick={() => navigate("/analyze")}
+          >
+            <span className="relative z-10">내 자소서 분석해보기</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
+          </button>
+          <p className="mt-3.5 text-[12.5px] text-zinc-500">
+            첫 분석 무료 <span className="text-zinc-700">·</span> 리포트는 1분
+            안에
+          </p>
         </div>
       </div>
     </section>
