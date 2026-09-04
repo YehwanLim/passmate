@@ -53,13 +53,13 @@ describe("Entitlements page", () => {
     expect(pageSource).toContain("summary.premiumEnabled && paymentUrl");
     expect(pageSource).toContain("summary.grobleSinglePaymentUrl");
     expect(pageSource).toContain("summary.groblePaymentUrl");
-    expect(pageSource).toContain("createPurchaseIntent");
-    // 체크아웃은 새 탭으로 연다 — 현재 페이지를 결제 도메인으로 넘기지 않는다
-    expect(pageSource).toContain('window.open(intent.checkoutUrl, "_blank", "noopener,noreferrer")');
+    // 체크아웃은 새 탭으로 연다 — 현재 페이지를 결제 도메인으로 넘기지 않는다.
+    // 구매 의도 생성은 /checkout 탭이 맡는다: 클릭과 창 열기 사이에 서버 왕복을
+    // 두면 브라우저가 팝업으로 보고 막는다(동작 검증은 Entitlements.purchase.test.tsx).
+    expect(pageSource).not.toContain("createPurchaseIntent");
+    expect(pageSource).toContain('window.open(path, "_blank")');
     expect(pageSource).not.toContain("window.location.assign");
     expect(pageSource).toContain("결제를 완료하면 이용권이 곧 반영돼요");
-    // 팝업 차단 시 사용자가 직접 여는 폴백 링크가 있어야 한다.
-    expect(pageSource).toContain("결제 창이 열리지 않았다면");
   });
 
   it("offers a payment inquiry channel", () => {

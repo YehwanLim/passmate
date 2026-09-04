@@ -8,7 +8,6 @@ import { HOME_NAV_ITEMS } from "@/pages/Home";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLoginRedirectPath } from "@/hooks/useRequireAuth";
 import {
-  createPurchaseIntent,
   fetchEntitlementSummary,
   type EntitlementSummary,
   type PurchaseProductKey,
@@ -52,12 +51,8 @@ export default function Entitlements() {
   const [summary, setSummary] = useState<EntitlementSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [purchasingProduct, setPurchasingProduct] =
-    useState<PurchaseProductKey | null>(null);
   const [purchaseStarted, setPurchaseStarted] = useState(false);
-  const [purchaseError, setPurchaseError] = useState<string | null>(null);
   // 팝업 차단 시 사용자가 직접 클릭해 열 수 있도록 체크아웃 URL을 보관한다.
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // 랜딩과 같은 GNB 메뉴를 유지한다. 섹션 타입은 랜딩으로 이동한 뒤 해당 섹션으로 스크롤.
@@ -129,29 +124,19 @@ export default function Entitlements() {
     }
   }, [authLoading, isAuthenticated, loadEntitlements]);
 
-  const handlePurchase = useCallback(
-    async (product: PurchaseProductKey) => {
-      setPurchasingProduct(product);
-      setPurchaseError(null);
-
-      try {
-        const accessToken = await getAccessToken();
-        if (!accessToken) return;
-
-        const intent = await createPurchaseIntent(accessToken, product);
-        // 결제는 Groble 체크아웃 새 탭에서 진행된다. ref 파라미터가 구매 의도를 연결한다.
-        // 클릭 이후 await를 거치면 브라우저가 사용자 제스처로 보지 않아 팝업을 차단할 수 있어,
-        // open 실패 시 사용자가 직접 여는 링크를 함께 제공한다.
-        window.open(intent.checkoutUrl, "_blank", "noopener,noreferrer");
-        setCheckoutUrl(intent.checkoutUrl);
-        setPurchaseStarted(true);
-      } catch {
-        setPurchaseError("구매를 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
-      } finally {
-        setPurchasingProduct(null);
+  const startCheckout = useCallback(
+    (product: PurchaseProductKey) => {
+      const path = `/checkout?product=${product}`;
+      // 클릭한 그 순간에 열어야 브라우저가 사용자 제스처로 인정해 팝업을 막지 않는다.
+      // 구매 의도 생성(서버 왕복)은 새 탭이 맡는다 — 여기서 await 하면 창이 차단된다.
+      const opened = window.open(path, "_blank");
+      if (!opened) {
+        navigate(path);
+        return;
       }
+      setPurchaseStarted(true);
     },
-    [getAccessToken]
+    [navigate]
   );
 
   // 결제 게이트: 판매 스위치가 켜져 있고 해당 상품의 결제 URL이 설정된 경우에만 열린다.
@@ -170,6 +155,16 @@ export default function Entitlements() {
       product === "triple"
         ? "h-11 w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:from-blue-400 hover:to-cyan-300 disabled:opacity-50"
         : "h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1] disabled:opacity-50";
+
+    // 아직 결제 URL을 모르는 동안은 "판매 준비 중"이 아니라 비활성 버튼을 보여준다 —
+    // 로딩과 판매 중단은 다른 상태고, 섞으면 로그인한 사용자에게 틀린 안내가 깜빡인다.
+    if (authLoading || (isAuthenticated && isLoading)) {
+      return (
+        <button type="button" disabled className={buttonClassName}>
+          {plan.label} 구매하기
+        </button>
+      );
+    }
 
     if (!isAuthenticated) {
       return (
@@ -194,11 +189,10 @@ export default function Entitlements() {
     return (
       <button
         type="button"
-        onClick={() => void handlePurchase(product)}
-        disabled={purchasingProduct !== null}
+        onClick={() => startCheckout(product)}
         className={buttonClassName}
       >
-        {purchasingProduct === product ? "여는 중..." : `${plan.label} 구매하기`}
+        {`${plan.label} 구매하기`}
       </button>
     );
   };
@@ -367,7 +361,7 @@ export default function Entitlements() {
 
           {/* 가격 카드 — 로그인 여부와 상관없이 항상 보여준다. */}
           <div className="space-y-6">
-            <p className="text-[14.5px] font-bold tracking-[0.14em] text-sky-300">
+            <p className="seasonal-discount-label w-fit text-[15px] font-bold">
               {SEASONAL_DISCOUNT_LABEL}
             </p>
 
@@ -424,27 +418,10 @@ export default function Entitlements() {
               </ul>
             </div>
 
-            {purchaseError && (
-              <p className="text-center text-xs text-red-200">{purchaseError}</p>
-            )}
-
             {purchaseStarted && (
               <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
                 <p className="text-xs text-zinc-500">
-                  결제 창이 열리지 않았다면{" "}
-                  {checkoutUrl ? (
-                    <a
-                      href={checkoutUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-white underline underline-offset-4"
-                    >
-                      여기를 눌러 결제 페이지를 열어 주세요
-                    </a>
-                  ) : (
-                    "잠시 후 다시 시도해 주세요"
-                  )}
-                  . 결제를 완료하면 이용권이 곧 반영돼요.
+                  새 탭에서 결제를 진행해 주세요. 결제를 완료하면 이용권이 곧 반영돼요.
                 </p>
                 <button
                   type="button"
