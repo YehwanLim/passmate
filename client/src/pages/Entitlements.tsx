@@ -29,45 +29,6 @@ const PAYMENT_INQUIRY_MAILTO = `mailto:hansitoring@gmail.com?subject=${encodeURI
   "아래 내용을 채워 보내주시면 영업일 기준 3일 이내에 안내드릴게요.\n\n- 결제일:\n- 결제 확인 정보(주문번호 또는 결제 이메일):\n- 문의 내용(환불 요청 시 사유 포함):\n"
 )}`;
 
-function CreditSkeleton() {
-  return (
-    <div
-      className="border-y border-white/5"
-      aria-label="이용권 정보를 불러오는 중"
-    >
-      {[1, 2, 3].map(row => (
-        <div
-          key={row}
-          className="h-[76px] border-b border-white/5 bg-white/[0.015] last:border-b-0 animate-pulse"
-        />
-      ))}
-    </div>
-  );
-}
-
-function CreditSummaryRow({
-  title,
-  description,
-  remaining,
-}: {
-  title: string;
-  description: string;
-  remaining: number;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-4">
-      <div>
-        <p className="text-sm font-medium text-zinc-300">{title}</p>
-        <p className="mt-0.5 text-xs text-zinc-600">{description}</p>
-      </div>
-      <p className="shrink-0 text-base font-medium text-zinc-100">
-        {remaining}
-        <span className="ml-0.5 text-xs font-normal text-zinc-500">회</span>
-      </p>
-    </div>
-  );
-}
-
 const PAID_PLAN_COPY: Record<
   PurchaseProductKey,
   { lead: string; body: string; perUseNote: string }
@@ -372,77 +333,37 @@ export default function Entitlements() {
             이용권
           </h1>
           <p className="text-[14px] text-zinc-500 font-light">
-            {isAuthenticated
-              ? "보유한 이용권을 확인하고, 필요한 만큼만 추가 구매할 수 있어요."
-              : "무료 1회로 시작하고, 필요한 만큼만 이용권을 구매할 수 있어요."}
+            무료 1회로 시작하고, 필요한 만큼만 이용권을 구매할 수 있어요.
+            {isAuthenticated && (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/my/entitlements")}
+                  className="text-zinc-400 underline underline-offset-4 transition-colors hover:text-zinc-200"
+                >
+                  내 이용권 현황 보기
+                </button>
+              </>
+            )}
           </p>
         </motion.div>
 
         <section className="mt-8 space-y-10" aria-live="polite">
-          {/* 로그인 시 보유 이용권 요약 — 가격 카드 위에 표시한다. */}
-          {isAuthenticated &&
-            (authLoading || isLoading ? (
-              <CreditSkeleton />
-            ) : error && !summary ? (
-              <div className="rounded-xl border border-red-400/[0.18] bg-red-400/[0.06] px-6 py-6 text-center">
-                <p className="text-sm text-red-100">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => void loadEntitlements()}
-                  className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 text-sm font-medium text-white transition-colors hover:bg-white/[0.12]"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  다시 시도
-                </button>
-              </div>
-            ) : summary ? (
-              <div className="space-y-4">
-                {error && (
-                  <div className="flex items-center justify-between gap-4 rounded-xl border border-red-400/[0.18] bg-red-400/[0.06] px-4 py-3">
-                    <p className="text-sm text-red-100">{error}</p>
-                    <button
-                      type="button"
-                      onClick={() => void loadEntitlements()}
-                      className="shrink-0 text-sm font-medium text-white underline underline-offset-4"
-                    >
-                      다시 시도
-                    </button>
-                  </div>
-                )}
-
-                <div className="border-y border-white/5">
-                  <div className="flex items-center justify-between gap-5 py-4">
-                    <div>
-                      <p className="text-sm font-medium text-zinc-300">
-                        남은 분석
-                      </p>
-                      <p className="mt-0.5 text-xl font-semibold tracking-tight text-white">
-                        {summary.remaining}
-                        <span className="ml-0.5 text-sm font-medium text-zinc-500">
-                          회
-                        </span>
-                      </p>
-                      <p className="mt-1 text-xs text-zinc-600">
-                        분석 결과가 저장될 때 차감돼요.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-white/5">
-                  <CreditSummaryRow
-                    title="무료 이용권"
-                    description="가입 후 제공되는 무료 분석 이용권이에요."
-                    remaining={summary.freeRemaining}
-                  />
-                  <CreditSummaryRow
-                    title="프리미엄 이용권"
-                    description="구매 후 사용할 수 있는 추가 분석 이용권이에요."
-                    remaining={summary.premiumRemaining}
-                  />
-                </div>
-              </div>
-            ) : null)}
+          {/* 보유 현황은 /my/entitlements로 분리 — 여기서는 구매 게이트 복구용 에러만 보여준다. */}
+          {isAuthenticated && !isLoading && error && (
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-red-400/[0.18] bg-red-400/[0.06] px-4 py-3">
+              <p className="text-sm text-red-100">{error}</p>
+              <button
+                type="button"
+                onClick={() => void loadEntitlements()}
+                className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-white underline underline-offset-4"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                다시 시도
+              </button>
+            </div>
+          )}
 
           {/* 가격 카드 — 로그인 여부와 상관없이 항상 보여준다. */}
           <div className="space-y-6">
@@ -527,11 +448,10 @@ export default function Entitlements() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => void loadEntitlements()}
+                  onClick={() => navigate("/my/entitlements")}
                   className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-white underline underline-offset-4"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  새로고침
+                  내 이용권 확인
                 </button>
               </div>
             )}

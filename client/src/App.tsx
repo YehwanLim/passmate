@@ -12,6 +12,7 @@ import AnalysisPending from "./pages/AnalysisPending";
 import ReportResult from "./pages/ReportResult";
 import MyProjects from "./pages/MyProjects";
 import Entitlements from "./pages/Entitlements";
+import MyEntitlements from "./pages/MyEntitlements";
 import MyAnalyses from "./pages/MyAnalyses";
 import Login from "./pages/Login";
 import Terms from "./pages/Terms";
@@ -37,6 +38,8 @@ function Router() {
       <Route path={"/feedback"} component={FeedbackSurvey} />
       <Route path={"/entitlements"} component={Entitlements} />
       <Route path={"/my"} component={MyProjects} />
+      {/* /my/:projectId 보다 먼저 선언해야 "entitlements"가 projectId로 잡히지 않는다 */}
+      <Route path={"/my/entitlements"} component={MyEntitlements} />
       <Route path={"/my/:projectId"} component={MyAnalyses} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

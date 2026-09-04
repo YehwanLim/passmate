@@ -22,7 +22,7 @@ describe("AuthButton header polish", () => {
     expect(entitlementsIndex).toBeGreaterThan(projectsIndex);
     expect(logoutIndex).toBeGreaterThan(entitlementsIndex);
     expect(source).toContain('handleNavigate("/my")');
-    expect(source).toContain('handleNavigate("/entitlements")');
+    expect(source).toContain('handleNavigate("/my/entitlements")');
     expect(source).toContain("navigate(path)");
     expect(source).toContain("setDropdownOpen(false)");
   });
@@ -41,7 +41,7 @@ describe("AuthButton header polish", () => {
     expect(entitlementsIndex).toBeGreaterThan(projectsIndex);
     expect(logoutIndex).toBeGreaterThan(entitlementsIndex);
     expect(source).toContain('handleNavigate("/my")');
-    expect(source).toContain('handleNavigate("/entitlements")');
+    expect(source).toContain('handleNavigate("/my/entitlements")');
     expect(source).toContain("setDropdownOpen(false)");
   });
 });

@@ -31,13 +31,15 @@ describe("Entitlements page", () => {
     expect(pageSource).toContain("plan.discountLabel");
   });
 
-  it("obtains the displayed balance from the API client for signed-in users", () => {
+  it("keeps the purchase gate server-driven while delegating the balance view to /my/entitlements", () => {
     expect(pageSource).toContain("supabase.auth.getSession");
     expect(pageSource).toContain("session.access_token");
+    // 요약 조회는 구매 게이트(판매 스위치·결제 URL) 판단에만 쓴다.
     expect(pageSource).toContain("fetchEntitlementSummary");
-    expect(pageSource).toContain("freeRemaining");
-    expect(pageSource).toContain("premiumRemaining");
-    expect(pageSource).toContain("remaining");
+    // 보유 현황 블록은 /my/entitlements로 분리됐다 — 여기서는 렌더하지 않는다.
+    expect(pageSource).not.toContain("남은 분석");
+    expect(pageSource).not.toContain("CreditSummaryRow");
+    expect(pageSource).toContain('navigate("/my/entitlements")');
     expect(appSource).toContain(
       'path={"/entitlements"} component={Entitlements}'
     );

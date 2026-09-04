@@ -43,7 +43,7 @@ export default function AuthButton() {
     }
   };
 
-  const handleNavigate = (path: "/my" | "/entitlements") => {
+  const handleNavigate = (path: "/my" | "/my/entitlements") => {
     setDropdownOpen(false);
     navigate(path);
   };
@@ -141,7 +141,7 @@ export default function AuthButton() {
               </button>
               <button
                 id="header-entitlements-btn"
-                onClick={() => handleNavigate("/entitlements")}
+                onClick={() => handleNavigate("/my/entitlements")}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-300 hover:text-white hover:bg-white/10 transition-colors duration-150"
               >
                 <Ticket className="w-4 h-4 text-gray-500" />
