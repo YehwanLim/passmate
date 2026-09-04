@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 
 import { adminApiFetch } from "@/lib/adminApi";
+import type { PurchaseProduct } from "@/lib/pricing";
 
 export interface UserDetailAnalysis { id: string; status: "PENDING" | "SUCCESS" | "FAILED"; model_name: string | null; model_provider: string | null; ai_score: number | null; created_at: string; project: { title: string; company: string | null } | null; token_usages: Array<{ total_tokens: number; cost: number | null }>; }
 export interface UserDetailFeedback { id: string; rating: "THUMBS_UP" | "THUMBS_DOWN"; comment: string | null; created_at: string; }
-export interface UserDetail { id: string; email: string; name: string | null; profile_image: string | null; provider: string | null; role: string; created_at: string; updated_at: string; analysis_count: number; project_count: number; feedback_count: number; total_tokens: number; total_ai_cost: number; analyses: UserDetailAnalysis[]; feedbacks: UserDetailFeedback[]; }
+export interface UserDetailPayment { id: string; product: PurchaseProduct | null; credits_granted: number; provider_payment_id: string; created_at: string; }
+export interface UserDetailPendingPurchase { id: string; product: PurchaseProduct; status: "PENDING" | "CANCELLED"; created_at: string; }
+export interface UserDetail { id: string; email: string; name: string | null; profile_image: string | null; provider: string | null; role: string; created_at: string; updated_at: string; analysis_count: number; project_count: number; feedback_count: number; total_tokens: number; total_ai_cost: number; analyses: UserDetailAnalysis[]; feedbacks: UserDetailFeedback[]; payments: UserDetailPayment[]; pending_purchases: UserDetailPendingPurchase[]; }
 interface UseUserDetailResult { user: UserDetail | null; isLoading: boolean; error: string | null; }
 
 export function useUserDetail(userId: string): UseUserDetailResult {

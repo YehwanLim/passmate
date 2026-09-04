@@ -77,7 +77,11 @@ export default function DashboardPage() {
       )}
 
       {/* ── KPI 카드 그리드 ───────────────────────────────── */}
-      <KpiGrid data={data?.kpi ?? null} isLoading={isLoading} />
+      <KpiGrid
+        data={data?.kpi ?? null}
+        paymentSummary={data?.paymentSummary ?? null}
+        isLoading={isLoading}
+      />
 
       {/* ── 차트 영역 (2열) ───────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-2">

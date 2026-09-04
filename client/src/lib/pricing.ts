@@ -52,3 +52,23 @@ export const REPORT_INCLUDED_FEATURES = [
 export function formatKrw(amount: number): string {
   return `${amount.toLocaleString("ko-KR")}원`;
 }
+
+/** 서버가 쓰는 상품 키(lib/entitlement-products.js). 상품을 알 수 없는 결제는 null. */
+export type PurchaseProduct = "SINGLE" | "TRIPLE";
+
+const PLAN_BY_PRODUCT: Record<PurchaseProduct, PricingPlan> = {
+  SINGLE: PRICING.single,
+  TRIPLE: PRICING.triple,
+};
+
+export function productLabel(product: PurchaseProduct | null): string {
+  return product ? PLAN_BY_PRODUCT[product].label : "–";
+}
+
+/**
+ * 결제 금액은 저장되지 않으므로(금액의 진실은 Groble) 현재 판매가로 되짚는다.
+ * 가격을 바꾸면 과거 결제도 새 가격으로 보이니, 화면에는 반드시 '추정'으로 표기한다.
+ */
+export function estimatedAmountFor(product: PurchaseProduct | null): number | null {
+  return product ? PLAN_BY_PRODUCT[product].salePrice : null;
+}

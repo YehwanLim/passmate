@@ -2,6 +2,7 @@ import { useParams, Link } from "wouter";
 import { useUserDetail } from "@/hooks/admin/useUserDetail";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { UserCreditManagementCard } from "@/components/admin/users/UserCreditManagementCard";
+import { UserPaymentsCard } from "@/components/admin/users/UserPaymentsCard";
 import { UserRoleBadge } from "@/components/admin/users/UserRoleBadge";
 import {
   Card,
@@ -18,7 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -36,7 +36,6 @@ import {
   FileText,
   Calendar,
   Activity,
-  CreditCard,
 } from "lucide-react";
 
 // ============================================================
@@ -140,7 +139,7 @@ function DetailSkeleton() {
  * - 통계 요약 (분석 수, 프로젝트 수, 누적 토큰, 누적 AI 비용)
  * - 분석 이력 테이블 (최근 20건)
  * - 피드백 이력 (최근 10건)
- * - 구독/결제 정보: "추후 구현 예정" (DB 미구현)
+ * - 결제 내역 (결제 완료 + 미완료 결제 시도)
  */
 export default function UserDetailPage() {
   const params = useParams<{ id: string }>();
@@ -388,26 +387,11 @@ export default function UserDetailPage() {
       {/* ── 분석 크레딧 관리 ─────────────────────────────── */}
       <UserCreditManagementCard userId={userId} />
 
-      {/* ── 결제 정보 (추후 구현 예정) ───────────────────── */}
-      <Card className="opacity-60">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <CreditCard className="size-4" />
-              구독 / 결제 정보
-            </CardTitle>
-            <Badge variant="outline" className="text-[10px]">추후 구현 예정</Badge>
-          </div>
-          <CardDescription className="text-xs">
-            payments / subscriptions 테이블 추가 후 활성화됩니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            현재 DB 스키마에 결제 테이블이 없어 표시할 수 없습니다.
-          </p>
-        </CardContent>
-      </Card>
+      {/* ── 결제 내역 ───────────────────────────────────── */}
+      <UserPaymentsCard
+        payments={user.payments}
+        pending_purchases={user.pending_purchases}
+      />
     </div>
   );
 }
