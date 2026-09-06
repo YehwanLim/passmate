@@ -232,7 +232,7 @@ export default function Entitlements() {
       <div
         key={tier.key}
         id={tier.key}
-        className={`flex h-full flex-col rounded-2xl border bg-white/[0.02] p-8 md:p-9 ${
+        className={`flex h-full flex-col rounded-2xl border bg-white/[0.02] p-8 md:p-9 xl:p-6 ${
           highlighted ? "border-blue-500/[0.25]" : "border-white/[0.06]"
         }`}
       >
@@ -240,7 +240,7 @@ export default function Entitlements() {
           {tier.label}
         </p>
         {tier.key === "basic" ? (
-          <div role="radiogroup" aria-label="베이직 구성 선택" className="mt-3 grid grid-cols-2 gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] p-1">
+          <div role="radiogroup" aria-label="베이직 구성 선택" className="mt-3 grid grid-cols-2 gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] p-1 px-1">
             {tier.products.map((choice) => (
               <button
                 key={choice}
@@ -248,7 +248,7 @@ export default function Entitlements() {
                 role="radio"
                 aria-checked={basicChoice === choice}
                 onClick={() => setBasicChoice(choice)}
-                className={`h-8 rounded-md text-[12.5px] font-semibold transition-colors ${
+                className={`h-8 whitespace-nowrap rounded-md text-[12px] font-semibold transition-colors xl:text-[11.5px] ${
                   basicChoice === choice ? "bg-white/[0.12] text-white" : "text-zinc-500 hover:text-zinc-300"
                 }`}
               >
@@ -259,7 +259,7 @@ export default function Entitlements() {
         ) : (
           <p className="mt-3 text-[13px] font-medium text-zinc-400">{usesLabel}</p>
         )}
-        <p className="mt-4 text-[2.4rem] font-bold leading-none tracking-tight text-white">
+        <p className="mt-4 whitespace-nowrap text-[2.4rem] font-bold leading-none tracking-tight text-white xl:text-[2rem]">
           {formatKrw(plan.salePrice)}
           <span className="ml-1.5 text-[15px] font-medium text-zinc-500">/ {plan.uses + plan.companyUses}회</span>
         </p>
@@ -405,11 +405,11 @@ export default function Entitlements() {
 
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
               {/* 무료 체험 */}
-              <div className="flex h-full flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 md:p-9">
+              <div className="flex h-full flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 md:p-9 xl:p-6">
                 <p className="text-lg font-bold tracking-tight text-zinc-200">
                   무료 체험
                 </p>
-                <p className="mt-4 text-[2.4rem] font-bold leading-none tracking-tight text-white">
+                <p className="mt-4 whitespace-nowrap text-[2.4rem] font-bold leading-none tracking-tight text-white xl:text-[2rem]">
                   0원
                   <span className="ml-1 text-[15px] font-medium text-zinc-500">
                     / 1회
