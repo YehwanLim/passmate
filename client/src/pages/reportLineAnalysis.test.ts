@@ -5,6 +5,7 @@ import {
   getHorizontalCenterOffset,
   getScrollPositionAt,
   resolveCoachPlacement,
+  scrollChildIntoHorizontalView,
 } from "./reportLineAnalysis";
 
 describe("getNeighborCardIndex", () => {
@@ -76,6 +77,14 @@ describe("resolveCoachPlacement", () => {
     const placement = resolveCoachPlacement({ badgeCenter: 5, containerWidth: 350, bubbleWidth: 150 });
     expect(placement.left).toBe(0);
     expect(placement.tailX).toBe(12);
+  });
+});
+
+describe("scrollChildIntoHorizontalView", () => {
+  it("skips containers that cannot scroll instead of throwing", () => {
+    const container = { clientWidth: 300, scrollLeft: 0 } as unknown as HTMLElement;
+    const child = { offsetLeft: 100, offsetWidth: 50 } as unknown as HTMLElement;
+    expect(() => scrollChildIntoHorizontalView(container, child)).not.toThrow();
   });
 });
 

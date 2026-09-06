@@ -28,6 +28,8 @@ export function scrollChildIntoHorizontalView(
     child: HTMLElement | null
 ) {
     if (!container || !child) return
+    // jsdom 등 scrollTo 가 없는 환경에서는 조용히 건너뛴다.
+    if (typeof container.scrollTo !== 'function') return
     container.scrollTo({
         left: getHorizontalCenterOffset({
             containerWidth: container.clientWidth,

@@ -76,6 +76,25 @@ describe("CompanyReport", () => {
     await waitFor(() => expect(screen.getByText("저장된 기업 분석 리포트 형식이 올바르지 않습니다.")).toBeTruthy());
   });
 
+  it("renders a report whose optional arrays are missing instead of crashing", async () => {
+    const sparse = buildCompanyReportFixture();
+    // 모델이 일부 배열을 빼먹은 응답을 흉내 낸다. 가드는 통과하고 화면은 빈 블록으로 버텨야 한다.
+    const payload = {
+      ...sparse,
+      brief: { oneLiner: sparse.brief.oneLiner, asOf: "2026-09-06", positionInIndustry: "" },
+      focusBusinesses: { statedDirection: "", items: [] },
+      financialSnapshot: { listed: false, market: null, revenueTrend: "", profitTrend: "", marketView: "", fundingNote: "", forApplicant: "" },
+      roleInContext: { whereItSits: "", whyHiringNow: "", postingReading: "" },
+      interviewPrep: { questions: [] },
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ id: "analysis-4", kind: "COMPANY", ai_response_json: payload, company_name: "현대자동차", job_role: "전략기획" })));
+
+    render(<CompanyReport />);
+
+    await waitFor(() => expect(screen.getByText("전동화로 체급을 바꾸는 완성차")).toBeTruthy());
+    expect(screen.getAllByText("출처와 기준일").length).toBeGreaterThan(0);
+  });
+
   it("asks unauthenticated visitors to log in", async () => {
     mocks.useAuth.mockReturnValue({ user: null, isLoading: false, isAuthenticated: false });
     render(<CompanyReport />);

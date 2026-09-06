@@ -52,11 +52,7 @@ function SectionChipBar({ activeSection }: { activeSection: string }) {
   useEffect(() => {
     const bar = barRef.current;
     const chip = bar?.querySelector<HTMLElement>(`[data-section="${activeSection}"]`) ?? null;
-    try {
-      scrollChildIntoHorizontalView(bar, chip);
-    } catch {
-      // jsdom(테스트 환경)은 Element.scrollTo 를 구현하지 않는다 — 실제 브라우저에는 항상 있다.
-    }
+    scrollChildIntoHorizontalView(bar, chip);
   }, [activeSection]);
 
   return (
@@ -165,6 +161,22 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
   const asOf = report.reportMeta?.asOf || report.brief.asOf || "";
   const numbers = report.financialSnapshot;
   const role = report.roleInContext;
+  // 모델 응답이 선택 배열을 빼먹어도 화면이 죽지 않도록 렌더 직전에 기본값을 채운다.
+  const keywords = report.brief.keywords ?? [];
+  const sources = report.sources ?? [];
+  const segments = report.businessMap.segments ?? [];
+  const focusItems = report.focusBusinesses.items ?? [];
+  const translated = report.focusBusinesses.translatedTalentKeywords ?? [];
+  const keyFigures = numbers.keyFigures ?? [];
+  const disclosures = numbers.recentDisclosures ?? [];
+  const issues = report.currentIssues ?? [];
+  const problems = role.problemsItSolves ?? [];
+  const roleNews = role.recentNewsForRole ?? [];
+  const opportunities = report.opportunitiesAndRisks.opportunities ?? [];
+  const risks = report.opportunitiesAndRisks.risks ?? [];
+  const candidates = report.businessCandidates ?? [];
+  const questions = report.interviewPrep.questions ?? [];
+  const primarySources = report.interviewPrep.primarySources ?? [];
 
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
@@ -216,19 +228,19 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
             <div className="relative min-w-0 py-12 text-center sm:py-14 md:py-[4.25rem]">
               <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{company}는</p>
               <h1 className="mx-auto max-w-3xl text-[2.08rem] sm:text-[3.15rem] md:text-[4.05rem] font-semibold leading-[1.04] tracking-tight text-white">
-                {report.brief.oneLiner}
+                {renderCompanyText(report.brief.oneLiner)}
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-[16px] sm:text-[19px] leading-[1.8] text-zinc-300 text-balance">
                 {renderCompanyText(report.brief.positionInIndustry)}
               </p>
             </div>
             <div className="relative flex min-w-0 flex-wrap justify-center gap-2.5 pb-6">
-              {report.brief.keywords.map((keyword) => (
-                <span key={keyword} className="max-w-full rounded-full border border-white/[0.12] bg-white/[0.045] px-3.5 py-2 text-xs font-semibold text-zinc-300">{keyword}</span>
+              {keywords.map((keyword, index) => (
+                <span key={`${keyword}-${index}`} className="max-w-full rounded-full border border-white/[0.12] bg-white/[0.045] px-3.5 py-2 text-xs font-semibold text-zinc-300">{keyword}</span>
               ))}
             </div>
             <p className="relative text-center text-[11px] uppercase tracking-[0.14em] text-zinc-600">
-              기준일 {asOf} · 출처 {report.sources.length}건
+              기준일 {asOf} · 출처 {sources.length}건
             </p>
           </div>
         </header>
@@ -237,10 +249,10 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
         <section id="company-business" className={sectionClass}>
           <CompanySectionHeading index="01" title="돈 버는 구조" deck={report.businessMap.summary} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {report.businessMap.segments.map((segment) => (
-              <div key={segment.name} className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
+            {segments.map((segment, index) => (
+              <div key={`${segment.name}-${index}`} className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-[17px] font-semibold text-zinc-50">{segment.name}</p>
+                  <p className="text-[17px] font-semibold text-zinc-50">{renderCompanyText(segment.name)}</p>
                   {segment.phase ? <PhaseBadge label={segment.phase} /> : null}
                 </div>
                 <p className="text-[15px] leading-[1.8] text-zinc-400">{renderCompanyText(segment.whatItDoes)}</p>
@@ -263,10 +275,10 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
             </blockquote>
           ) : null}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {report.focusBusinesses.items.map((item) => (
-              <div key={item.name} className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
+            {focusItems.map((item, index) => (
+              <div key={`${item.name}-${index}`} className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
                 <div className="mb-3 flex items-start justify-between gap-3">
-                  <p className="text-[17px] font-semibold text-zinc-50">{item.name}</p>
+                  <p className="text-[17px] font-semibold text-zinc-50">{renderCompanyText(item.name)}</p>
                   <RelevanceBadge relevance={item.relevanceToRole} />
                 </div>
                 <p className="text-[15px] leading-[1.8] text-zinc-300">{renderCompanyText(item.whatChanged)}</p>
@@ -275,12 +287,12 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
               </div>
             ))}
           </div>
-          {report.focusBusinesses.translatedTalentKeywords.length > 0 ? (
+          {translated.length > 0 ? (
             <div className="mt-12 rounded-xl border border-white/[0.05] bg-white/[0.03] p-6 sm:p-8">
               <p className="mb-5 text-sm font-semibold uppercase tracking-[0.12em] text-zinc-400">인재상 문구를 사업 언어로</p>
               <ul className="space-y-3">
-                {report.focusBusinesses.translatedTalentKeywords.map((pair) => (
-                  <li key={pair.stated} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_24px_minmax(0,2fr)] gap-2 text-[15px] leading-[1.7]">
+                {translated.map((pair, index) => (
+                  <li key={`${pair.stated}-${index}`} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_24px_minmax(0,2fr)] gap-2 text-[15px] leading-[1.7]">
                     <span className="text-zinc-500">{pair.stated}</span>
                     <span aria-hidden="true" className="hidden sm:block text-zinc-700">→</span>
                     <span className="text-zinc-200">{renderCompanyText(pair.meaning)}</span>
@@ -295,10 +307,10 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
         {/* 03 숫자로 보는 회사 */}
         <section id="company-numbers" className={sectionClass}>
           <CompanySectionHeading index="03" title="숫자로 보는 회사" />
-          {numbers.keyFigures.length > 0 ? (
+          {keyFigures.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-              {numbers.keyFigures.slice(0, 4).map((figure) => (
-                <div key={`${figure.label}-${figure.period}`} className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
+              {keyFigures.slice(0, 4).map((figure, index) => (
+                <div key={`${figure.label}-${index}`} className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
                   <p className="text-xs uppercase tracking-[0.12em] text-zinc-500 mb-2">{figure.label}</p>
                   <p className="text-[22px] font-semibold tabular-nums text-zinc-50 leading-tight">{figure.value}</p>
                   <p className="mt-2 text-[12px] text-zinc-600">{figure.period}</p>
@@ -320,10 +332,10 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
             <div className="mt-10 rounded-xl border border-white/[0.05] bg-white/[0.03] p-6 sm:p-8">
               <p className="mb-2 text-sm font-semibold uppercase tracking-[0.12em] text-zinc-400">시장과 공시{numbers.market ? ` · ${numbers.market}` : ""}</p>
               {numbers.marketView ? <p className="text-[15px] leading-[1.85] text-zinc-300">{renderCompanyText(numbers.marketView)}</p> : null}
-              {numbers.recentDisclosures.length > 0 ? (
+              {disclosures.length > 0 ? (
                 <ul className="mt-5 space-y-2">
-                  {numbers.recentDisclosures.map((disclosure) => (
-                    <li key={`${disclosure.when}-${disclosure.title}`} className="flex items-start gap-3 text-[14px] leading-[1.7] text-zinc-400">
+                  {disclosures.map((disclosure, index) => (
+                    <li key={`${disclosure.when}-${index}`} className="flex items-start gap-3 text-[14px] leading-[1.7] text-zinc-400">
                       <span className="shrink-0 tabular-nums text-zinc-600">{disclosure.when}</span>
                       <span>{disclosure.title}</span>
                     </li>
@@ -348,7 +360,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
         <section id="company-issues" className={sectionClass}>
           <CompanySectionHeading index="04" title="최근 1년의 국면" />
           <Timeline
-            entries={report.currentIssues.map((issue) => ({
+            entries={issues.map((issue) => ({
               when: issue.when,
               title: issue.title,
               body: (
@@ -370,8 +382,8 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-400 mb-4">이 직무가 지금 푸는 문제</p>
               <ul className="space-y-3">
-                {role.problemsItSolves.map((problem) => (
-                  <li key={problem} className="flex items-start gap-2.5 text-[15px] leading-[1.7] text-zinc-200">
+                {problems.map((problem, index) => (
+                  <li key={`${problem}-${index}`} className="flex items-start gap-2.5 text-[15px] leading-[1.7] text-zinc-200">
                     <span className="mt-[9px] size-[5px] shrink-0 rounded-full bg-zinc-600" />{renderCompanyText(problem)}
                   </li>
                 ))}
@@ -388,12 +400,12 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
               <p className="text-[15px] leading-[1.85] text-zinc-300">{renderCompanyText(role.postingReading)}</p>
             </div>
           ) : null}
-          {role.recentNewsForRole.length > 0 ? (
+          {roleNews.length > 0 ? (
             <>
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-400 mb-6">이 직무와 연결된 최신 소식</p>
               <Timeline
                 dense
-                entries={role.recentNewsForRole.map((news) => ({
+                entries={roleNews.map((news) => ({
                   when: news.when,
                   title: news.title,
                   body: renderCompanyText(news.fact),
@@ -411,14 +423,14 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-14">
             <div>
               <p className="mb-6 flex items-center gap-2 text-[15px] font-bold text-emerald-300/90"><Check className="w-4 h-4 text-emerald-400/60" />기회</p>
-              {report.opportunitiesAndRisks.opportunities.map((item) => (
-                <HeadlineCard key={item.headline} headline={item.headline} text={item.text} tone="opportunity" />
+              {opportunities.map((item, index) => (
+                <HeadlineCard key={`${item.headline}-${index}`} headline={renderCompanyText(item.headline)} text={item.text} tone="opportunity" />
               ))}
             </div>
             <div>
               <p className="mb-6 flex items-center gap-2 text-[15px] font-bold text-rose-300/80"><X className="w-4 h-4 text-rose-400/50" />리스크</p>
-              {report.opportunitiesAndRisks.risks.map((item) => (
-                <HeadlineCard key={item.headline} headline={item.headline} text={item.text} tone="risk" />
+              {risks.map((item, index) => (
+                <HeadlineCard key={`${item.headline}-${index}`} headline={renderCompanyText(item.headline)} text={item.text} tone="risk" />
               ))}
             </div>
           </div>
@@ -429,11 +441,11 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
         <section id="company-candidates" className={sectionClass}>
           <CompanySectionHeading index="07" title="맡고 싶은 사업" deck="자소서에 쓸 만한 사업과 각도입니다. 문장이 아니라 방향이니, 본인 경험으로 채워 주세요." />
           <div className="grid grid-cols-1 gap-5">
-            {report.businessCandidates.map((candidate, index) => (
-              <div key={candidate.name} className="rounded-xl border border-sky-300/20 bg-sky-300/[0.05] p-6 sm:p-8">
+            {candidates.map((candidate, index) => (
+              <div key={`${candidate.name}-${index}`} className="rounded-xl border border-sky-300/20 bg-sky-300/[0.05] p-6 sm:p-8">
                 <div className="mb-4 flex items-center gap-3">
                   <span className="text-[28px] font-extrabold leading-none tracking-[0.08em] text-sky-300/70">{String(index + 1).padStart(2, "0")}</span>
-                  <p className="text-[19px] font-semibold text-zinc-50">{candidate.name}</p>
+                  <p className="text-[19px] font-semibold text-zinc-50">{renderCompanyText(candidate.name)}</p>
                 </div>
                 <p className="text-[15px] leading-[1.85] text-zinc-300">{renderCompanyText(candidate.whyForThisRole)}</p>
                 <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -471,18 +483,23 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
               </button>
             ) : null}
           </div>
+          <SourceNote />
         </section>
 
         {/* 08 면접 전 체크리스트 */}
         <section id="company-interview" className={sectionClass}>
           <CompanySectionHeading index="08" title="면접 전 체크리스트" />
           <div className="space-y-0">
-            {report.interviewPrep.questions.map((item, index) => (
+            {questions.map((item, index) => (
               <div key={`${index}-${item.question}`} className="border-b border-white/[0.04] last:border-0">
-                <button onClick={() => setOpenQuestionIndex(openQuestionIndex === index ? null : index)} className="w-full py-6 flex items-start gap-5 text-left group">
+                <button
+                  onClick={() => setOpenQuestionIndex(openQuestionIndex === index ? null : index)}
+                  aria-expanded={openQuestionIndex === index}
+                  className="w-full py-6 flex items-start gap-5 text-left group"
+                >
                   <span className="text-xs uppercase tracking-[0.12em] text-zinc-500 mt-1 min-w-[50px] font-medium">Q{index + 1}</span>
                   <span className="flex-1 text-[17px] text-zinc-300 group-hover:text-white transition-colors leading-[1.6]">{renderCompanyText(item.question)}</span>
-                  <ChevronDown className={`w-5 h-5 text-zinc-600 transition-transform mt-0.5 ${openQuestionIndex === index ? "rotate-180" : ""}`} />
+                  <ChevronDown aria-hidden="true" className={`w-5 h-5 text-zinc-600 transition-transform mt-0.5 ${openQuestionIndex === index ? "rotate-180" : ""}`} />
                 </button>
                 {openQuestionIndex === index ? (
                   <div className="pb-8 pl-[70px]">
@@ -493,12 +510,12 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
               </div>
             ))}
           </div>
-          {report.interviewPrep.primarySources.length > 0 ? (
+          {primarySources.length > 0 ? (
             <div className="mt-12">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-400 mb-4">더 읽어볼 1차 자료</p>
               <ul className="space-y-2">
-                {report.interviewPrep.primarySources.map((primary) => (
-                  <li key={`${primary.label}-${primary.url}`}>
+                {primarySources.map((primary, index) => (
+                  <li key={`${primary.label}-${index}`}>
                     <a href={primary.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[15px] text-zinc-300 hover:text-white">
                       <ExternalLink className="w-3.5 h-3.5 text-zinc-600" />{primary.label}
                     </a>
@@ -507,6 +524,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
               </ul>
             </div>
           ) : null}
+          <SourceNote />
         </section>
 
         {/* 09 부록: 출처와 기준일 */}
@@ -515,8 +533,8 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
           <p className="text-[14px] leading-[1.8] text-zinc-400 mb-2">기준일 {asOf}. {COMPANY_REPORT_DISCLAIMER}</p>
           <p className="text-xs text-zinc-600 mb-10">링크는 검색 제공자의 리다이렉트 주소라 시간이 지나면 열리지 않을 수 있어요. 제목과 발행처로 원문을 찾아 주세요.</p>
           <ol className="space-y-3">
-            {report.sources.map((source) => (
-              <li key={source.id} className="grid grid-cols-[32px_1fr] gap-3 text-[15px] leading-[1.7]">
+            {sources.map((source, index) => (
+              <li key={`${source.id}-${index}`} className="grid grid-cols-[32px_1fr] gap-3 text-[15px] leading-[1.7]">
                 <span className="tabular-nums text-zinc-600">{source.id}.</span>
                 <span className="min-w-0">
                   <span className="text-zinc-200">{source.title}</span>
@@ -551,12 +569,13 @@ export default function CompanyReport() {
     return <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-zinc-400">로그인 정보를 확인하는 중이에요.</main>;
   }
   if (!isAuthenticated) {
+    const redirect = `${window.location.pathname}${window.location.search}`;
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center">
         <section className="max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8">
           <h1 className="text-lg font-semibold text-white">로그인이 필요해요</h1>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">로그인 후 기업 분석 리포트를 확인할 수 있어요.</p>
-          <a href={`/login?redirect=${encodeURIComponent("/company-report")}`} className="mt-6 inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-zinc-900">로그인하기</a>
+          <a href={`/login?redirect=${encodeURIComponent(redirect)}`} className="mt-6 inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-zinc-900">로그인하기</a>
         </section>
       </main>
     );

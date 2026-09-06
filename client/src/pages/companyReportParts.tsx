@@ -87,7 +87,7 @@ export function Timeline({ entries, dense = false }: { entries: TimelineEntry[];
   );
 }
 
-export function HeadlineCard({ headline, text, tone }: { headline: string; text: string; tone: "opportunity" | "risk" }) {
+export function HeadlineCard({ headline, text, tone }: { headline: ReactNode; text: string; tone: "opportunity" | "risk" }) {
   const dot = tone === "opportunity"
     ? "bg-emerald-400/85 shadow-[0_0_8px_rgba(52,211,153,0.35)]"
     : "bg-rose-400/70 shadow-[0_0_8px_rgba(251,113,133,0.25)]";
