@@ -6,6 +6,10 @@ export type EntitlementSummary = {
   groblePaymentUrl: string | null;
   grobleSinglePaymentUrl: string | null;
   feedbackRewardClaimed: boolean;
+  /** 기업 분석 리포트 판매·생성 스위치. 구버전 서버 응답에 없으면 false. */
+  companyAnalysisEnabled: boolean;
+  /** 기업 분석 리포트 잔여 크레딧(자소서 remaining 과 별도 풀). 구버전 응답에 없으면 0. */
+  companyRemaining: number;
 };
 
 /** 구매 의도 생성 시 상품 구분(1회권/3회권). 서버 쿼리스트링 값과 동일하다. */
@@ -84,6 +88,12 @@ function parseEntitlementSummary(payload: unknown): EntitlementSummary {
     grobleSinglePaymentUrl: payload.grobleSinglePaymentUrl ?? null,
     // 구버전 서버 응답에도 화면이 깨지지 않도록 없으면 "아직 안 받음"으로 본다.
     feedbackRewardClaimed: payload.feedbackRewardClaimed === true,
+    companyAnalysisEnabled: payload.companyAnalysisEnabled === true,
+    // 구버전 서버 응답에는 없다. 있으면 다른 잔여 수와 같은 엄격함으로 읽는다.
+    companyRemaining:
+      payload.companyRemaining === undefined
+        ? 0
+        : readNonNegativeInteger(payload.companyRemaining, "companyRemaining"),
   };
 }
 

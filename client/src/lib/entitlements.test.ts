@@ -49,6 +49,9 @@ describe("entitlements client", () => {
       grobleSinglePaymentUrl: null,
       // 응답에 없으면 "아직 안 받음"으로 읽는다
       feedbackRewardClaimed: false,
+      // 구버전 서버 응답에 없으면 기업 분석은 "꺼짐·0"으로 읽는다
+      companyAnalysisEnabled: false,
+      companyRemaining: 0,
     });
     expect(calls).toEqual([
       [
@@ -71,6 +74,40 @@ describe("entitlements client", () => {
     await expect(
       fetchEntitlementSummary("access-token", fetcher)
     ).rejects.toEqual(new EntitlementApiError("Invalid remaining response"));
+  });
+
+  it("reads the company analysis pool when the server provides it", async () => {
+    const fetcher: typeof fetch = async () =>
+      jsonResponse({
+        premiumEnabled: true,
+        freeRemaining: 0,
+        premiumRemaining: 2,
+        remaining: 2,
+        groblePaymentUrl: null,
+        companyAnalysisEnabled: true,
+        companyRemaining: 1,
+      });
+
+    await expect(fetchEntitlementSummary("access-token", fetcher)).resolves.toMatchObject({
+      companyAnalysisEnabled: true,
+      companyRemaining: 1,
+    });
+  });
+
+  it("rejects a malformed company credit count instead of inventing a balance", async () => {
+    const fetcher: typeof fetch = async () =>
+      jsonResponse({
+        premiumEnabled: false,
+        freeRemaining: 1,
+        premiumRemaining: 0,
+        remaining: 1,
+        groblePaymentUrl: null,
+        companyRemaining: "1",
+      });
+
+    await expect(fetchEntitlementSummary("access-token", fetcher)).rejects.toBeInstanceOf(
+      EntitlementApiError
+    );
   });
 
   it("rejects a missing session token before an anonymous request is sent", async () => {
