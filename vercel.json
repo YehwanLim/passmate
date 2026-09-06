@@ -58,6 +58,10 @@
       "destination": "/api/analyze?split=1"
     },
     {
+      "source": "/api/analyze/company",
+      "destination": "/api/analyze?kind=company"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
