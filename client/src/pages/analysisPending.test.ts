@@ -30,6 +30,12 @@ describe("AnalysisPending", () => {
       .toBeLessThan(appSource.indexOf('path={"/report-new"}'));
   });
 
+  it("rotates the company waiting copy by elapsed time", () => {
+    expect(source).toContain('import { pickCompanyPendingStep } from "./companyPendingCopy"');
+    expect(source).toContain("pickCompanyPendingStep(elapsedMs)");
+    expect(source).toContain("performance.now() - mountedAt.current");
+  });
+
   it("routes company reports to /company-report and tracks them as company_report", () => {
     expect(source).toContain("/company-report?analysisId=${encodeURIComponent(status.analysisId)}");
     expect(source).toContain("/report-new?analysisId=${encodeURIComponent(status.analysisId)}");

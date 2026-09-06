@@ -53,10 +53,10 @@ export function CompanySectionNumber({ value }: { value: string }) {
 export function CompanySectionHeading({ index, title, deck }: { index: string; title: string; deck?: string }) {
   return (
     <>
-      <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight">
+      <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight text-balance">
         <CompanySectionNumber value={index} />{title}
       </h3>
-      {deck ? <p className="text-base text-zinc-400 mb-12 max-w-2xl leading-[1.75]">{renderCompanyText(deck)}</p> : null}
+      {deck ? <p className="text-base text-zinc-400 mb-12 max-w-2xl leading-[1.75] text-pretty">{renderCompanyText(deck)}</p> : null}
     </>
   );
 }

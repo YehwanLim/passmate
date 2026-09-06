@@ -5,15 +5,15 @@ import { COMPANY_HERO_ID, COMPANY_REPORT_NAV_SECTIONS } from "./companyReportNav
 describe("company report navigation", () => {
   it("lists the eight sections and the appendix in reading order", () => {
     expect(COMPANY_REPORT_NAV_SECTIONS.map((section) => `${section.indexLabel}. ${section.label}`)).toEqual([
-      "01. 돈 버는 구조",
-      "02. 밀고 있는 사업",
-      "03. 숫자로 보는 회사",
-      "04. 최근 1년의 국면",
-      "05. 이 직무의 자리",
-      "06. 기회와 리스크",
-      "07. 맡고 싶은 사업",
-      "08. 면접 전 체크리스트",
-      "09. 출처와 기준일",
+      "01. 사업 구조",
+      "02. 집중 사업",
+      "03. 실적과 주가",
+      "04. 최근 이슈",
+      "05. 직무의 역할",
+      "06. 기회와 위험",
+      "07. 자소서 소재",
+      "08. 면접 준비",
+      "09. 출처",
     ]);
   });
 

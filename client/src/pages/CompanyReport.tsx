@@ -228,7 +228,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
             </div>
             <div className="relative min-w-0 py-12 text-center sm:py-14 md:py-[4.25rem]">
               <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{company}는</p>
-              <h1 className="mx-auto max-w-3xl text-[2.08rem] sm:text-[3.15rem] md:text-[4.05rem] font-semibold leading-[1.04] tracking-tight text-white">
+              <h1 className="mx-auto max-w-3xl text-[2.08rem] sm:text-[3.15rem] md:text-[4.05rem] font-semibold leading-[1.04] tracking-tight text-white text-balance">
                 {renderCompanyText(report.brief.oneLiner)}
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-[16px] sm:text-[19px] leading-[1.8] text-zinc-300 text-balance">
@@ -248,7 +248,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
         {/* 01 돈 버는 구조 */}
         <section id="company-business" className={sectionClass}>
-          <CompanySectionHeading index="01" title="돈 버는 구조" deck={report.businessMap.summary} />
+          <CompanySectionHeading index="01" title="무엇을 팔아 돈을 버나" deck={report.businessMap.summary} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {segments.map((segment, index) => (
               <div key={`${segment.name}-${index}`} className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
@@ -269,7 +269,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
         {/* 02 밀고 있는 사업 */}
         <section id="company-focus" className={sectionClass}>
-          <CompanySectionHeading index="02" title="밀고 있는 사업" />
+          <CompanySectionHeading index="02" title="요즘 힘을 싣는 사업" />
           {report.focusBusinesses.statedDirection ? (
             <blockquote className="mb-12 border-l-2 border-white/[0.12] pl-5 text-[15px] leading-[1.85] text-zinc-400">
               {renderCompanyText(report.focusBusinesses.statedDirection)}
@@ -307,7 +307,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
         {/* 03 숫자로 보는 회사 */}
         <section id="company-numbers" className={sectionClass}>
-          <CompanySectionHeading index="03" title="숫자로 보는 회사" />
+          <CompanySectionHeading index="03" title="매출·이익·주가 한눈에" />
           {keyFigures.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
               {keyFigures.slice(0, 4).map((figure, index) => (
@@ -359,7 +359,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
         {/* 04 최근 1년의 국면 */}
         <section id="company-issues" className={sectionClass}>
-          <CompanySectionHeading index="04" title="최근 1년의 국면" />
+          <CompanySectionHeading index="04" title="최근 1년 주요 이슈" />
           <Timeline
             entries={issues.map((issue) => ({
               when: issue.when,
@@ -378,7 +378,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
         {/* 05 이 직무의 자리 */}
         <section id="company-role" className={sectionClass}>
-          <CompanySectionHeading index="05" title={`이 직무의 자리${jobRole ? ` · ${jobRole}` : ""}`} deck={role.whereItSits} />
+          <CompanySectionHeading index="05" title={`지원 직무가 하는 일${jobRole ? ` · ${jobRole}` : ""}`} deck={role.whereItSits} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-400 mb-4">이 직무가 지금 푸는 문제</p>
@@ -420,7 +420,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
         {/* 06 기회와 리스크 */}
         <section id="company-risks" className={sectionClass}>
-          <CompanySectionHeading index="06" title="기회와 리스크" deck="지원자의 시선으로 골랐어요. 면접에서 '우리 회사의 숙제가 뭐라고 보나요'에 답할 재료입니다." />
+          <CompanySectionHeading index="06" title="회사의 기회와 걱정거리" deck="지원자의 시선으로 골랐어요. 면접에서 '우리 회사의 숙제가 뭐라고 보나요'에 답할 재료입니다." />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-14">
             <div>
               <p className="mb-6 flex items-center gap-2 text-[15px] font-bold text-emerald-300/90"><Check className="w-4 h-4 text-emerald-400/60" />기회</p>
@@ -440,7 +440,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
         {/* 07 맡고 싶은 사업 */}
         <section id="company-candidates" className={sectionClass}>
-          <CompanySectionHeading index="07" title="맡고 싶은 사업" deck="자소서에 쓸 만한 사업과 각도입니다. 문장이 아니라 방향이니, 본인 경험으로 채워 주세요." />
+          <CompanySectionHeading index="07" title="자소서에 쓸 사업 소재" deck="자소서에 쓸 만한 사업과 각도입니다. 문장이 아니라 방향이니, 본인 경험으로 채워 주세요." />
           <div className="grid grid-cols-1 gap-5">
             {candidates.map((candidate, index) => (
               <div key={`${candidate.name}-${index}`} className="rounded-xl border border-sky-300/20 bg-sky-300/[0.05] p-6 sm:p-8">
@@ -489,7 +489,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
         {/* 08 면접 전 체크리스트 */}
         <section id="company-interview" className={sectionClass}>
-          <CompanySectionHeading index="08" title="면접 전 체크리스트" />
+          <CompanySectionHeading index="08" title="면접 예상 질문과 읽을 자료" />
           <div className="space-y-0">
             {questions.map((item, index) => (
               <div key={`${index}-${item.question}`} className="border-b border-white/[0.04] last:border-0">

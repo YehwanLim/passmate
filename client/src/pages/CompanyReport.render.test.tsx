@@ -44,8 +44,12 @@ describe("CompanyReport", () => {
     render(<CompanyReport />);
 
     await waitFor(() => expect(screen.getByText("전동화로 체급을 바꾸는 완성차")).toBeTruthy());
-    for (const heading of ["돈 버는 구조", "밀고 있는 사업", "숫자로 보는 회사", "최근 1년의 국면", "이 직무의 자리", "기회와 리스크", "맡고 싶은 사업", "면접 전 체크리스트", "출처와 기준일"]) {
-      expect(screen.getAllByText(heading).length).toBeGreaterThan(0);
+    for (const heading of ["무엇을 팔아 돈을 버나", "요즘 힘을 싣는 사업", "매출·이익·주가 한눈에", "최근 1년 주요 이슈", "지원 직무가 하는 일 · 전략기획", "회사의 기회와 걱정거리", "자소서에 쓸 사업 소재", "면접 예상 질문과 읽을 자료", "출처와 기준일"]) {
+      expect(screen.getAllByText(heading, { exact: false }).length).toBeGreaterThan(0);
+    }
+    // 목차(미니 내비)는 짧은 키워드형 라벨을 쓴다.
+    for (const label of ["사업 구조", "집중 사업", "실적과 주가", "최근 이슈", "직무의 역할", "기회와 위험", "자소서 소재", "면접 준비"]) {
+      expect(screen.getAllByText(label, { exact: false }).length).toBeGreaterThan(0);
     }
     expect(screen.getByText("hyundai.com")).toBeTruthy();
     expect(screen.getByText("dart.fss.or.kr")).toBeTruthy();
@@ -92,7 +96,7 @@ describe("CompanyReport", () => {
     render(<CompanyReport />);
 
     await waitFor(() => expect(screen.getByText("전동화로 체급을 바꾸는 완성차")).toBeTruthy());
-    expect(screen.getAllByText("출처와 기준일").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("출처와 기준일", { exact: false }).length).toBeGreaterThan(0);
   });
 
   it("asks unauthenticated visitors to log in", async () => {

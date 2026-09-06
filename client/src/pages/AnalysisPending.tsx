@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import { trackAnalysisComplete, trackAnalysisFailed } from "@/lib/analytics";
 import { parseAnalysisRequestStatus, type AnalysisKind } from "@/lib/analysisRequest";
+import { pickCompanyPendingStep } from "./companyPendingCopy";
 
 type PendingView = "checking" | "failed" | "unavailable" | "timeout";
 
@@ -28,6 +29,15 @@ export default function AnalysisPending() {
   const [view, setView] = useState<PendingView>("checking");
   const [isContextIrrelevant, setIsContextIrrelevant] = useState(false);
   const [kind, setKind] = useState<AnalysisKind>("RESUME");
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  // 대기 문구를 경과 시간에 따라 바꾸기 위한 1초 틱. 기다리는 동안에만 돈다.
+  useEffect(() => {
+    if (view !== "checking") return;
+    setElapsedMs(0);
+    const ticker = setInterval(() => setElapsedMs(performance.now() - mountedAt.current), 1000);
+    return () => clearInterval(ticker);
+  }, [view, retryCount]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -111,6 +121,11 @@ export default function AnalysisPending() {
   };
 
   const isCompany = kind === "COMPANY";
+  const companyStep = pickCompanyPendingStep(elapsedMs);
+  const checkingTitle = isCompany ? companyStep.title : "분석 결과를 확인 중이에요";
+  const checkingLines = isCompany
+    ? companyStep.lines
+    : ["완료되는 즉시 리포트를 자동으로 열어 드릴게요.", "화면을 닫아도 분석은 계속됩니다."];
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] px-4 text-white">
@@ -127,13 +142,17 @@ export default function AnalysisPending() {
 
         {view === "checking" && (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {isCompany ? "기업 분석을 정리하는 중이에요" : "분석 결과를 확인 중이에요"}
+            <h1 className="text-2xl font-semibold tracking-tight text-balance" aria-live="polite">
+              {checkingTitle}
             </h1>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400">
-              {isCompany
-                ? "공개 자료를 검색해 정리하는 데 1분 정도 걸려요. 화면을 닫아도 분석은 계속됩니다."
-                : "완료되는 즉시 리포트를 자동으로 열어 드릴게요. 화면을 닫아도 분석은 계속됩니다."}
+            {/* 문장 단위 줄바꿈: PC에서는 한 문장이 한 줄, 모바일에서는 이어서 흐른다. */}
+            <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400 text-pretty">
+              {checkingLines.map((line, index) => (
+                <span key={`${index}-${line}`} className="sm:block">
+                  {line}
+                  {index < checkingLines.length - 1 ? " " : null}
+                </span>
+              ))}
             </p>
           </>
         )}
