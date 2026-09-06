@@ -130,10 +130,39 @@ describe("admin credit grants", () => {
     expect(mocks.grantAdminCredits).toHaveBeenCalledWith(expect.anything(), {
       userId: USER_ID,
       credits: 3,
+      kind: "RESUME",
       note: "베타 테스터 지급",
       grantedByUserId: ADMIN.applicationUser.id,
       grantedByEmail: ADMIN.applicationUser.email,
     });
+  });
+
+  it("forwards the requested grant kind to the entitlement layer", async () => {
+    mocks.grantAdminCredits.mockResolvedValue({ ...SUMMARY, companyRemaining: 1 });
+
+    const res = await invoke({
+      method: "POST",
+      body: { userId: USER_ID, credits: 1, kind: "COMPANY" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(mocks.grantAdminCredits).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      userId: USER_ID,
+      credits: 1,
+      kind: "COMPANY",
+    }));
+  });
+
+  it("defaults the grant kind to RESUME and rejects unknown kinds", async () => {
+    mocks.grantAdminCredits.mockResolvedValue(SUMMARY);
+
+    await invoke({ method: "POST", body: { userId: USER_ID, credits: 1 } });
+    expect(mocks.grantAdminCredits).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({
+      kind: "RESUME",
+    }));
+
+    const res = await invoke({ method: "POST", body: { userId: USER_ID, credits: 1, kind: "BONUS" } });
+    expect(res.statusCode).toBe(400);
   });
 
   it("rejects invalid grant payloads", async () => {

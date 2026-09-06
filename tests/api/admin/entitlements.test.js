@@ -52,26 +52,63 @@ describe("admin premium sales switch", () => {
     mocks.requireAdministrator.mockResolvedValue({
       applicationUser: { id: "11111111-1111-4111-8111-111111111111", role: "admin" },
     });
-    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({ premiumEnabled: false });
-    mocks.prisma.entitlementSetting.update.mockResolvedValue({ premiumEnabled: true });
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      premiumEnabled: false,
+      companyAnalysisEnabled: false,
+    });
+    mocks.prisma.entitlementSetting.update.mockResolvedValue({
+      premiumEnabled: true,
+      companyAnalysisEnabled: false,
+    });
   });
 
   it("reads the current sales state from the database", async () => {
     const res = await invoke();
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ premiumEnabled: false });
+    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: false });
+  });
+
+  it("returns both switches on GET", async () => {
+    const res = await invoke();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: false });
   });
 
   it("turns premium sales on through a single-key PATCH", async () => {
     const res = await invoke({ body: { premiumEnabled: true }, method: "PATCH" });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ premiumEnabled: true });
+    expect(res.body).toEqual({ premiumEnabled: true, companyAnalysisEnabled: false });
     expect(mocks.prisma.entitlementSetting.update).toHaveBeenCalledWith({
       where: { id: "singleton" },
       data: { premiumEnabled: true },
     });
+  });
+
+  it("toggles the company analysis switch with a single-key PATCH", async () => {
+    mocks.prisma.entitlementSetting.update.mockResolvedValue({
+      premiumEnabled: false,
+      companyAnalysisEnabled: true,
+    });
+
+    const res = await invoke({ method: "PATCH", body: { companyAnalysisEnabled: true } });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: true });
+    expect(mocks.prisma.entitlementSetting.update).toHaveBeenCalledWith({
+      where: { id: "singleton" },
+      data: { companyAnalysisEnabled: true },
+    });
+  });
+
+  it("rejects a PATCH that sets both switches at once", async () => {
+    const res = await invoke({
+      method: "PATCH",
+      body: { premiumEnabled: true, companyAnalysisEnabled: true },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(mocks.prisma.entitlementSetting.update).not.toHaveBeenCalled();
   });
 
   it.each([
