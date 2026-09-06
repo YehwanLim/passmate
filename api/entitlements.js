@@ -3,7 +3,13 @@ import {
   hasClaimedFeedbackReward,
 } from "../lib/analysis-entitlements.js";
 import { AuthorizationError, requireActiveApplicationUser } from "../lib/auth.js";
-import { parsePurchaseProductQuery } from "../lib/entitlement-products.js";
+import {
+  PRODUCT_QUERY_KEYS,
+  PURCHASE_PRODUCTS,
+  PURCHASE_PRODUCT_KEYS,
+  parsePurchaseProductQuery,
+  readPurchaseProductSettings,
+} from "../lib/entitlement-products.js";
 import grobleWebhookHandler from "../lib/groble-webhook-handler.js";
 import prisma from "../lib/prisma.js";
 import { handleRequestError, requestIdFor } from "../lib/request-errors.js";
@@ -15,6 +21,24 @@ export const config = {
 };
 
 const SETTINGS_ID = "singleton";
+const SWITCH_SELECT = { premiumEnabled: true, companyAnalysisEnabled: true };
+
+/**
+ * 상품 하나의 결제 URL. 전체 판매 스위치 → (기업 크레딧 포함 상품이면) 기업 분석 스위치 →
+ * 상품 행의 active 와 URL 순으로 닫힌다. 닫혀 있으면 null.
+ */
+function checkoutUrlFor(product, productSettings, switches) {
+  if (!switches?.premiumEnabled) return null;
+  if (PURCHASE_PRODUCTS[product].companyCredits > 0 && !switches.companyAnalysisEnabled) return null;
+  const setting = productSettings[product];
+  return setting.active && setting.paymentUrl ? setting.paymentUrl : null;
+}
+
+function checkoutUrlsFor(productSettings, switches) {
+  return Object.fromEntries(
+    PURCHASE_PRODUCT_KEYS.map((product) => [PRODUCT_QUERY_KEYS[product], checkoutUrlFor(product, productSettings, switches)]),
+  );
+}
 
 function pathnameOf(req) {
   return new URL(req.url ?? "/", "http://localhost").pathname;
@@ -57,23 +81,20 @@ async function getAuthenticatedUser(req, res) {
 
 async function getEntitlements(res, user) {
   // 표시용 조회라 잠금 트랜잭션 대신 조회 전용 요약을 쓴다 — 왕복이 병렬화되어 빠르다.
-  const [summary, settings, feedbackRewardClaimed] = await Promise.all([
+  const [summary, switches, productSettings, feedbackRewardClaimed] = await Promise.all([
     getEntitlementSummaryReadOnly(prisma, user.id),
-    prisma.entitlementSetting.findUnique({
-      where: { id: SETTINGS_ID },
-      select: { groblePaymentUrl: true, grobleSinglePaymentUrl: true, premiumEnabled: true },
-    }),
+    prisma.entitlementSetting.findUnique({ where: { id: SETTINGS_ID }, select: SWITCH_SELECT }),
+    readPurchaseProductSettings(prisma),
     hasClaimedFeedbackReward(prisma, user.id),
   ]);
+  const checkoutUrls = checkoutUrlsFor(productSettings, switches);
 
   return res.status(200).json({
     ...summary,
-    groblePaymentUrl:
-      settings?.premiumEnabled && settings.groblePaymentUrl ? settings.groblePaymentUrl : null,
-    grobleSinglePaymentUrl:
-      settings?.premiumEnabled && settings.grobleSinglePaymentUrl
-        ? settings.grobleSinglePaymentUrl
-        : null,
+    // 구버전 클라이언트 호환: 두 필드는 "3회권(→스탠다드)"·"1회권" URL 의미를 유지한다.
+    groblePaymentUrl: checkoutUrls.standard,
+    grobleSinglePaymentUrl: checkoutUrls.single,
+    checkoutUrls,
     feedbackRewardClaimed,
   });
 }
@@ -88,17 +109,21 @@ async function createPurchaseIntent(req, res, user) {
     return res.status(400).json({ error: "INVALID_PURCHASE_PRODUCT" });
   }
 
-  const settings = await prisma.entitlementSetting.findUnique({
-    where: { id: SETTINGS_ID },
-    select: { groblePaymentUrl: true, grobleSinglePaymentUrl: true, premiumEnabled: true },
-  });
+  const [switches, productSettings] = await Promise.all([
+    prisma.entitlementSetting.findUnique({ where: { id: SETTINGS_ID }, select: SWITCH_SELECT }),
+    readPurchaseProductSettings(prisma),
+  ]);
 
-  if (!settings?.premiumEnabled) {
+  if (!switches?.premiumEnabled) {
     return res.status(403).json({ error: "PREMIUM_SALES_DISABLED" });
   }
 
-  const paymentUrl =
-    product === "SINGLE" ? settings.grobleSinglePaymentUrl : settings.groblePaymentUrl;
+  // 기업 분석 크레딧이 든 상품은 기업 분석 스위치가 켜져야 판다 — 쓸 수 없는 크레딧을 팔지 않는다.
+  if (PURCHASE_PRODUCTS[product].companyCredits > 0 && !switches.companyAnalysisEnabled) {
+    return res.status(403).json({ error: "COMPANY_SALES_DISABLED" });
+  }
+
+  const paymentUrl = checkoutUrlFor(product, productSettings, switches);
   if (!paymentUrl) {
     return res.status(503).json({ error: "PREMIUM_CHECKOUT_NOT_CONFIGURED" });
   }
