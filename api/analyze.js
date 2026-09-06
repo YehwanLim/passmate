@@ -464,6 +464,9 @@ export function createAnalyzeHandler({
       }
       const request = normalize(req.body);
       const hash = hashRequest(request);
+      // 소유권 검증은 재생(replay) 처리보다 먼저 돈다. 연결한 자소서 분석이 그 사이 삭제되면
+      // 완료된 요청의 POST 재생도 404 가 되지만, 클라이언트는 GET /api/analysis-requests/:id 로
+      // 폴링하므로 실사용 영향은 없고, "일하기 전에 소유권" 원칙을 우선한다.
       await verifyRequest(request, { db, userId: applicationUser.id });
 
       // A completed request is a read-only replay: do not consume another rate
@@ -643,10 +646,19 @@ const analyzeHandler = createAnalyzeHandler();
 const companyAnalyzeHandler = createCompanyAnalyzeHandler();
 const resumeSplitHandler = createResumeSplitHandler();
 
+/** 쿼리로 세 핸들러 중 하나를 고른다. split 이 kind 보다 우선한다(기존 동작 유지). */
+export function selectAnalyzeHandler(query, { company, resume, split }) {
+  if (query?.split === "1") return split;
+  if (query?.kind === "company") return company;
+  return resume;
+}
+
 // /api/analyze/split → ?split=1, /api/analyze/company → ?kind=company 로 rewrite 되어
 // 이 함수 하나로 들어온다 (Hobby 12함수 제한).
 export default function handler(req, res) {
-  if (req.query?.split === "1") return resumeSplitHandler(req, res);
-  if (req.query?.kind === "company") return companyAnalyzeHandler(req, res);
-  return analyzeHandler(req, res);
+  return selectAnalyzeHandler(req.query, {
+    company: companyAnalyzeHandler,
+    resume: analyzeHandler,
+    split: resumeSplitHandler,
+  })(req, res);
 }

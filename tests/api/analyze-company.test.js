@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import { AuthorizationError } from "../../lib/auth.js";
 import { EntitlementUnavailableError } from "../../lib/analysis-entitlements.js";
 import { companyRequestHash, normalizeCompanyRequest } from "../../lib/company-analysis.js";
-import analyzeHandler, { createAnalyzeHandler, createCompanyAnalyzeHandler } from "../../api/analyze.js";
+import analyzeHandler, {
+  createAnalyzeHandler,
+  createCompanyAnalyzeHandler,
+  selectAnalyzeHandler,
+} from "../../api/analyze.js";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const RESUME_ANALYSIS_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -179,14 +183,24 @@ describe("company analysis API", () => {
   });
 
   it("uses the company throughput policy for concurrency and rate limits", async () => {
-    const db = createDatabase();
-    db.analysisRequest.count = vi.fn(async () => 2);
-    const res = response();
+    // 회사 정책의 동시성 한도는 2다. count=1 은 자소서 무료 정책(한도 1)이라면 409 였겠지만
+    // 기업 정책에서는 통과해야 한다 — 이 값이 정책 자체를 구별해 준다.
+    const dbWithinLimit = createDatabase();
+    dbWithinLimit.analysisRequest.count = vi.fn(async () => 1);
+    const resWithinLimit = response();
 
-    await companyHandler({ db })(request(), res);
+    await companyHandler({ db: dbWithinLimit })(request(), resWithinLimit);
 
-    expect(res.statusCode).toBe(409);
-    expect(res.body.error).toBe("ANALYSIS_CONCURRENCY_LIMITED");
+    expect(resWithinLimit.statusCode).toBe(202);
+
+    const dbAtLimit = createDatabase();
+    dbAtLimit.analysisRequest.count = vi.fn(async () => 2);
+    const resAtLimit = response();
+
+    await companyHandler({ db: dbAtLimit })(request(), resAtLimit);
+
+    expect(resAtLimit.statusCode).toBe(409);
+    expect(resAtLimit.body.error).toBe("ANALYSIS_CONCURRENCY_LIMITED");
   });
 
   it("keeps the résumé handler untouched: no kind query still stores a RESUME analysis", async () => {
@@ -216,10 +230,39 @@ describe("company analysis API", () => {
     }));
   });
 
-  it("dispatches ?kind=company from the default export before touching the résumé handler", async () => {
+  it("still requires authentication on the company route", async () => {
     const res = response();
     await analyzeHandler(request({ headers: {} }), res);
-    // 인증이 없으니 401 — 하지만 자소서 본문 검증(questions 필수)이 먼저 돌았다면 400 이었을 것이다.
+    // requireUser 가 normalize 보다 먼저 돌기 때문에 인증 없는 요청은 자소서/기업 어느 핸들러든
+    // 동일하게 401 을 낸다 — 이 테스트는 인증 게이트만 확인하고, 디스패치 자체는
+    // selectAnalyzeHandler 단위 테스트가 검증한다.
     expect(res.statusCode).toBe(401);
+  });
+
+  it("selects the company handler for ?kind=company, keeps split first, and defaults to résumé", () => {
+    const handlers = { company: () => "company", resume: () => "resume", split: () => "split" };
+    expect(selectAnalyzeHandler({ kind: "company" }, handlers)).toBe(handlers.company);
+    expect(selectAnalyzeHandler({ split: "1", kind: "company" }, handlers)).toBe(handlers.split);
+    expect(selectAnalyzeHandler({}, handlers)).toBe(handlers.resume);
+    expect(selectAnalyzeHandler(undefined, handlers)).toBe(handlers.resume);
+  });
+
+  it("links an owned résumé analysis and folds it into the request hash", async () => {
+    const db = createDatabase({ ownedResumeAnalysis: true });
+    const res = response();
+    const body = { company: "현대자동차", jobKeyword: "전략기획", resumeAnalysisId: RESUME_ANALYSIS_ID };
+
+    await companyHandler({ db })(request({ body }), res);
+
+    expect(res.statusCode).toBe(202);
+    expect(db.analysis.findFirst).toHaveBeenCalledWith({
+      where: { id: RESUME_ANALYSIS_ID, userId: USER_ID, kind: "RESUME" },
+      select: { id: true },
+    });
+    const expectedHash = companyRequestHash(normalizeCompanyRequest(body));
+    expect(db.analysisRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ requestHash: expectedHash }),
+    }));
+    expect(expectedHash).not.toBe(companyRequestHash(normalizeCompanyRequest({ company: "현대자동차", jobKeyword: "전략기획" })));
   });
 });
