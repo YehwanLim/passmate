@@ -40,4 +40,9 @@ describe("analysis persistence into My Projects", () => {
     expect(reportSource).toContain("setReportData(payload.ai_response_json as ReportData)");
   });
 
+  it("opens company reports at /company-report and résumé reports at /report-new", () => {
+    expect(myProjectsSource).toContain('project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`');
+    expect(myProjectsSource).toContain("analysisId=${encodeURIComponent(project.latest_analysis_id)}");
+  });
+
 });

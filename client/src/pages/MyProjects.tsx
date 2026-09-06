@@ -161,7 +161,8 @@ export default function MyProjects() {
                   onViewQuestions={() => navigate(`/my/${project.id}`)}
                   onViewReport={() => {
                     if (project.latest_analysis_id) {
-                      navigate(`/report-new?analysisId=${encodeURIComponent(project.latest_analysis_id)}`);
+                      const query = `analysisId=${encodeURIComponent(project.latest_analysis_id)}`;
+                      navigate(project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`);
                     } else {
                       setLoadError("저장된 분석 리포트를 찾을 수 없습니다.");
                     }

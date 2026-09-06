@@ -1,4 +1,4 @@
-import { Calendar, FileText, ClipboardCheck } from "lucide-react";
+import { Calendar, FileText, ClipboardCheck, Building2 } from "lucide-react";
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
 
@@ -26,6 +26,7 @@ export default function ProjectCard({
   onDelete,
 }: ProjectCardProps) {
   const kebabItems = createDefaultKebabItems({ onDelete });
+  const isCompany = project.kind === "COMPANY";
 
   return (
     <div className="relative border border-zinc-800 bg-zinc-900/80 rounded-2xl p-6 lg:p-7 transition-all duration-300 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20 group">
@@ -46,6 +47,11 @@ export default function ProjectCard({
                 샘플
               </span>
             )}
+            {isCompany && (
+              <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-sky-500/15 text-sky-300 border border-sky-400/25 whitespace-nowrap">
+                기업 분석
+              </span>
+            )}
             <h3 className="text-[20px] font-bold text-zinc-50 tracking-tight truncate">
               {project.company_name || project.title || "기업 미지정"}
             </h3>
@@ -63,8 +69,8 @@ export default function ProjectCard({
               <span>{formatDate(project.created_at)} 작성됨</span>
             </div>
             <div className="flex items-center gap-2">
-              <FileText className="w-3.5 h-3.5" />
-              <span>{project.question_count ?? project.analysis_count}개 문항</span>
+              {isCompany ? <Building2 className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+              <span>{isCompany ? "기업 분석 리포트" : `${project.question_count ?? project.analysis_count}개 문항`}</span>
             </div>
           </div>
         </div>
@@ -121,16 +127,15 @@ export default function ProjectCard({
               <ClipboardCheck className="w-3.5 h-3.5" />
               <span>리포트 보기</span>
             </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewQuestions();
-              }}
-              className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg border border-zinc-700 bg-zinc-800/40 text-[13px] font-medium text-zinc-300 hover:bg-zinc-700/60 hover:text-zinc-100 transition-all duration-200"
-            >
-              <FileText className="w-3.5 h-3.5 text-zinc-500" />
-              <span>작성한 자소서 보기</span>
-            </button>
+            {isCompany ? null : (
+              <button
+                onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
+                className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg border border-zinc-700 bg-zinc-800/40 text-[13px] font-medium text-zinc-300 hover:bg-zinc-700/60 hover:text-zinc-100 transition-all duration-200"
+              >
+                <FileText className="w-3.5 h-3.5 text-zinc-500" />
+                <span>작성한 자소서 보기</span>
+              </button>
+            )}
           </div>
 
         </div>

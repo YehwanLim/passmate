@@ -17,7 +17,7 @@ function CreditSkeleton() {
       className="border-y border-white/5"
       aria-label="이용권 정보를 불러오는 중"
     >
-      {[1, 2, 3].map(row => (
+      {[1, 2, 3, 4].map(row => (
         <div
           key={row}
           className="h-[76px] border-b border-white/5 bg-white/[0.015] last:border-b-0 animate-pulse"
@@ -190,6 +190,11 @@ export default function MyEntitlements() {
                   title="프리미엄 이용권"
                   description="구매 후 사용할 수 있는 추가 분석 이용권이에요."
                   remaining={summary.premiumRemaining}
+                />
+                <CreditSummaryRow
+                  title="기업 분석 이용권"
+                  description="회사·직무를 넣으면 기업 분석 리포트를 만들어 드려요."
+                  remaining={summary.companyRemaining}
                 />
               </div>
             </div>
