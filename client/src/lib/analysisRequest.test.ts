@@ -39,6 +39,7 @@ describe("analysis request browser contracts", () => {
       analysisId: "analysis-1",
       error: null,
       id: "request-1",
+      kind: "RESUME",
       requestId: "request-id",
       status: "SUCCEEDED",
     });
@@ -68,5 +69,13 @@ describe("analysis request browser contracts", () => {
     expect(analysisPendingPath("request/id?x=1")).toBe(
       "/analysis-pending?requestId=request%2Fid%3Fx%3D1",
     );
+  });
+
+  it("reads the analysis kind and defaults unknown or missing kinds to RESUME", () => {
+    const base = { analysis_id: "analysis-1", error: null, id: "request-1", requestId: "request-id", status: "SUCCEEDED" };
+    expect(parseAnalysisRequestStatus({ ...base, kind: "COMPANY" }).kind).toBe("COMPANY");
+    expect(parseAnalysisRequestStatus({ ...base, kind: "RESUME" }).kind).toBe("RESUME");
+    expect(parseAnalysisRequestStatus({ ...base, kind: "OTHER" }).kind).toBe("RESUME");
+    expect(parseAnalysisRequestStatus(base).kind).toBe("RESUME");
   });
 });

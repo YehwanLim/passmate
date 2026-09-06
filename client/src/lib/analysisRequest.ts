@@ -20,10 +20,14 @@ export interface AnalysisReceipt {
   status: AnalysisRequestStatusName;
 }
 
+/** 분석 종류. 서버 enum AnalysisKind 와 같다. 구버전 응답에 없으면 RESUME 으로 본다. */
+export type AnalysisKind = "RESUME" | "COMPANY";
+
 export interface AnalysisRequestStatus {
   analysisId: string | null;
   error: "ANALYSIS_FAILED" | "CONTEXT_IRRELEVANT" | null;
   id: string;
+  kind: AnalysisKind;
   requestId: string;
   status: AnalysisRequestStatusName;
 }
@@ -92,6 +96,7 @@ export function parseAnalysisRequestStatus(value: unknown): AnalysisRequestStatu
     analysisId,
     error: error as AnalysisRequestStatus["error"],
     id,
+    kind: value.kind === "COMPANY" ? "COMPANY" : "RESUME",
     requestId,
     status,
   };
