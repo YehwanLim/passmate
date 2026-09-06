@@ -141,6 +141,18 @@ describe("company analysis API", () => {
     expect(res.body.error).toBe("COMPANY_ANALYSIS_DISABLED");
   });
 
+  it("lets an administrator generate while the switch is off", async () => {
+    const db = createDatabase({ companyAnalysisEnabled: false });
+    const res = response();
+
+    await companyHandler({
+      db,
+      requireUser: async () => ({ applicationUser: { id: USER_ID, role: "admin" } }),
+    })(request(), res);
+
+    expect(res.statusCode).toBe(202);
+  });
+
   it("returns 409 COMPANY_CREDITS_EXHAUSTED from the company pool, not the résumé pool", async () => {
     const res = response();
     await companyHandler({

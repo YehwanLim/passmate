@@ -411,9 +411,9 @@ async function allocateAnalysisRequest({
       data: {
         userId,
         projectId: project.id,
-        kind,
         ...analysisInput(request),
         status: "PENDING",
+        kind,
       },
     });
     const analysisRequest = await tx.analysisRequest.create({
@@ -533,7 +533,7 @@ export function createAnalyzeHandler({
         where: { id: SETTINGS_ID },
         select: { analysisEnabled: true, companyAnalysisEnabled: true },
       });
-      if (!isEnabled(settings)) {
+      if (!isEnabled(settings, applicationUser)) {
         return sendError(res, 503, disabledCode, requestId);
       }
 
@@ -630,7 +630,10 @@ const COMPANY_HANDLER_DEFAULTS = Object.freeze({
   getAnalysisThroughputPolicy: getCompanyAnalysisThroughputPolicy,
   hashRequest: companyRequestHash,
   // 전체 분석 스위치가 꺼지면 기업 분석도 함께 멈춘다.
-  isEnabled: (settings) => settings?.analysisEnabled === true && settings?.companyAnalysisEnabled === true,
+  // 스위치가 꺼져 있어도 관리자는 생성할 수 있다(스펙 §4 M1: 관리자 지급 크레딧으로 내부 QA).
+  isEnabled: (settings, user) =>
+    settings?.analysisEnabled === true
+    && (settings?.companyAnalysisEnabled === true || user?.role === "admin"),
   kind: "COMPANY",
   model: analyzeCompany,
   normalizeRequest: normalizeCompanyRequest,
