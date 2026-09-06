@@ -40,6 +40,7 @@ export function createAnalysisHandler({
           totalChars: true,
           createdAt: true,
           projectId: true,
+          kind: true,
           project: { select: { company: true, jobKeyword: true, title: true } },
         },
       });
@@ -53,6 +54,7 @@ export function createAnalysisHandler({
         input_text: analysis.inputText,
         ai_response_json: sanitizeAiResponse(analysis.aiResponseJson),
         status: analysis.status,
+        kind: analysis.kind ?? "RESUME",
         total_chars: analysis.totalChars ?? 0,
         created_at: analysis.createdAt,
         project_id: analysis.projectId,

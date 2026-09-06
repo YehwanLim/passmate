@@ -16,7 +16,7 @@ const OWNED_STATUS_SELECT = {
   reservationId: true,
   providerMetadata: true,
   providerResult: true,
-  analysis: { select: { errorCode: true, id: true, projectId: true } },
+  analysis: { select: { errorCode: true, id: true, projectId: true, kind: true } },
 };
 
 function safeErrorCode(analysisRequest) {
@@ -33,6 +33,7 @@ function statusResponse(analysisRequest, requestId) {
     analysis_id: analysisRequest.status === "SUCCEEDED" && typeof analysisRequest.analysisId === "string"
       ? analysisRequest.analysisId
       : null,
+    kind: analysisRequest.analysis?.kind ?? "RESUME",
     error: safeErrorCode(analysisRequest),
     requestId,
   };

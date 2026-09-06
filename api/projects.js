@@ -14,7 +14,11 @@ function extractSummary(aiResponseJson) {
   try {
     const data = typeof aiResponseJson === "string" ? JSON.parse(aiResponseJson) : aiResponseJson;
     if (!data || typeof data !== "object") return null;
-    return data.summary ?? data.firstImpression?.summaryOneLiner ?? data.firstImpression?.persona ?? null;
+    return data.summary
+      ?? data.firstImpression?.summaryOneLiner
+      ?? data.firstImpression?.persona
+      ?? data.brief?.oneLiner
+      ?? null;
   } catch {
     return null;
   }
@@ -44,7 +48,7 @@ export function createProjectsHandler({
           analyses: {
             orderBy: { createdAt: "desc" },
             take: 1,
-            select: { id: true, totalChars: true, aiResponseJson: true, questionText: true },
+            select: { id: true, totalChars: true, aiResponseJson: true, questionText: true, kind: true },
           },
         },
       });
@@ -58,6 +62,7 @@ export function createProjectsHandler({
           job_role: project.jobKeyword ?? null,
           created_at: project.createdAt,
           analysis_count: project._count.analyses,
+          kind: latest?.kind ?? "RESUME",
           question_count: countQuestions(latest?.questionText),
           latest_analysis_id: latest?.id ?? null,
           total_chars: latest?.totalChars ?? 0,

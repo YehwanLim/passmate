@@ -97,6 +97,42 @@ describe("protected user APIs", () => {
 
     expect(res.body[0].analysis_count).toBe(2);
     expect(res.body[0].question_count).toBe(3);
+    expect(res.body[0].kind).toBe("RESUME");
+  });
+
+  it("labels a company analysis project and summarizes it from the brief", async () => {
+    const handler = createProjectsHandler({
+      db: {
+        project: {
+          findMany: vi.fn(async () => [{
+            id: "p2",
+            title: "현대자동차 전략기획 기업 분석",
+            company: "현대자동차",
+            jobKeyword: "전략기획",
+            createdAt: new Date("2026-09-06T00:00:00Z"),
+            _count: { analyses: 1 },
+            analyses: [{
+              id: "a2",
+              kind: "COMPANY",
+              totalChars: null,
+              questionText: "",
+              aiResponseJson: { brief: { oneLiner: "전동화로 체급을 바꾸는 완성차" } },
+            }],
+          }]),
+        },
+      },
+      requireUser: activeUser,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.body[0]).toMatchObject({
+      kind: "COMPANY",
+      question_count: 0,
+      total_chars: 0,
+      summary: "전동화로 체급을 바꾸는 완성차",
+    });
   });
 
   it("looks up a project by both its ID and the verified user ID", async () => {

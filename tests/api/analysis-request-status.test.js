@@ -73,7 +73,7 @@ const activeUser = async () => ({ applicationUser: { id: USER_ID } });
 
 function storedRequest(overrides = {}) {
   return {
-    analysis: { errorCode: null, id: "analysis-1", projectId: "project-1" },
+    analysis: { errorCode: null, id: "analysis-1", projectId: "project-1", kind: "RESUME" },
     analysisId: "analysis-1",
     expiresAt: new Date("2027-01-01T00:00:00.000Z"),
     id: "request-1",
@@ -143,6 +143,7 @@ describe("GET /api/analysis-requests/:id", () => {
       id: "request-1",
       status: "SUCCEEDED",
       analysis_id: "analysis-1",
+      kind: "RESUME",
       error: null,
       requestId: expect.any(String),
     });
@@ -167,6 +168,7 @@ describe("GET /api/analysis-requests/:id", () => {
       id: "request-1",
       status: "CALLING",
       analysis_id: null,
+      kind: "RESUME",
       error: null,
       requestId: expect.any(String),
     });
@@ -198,6 +200,7 @@ describe("GET /api/analysis-requests/:id", () => {
       id: "request-1",
       status: "SUCCEEDED",
       analysis_id: "analysis-1",
+      kind: "RESUME",
       error: null,
       requestId: expect.any(String),
     });
@@ -219,5 +222,17 @@ describe("GET /api/analysis-requests/:id", () => {
     expect(res.statusCode).toBe(405);
     expect(res.body.error).toBe("METHOD_NOT_ALLOWED");
     expect(db.analysisRequest.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("reports the analysis kind so the client can route to the right report page", async () => {
+    const { db } = createDatabase({
+      stored: storedRequest({ analysis: { errorCode: null, id: "analysis-1", projectId: "project-1", kind: "COMPANY" } }),
+    });
+    const handler = createAnalysisRequestStatusHandler({ db, requireUser: activeUser });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.body).toMatchObject({ status: "SUCCEEDED", analysis_id: "analysis-1", kind: "COMPANY" });
   });
 });
