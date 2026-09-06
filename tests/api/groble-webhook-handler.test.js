@@ -27,8 +27,10 @@ vi.mock("../../lib/prisma.js", () => ({
 
 const { createGrobleWebhookHandler } = await import("../../lib/groble-webhook-handler.js");
 
-const CONTENT_ID = "premium-product-id";
-const SINGLE_CONTENT_ID = "single-product-id";
+const CONTENT_ID = "4SGBV5"; // 기존 상수 유지 — 이제 STANDARD 의 contentId
+const SINGLE_CONTENT_ID = "6HteWn"; // 기존 상수 유지(1회권)
+const COMPANY_CONTENT_ID = "cmp001";
+const PREMIUM_CONTENT_ID = "prm001";
 const INTENT_ID = "11111111-1111-4111-8111-111111111111";
 const NOW = 1_785_091_200_000;
 const SECRET = "groble-webhook-secret";
@@ -79,13 +81,23 @@ function signedHeaders(rawBody, timestamp = String(NOW / 1000)) {
   };
 }
 
+function settingsWith(overrides = {}) {
+  const base = {
+    SINGLE: { contentId: SINGLE_CONTENT_ID, paymentUrl: "https://www.groble.im/payment/SINGLE", active: true },
+    COMPANY_SINGLE: { contentId: COMPANY_CONTENT_ID, paymentUrl: "", active: false },
+    STANDARD: { contentId: CONTENT_ID, paymentUrl: "https://www.groble.im/payment/4SGBV5", active: true },
+    PREMIUM: { contentId: PREMIUM_CONTENT_ID, paymentUrl: "", active: false },
+    TRIPLE: { contentId: null, paymentUrl: "", active: false },
+  };
+  return { ...base, ...overrides };
+}
+
 function createHandler(overrides = {}) {
   return createGrobleWebhookHandler({
     logger: mocks.logger,
     now: () => NOW,
-    premiumContentId: CONTENT_ID,
     prismaClient: mocks.prisma,
-    singleContentId: SINGLE_CONTENT_ID,
+    readProductSettings: async () => settingsWith(),
     webhookSecret: SECRET,
     ...overrides,
   });
@@ -118,31 +130,36 @@ describe("Groble webhook", () => {
     mocks.prisma.paymentEntitlement.findUnique.mockResolvedValue(null);
     mocks.prisma.purchaseIntent.findUnique.mockResolvedValue({
       id: INTENT_ID,
-      product: "TRIPLE",
+      product: "STANDARD",
       status: "PENDING",
       userId: USER_ID,
     });
     mocks.prisma.purchaseIntent.updateMany.mockResolvedValue({ count: 1 });
-    mocks.grantGroblePurchase.mockResolvedValue({ credits: 3, granted: true });
+    mocks.grantGroblePurchase.mockResolvedValue({ credits: 2, companyCredits: 1, granted: true });
   });
 
-  it("grants the intent owner three credits for one valid signed premium payment", async () => {
+  it("grants two résumé credits and one company credit for a signed standard payment", async () => {
     const response = await invokeGrobleWebhook();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ grantedCredits: 3, ok: true });
+    expect(response.body).toEqual({ grantedCredits: 2, grantedCompanyCredits: 1, ok: true });
     expect(mocks.prisma.purchaseIntent.updateMany).toHaveBeenCalledWith({
       data: { status: "PAID" },
       where: { id: INTENT_ID, status: "PENDING" },
     });
+    expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
+      mocks.prisma,
+      expect.objectContaining({ resumeCredits: 2, companyCredits: 1 }),
+    );
     expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(mocks.prisma, {
-      credits: 3,
+      resumeCredits: 2,
+      companyCredits: 1,
       providerPaymentId: "groble-100",
       rawEvent: {
         contentId: CONTENT_ID,
         eventId: "evt_groble_100",
         merchantUid: "groble-100",
-        product: "TRIPLE",
+        product: "STANDARD",
         purchasedAt: "2026-07-27T00:00:00.000Z",
         type: "payment.completed",
       },
@@ -160,18 +177,19 @@ describe("Groble webhook", () => {
       status: "PENDING",
       userId: USER_ID,
     });
-    mocks.grantGroblePurchase.mockResolvedValue({ credits: 1, granted: true });
+    mocks.grantGroblePurchase.mockResolvedValue({ credits: 1, companyCredits: 0, granted: true });
 
     const response = await invokeGrobleWebhook({
       payload: paidPayload({ object: { content: { id: SINGLE_CONTENT_ID } } }),
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ grantedCredits: 1, ok: true });
+    expect(response.body).toEqual({ grantedCredits: 1, grantedCompanyCredits: 0, ok: true });
     expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
       mocks.prisma,
       expect.objectContaining({
-        credits: 1,
+        resumeCredits: 1,
+        companyCredits: 0,
         rawEvent: expect.objectContaining({
           contentId: SINGLE_CONTENT_ID,
           product: "SINGLE",
@@ -182,9 +200,11 @@ describe("Groble webhook", () => {
     expect(mocks.logger).not.toHaveBeenCalled();
   });
 
-  it("rejects a single-plan payment while GROBLE_SINGLE_CONTENT_ID is not configured", async () => {
+  it("rejects a single-plan payment while its content id is not configured", async () => {
     const response = await invokeGrobleWebhook({
-      handler: createHandler({ singleContentId: undefined }),
+      handler: createHandler({
+        readProductSettings: async () => settingsWith({ SINGLE: { contentId: null, paymentUrl: "", active: false } }),
+      }),
       payload: paidPayload({ object: { content: { id: SINGLE_CONTENT_ID } } }),
     });
 
@@ -194,7 +214,7 @@ describe("Groble webhook", () => {
   });
 
   it("grants by the paid product and logs when the intent was created for another product", async () => {
-    // 사용자가 1회권 intent 의 ref 로 3회권을 결제한 크로스 케이스 —
+    // 사용자가 1회권 intent 의 ref 로 스탠다드를 결제한 크로스 케이스 —
     // 실제 지불액(웹훅 contentId) 기준으로 지급하고 진단만 남긴다.
     mocks.prisma.purchaseIntent.findUnique.mockResolvedValue({
       id: INTENT_ID,
@@ -206,14 +226,14 @@ describe("Groble webhook", () => {
     const response = await invokeGrobleWebhook();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ grantedCredits: 3, ok: true });
+    expect(response.body).toEqual({ grantedCredits: 2, grantedCompanyCredits: 1, ok: true });
     expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
       mocks.prisma,
-      expect.objectContaining({ credits: 3 }),
+      expect.objectContaining({ resumeCredits: 2, companyCredits: 1 }),
     );
     expect(mocks.logger).toHaveBeenCalledWith(
       "[api/webhooks/groble] purchase intent product mismatch",
-      expect.objectContaining({ intentProduct: "SINGLE", paidProduct: "TRIPLE" }),
+      expect.objectContaining({ intentProduct: "SINGLE", paidProduct: "STANDARD" }),
     );
     // 진단에 intent id 원문이 새지 않는다.
     expect(JSON.stringify(mocks.logger.mock.calls)).not.toContain(INTENT_ID);
@@ -326,7 +346,7 @@ describe("Groble webhook", () => {
     const response = await invokeGrobleWebhook();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ grantedCredits: 0, ok: true });
+    expect(response.body).toEqual({ grantedCredits: 0, grantedCompanyCredits: 0, ok: true });
     expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
   });
 
@@ -351,5 +371,57 @@ describe("Groble webhook", () => {
 
     expect(response.statusCode).toBe(405);
     expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
+  });
+
+  it("grants both pools for a premium payment and reports both counts", async () => {
+    mocks.prisma.purchaseIntent.findUnique.mockResolvedValue({
+      id: INTENT_ID, product: "PREMIUM", status: "PENDING", userId: USER_ID,
+    });
+    mocks.grantGroblePurchase.mockResolvedValue({ granted: true, credits: 3, companyCredits: 3 });
+
+    const res = await invokeGrobleWebhook({
+      payload: paidPayload({ object: { content: { id: PREMIUM_CONTENT_ID } } }),
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ ok: true, grantedCredits: 3, grantedCompanyCredits: 3 });
+    expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
+      mocks.prisma,
+      expect.objectContaining({ resumeCredits: 3, companyCredits: 3, userId: USER_ID }),
+    );
+  });
+
+  it("grants only the company pool for a company-single payment", async () => {
+    mocks.prisma.purchaseIntent.findUnique.mockResolvedValue({
+      id: INTENT_ID, product: "COMPANY_SINGLE", status: "PENDING", userId: USER_ID,
+    });
+    mocks.grantGroblePurchase.mockResolvedValue({ granted: true, credits: 0, companyCredits: 1 });
+
+    const res = await invokeGrobleWebhook({
+      payload: paidPayload({ object: { content: { id: COMPANY_CONTENT_ID } } }),
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ ok: true, grantedCredits: 0, grantedCompanyCredits: 1 });
+    expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
+      mocks.prisma,
+      expect.objectContaining({ resumeCredits: 0, companyCredits: 1 }),
+    );
+  });
+
+  it("reads product settings only after the signature is verified", async () => {
+    const readProductSettings = vi.fn(async () => settingsWith());
+    // 서명 훼손 방식과 기대 상태 코드는 "rejects an altered signature before opening a transaction" 과 같게.
+    const payload = paidPayload();
+    const rawBody = JSON.stringify(payload);
+    const res = await invokeGrobleWebhook({
+      handler: createHandler({ readProductSettings }),
+      headers: { ...signedHeaders(rawBody), "x-groble-signature": "0".repeat(64) },
+      payload,
+      rawBody,
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(readProductSettings).not.toHaveBeenCalled();
   });
 });

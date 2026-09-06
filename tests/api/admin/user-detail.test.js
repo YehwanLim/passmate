@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   prisma: {
     user: { findUnique: vi.fn() },
     tokenUsage: { findMany: vi.fn() },
+    purchaseProductSetting: { findMany: vi.fn() },
   },
   requireAdministrator: vi.fn(),
 }));
@@ -62,6 +63,7 @@ describe("admin user detail — 결제 정보", () => {
     process.env.GROBLE_SINGLE_CONTENT_ID = SINGLE_CONTENT_ID;
     mocks.requireAdministrator.mockResolvedValue({});
     mocks.prisma.tokenUsage.findMany.mockResolvedValue([]);
+    mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue([]);
   });
 
   it("결제 기록에 저장된 상품을 그대로 내려준다", async () => {
