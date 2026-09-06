@@ -16,6 +16,7 @@ import {
   fetchUserCredits,
   grantUserCredits,
   type AdminCreditGrantRecord,
+  type AdminCreditKind,
   type UserCreditSummary,
 } from "@/lib/admin-credits";
 
@@ -34,6 +35,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
 
   const [credits, setCredits] = useState("3");
   const [note, setNote] = useState("");
+  const [kind, setKind] = useState<AdminCreditKind>("RESUME");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -66,7 +68,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
     setSubmitError(null);
     setSubmitted(false);
     try {
-      await grantUserCredits({ userId, credits: amount, note });
+      await grantUserCredits({ userId, credits: amount, note, kind });
       setSubmitted(true);
       setNote("");
       await load();
@@ -104,7 +106,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
             <AlertDescription>{loadError}</AlertDescription>
           </Alert>
         ) : summary ? (
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="rounded-md border p-2">
               <p className="text-lg font-semibold">{summary.freeRemaining}</p>
               <p className="text-xs text-muted-foreground">무료 잔여</p>
@@ -118,6 +120,10 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
               <p className="text-xs text-muted-foreground">
                 프리미엄 잔여{summary.premiumEnabled ? "" : " (판매 OFF)"}
               </p>
+            </div>
+            <div className="rounded-md border p-2">
+              <p className="text-lg font-semibold">{summary.companyRemaining}</p>
+              <p className="text-xs text-muted-foreground">기업 분석</p>
             </div>
           </div>
         ) : null}
@@ -134,6 +140,19 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
               onChange={(event) => setCredits(event.target.value)}
               disabled={submitting}
             />
+          </div>
+          <div className="w-32">
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="admin-credit-kind">종류</label>
+            <select
+              id="admin-credit-kind"
+              value={kind}
+              onChange={(event) => setKind(event.target.value as AdminCreditKind)}
+              disabled={submitting}
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            >
+              <option value="RESUME">자소서 분석</option>
+              <option value="COMPANY">기업 분석</option>
+            </select>
           </div>
           <div className="min-w-40 flex-1">
             <label className="mb-1 block text-xs text-muted-foreground" htmlFor="admin-credit-note">

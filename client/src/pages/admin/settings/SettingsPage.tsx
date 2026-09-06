@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { adminApiFetch } from "@/lib/adminApi";
 import {
   fetchPremiumSalesSettings,
+  updateCompanyAnalysisEnabled,
   updatePremiumSalesEnabled,
 } from "@/lib/admin-entitlements";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
@@ -105,9 +106,16 @@ export default function SettingsPage() {
   const [premiumSwitchBusy, setPremiumSwitchBusy] = useState(false);
   const [premiumSwitchError, setPremiumSwitchError] = useState<string | null>(null);
 
+  const [companyAnalysisEnabled, setCompanyAnalysisEnabled] = useState<boolean | null>(null);
+  const [companySwitchBusy, setCompanySwitchBusy] = useState(false);
+  const [companySwitchError, setCompanySwitchError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchPremiumSalesSettings()
-      .then((result) => setPremiumEnabled(result.premiumEnabled))
+      .then((result) => {
+        setPremiumEnabled(result.premiumEnabled);
+        setCompanyAnalysisEnabled(result.companyAnalysisEnabled);
+      })
       .catch((error: unknown) =>
         setPremiumSwitchError(error instanceof Error ? error.message : "결제 판매 상태를 불러오지 못했습니다."),
       );
@@ -123,6 +131,19 @@ export default function SettingsPage() {
       setPremiumSwitchError(error instanceof Error ? error.message : "결제 판매 상태를 변경하지 못했습니다.");
     } finally {
       setPremiumSwitchBusy(false);
+    }
+  };
+
+  const handleCompanyToggle = async (checked: boolean) => {
+    setCompanySwitchBusy(true);
+    setCompanySwitchError(null);
+    try {
+      const result = await updateCompanyAnalysisEnabled(checked);
+      setCompanyAnalysisEnabled(result.companyAnalysisEnabled);
+    } catch (error: unknown) {
+      setCompanySwitchError(error instanceof Error ? error.message : "기업 분석 스위치를 변경하지 못했습니다.");
+    } finally {
+      setCompanySwitchBusy(false);
     }
   };
 
@@ -229,6 +250,31 @@ export default function SettingsPage() {
               checked={premiumEnabled === true}
               disabled={premiumEnabled === null || premiumSwitchBusy}
               onCheckedChange={handlePremiumToggle}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">기업 분석 리포트</CardTitle>
+          <CardDescription className="text-xs">
+            켜면 일반 사용자가 기업 분석 리포트를 생성할 수 있습니다. 꺼져 있어도 관리자 계정은 생성할 수 있고,
+            이미 지급된 기업 분석 크레딧 잔액은 그대로 보입니다. 토글 즉시 서버에 반영됩니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-3.5 border rounded-lg">
+            <div className="space-y-0.5">
+              <span className="text-sm font-semibold">
+                {companyAnalysisEnabled === null ? "상태 불러오는 중..." : companyAnalysisEnabled ? "열림" : "관리자만"}
+              </span>
+              {companySwitchError ? <p className="text-xs text-destructive">{companySwitchError}</p> : null}
+            </div>
+            <Switch
+              checked={companyAnalysisEnabled === true}
+              disabled={companyAnalysisEnabled === null || companySwitchBusy}
+              onCheckedChange={handleCompanyToggle}
             />
           </div>
         </CardContent>

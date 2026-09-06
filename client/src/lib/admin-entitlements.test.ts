@@ -10,6 +10,7 @@ vi.mock("./supabase", () => ({
 
 import {
   fetchPremiumSalesSettings,
+  updateCompanyAnalysisEnabled,
   updatePremiumSalesEnabled,
 } from "./admin-entitlements";
 
@@ -34,7 +35,7 @@ describe("admin premium sales API client", () => {
   it("reads persisted sales state with the active Supabase bearer token", async () => {
     mockedFetch().mockResolvedValue(jsonResponse({ premiumEnabled: true }));
 
-    await expect(fetchPremiumSalesSettings()).resolves.toEqual({ premiumEnabled: true });
+    await expect(fetchPremiumSalesSettings()).resolves.toEqual({ premiumEnabled: true, companyAnalysisEnabled: false });
     expect(mockedFetch()).toHaveBeenCalledWith("/api/admin/entitlements", {
       headers: {
         Authorization: "Bearer session-token",
@@ -46,11 +47,23 @@ describe("admin premium sales API client", () => {
   it("patches only the requested persisted sales state", async () => {
     mockedFetch().mockResolvedValue(jsonResponse({ premiumEnabled: false }));
 
-    await expect(updatePremiumSalesEnabled(false)).resolves.toEqual({ premiumEnabled: false });
+    await expect(updatePremiumSalesEnabled(false)).resolves.toEqual({ premiumEnabled: false, companyAnalysisEnabled: false });
     expect(mockedFetch()).toHaveBeenCalledWith("/api/admin/entitlements", expect.objectContaining({
       method: "PATCH",
       body: JSON.stringify({ premiumEnabled: false }),
       headers: expect.objectContaining({ Authorization: "Bearer session-token" }),
+    }));
+  });
+
+  it("reads the company analysis switch and patches it independently", async () => {
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ premiumEnabled: false, companyAnalysisEnabled: true }));
+    await expect(fetchPremiumSalesSettings()).resolves.toEqual({ premiumEnabled: false, companyAnalysisEnabled: true });
+
+    mockedFetch().mockResolvedValueOnce(jsonResponse({ premiumEnabled: false, companyAnalysisEnabled: false }));
+    await expect(updateCompanyAnalysisEnabled(false)).resolves.toEqual({ premiumEnabled: false, companyAnalysisEnabled: false });
+    expect(mockedFetch()).toHaveBeenLastCalledWith("/api/admin/entitlements", expect.objectContaining({
+      method: "PATCH",
+      body: JSON.stringify({ companyAnalysisEnabled: false }),
     }));
   });
 

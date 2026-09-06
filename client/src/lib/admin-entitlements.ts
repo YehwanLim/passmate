@@ -2,6 +2,8 @@ import { supabase } from "./supabase";
 
 export interface PremiumSalesSettings {
   premiumEnabled: boolean;
+  /** 기업 분석 리포트 생성·판매 스위치. 구버전 서버 응답에 없으면 false. */
+  companyAnalysisEnabled: boolean;
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -38,7 +40,10 @@ async function requestPremiumSalesSettings(
     throw new Error(fallback);
   }
 
-  return { premiumEnabled: payload.premiumEnabled };
+  return {
+    premiumEnabled: payload.premiumEnabled,
+    companyAnalysisEnabled: payload.companyAnalysisEnabled === true,
+  };
 }
 
 export function fetchPremiumSalesSettings(): Promise<PremiumSalesSettings> {
@@ -54,5 +59,14 @@ export function updatePremiumSalesEnabled(
   return requestPremiumSalesSettings(
     { method: "PATCH", body: JSON.stringify({ premiumEnabled }) },
     "결제 판매 상태를 변경하지 못했습니다.",
+  );
+}
+
+export function updateCompanyAnalysisEnabled(
+  companyAnalysisEnabled: boolean,
+): Promise<PremiumSalesSettings> {
+  return requestPremiumSalesSettings(
+    { method: "PATCH", body: JSON.stringify({ companyAnalysisEnabled }) },
+    "기업 분석 스위치를 변경하지 못했습니다.",
   );
 }

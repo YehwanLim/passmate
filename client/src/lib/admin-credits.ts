@@ -1,11 +1,15 @@
 import { supabase } from "./supabase";
 
+export type AdminCreditKind = "RESUME" | "COMPANY";
+
 export interface UserCreditSummary {
   premiumEnabled: boolean;
   freeRemaining: number;
   bonusRemaining: number;
   premiumRemaining: number;
   remaining: number;
+  /** 기업 분석 크레딧 잔여. 구버전 응답에 없으면 0. */
+  companyRemaining: number;
 }
 
 export interface AdminCreditGrantRecord {
@@ -42,6 +46,10 @@ function parseSummary(payload: unknown): UserCreditSummary | null {
     bonusRemaining: summary.bonusRemaining,
     premiumRemaining: summary.premiumRemaining,
     remaining: summary.remaining,
+    companyRemaining:
+      typeof summary.companyRemaining === "number" && Number.isInteger(summary.companyRemaining) && summary.companyRemaining >= 0
+        ? summary.companyRemaining
+        : 0,
   };
 }
 
@@ -97,6 +105,7 @@ export async function grantUserCredits(input: {
   userId: string;
   credits: number;
   note?: string;
+  kind?: AdminCreditKind;
 }): Promise<UserCreditSummary> {
   const fallback = "크레딧 지급에 실패했습니다.";
   const payload = await requestCredits(
@@ -107,6 +116,7 @@ export async function grantUserCredits(input: {
         userId: input.userId,
         credits: input.credits,
         note: input.note?.trim() ? input.note.trim() : undefined,
+        kind: input.kind,
       }),
     },
     fallback,

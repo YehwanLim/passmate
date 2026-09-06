@@ -29,4 +29,12 @@ describe("admin user credit management", () => {
       read("client/src/pages/admin/settings/SettingsPage.tsx")
     ).not.toContain("passmate_admin_coupons");
   });
+
+  it("lets the administrator choose the credit kind and see the company balance", () => {
+    const card = read("client/src/components/admin/users/UserCreditManagementCard.tsx");
+    expect(card).toContain('value="COMPANY"');
+    expect(card).toContain("기업 분석");
+    expect(card).toContain("companyRemaining");
+    expect(read("client/src/lib/admin-credits.ts")).toContain("kind");
+  });
 });
