@@ -180,6 +180,7 @@ model AnalysisReservation {
   analysisRequest AnalysisRequest?
 
   @@index([userId])
+  @@index([status])
   @@index([userId, kind, source, status])
   @@map("analysis_reservations")
 }
@@ -383,6 +384,9 @@ model Analysis {
   userId    String @map("user_id") @db.Uuid
   projectId String @map("project_id") @db.Uuid
 
+  /// RESUME 이면 questionText/inputText 가 자소서, COMPANY 면 둘 다 "" 이고 리포트는 aiResponseJson 에만 있다.
+  kind      AnalysisKind @default(RESUME)
+
   // ── 입력 데이터 ──
   questionText String @map("question_text") @db.Text     // 문항 질문
   inputText    String @map("input_text") @db.Text         // 사용자 원문 자소서
@@ -407,9 +411,6 @@ model Analysis {
   // ── 메타데이터 ──
   totalChars   Int?     @map("total_chars")                // 원문 글자 수
   responseTime Int?     @map("response_time_ms")           // AI 응답 시간 (ms)
-
-  /// RESUME 이면 questionText/inputText 가 자소서, COMPANY 면 둘 다 "" 이고 리포트는 aiResponseJson 에만 있다.
-  kind      AnalysisKind @default(RESUME)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
