@@ -47,6 +47,7 @@ describe("entitlements client", () => {
       groblePaymentUrl: null,
       // 구버전 서버 응답에 없으면 "미설정"으로 읽는다
       grobleSinglePaymentUrl: null,
+      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null },
       // 응답에 없으면 "아직 안 받음"으로 읽는다
       feedbackRewardClaimed: false,
       // 구버전 서버 응답에 없으면 기업 분석은 "꺼짐·0"으로 읽는다
@@ -119,6 +120,47 @@ describe("entitlements client", () => {
       new EntitlementApiError("Authentication required")
     );
   });
+
+  it("reads per-product checkout URLs and treats missing keys as closed", async () => {
+    const fetcher: typeof fetch = async () =>
+      jsonResponse({
+        premiumEnabled: true, freeRemaining: 0, premiumRemaining: 0, remaining: 0,
+        groblePaymentUrl: "https://www.groble.im/payment/4SGBV5",
+        grobleSinglePaymentUrl: null,
+        checkoutUrls: { single: null, standard: "https://www.groble.im/payment/4SGBV5", premium: "https://www.groble.im/payment/PRM" },
+      });
+
+    const summary = await fetchEntitlementSummary("access-token", fetcher);
+    expect(summary.checkoutUrls).toEqual({
+      single: null, company: null, standard: "https://www.groble.im/payment/4SGBV5", premium: "https://www.groble.im/payment/PRM", triple: null,
+    });
+  });
+
+  it("derives checkout URLs from the legacy fields when an old server omits checkoutUrls", async () => {
+    const fetcher: typeof fetch = async () =>
+      jsonResponse({
+        premiumEnabled: true, freeRemaining: 0, premiumRemaining: 0, remaining: 0,
+        groblePaymentUrl: "https://www.groble.im/payment/4SGBV5",
+        grobleSinglePaymentUrl: "https://www.groble.im/payment/6HteWn",
+      });
+
+    const summary = await fetchEntitlementSummary("access-token", fetcher);
+    expect(summary.checkoutUrls.standard).toBe("https://www.groble.im/payment/4SGBV5");
+    expect(summary.checkoutUrls.single).toBe("https://www.groble.im/payment/6HteWn");
+    expect(summary.checkoutUrls.premium).toBeNull();
+  });
+
+  it("rejects a malformed checkout URL instead of rendering a broken button", async () => {
+    const fetcher: typeof fetch = async () =>
+      jsonResponse({
+        premiumEnabled: true, freeRemaining: 0, premiumRemaining: 0, remaining: 0,
+        groblePaymentUrl: null, checkoutUrls: { premium: 42 },
+      });
+
+    await expect(fetchEntitlementSummary("access-token", fetcher)).rejects.toEqual(
+      new EntitlementApiError("Invalid checkoutUrls.premium response"),
+    );
+  });
 });
 
 describe("createPurchaseIntent", () => {
@@ -167,6 +209,26 @@ describe("createPurchaseIntent", () => {
 
     expect(fetcher).toHaveBeenCalledWith(
       "/api/entitlements/purchase-intents?product=single",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("stamps the premium product onto the purchase-intent query string", async () => {
+    const { createPurchaseIntent } = await import("./entitlements");
+    const fetcher = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          purchaseIntentId: "33333333-3333-4333-8333-333333333333",
+          checkoutUrl: "https://www.groble.im/payment/PRM?ref=33333333-3333-4333-8333-333333333333",
+        }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await createPurchaseIntent("token", "premium", fetcher as typeof fetch);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/entitlements/purchase-intents?product=premium",
       expect.objectContaining({ method: "POST" }),
     );
   });

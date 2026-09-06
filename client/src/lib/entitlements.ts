@@ -1,3 +1,7 @@
+import { PURCHASE_PRODUCT_KEYS, type PurchaseProductKey } from "./pricing";
+
+export type { PurchaseProductKey };
+
 export type EntitlementSummary = {
   premiumEnabled: boolean;
   freeRemaining: number;
@@ -5,15 +9,14 @@ export type EntitlementSummary = {
   remaining: number;
   groblePaymentUrl: string | null;
   grobleSinglePaymentUrl: string | null;
+  /** 상품 키별 결제 URL. 판매 스위치·상품 활성·URL 이 모두 갖춰진 상품만 문자열, 나머지 null. */
+  checkoutUrls: Record<PurchaseProductKey, string | null>;
   feedbackRewardClaimed: boolean;
   /** 기업 분석 리포트 판매·생성 스위치. 구버전 서버 응답에 없으면 false. */
   companyAnalysisEnabled: boolean;
   /** 기업 분석 리포트 잔여 크레딧(자소서 remaining 과 별도 풀). 구버전 응답에 없으면 0. */
   companyRemaining: number;
 };
-
-/** 구매 의도 생성 시 상품 구분(1회권/3회권). 서버 쿼리스트링 값과 동일하다. */
-export type PurchaseProductKey = "single" | "triple";
 
 export class EntitlementApiError extends Error {
   constructor(message: string) {
@@ -32,6 +35,28 @@ function readNonNegativeInteger(value: unknown, field: string): number {
   }
 
   return value;
+}
+
+function readCheckoutUrl(value: unknown, field: string): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") {
+    throw new EntitlementApiError(`Invalid ${field} response`);
+  }
+  return value;
+}
+
+/** 구버전 서버 응답(checkoutUrls 없음)은 두 URL 필드로 1회권·스탠다드만 채우고 나머지는 닫힌 것으로 본다. */
+function readCheckoutUrls(payload: Record<string, unknown>): Record<PurchaseProductKey, string | null> {
+  const source = isRecord(payload.checkoutUrls) ? payload.checkoutUrls : null;
+  const urls = {} as Record<PurchaseProductKey, string | null>;
+  for (const key of PURCHASE_PRODUCT_KEYS) {
+    urls[key] = source ? readCheckoutUrl(source[key], `checkoutUrls.${key}`) : null;
+  }
+  if (!source) {
+    urls.single = readCheckoutUrl(payload.grobleSinglePaymentUrl, "grobleSinglePaymentUrl");
+    urls.standard = readCheckoutUrl(payload.groblePaymentUrl, "groblePaymentUrl");
+  }
+  return urls;
 }
 
 function readError(payload: unknown, fallback: string): string {
@@ -86,6 +111,7 @@ function parseEntitlementSummary(payload: unknown): EntitlementSummary {
     groblePaymentUrl: payload.groblePaymentUrl,
     // 구버전 서버 응답에도 화면이 깨지지 않도록 없으면 "미설정"으로 본다.
     grobleSinglePaymentUrl: payload.grobleSinglePaymentUrl ?? null,
+    checkoutUrls: readCheckoutUrls(payload),
     // 구버전 서버 응답에도 화면이 깨지지 않도록 없으면 "아직 안 받음"으로 본다.
     feedbackRewardClaimed: payload.feedbackRewardClaimed === true,
     companyAnalysisEnabled: payload.companyAnalysisEnabled === true,

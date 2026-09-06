@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   PRICING,
+  PRODUCT_KEY_BY_PRODUCT,
+  PURCHASE_PRODUCT_KEYS,
+  TIERS,
   TRIPLE_PER_USE_PRICE,
   estimatedAmountFor,
   formatKrw,
   productLabel,
+  savingsFor,
+  type PurchaseProduct,
+  type PurchaseProductKey,
 } from "./pricing";
 
 describe("pricing constants", () => {
@@ -45,7 +51,7 @@ describe("pricing constants", () => {
 
 describe("product labels and estimated amounts", () => {
   it("names the server product keys in Korean", () => {
-    expect(productLabel("SINGLE")).toBe("1회권");
+    expect(productLabel("SINGLE")).toBe("자소서 진단 1회");
     expect(productLabel("TRIPLE")).toBe("3회권");
   });
 
@@ -60,5 +66,53 @@ describe("product labels and estimated amounts", () => {
 
   it("estimates nothing for an unidentified product rather than guessing zero", () => {
     expect(estimatedAmountFor(null)).toBeNull();
+  });
+
+  it("does not throw for a product string outside the known set", () => {
+    const unknown = "MYSTERY" as PurchaseProduct;
+    expect(productLabel(unknown)).toBe("–");
+    expect(estimatedAmountFor(unknown)).toBeNull();
+  });
+});
+
+describe("tier pricing", () => {
+  it("keeps every tier's unit price falling as the tier rises", () => {
+    const unit = (key: PurchaseProductKey) => {
+      const plan = PRICING[key];
+      return plan.salePrice / (plan.uses + plan.companyUses);
+    };
+    expect(unit("single")).toBe(5_900);
+    expect(unit("company")).toBe(5_900);
+    expect(unit("standard")).toBeLessThan(unit("single"));
+    expect(unit("premium")).toBeLessThan(unit("standard"));
+  });
+
+  it("prices bundles against the basic unit price so the savings claim is honest", () => {
+    const basic = PRICING.single.salePrice;
+    expect(PRICING.standard.listPrice).toBe(basic * (PRICING.standard.uses + PRICING.standard.companyUses));
+    expect(PRICING.premium.listPrice).toBe(basic * (PRICING.premium.uses + PRICING.premium.companyUses));
+    expect(savingsFor(PRICING.standard)).toBe(2_800);
+    expect(savingsFor(PRICING.premium)).toBe(9_500);
+    expect(PRICING.standard.discountLabel).toBe("2,800원 절약");
+    expect(PRICING.premium.discountLabel).toBe("9,500원 절약");
+  });
+
+  it("gives the company single no strikethrough price", () => {
+    expect(PRICING.company.listPrice).toBe(PRICING.company.salePrice);
+    expect(PRICING.company.discountLabel).toBe("");
+  });
+
+  it("maps server product keys to pricing keys and labels", () => {
+    expect(PRODUCT_KEY_BY_PRODUCT).toEqual({ SINGLE: "single", COMPANY_SINGLE: "company", STANDARD: "standard", PREMIUM: "premium", TRIPLE: "triple" });
+    expect(productLabel("STANDARD")).toBe("스탠다드");
+    expect(productLabel("PREMIUM")).toBe("프리미엄");
+    expect(productLabel("COMPANY_SINGLE")).toBe("기업 분석 1회");
+    expect(estimatedAmountFor("PREMIUM")).toBe(25_900);
+  });
+
+  it("lists the tiers in ascending order with the basic tier offering a choice", () => {
+    expect(TIERS.map((tier) => tier.key)).toEqual(["basic", "standard", "premium"]);
+    expect(TIERS[0].products).toEqual(["single", "company"]);
+    expect(PURCHASE_PRODUCT_KEYS).toEqual(["single", "company", "standard", "premium", "triple"]);
   });
 });

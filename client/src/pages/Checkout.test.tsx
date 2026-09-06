@@ -69,6 +69,15 @@ describe("Checkout redirect page", () => {
     expect(mocks.createPurchaseIntent).toHaveBeenCalledWith("t", "single");
   });
 
+  it("creates the purchase intent for the requested premium product and sends the tab to Groble", async () => {
+    visit("?product=premium");
+
+    render(<Checkout />);
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith(CHECKOUT_URL));
+    expect(mocks.createPurchaseIntent).toHaveBeenCalledWith("t", "premium");
+  });
+
   it("cuts the opener loose before handing the tab to the payment page", async () => {
     visit("?product=triple");
     window.opener = { hijack: true };

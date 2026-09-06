@@ -8,10 +8,10 @@ import {
   createPurchaseIntent,
   type PurchaseProductKey,
 } from "@/lib/entitlements";
-import { PRICING } from "@/lib/pricing";
+import { PRICING, PURCHASE_PRODUCT_KEYS } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase";
 
-const PRODUCT_KEYS: PurchaseProductKey[] = ["single", "triple"];
+const PRODUCT_KEYS: readonly PurchaseProductKey[] = PURCHASE_PRODUCT_KEYS;
 
 function readProduct(search: string): PurchaseProductKey | null {
   const value = new URLSearchParams(search).get("product");
@@ -23,7 +23,7 @@ type Phase = "opening" | "invalid" | "failed";
 /**
  * Checkout
  *
- * 이용권 구매 버튼이 새 탭으로 여는 중간 페이지(/checkout?product=single|triple).
+ * 이용권 구매 버튼이 새 탭으로 여는 중간 페이지(/checkout?product=single|company|standard|premium).
  *
  * 구매 의도를 만들어 그 id를 결제 URL의 ref 로 붙여야 Groble 웹훅이 결제 주인을
  * 찾을 수 있다. 그 서버 왕복을 클릭과 창 열기 사이에 두면 브라우저가 팝업으로
