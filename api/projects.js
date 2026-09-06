@@ -10,18 +10,43 @@ function countQuestions(questionText) {
   return markers ? markers.length : 1;
 }
 
-function extractSummary(aiResponseJson) {
+function parseReport(aiResponseJson) {
   try {
     const data = typeof aiResponseJson === "string" ? JSON.parse(aiResponseJson) : aiResponseJson;
-    if (!data || typeof data !== "object") return null;
-    return data.summary
-      ?? data.firstImpression?.summaryOneLiner
-      ?? data.firstImpression?.persona
-      ?? data.brief?.oneLiner
-      ?? null;
+    return data && typeof data === "object" ? data : null;
   } catch {
     return null;
   }
+}
+
+function extractSummary(aiResponseJson) {
+  const data = parseReport(aiResponseJson);
+  if (!data) return null;
+  return data.summary
+    ?? data.firstImpression?.summaryOneLiner
+    ?? data.firstImpression?.persona
+    ?? data.brief?.oneLiner
+    ?? null;
+}
+
+const MAX_CARD_KEYWORDS = 6;
+
+// 카드 칩용 키워드. 자소서 리포트는 firstImpression.hashtags, 기업 리포트는 brief.keywords.
+// 리포트 화면(reportFirstImpression.ts)과 같은 규칙으로 "#"을 떼고 중복을 제거한다.
+function extractKeywords(aiResponseJson) {
+  const data = parseReport(aiResponseJson);
+  if (!data) return [];
+  const raw = data.firstImpression?.hashtags ?? data.brief?.keywords;
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set();
+  for (const item of raw) {
+    if (typeof item !== "string") continue;
+    const keyword = item.replace(/^#/, "").trim();
+    if (keyword.length === 0) continue;
+    seen.add(keyword);
+    if (seen.size >= MAX_CARD_KEYWORDS) break;
+  }
+  return Array.from(seen);
 }
 
 export function createProjectsHandler({
@@ -48,7 +73,7 @@ export function createProjectsHandler({
           analyses: {
             orderBy: { createdAt: "desc" },
             take: 1,
-            select: { id: true, totalChars: true, aiResponseJson: true, questionText: true, kind: true },
+            select: { id: true, status: true, totalChars: true, aiResponseJson: true, questionText: true, kind: true },
           },
         },
       });
@@ -65,8 +90,10 @@ export function createProjectsHandler({
           kind: latest?.kind ?? "RESUME",
           question_count: countQuestions(latest?.questionText),
           latest_analysis_id: latest?.id ?? null,
+          latest_status: latest?.status ?? null,
           total_chars: latest?.totalChars ?? 0,
           summary: extractSummary(latest?.aiResponseJson),
+          keywords: extractKeywords(latest?.aiResponseJson),
         };
       }), requestId);
     });

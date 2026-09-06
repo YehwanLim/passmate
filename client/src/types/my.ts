@@ -25,9 +25,10 @@ export interface ProjectSummary {
   total_chars: number | null;
   /** 최신 analysis의 ai_response_json.summary (없으면 null) */
   summary: string | null;
-  /** 핵심 역량 키워드 — 현재 API 미반환, 프론트 Mock용 optional */
-  // TODO: keywords 컬럼 향후 추가 시 required로 변경
+  /** 카드 칩용 키워드 — 자소서는 firstImpression.hashtags, 기업은 brief.keywords에서 추출(최대 6개). 구버전 응답에는 없다. */
   keywords?: string[];
+  /** 최신 analysis의 상태. 구버전 응답이나 분석이 없으면 null/undefined. */
+  latest_status?: AnalysisStatus | null;
   /** 분석 종류. 구버전 응답에 없으면 RESUME 으로 본다. */
   kind?: "RESUME" | "COMPANY";
 }

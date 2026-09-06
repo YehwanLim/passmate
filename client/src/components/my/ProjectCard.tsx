@@ -27,6 +27,17 @@ export default function ProjectCard({
 }: ProjectCardProps) {
   const kebabItems = createDefaultKebabItems({ onDelete });
   const isCompany = project.kind === "COMPANY";
+  const keywords = project.keywords ?? [];
+  // 상태는 서버가 내려준 최신 analysis 기준으로만 판단한다. 키워드가 비었다고 대기중으로 보지 않는다
+  // (구버전 리포트는 키워드 필드가 없을 수 있다).
+  const isPending = project.latest_status === "PENDING";
+  const isFailed = project.latest_status === "FAILED";
+  const summaryFallback = isPending
+    ? "아직 분석이 완료되지 않았습니다."
+    : isFailed
+      ? "분석에 실패했습니다. 다시 시도해 주세요."
+      : "한줄 요약이 없는 리포트입니다.";
+  const keywordFallback = isPending ? "분석 대기중" : isFailed ? "분석 실패" : null;
 
   return (
     <div className="relative border border-zinc-800 bg-zinc-900/80 rounded-2xl p-6 lg:p-7 transition-all duration-300 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20 group">
@@ -83,13 +94,13 @@ export default function ProjectCard({
             한줄 요약
           </span>
           <p className="text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-6 line-clamp-2">
-            "{project.summary || "아직 분석이 완료되지 않았습니다."}"
+            "{project.summary || summaryFallback}"
           </p>
 
           <div className="mt-auto">
             <div className="flex flex-wrap gap-2.5">
-              {project.keywords && project.keywords.length > 0 ? (
-                project.keywords.map((kw, idx) => (
+              {keywords.length > 0 ? (
+                keywords.map((kw, idx) => (
                   <span
                     key={idx}
                     className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-400/30 text-[14px] font-bold text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
@@ -97,11 +108,11 @@ export default function ProjectCard({
                     {kw}
                   </span>
                 ))
-              ) : (
+              ) : keywordFallback ? (
                 <span className="text-[14px] font-medium text-zinc-500 bg-zinc-800/50 px-4 py-2 rounded-lg border border-zinc-700/50">
-                  분석 대기중
+                  {keywordFallback}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

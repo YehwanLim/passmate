@@ -135,6 +135,98 @@ describe("protected user APIs", () => {
     });
   });
 
+  it("returns the latest analysis status and normalized résumé hashtags as keywords", async () => {
+    const handler = createProjectsHandler({
+      db: {
+        project: {
+          findMany: vi.fn(async () => [{
+            id: "p3",
+            title: "네이버 마케팅 지원서",
+            company: "네이버",
+            jobKeyword: "마케팅",
+            createdAt: new Date("2026-09-06T00:00:00Z"),
+            _count: { analyses: 1 },
+            analyses: [{
+              id: "a3",
+              kind: "RESUME",
+              status: "SUCCESS",
+              totalChars: 1200,
+              questionText: "[문항 1] q1",
+              aiResponseJson: {
+                firstImpression: {
+                  summaryOneLiner: "숫자가 붙는 자소서",
+                  hashtags: ["#커머스 리텐션", "# 커머스 리텐션", "#퍼널 실험", "", "#CRM", "#데이터", "#고객", "#7번째"],
+                },
+              },
+            }],
+          }]),
+        },
+      },
+      requireUser: activeUser,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.body[0].latest_status).toBe("SUCCESS");
+    expect(res.body[0].keywords).toEqual(["커머스 리텐션", "퍼널 실험", "CRM", "데이터", "고객", "7번째"]);
+  });
+
+  it("uses brief.keywords for company analyses", async () => {
+    const handler = createProjectsHandler({
+      db: {
+        project: {
+          findMany: vi.fn(async () => [{
+            id: "p4",
+            title: "현대자동차 전략기획 기업 분석",
+            company: "현대자동차",
+            jobKeyword: "전략기획",
+            createdAt: new Date("2026-09-06T00:00:00Z"),
+            _count: { analyses: 1 },
+            analyses: [{
+              id: "a4",
+              kind: "COMPANY",
+              status: "SUCCESS",
+              totalChars: null,
+              questionText: "",
+              aiResponseJson: { brief: { oneLiner: "전동화", keywords: ["전동화", "SDV", 42, "전동화"] } },
+            }],
+          }]),
+        },
+      },
+      requireUser: activeUser,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.body[0].keywords).toEqual(["전동화", "SDV"]);
+  });
+
+  it("reports a pending analysis with an empty keyword list instead of failing", async () => {
+    const handler = createProjectsHandler({
+      db: {
+        project: {
+          findMany: vi.fn(async () => [{
+            id: "p5",
+            title: "진행 중",
+            company: "토스",
+            jobKeyword: "PM",
+            createdAt: new Date("2026-09-06T00:00:00Z"),
+            _count: { analyses: 1 },
+            analyses: [{ id: "a5", kind: "RESUME", status: "PENDING", totalChars: 900, questionText: "[문항 1] q1", aiResponseJson: null }],
+          }]),
+        },
+      },
+      requireUser: activeUser,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.body[0]).toMatchObject({ latest_status: "PENDING", keywords: [], summary: null });
+  });
+
   it("looks up a project by both its ID and the verified user ID", async () => {
     const findFirst = vi.fn(async () => null);
     const handler = createProjectDetailHandler({
