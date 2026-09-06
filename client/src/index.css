@@ -716,6 +716,146 @@ html {
   }
 }
 
+/* ── Report: 섹션 앵커 여백 — sticky 헤더(+xl 미만 칩 바)가 섹션 상단을 가리지 않게 ── */
+#section-first-impression,
+#section-company-insight,
+#section-core-diagnosis,
+#section-line-analysis,
+#section-interview-drill,
+#section-action-plan,
+#section-pm-comment {
+  scroll-margin-top: 112px;
+}
+@media (min-width: 1280px) {
+  #section-first-impression,
+  #section-company-insight,
+  #section-core-diagnosis,
+  #section-line-analysis,
+  #section-interview-drill,
+  #section-action-plan,
+  #section-pm-comment {
+    scroll-margin-top: 80px;
+  }
+}
+
+/* ── Report: 컴팩트 레이아웃 하단 코멘트 시트 ── */
+.report-sheet > div:first-child {
+  background: rgba(255, 255, 255, 0.14);
+}
+.report-sheet-nav {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 9, 9, 0.9);
+  color: #a1a1aa;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+.report-sheet-nav:disabled {
+  opacity: 0.3;
+}
+.report-sheet-nav:not(:disabled):active {
+  background: #fff;
+  color: #111;
+}
+/* 이전/다음: 본문은 진행 방향으로 밀리며 페이드아웃 → 반대편에서 페이드인 */
+.report-sheet-body {
+  transition: opacity 0.16s ease, transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.report-sheet-leave-left {
+  opacity: 0;
+  transform: translateX(-16px);
+}
+.report-sheet-leave-right {
+  opacity: 0;
+  transform: translateX(16px);
+}
+.report-sheet-enter-right {
+  transition: none;
+  opacity: 0;
+  transform: translateX(16px);
+}
+.report-sheet-enter-left {
+  transition: none;
+  opacity: 0;
+  transform: translateX(-16px);
+}
+.report-sheet-meta {
+  transition: opacity 0.16s ease;
+}
+.report-sheet-stepping .report-sheet-meta {
+  opacity: 0.35;
+}
+
+/* ── Report: 첫 진입 안내 말풍선 (첫 하이라이트 위, 계정당 한 번) ── */
+.report-coach {
+  position: absolute;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 8px 10px;
+  border: none;
+  border-radius: 999px;
+  background: #fafafa;
+  color: #111;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  animation: reportCoachBob 1.8s ease-in-out 0.3s infinite;
+}
+.report-coach::after {
+  content: '';
+  position: absolute;
+  left: var(--coach-tail-x, 18px);
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #fafafa;
+  transform: rotate(45deg);
+}
+.report-coach-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: reportCoachPulse 1.8s ease-out infinite;
+}
+.annotation-hl.coach-target .annotation-badge {
+  animation: reportCoachRing 1.8s ease-out infinite;
+}
+@keyframes reportCoachBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes reportCoachPulse {
+  0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55); }
+  100% { box-shadow: 0 0 0 9px rgba(74, 222, 128, 0); }
+}
+@keyframes reportCoachRing {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
+  100% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .report-coach,
+  .report-coach-dot,
+  .annotation-hl.coach-target .annotation-badge {
+    animation: none;
+  }
+  .report-sheet-body {
+    transition: none;
+  }
+}
+
 /* ── Annotation Highlight: Soft Ink Tint ── */
 .annotation-hl {
   position: relative;
@@ -857,6 +997,8 @@ html {
 /* ── Section Navigator Tabs ── */
 .section-tab {
   position: relative;
+  white-space: nowrap;
+  flex-shrink: 0;
   padding: 10px 0;
   margin-right: 28px;
   font-size: 14px;
@@ -990,12 +1132,14 @@ html {
   background: rgba(255, 255, 255, 0.10);
   color: rgba(230, 230, 230, 0.9);
 }
-.commentary-item.praise .commentary-num {
+.commentary-item.praise .commentary-num,
+.report-sheet-head.praise .commentary-num {
   background: rgba(52, 211, 153, 0.14);
   color: #6ee7b7;
   border: 1px solid rgba(52, 211, 153, 0.3);
 }
-.commentary-item.improvement .commentary-num {
+.commentary-item.improvement .commentary-num,
+.report-sheet-head.improvement .commentary-num {
   background: rgba(252, 211, 77, 0.12);
   color: #fcd34d;
   border: 1px solid rgba(252, 211, 77, 0.28);

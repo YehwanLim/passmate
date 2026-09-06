@@ -1,7 +1,14 @@
-import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, type CSSProperties, type ReactNode } from "react"
 import { useLocation } from "wouter"
-import { Check, ChevronDown, ArrowRight, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X } from "lucide-react"
-import type { ReportData } from "../types/report"
+import { Check, ChevronDown, ArrowRight, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X, Pointer } from "lucide-react"
+import type { FeedbackCard, ReportData } from "../types/report"
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui/drawer"
+import {
+    animateScroll,
+    getNeighborCardIndex,
+    resolveCoachPlacement,
+    scrollChildIntoHorizontalView,
+} from "./reportLineAnalysis"
 import { UI_LABELS } from "../constants/labels"
 import { isReportSectionLocked } from "../utils/reportAccess"
 import FeedbackSection from "../components/FeedbackSection"
@@ -102,6 +109,74 @@ function MiniNavigator({ activeSection }: { activeSection: string }) {
                 ))}
             </div>
         </nav>
+    )
+}
+
+// xl 미만에서 좌측 목차를 대신하는 가로 스크롤 섹션 칩. sticky 헤더 안에 붙어 함께 고정된다.
+function SectionChipBar({ activeSection }: { activeSection: string }) {
+    const barRef = useRef<HTMLElement>(null)
+
+    // 스크롤 스파이가 바뀔 때 활성 칩이 화면 가운데로 오게 가로만 스크롤한다.
+    useEffect(() => {
+        const bar = barRef.current
+        const chip = bar?.querySelector<HTMLElement>(`[data-section="${activeSection}"]`) ?? null
+        scrollChildIntoHorizontalView(bar, chip)
+    }, [activeSection])
+
+    return (
+        <nav
+            ref={barRef}
+            className="xl:hidden mx-auto flex max-w-4xl gap-2 overflow-x-auto hide-scrollbar whitespace-nowrap px-6 pb-3 md:px-8"
+            aria-label="리포트 목차"
+        >
+            {REPORT_NAV_SECTIONS.map((sec) => {
+                const isActive = activeSection === sec.id
+                return (
+                    <a
+                        key={sec.id}
+                        href={`#${sec.id}`}
+                        data-section={sec.id}
+                        aria-current={isActive ? 'location' : undefined}
+                        className={`inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-colors ${
+                            isActive
+                                ? 'border-emerald-300/[0.22] bg-emerald-300/[0.08] text-emerald-100/80'
+                                : 'border-white/[0.07] bg-white/[0.03] text-zinc-500'
+                        }`}
+                        onClick={(e) => {
+                            e.preventDefault()
+                            document.getElementById(sec.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }}
+                    >
+                        <span className={`text-[11px] font-semibold tabular-nums ${isActive ? 'text-emerald-100/80' : 'text-zinc-600'}`}>{sec.indexLabel}</span>
+                        <span>{sec.label}</span>
+                    </a>
+                )
+            })}
+        </nav>
+    )
+}
+
+// 카드 본문(진단 → 예상 면접 질문 → 개선한 문장). 집중 모드·목록 모드·하단 시트가 같은 마크업을 쓴다.
+function FeedbackCardBody({ card, renderRichText }: { card: FeedbackCard; renderRichText: (text: string) => ReactNode }) {
+    return (
+        <>
+            <p className="commentary-body-text mb-4">{renderRichText(card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint) || '')}</p>
+
+            {card.interviewLink && (
+                <>
+                    <p className="commentary-label">예상 면접 질문</p>
+                    <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-sky-300/80">Q.</span>{renderRichText(card.interviewLink.question)}</p>
+                    <p className="commentary-meta mt-1 mb-4">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
+                </>
+            )}
+
+            {card.type === 'improvement' && card.suggestion && (
+                <>
+                    <p className="commentary-label">개선한 문장</p>
+                    <p className="commentary-headline">{renderRichText(card.suggestion)}</p>
+                </>
+            )}
+        </>
     )
 }
 
@@ -238,6 +313,32 @@ function ReportContent({
     const [activeSection, setActiveSection] = useState(REPORT_NAV_SECTIONS[0].id)
     const [isPrinting, setIsPrinting] = useState(false)
 
+    // lg 미만(1023px 이하)은 문장 분석 2단이 1단으로 접히는 컴팩트 레이아웃. 코멘트는 하단 시트로 연다.
+    const [isCompactLayout, setIsCompactLayout] = useState(false)
+    const [isSheetOpen, setIsSheetOpen] = useState(false)
+    // 시트가 보여주는 카드. 이전/다음 전환 중에는 focusedCardIndex보다 150ms 늦게 따라간다.
+    const [sheetCardIndex, setSheetCardIndex] = useState<number | null>(null)
+    const [sheetPhase, setSheetPhase] = useState<'idle' | 'leave-left' | 'leave-right' | 'enter-left' | 'enter-right'>('idle')
+    const sheetStepTimerRef = useRef<number | null>(null)
+    const [coachVisible, setCoachVisible] = useState(false)
+    const [coachStyle, setCoachStyle] = useState<CSSProperties>({})
+    const coachDismissedRef = useRef(false)
+    const coachRef = useRef<HTMLButtonElement>(null)
+    const sourceBodyRef = useRef<HTMLDivElement>(null)
+    const tabBarRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia("(max-width: 1023px)")
+        const update = () => setIsCompactLayout(mediaQuery.matches)
+        update()
+        mediaQuery.addEventListener("change", update)
+        return () => mediaQuery.removeEventListener("change", update)
+    }, [])
+
+    useEffect(() => () => {
+        if (sheetStepTimerRef.current !== null) window.clearTimeout(sheetStepTimerRef.current)
+    }, [])
+
     // 접힌 항목을 모두 펼쳐 렌더한 다음 프레임에 브라우저 인쇄(→ PDF 저장)를 연다.
     useEffect(() => {
         if (!isPrinting) return
@@ -285,7 +386,14 @@ function ReportContent({
 
     const handleTabChange = (index: number) => {
         setActiveTab(index)
+        setIsSheetOpen(false)
     }
+
+    // 활성 문항 탭이 좁은 화면에서도 보이게 탭 줄만 가로 스크롤한다.
+    useEffect(() => {
+        const bar = tabBarRef.current
+        scrollChildIntoHorizontalView(bar, bar?.querySelector<HTMLElement>(`[data-tab-index="${activeTab}"]`) ?? null)
+    }, [activeTab])
 
     // 아무것도 클릭하지 않은 상태에서도 1번 문장이 디폴트로 선택되어 있게 처리
     useEffect(() => {
@@ -428,8 +536,106 @@ function ReportContent({
         setFocusedCardIndex(cardIdx)
     }, [])
 
+    const sortedOrder = useMemo(() => sortedCards.map((c: any) => c._origIdx as number), [sortedCards])
+    const firstCardIndex: number | null = sortedOrder[0] ?? null
+
+    // ── 첫 진입 안내 말풍선: 컴팩트 레이아웃에서 원문이 보이면 첫 하이라이트 위에. 계정당 한 번. ──
+    useEffect(() => {
+        if (!isCompactLayout || coachDismissedRef.current || firstCardIndex === null) return
+        try {
+            if (window.localStorage.getItem("preview:report-tap-coach-seen") === "1") {
+                coachDismissedRef.current = true
+                return
+            }
+        } catch {
+            // 프라이빗 모드 등에서 저장소 접근이 막히면 그냥 한 번 보여준다.
+        }
+        const target = sourceBodyRef.current
+        if (!target) return
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                setCoachVisible(true)
+                observer.disconnect()
+            }
+        }, { threshold: 0.2 })
+        observer.observe(target)
+        return () => observer.disconnect()
+    }, [isCompactLayout, firstCardIndex])
+
+    const dismissCoach = useCallback(() => {
+        if (coachDismissedRef.current) return
+        coachDismissedRef.current = true
+        setCoachVisible(false)
+        try {
+            window.localStorage.setItem("preview:report-tap-coach-seen", "1")
+        } catch {
+            // 저장 실패는 무시한다. 다음 방문에 한 번 더 보일 뿐이다.
+        }
+    }, [])
+
+    // 말풍선은 원문 폭 안으로 밀어 넣고, 꼬리만 첫 하이라이트의 번호 배지를 가리킨다.
+    useLayoutEffect(() => {
+        if (!coachVisible || firstCardIndex === null) return
+        const place = () => {
+            const highlight = document.getElementById(`source-sentence-${firstCardIndex}`)
+            const container = sourceBodyRef.current
+            const bubble = coachRef.current
+            if (!highlight || !container || !bubble) return
+            const line = highlight.getClientRects()[0] ?? highlight.getBoundingClientRect()
+            const base = container.getBoundingClientRect()
+            const { left, tailX } = resolveCoachPlacement({
+                badgeCenter: line.left - base.left + 12,
+                containerWidth: base.width,
+                bubbleWidth: bubble.offsetWidth,
+            })
+            setCoachStyle({ left, top: line.top - base.top - 46, ['--coach-tail-x' as string]: `${tailX}px` } as CSSProperties)
+        }
+        place()
+        window.addEventListener('resize', place)
+        return () => window.removeEventListener('resize', place)
+    }, [coachVisible, firstCardIndex, activeTab])
+
+    // ── 하단 시트 ──
+    const openSheet = useCallback((cardIdx: number) => {
+        setFocusedCardIndex(cardIdx)
+        setSheetCardIndex(cardIdx)
+        setSheetPhase('idle')
+        setIsSheetOpen(true)
+    }, [])
+
+    const closeSheet = useCallback(() => setIsSheetOpen(false), [])
+
+    // 이전/다음: 원문 하이라이트와 배경 스크롤은 즉시 움직이고, 시트 본문은 방향에 맞춰 밀리며 교차 페이드한다.
+    const stepSheet = useCallback((delta: 1 | -1) => {
+        if (sheetPhase !== 'idle' || focusedCardIndex === null) return
+        const next = getNeighborCardIndex(sortedOrder, focusedCardIndex, delta)
+        if (next === null) return
+        setFocusedCardIndex(next)
+        const sentence = document.getElementById(`source-sentence-${next}`)
+        if (sentence) {
+            // 시트가 아래 78vh를 덮으므로 문장을 화면 위쪽 8% 지점에 놓는다.
+            const top = window.scrollY + sentence.getBoundingClientRect().top - window.innerHeight * 0.08
+            animateScroll(window, Math.max(0, top))
+        }
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            setSheetCardIndex(next)
+            return
+        }
+        setSheetPhase(delta > 0 ? 'leave-left' : 'leave-right')
+        sheetStepTimerRef.current = window.setTimeout(() => {
+            setSheetCardIndex(next)
+            setSheetPhase(delta > 0 ? 'enter-right' : 'enter-left')
+            requestAnimationFrame(() => requestAnimationFrame(() => setSheetPhase('idle')))
+        }, 150)
+    }, [sheetPhase, focusedCardIndex, sortedOrder])
+
     // Click source highlight → expand matching accordion and scroll to it
     const handleSourceHighlightClick = useCallback((cardIdx: number) => {
+        dismissCoach()
+        if (isCompactLayout) {
+            openSheet(cardIdx)
+            return
+        }
         setFocusedCardIndex(cardIdx)
         setExpandedCards(prev => {
             const next = new Set(prev)
@@ -454,7 +660,7 @@ function ReportContent({
                 el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
             }
         }, 50)
-    }, [])
+    }, [dismissCoach, isCompactLayout, openSheet])
 
     return (
         <main className="min-h-screen bg-[#09090B] text-zinc-100 font-sans selection:bg-indigo-500/20">
@@ -462,7 +668,7 @@ function ReportContent({
 
             {/* TOP NAV (Global Sticky) */}
             <div className="print:hidden sticky top-0 z-50 w-full bg-[#09090B]/95 backdrop-blur-md border-b border-white/[0.05]">
-                <div className="max-w-4xl mx-auto px-6 md:px-8 pt-6 pb-4 flex items-center justify-between">
+                <div className="max-w-4xl mx-auto px-6 md:px-8 pt-4 pb-3 sm:pt-6 sm:pb-4 flex items-center justify-between">
                     <button onClick={() => window.history.back()} className="inline-flex items-center gap-2.5 text-sm text-zinc-500 hover:text-white transition-colors group">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                         <span>{UI_LABELS.BACK}</span>
@@ -477,6 +683,7 @@ function ReportContent({
                         <AuthButton />
                     </div>
                 </div>
+                <SectionChipBar activeSection={activeSection} />
             </div>
 
             <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10 pt-4">
@@ -717,7 +924,7 @@ function ReportContent({
             <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10"
                 onClick={(e) => {
                     // Click-outside: reset highlight if clicking empty area
-                    if ((e.target as HTMLElement).closest('.annotation-hl') || (e.target as HTMLElement).closest('.subtitle-hl') || (e.target as HTMLElement).closest('.commentary-trigger') || (e.target as HTMLElement).closest('.commentary-body') || (e.target as HTMLElement).closest('.view-mode-toggle')) return
+                    if ((e.target as HTMLElement).closest('.annotation-hl') || (e.target as HTMLElement).closest('.subtitle-hl') || (e.target as HTMLElement).closest('.commentary-trigger') || (e.target as HTMLElement).closest('.commentary-body') || (e.target as HTMLElement).closest('.view-mode-toggle') || (e.target as HTMLElement).closest('.report-coach')) return
                     setFocusedCardIndex(null)
                     setExpandedCards(new Set())
                 }}>
@@ -736,9 +943,9 @@ function ReportContent({
                         </div>
 
                         {/* Section Navigator Tabs */}
-                        <div className="flex items-center border-b border-white/[0.06] mb-8">
+                        <div ref={tabBarRef} className="flex items-center border-b border-white/[0.06] mb-8 overflow-x-auto hide-scrollbar -mx-1 px-1">
                             {reportData.questionTabs.map((tab, index) => (
-                                <button key={tab.id} onClick={() => handleTabChange(index)}
+                                <button key={tab.id} data-tab-index={index} onClick={() => handleTabChange(index)}
                                     className={`section-tab ${activeTab === index ? 'active' : ''}`}>
                                     <span className="tab-num">{String(index + 1).padStart(2, "0")}</span>
                                     {tab.title}
@@ -752,7 +959,14 @@ function ReportContent({
                             <p className="border-b border-white/[0.05] pb-6 text-[15.5px] font-medium leading-[1.65] text-zinc-300">{currentTab.prompt}</p>
                         </div>
 
+                        {/* 컴팩트 레이아웃 상시 안내. 말풍선이 사라진 뒤에도 남는다. */}
+                        <p className="mb-4 flex items-center gap-2 text-[12.5px] text-zinc-500 lg:hidden print:hidden">
+                            <Pointer className="h-3.5 w-3.5 shrink-0" />
+                            {UI_LABELS.TAP_HIGHLIGHT_GUIDE}
+                        </p>
+
                         {/* Source Text Body */}
+                        <div ref={sourceBodyRef} className="relative">
                         <div className={`source-text-body ${focusedCardIndex !== null ? 'original-text-dimmed' : ''}`}>
                             {currentTab.fullAnswer.split('\n').map((paragraph: string, pIdx: number) => (
                                 <p key={pIdx}>
@@ -803,7 +1017,7 @@ function ReportContent({
                                                                 e.stopPropagation()
                                                                 handleSourceHighlightClick(matchedCardIdx)
                                                             }}
-                                                            className={`annotation-hl ${typeClass} ${isActive ? 'active' : ''}`}>
+                                                            className={`annotation-hl ${typeClass} ${isActive ? 'active' : ''} ${coachVisible && matchedCardIdx === firstCardIndex ? 'coach-target' : ''}`}>
                                                             <span className="annotation-badge">
                                                                 {displayNum}
                                                             </span>
@@ -822,6 +1036,22 @@ function ReportContent({
                                 </p>
                             ))}
                         </div>
+                        {coachVisible && isCompactLayout && (
+                            <button
+                                ref={coachRef}
+                                type="button"
+                                className="report-coach print:hidden"
+                                style={coachStyle}
+                                onClick={() => {
+                                    dismissCoach()
+                                    if (firstCardIndex !== null) openSheet(firstCardIndex)
+                                }}
+                            >
+                                <span className="report-coach-dot" aria-hidden="true" />
+                                {UI_LABELS.TAP_HIGHLIGHT_COACH}
+                            </button>
+                        )}
+                        </div>
 
                         {/* Character Count */}
                         <div className="mt-10 pt-6 border-t border-white/[0.04]">
@@ -834,7 +1064,7 @@ function ReportContent({
                         {/* Panel Header + View Mode Toggle */}
                         <div className="flex items-center justify-between mb-6 shrink-0">
                             <p className="text-[15.5px] font-semibold tracking-[-0.01em] text-zinc-50">{UI_LABELS.AI_COMMENTARY}</p>
-                            <div className="view-mode-toggle print:hidden">
+                            <div className="view-mode-toggle print:hidden hidden lg:flex">
                                 <button onClick={() => setViewMode('list')}
                                     className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}>
                                     {UI_LABELS.VIEW_MODE_LIST}
@@ -882,7 +1112,7 @@ function ReportContent({
                             </div>
 
                         {/* ── Focus Mode: Full content for focused card ── */}
-                        {viewMode === 'focus' && !isPrinting && (
+                        {viewMode === 'focus' && !isPrinting && !isCompactLayout && (
                             <div>
                                 {focusedCardIndex !== null ? (() => {
                                     const card = currentTab.feedbackCards[focusedCardIndex] as any
@@ -898,25 +1128,7 @@ function ReportContent({
                                                 <p className="text-[14px] text-zinc-300 leading-[1.7] italic flex-1">"{card.original}"</p>
                                             </div>
 
-                                            {/* Detailed Analysis */}
-                                            <p className="commentary-body-text mb-4">{renderRichText(card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint))}</p>
-
-                                            {/* Interview perspective */}
-                                            {card.interviewLink && (
-                                                <>
-                                                    <p className="commentary-label">예상 면접 질문</p>
-                                                    <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-sky-300/80">Q.</span>{renderRichText(card.interviewLink.question)}</p>
-                                                    <p className="commentary-meta mb-4">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
-                                                </>
-                                            )}
-
-                                            {/* Improvement suggestion */}
-                                            {card.type === 'improvement' && card.suggestion && (
-                                                <>
-                                                    <p className="commentary-label">개선한 문장</p>
-                                                    <p className="commentary-headline">{renderRichText(card.suggestion)}</p>
-                                                </>
-                                            )}
+                                            <FeedbackCardBody card={card} renderRichText={renderRichText} />
                                         </div>
                                     )
                                 })() : (
@@ -928,7 +1140,7 @@ function ReportContent({
                         )}
 
                         {/* ── List Mode: Accordion ── */}
-                        {(viewMode === 'list' || isPrinting) && (
+                        {(viewMode === 'list' || isPrinting || isCompactLayout) && (
                             <div>
                                 {sortedCards.map((card: any) => {
                                     const realIdx = card._origIdx
@@ -958,25 +1170,7 @@ function ReportContent({
                                             <div className="commentary-body">
                                                 <div className="commentary-body-inner">
                                                     <div className="pt-2 pb-5">
-                                                        {/* Detailed Analysis */}
-                                                        <p className="commentary-body-text mb-4">{renderRichText(card.detailedAnalysis || (card.type === 'improvement' ? card.feedback : card.praisePoint))}</p>
-
-                                                        {/* Interview perspective */}
-                                                        {card.interviewLink && (
-                                                            <>
-                                                                <p className="commentary-label">예상 면접 질문</p>
-                                                                <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-sky-300/80">Q.</span>{renderRichText(card.interviewLink.question)}</p>
-                                                                <p className="commentary-meta mt-1">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
-                                                            </>
-                                                        )}
-
-                                                        {/* Improvement suggestion */}
-                                                        {card.type === 'improvement' && card.suggestion && (
-                                                            <>
-                                                                <p className="commentary-label">개선한 문장</p>
-                                                                <p className="commentary-headline">{renderRichText(card.suggestion)}</p>
-                                                            </>
-                                                        )}
+                                                        <FeedbackCardBody card={card} renderRichText={renderRichText} />
                                                     </div>
                                                 </div>
                                             </div>
@@ -990,6 +1184,59 @@ function ReportContent({
                         </div> {/* End Scrolling Content Area */}
                     </div>
                 </div>
+
+                {/* 컴팩트 레이아웃: 하이라이트를 누르면 하단 시트로 코멘트를 연다.
+                    vaul 모달 잠금은 이전/다음 시 배경 스크롤을 막으므로 modal={false} + 자체 오버레이를 쓴다.
+                    시트·오버레이 클릭은 섹션의 click-outside 초기화로 번지지 않게 막는다. */}
+                {isCompactLayout && (() => {
+                    const sheetCard = sheetCardIndex !== null ? (currentTab.feedbackCards[sheetCardIndex] as FeedbackCard | undefined) : undefined
+                    const sheetRank = sheetCardIndex !== null ? sortedOrder.indexOf(sheetCardIndex) : -1
+                    return (
+                        <>
+                            {isSheetOpen && (
+                                <div
+                                    className="fixed inset-0 z-[60] bg-black/40 touch-none print:hidden"
+                                    aria-hidden="true"
+                                    onClick={(e) => { e.stopPropagation(); closeSheet() }}
+                                />
+                            )}
+                            <Drawer open={isSheetOpen} onOpenChange={(open) => { if (!open) closeSheet() }} modal={false} noBodyStyles>
+                                <DrawerContent
+                                    className={`report-sheet z-[70] max-h-[78vh] border-white/[0.08] bg-[#0E0E11] text-zinc-100 ${sheetPhase !== 'idle' ? 'report-sheet-stepping' : ''}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <DrawerTitle className="sr-only">{UI_LABELS.AI_COMMENTARY}</DrawerTitle>
+                                    {sheetCard && sheetCardIndex !== null && (
+                                        <>
+                                            <div className={`report-sheet-head ${sheetCard.type} flex items-center gap-2.5 border-b border-white/[0.06] px-[18px] pb-3 pt-1`}>
+                                                <span className="commentary-num report-sheet-meta">{cardDisplayNumbers[sheetCardIndex] ?? (sheetCardIndex + 1)}</span>
+                                                <span className={`report-sheet-meta text-[12px] font-semibold tracking-[0.02em] ${sheetCard.type === 'praise' ? 'text-emerald-300/85' : 'text-amber-300/75'}`}>
+                                                    {sheetCard.type === 'praise' ? UI_LABELS.FEEDBACK_TYPE_PRAISE : UI_LABELS.FEEDBACK_TYPE_IMPROVEMENT}
+                                                </span>
+                                                <span className="report-sheet-meta ml-auto text-[12px] tabular-nums text-zinc-500">{sheetRank + 1} / {sortedOrder.length}</span>
+                                                <button type="button" className="report-sheet-nav" aria-label="이전 문장" disabled={sheetRank <= 0} onClick={() => stepSheet(-1)}>
+                                                    <ArrowLeft className="h-[15px] w-[15px]" />
+                                                </button>
+                                                <button type="button" className="report-sheet-nav" aria-label="다음 문장" disabled={sheetRank >= sortedOrder.length - 1} onClick={() => stepSheet(1)}>
+                                                    <ArrowRight className="h-[15px] w-[15px]" />
+                                                </button>
+                                                <DrawerClose asChild>
+                                                    <button type="button" className="report-sheet-nav" aria-label="닫기">
+                                                        <X className="h-[15px] w-[15px]" />
+                                                    </button>
+                                                </DrawerClose>
+                                            </div>
+                                            <div className={`report-sheet-body overflow-y-auto px-5 pb-7 pt-[18px] ${sheetPhase !== 'idle' ? `report-sheet-${sheetPhase}` : ''}`}>
+                                                <p className="commentary-quote">“{sheetCard.original}”</p>
+                                                <FeedbackCardBody card={sheetCard} renderRichText={renderRichText} />
+                                            </div>
+                                        </>
+                                    )}
+                                </DrawerContent>
+                            </Drawer>
+                        </>
+                    )
+                })()}
             </section>
             </ReportAccessGate>
 

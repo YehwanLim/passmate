@@ -40,6 +40,8 @@ export const UI_LABELS = {
   VIEW_MODE_LIST: "목록 모드",
   SUBTITLE_DIAGNOSIS: "소제목 진단",
   CLICK_HIGHLIGHT_GUIDE: "우측에서 하이라이트된 문장을 클릭하여 피드백을 확인하세요.",
+  TAP_HIGHLIGHT_GUIDE: "표시된 문장을 누르면 코멘트를 볼 수 있어요",
+  TAP_HIGHLIGHT_COACH: "이 문장을 눌러보세요",
   ORIGINAL_SENTENCE: "원본 문장",
   AI_DIAGNOSIS: "AI 진단",
   INTERVIEW_ATTACK_POINT: "면접 예상 질문",
