@@ -26,9 +26,9 @@ export function getCompanyAnalyzeError(errorData: unknown, status: number): Comp
   if (code === "COMPANY_CREDITS_EXHAUSTED") {
     return {
       title: "이용권 없음",
-      message: "기업 분석 이용권이 없어요. 판매가 열리면 이용권 페이지에서 구매할 수 있어요.",
+      message: "기업 분석 이용권이 없어요. 이용권 페이지에서 기업 분석 1회 또는 스탠다드·프리미엄을 구매할 수 있어요.",
       actionLabel: "이용권 확인하기",
-      actionHref: "/entitlements",
+      actionHref: "/entitlements#company",
       trackingType: "credits_exhausted",
     };
   }

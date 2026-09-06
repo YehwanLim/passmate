@@ -24,8 +24,12 @@ describe("Entitlements page", () => {
     expect(pageSource).not.toContain("9,900원");
     // 무료 체험 + 1회권 + 3회권 카드는 로그인 여부와 무관하게 렌더된다.
     expect(pageSource).toContain("무료 체험");
-    expect(pageSource).toContain('renderPaidPlanCard("single")');
-    expect(pageSource).toContain('renderPaidPlanCard("triple")');
+    // 티어 카드 3장: 베이직(선택 버튼 2개) + 스탠다드 + 프리미엄. 카드 수·순서는 pricing.ts 의 TIERS 가 정한다.
+    expect(pageSource).toContain("TIERS.map(");
+    expect(pageSource).toContain('id="basic"');
+    expect(pageSource).toContain("자소서 진단 1회");
+    expect(pageSource).toContain("기업 분석 1회");
+    expect(pageSource).toContain("COMPANY_REPORT_INCLUDED_FEATURES");
     // 정가는 취소선으로, 할인율 배지와 함께 보여준다.
     expect(pageSource).toContain("line-through");
     expect(pageSource).toContain("plan.discountLabel");
@@ -49,10 +53,10 @@ describe("Entitlements page", () => {
     expect(pageSource).toContain("다시 시도");
     // 판매 스위치가 꺼져 있으면 준비 안내만 보인다
     expect(pageSource).toContain("현재 추가 이용권 판매를 준비하고 있어요.");
-    // 상품별 결제 URL과 판매 스위치를 함께 확인한다.
-    expect(pageSource).toContain("summary.premiumEnabled && paymentUrl");
-    expect(pageSource).toContain("summary.grobleSinglePaymentUrl");
-    expect(pageSource).toContain("summary.groblePaymentUrl");
+    // 상품별 결제 URL은 서버가 스위치·활성·URL을 모두 반영해 준다 — 페이지는 있는지만 본다.
+    expect(pageSource).toContain("summary.checkoutUrls[product]");
+    expect(pageSource).not.toContain("summary.groblePaymentUrl");
+    expect(pageSource).not.toContain("summary.grobleSinglePaymentUrl");
     // 체크아웃은 새 탭으로 연다 — 현재 페이지를 결제 도메인으로 넘기지 않는다.
     // 구매 의도 생성은 /checkout 탭이 맡는다: 클릭과 창 열기 사이에 서버 왕복을
     // 두면 브라우저가 팝업으로 보고 막는다(동작 검증은 Entitlements.purchase.test.tsx).
@@ -66,5 +70,11 @@ describe("Entitlements page", () => {
     // 환불을 포함한 결제 문의 채널: 메일 링크 (숨김 톤이지만 존재해야 한다)
     expect(pageSource).toContain("mailto:hansitoring@gmail.com");
     expect(pageSource).toContain("이메일로 문의하기");
+  });
+
+  it("lands the company credit deep link on the basic card with the company option selected", () => {
+    expect(pageSource).toContain('window.location.hash === "#company"');
+    expect(pageSource).toContain('setBasicChoice("company")');
+    expect(pageSource).toContain('getElementById("basic")');
   });
 });

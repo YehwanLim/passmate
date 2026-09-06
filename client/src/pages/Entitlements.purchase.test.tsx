@@ -42,6 +42,15 @@ const SUMMARY = {
   remaining: 0,
   groblePaymentUrl: "https://www.groble.im/payment/4SGBV5",
   grobleSinglePaymentUrl: "https://www.groble.im/payment/6HteWn",
+  checkoutUrls: {
+    single: "https://www.groble.im/payment/6HteWn",
+    company: "https://www.groble.im/payment/CMP",
+    standard: "https://www.groble.im/payment/4SGBV5",
+    premium: "https://www.groble.im/payment/PRM",
+    triple: null,
+  },
+  companyAnalysisEnabled: true,
+  companyRemaining: 0,
   feedbackRewardClaimed: false,
 };
 
@@ -69,7 +78,7 @@ describe("Entitlements purchase button", () => {
     render(<Entitlements />);
 
     expect(screen.queryAllByText(/판매를 준비하고 있어요/)).toHaveLength(0);
-    expect(screen.getAllByRole("button", { name: /3회권 구매하기/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /스탠다드 구매하기/ }).length).toBeGreaterThan(0);
   });
 
   it("keeps the purchase button disabled until the checkout URL is known", async () => {
@@ -78,7 +87,7 @@ describe("Entitlements purchase button", () => {
 
     render(<Entitlements />);
 
-    const button = screen.getAllByRole("button", { name: /3회권 구매하기/ })[0];
+    const button = screen.getAllByRole("button", { name: /스탠다드 구매하기/ })[0];
     expect(button.hasAttribute("disabled")).toBe(true);
   });
 
@@ -87,7 +96,7 @@ describe("Entitlements purchase button", () => {
     render(<Entitlements />);
 
     await waitFor(() => {
-      const button = screen.getAllByRole("button", { name: /3회권 구매하기/ })[0];
+      const button = screen.getAllByRole("button", { name: /스탠다드 구매하기/ })[0];
       expect(button.hasAttribute("disabled")).toBe(false);
     });
   });
@@ -99,6 +108,7 @@ describe("Entitlements purchase button", () => {
       premiumEnabled: false,
       groblePaymentUrl: null,
       grobleSinglePaymentUrl: null,
+      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null },
     });
 
     render(<Entitlements />);
@@ -115,10 +125,10 @@ describe("Entitlements purchase button", () => {
 
     render(<Entitlements />);
     await waitFor(() => {
-      expect(screen.getAllByRole("button", { name: /1회권 구매하기/ })[0].hasAttribute("disabled")).toBe(false);
+      expect(screen.getAllByRole("button", { name: /자소서 진단 1회 구매하기/ })[0].hasAttribute("disabled")).toBe(false);
     });
 
-    screen.getAllByRole("button", { name: /1회권 구매하기/ })[0].click();
+    screen.getAllByRole("button", { name: /자소서 진단 1회 구매하기/ })[0].click();
 
     // 클릭 핸들러가 await 를 거치기 전에 창을 연다 — 그래야 사용자 제스처로 인정된다.
     expect(open).toHaveBeenCalledWith("/checkout?product=single", "_blank");
@@ -133,12 +143,12 @@ describe("Entitlements purchase button", () => {
 
     render(<Entitlements />);
     await waitFor(() => {
-      expect(screen.getAllByRole("button", { name: /3회권 구매하기/ })[0].hasAttribute("disabled")).toBe(false);
+      expect(screen.getAllByRole("button", { name: /스탠다드 구매하기/ })[0].hasAttribute("disabled")).toBe(false);
     });
 
-    screen.getAllByRole("button", { name: /3회권 구매하기/ })[0].click();
+    screen.getAllByRole("button", { name: /스탠다드 구매하기/ })[0].click();
 
-    expect(mocks.navigate).toHaveBeenCalledWith("/checkout?product=triple");
+    expect(mocks.navigate).toHaveBeenCalledWith("/checkout?product=standard");
     vi.unstubAllGlobals();
   });
 
@@ -149,10 +159,60 @@ describe("Entitlements purchase button", () => {
 
     render(<Entitlements />);
 
-    screen.getAllByRole("button", { name: /3회권 구매하기/ })[0].click();
+    screen.getAllByRole("button", { name: /스탠다드 구매하기/ })[0].click();
 
     expect(open).not.toHaveBeenCalled();
     expect(mocks.navigate).toHaveBeenCalledWith(expect.stringContaining("/login"));
     vi.unstubAllGlobals();
+  });
+
+  it("switches the basic card to the company product and opens its checkout", async () => {
+    signedIn();
+    const open = vi.fn().mockReturnValue({});
+    vi.stubGlobal("open", open);
+
+    render(<Entitlements />);
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: /자소서 진단 1회 구매하기/ })[0].hasAttribute("disabled")).toBe(false);
+    });
+
+    screen.getByRole("radio", { name: /기업 분석 1회/ }).click();
+    await waitFor(() => {
+      expect(screen.getByRole("radio", { name: /기업 분석 1회/ }).getAttribute("aria-checked")).toBe("true");
+    });
+    screen.getAllByRole("button", { name: /기업 분석 1회 구매하기/ })[0].click();
+
+    expect(open).toHaveBeenCalledWith("/checkout?product=company", "_blank");
+    vi.unstubAllGlobals();
+  });
+
+  it("opens the premium checkout from the premium card", async () => {
+    signedIn();
+    const open = vi.fn().mockReturnValue({});
+    vi.stubGlobal("open", open);
+
+    render(<Entitlements />);
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: /프리미엄 구매하기/ })[0].hasAttribute("disabled")).toBe(false);
+    });
+    screen.getAllByRole("button", { name: /프리미엄 구매하기/ })[0].click();
+
+    expect(open).toHaveBeenCalledWith("/checkout?product=premium", "_blank");
+    vi.unstubAllGlobals();
+  });
+
+  it("shows the preparing note only for products whose checkout URL is missing", async () => {
+    signedIn();
+    mocks.fetchEntitlementSummary.mockResolvedValue({
+      ...SUMMARY,
+      checkoutUrls: { ...SUMMARY.checkoutUrls, premium: null },
+    });
+
+    render(<Entitlements />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/판매를 준비하고 있어요/)).toHaveLength(1);
+      expect(screen.getAllByRole("button", { name: /스탠다드 구매하기/ })[0].hasAttribute("disabled")).toBe(false);
+    });
   });
 });

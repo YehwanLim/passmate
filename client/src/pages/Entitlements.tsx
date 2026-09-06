@@ -13,11 +13,14 @@ import {
   type PurchaseProductKey,
 } from "@/lib/entitlements";
 import {
+  COMPANY_REPORT_INCLUDED_FEATURES,
   PRICING,
   REPORT_INCLUDED_FEATURES,
   SEASONAL_DISCOUNT_LABEL,
+  TIERS,
   TRIPLE_PER_USE_PRICE,
   formatKrw,
+  savingsFor,
 } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase";
 
@@ -29,7 +32,7 @@ const PAYMENT_INQUIRY_MAILTO = `mailto:hansitoring@gmail.com?subject=${encodeURI
 )}`;
 
 const PAID_PLAN_COPY: Record<
-  PurchaseProductKey,
+  "single" | "company" | "standard" | "premium",
   { lead: string; body: string; perUseNote: string }
 > = {
   single: {
@@ -37,12 +40,24 @@ const PAID_PLAN_COPY: Record<
     body: "지금 쓴 자소서가 채용 담당자에게 어떻게 읽히는지, 제출 전에 확인해 보세요.",
     perUseNote: "이번 지원, 제출 전 마지막 점검",
   },
-  triple: {
-    lead: "고쳐 쓰고, 다시 확인하고, 다음 지원까지.",
-    body: "지원하는 회사가 바뀌면 리포트의 기준도 바뀝니다. 고쳐 쓴 자소서가 정말 나아졌는지도 다시 확인해 보세요.",
+  company: {
+    lead: "자소서를 쓰기 전에 회사부터 알고 싶다면.",
+    body: "무엇을 팔아 돈을 버는지, 요즘 힘을 싣는 사업이 무엇인지, 자소서에 쓸 사업 소재까지 한 리포트로 받아 보세요.",
+    perUseNote: "회사 한 곳, 자소서 쓰기 전 조사",
+  },
+  standard: {
+    lead: "한 회사를 제대로 준비하고, 고쳐 쓴 자소서까지 다시 확인.",
+    body: "기업 분석으로 소재를 잡고, 자소서 진단을 두 번 받으세요. 고쳐 쓴 자소서가 정말 나아졌는지 확인할 수 있어요.",
     perUseNote: `회당 ${formatKrw(TRIPLE_PER_USE_PRICE)} — 커피 한 잔 값`,
   },
+  premium: {
+    lead: "세 회사를 완전히 대비하고 싶다면.",
+    body: "회사마다 기업 분석 리포트와 자소서 진단을 한 번씩. 지원하는 회사가 바뀌면 리포트의 기준도 바뀝니다.",
+    perUseNote: "회사 세 곳, 조사부터 진단까지",
+  },
 };
+
+type BasicChoice = "single" | "company";
 
 export default function Entitlements() {
   const [, navigate] = useLocation();
@@ -54,6 +69,7 @@ export default function Entitlements() {
   const [purchaseStarted, setPurchaseStarted] = useState(false);
   // 팝업 차단 시 사용자가 직접 클릭해 열 수 있도록 체크아웃 URL을 보관한다.
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [basicChoice, setBasicChoice] = useState<BasicChoice>("single");
 
   // 랜딩과 같은 GNB 메뉴를 유지한다. 섹션 타입은 랜딩으로 이동한 뒤 해당 섹션으로 스크롤.
   const handleNavClick = useCallback(
@@ -124,6 +140,14 @@ export default function Entitlements() {
     }
   }, [authLoading, isAuthenticated, loadEntitlements]);
 
+  // /entitlements#company — 기업 분석 이용권이 없어서 온 사용자는 베이직 카드의 기업 분석을 바로 고른 상태로 만난다.
+  useEffect(() => {
+    if (window.location.hash === "#company") {
+      setBasicChoice("company");
+      document.getElementById("basic")?.scrollIntoView({ block: "start" });
+    }
+  }, []);
+
   const startCheckout = useCallback(
     (product: PurchaseProductKey) => {
       const path = `/checkout?product=${product}`;
@@ -139,20 +163,16 @@ export default function Entitlements() {
     [navigate]
   );
 
-  // 결제 게이트: 판매 스위치가 켜져 있고 해당 상품의 결제 URL이 설정된 경우에만 열린다.
+  // 결제 게이트: 서버가 판매 스위치·상품 활성·결제 URL을 모두 반영해 checkoutUrls 를 준다. 페이지는 있는지만 본다.
   const canPurchase = (product: PurchaseProductKey) => {
     if (!summary) return false;
-    const paymentUrl =
-      product === "single"
-        ? summary.grobleSinglePaymentUrl
-        : summary.groblePaymentUrl;
-    return Boolean(summary.premiumEnabled && paymentUrl);
+    return Boolean(summary.checkoutUrls[product]);
   };
 
   const renderPaidPlanButton = (product: PurchaseProductKey) => {
     const plan = PRICING[product];
     const buttonClassName =
-      product === "triple"
+      product === "premium"
         ? "h-11 w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:from-blue-400 hover:to-cyan-300 disabled:opacity-50"
         : "h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1] disabled:opacity-50";
 
@@ -197,47 +217,67 @@ export default function Entitlements() {
     );
   };
 
-  const renderPaidPlanCard = (product: PurchaseProductKey) => {
+  const renderTierCard = (tier: (typeof TIERS)[number]) => {
+    const product: PurchaseProductKey = tier.key === "basic" ? basicChoice : tier.products[0];
     const plan = PRICING[product];
-    const copy = PAID_PLAN_COPY[product];
-    const highlighted = product === "triple";
+    const copy = PAID_PLAN_COPY[product as keyof typeof PAID_PLAN_COPY];
+    const highlighted = tier.key === "premium";
+    const hasStrike = plan.listPrice > plan.salePrice;
+    const usesLabel = [
+      plan.uses > 0 ? `자소서 진단 ${plan.uses}회` : null,
+      plan.companyUses > 0 ? `기업 분석 ${plan.companyUses}회` : null,
+    ].filter(Boolean).join(" + ");
 
     return (
+      // 베이직 카드는 id="basic" 로 /entitlements#company 딥링크의 스크롤 대상이 된다.
       <div
+        key={tier.key}
+        id={tier.key}
         className={`flex h-full flex-col rounded-2xl border bg-white/[0.02] p-8 md:p-9 ${
           highlighted ? "border-blue-500/[0.25]" : "border-white/[0.06]"
         }`}
       >
-        <p
-          className={`text-lg font-bold tracking-tight ${
-            highlighted ? "text-blue-400" : "text-zinc-200"
-          }`}
-        >
-          {plan.label}
+        <p className={`text-lg font-bold tracking-tight ${highlighted ? "text-blue-400" : "text-zinc-200"}`}>
+          {tier.label}
         </p>
+        {tier.key === "basic" ? (
+          // 선택지: 자소서 진단 1회 또는 기업 분석 1회 (PRICING.single/company.label과 일치해야 한다).
+          <div role="radiogroup" aria-label="베이직 구성 선택" className="mt-3 grid grid-cols-2 gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] p-1">
+            {tier.products.map((choice) => (
+              <button
+                key={choice}
+                type="button"
+                role="radio"
+                aria-checked={basicChoice === choice}
+                onClick={() => setBasicChoice(choice)}
+                className={`h-8 rounded-md text-[12.5px] font-semibold transition-colors ${
+                  basicChoice === choice ? "bg-white/[0.12] text-white" : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {PRICING[choice].label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-[13px] font-medium text-zinc-400">{usesLabel}</p>
+        )}
         <p className="mt-4 text-[2.4rem] font-bold leading-none tracking-tight text-white">
           {formatKrw(plan.salePrice)}
-          <span className="ml-1.5 text-[15px] font-medium text-zinc-500">
-            / {plan.uses}회
-          </span>
+          <span className="ml-1.5 text-[15px] font-medium text-zinc-500">/ {plan.uses + plan.companyUses}회</span>
         </p>
-        <p className="mt-3 flex flex-wrap items-baseline gap-x-3 text-[15px]">
-          <span className="font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
-            정가 {formatKrw(plan.listPrice)}
-          </span>
-          <span className="text-lg font-extrabold tracking-tight text-sky-300">
-            {plan.discountLabel}
-          </span>
-        </p>
-        <p className="mt-1.5 text-xs font-light text-zinc-500">
-          {copy.perUseNote}
-        </p>
-        <p className="mt-6 text-[14.5px] font-medium leading-relaxed text-zinc-200">
-          {copy.lead}
-        </p>
-        <p className="mb-7 mt-2 flex-1 text-[13px] font-light leading-[1.8] text-zinc-500">
-          {copy.body}
-        </p>
+        {hasStrike ? (
+          <p className="mt-3 flex flex-wrap items-baseline gap-x-3 text-[15px]">
+            <span className="font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
+              {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
+            </span>
+            <span className="text-lg font-extrabold tracking-tight text-sky-300">{plan.discountLabel}</span>
+          </p>
+        ) : (
+          <p className="mt-3 text-[15px] font-light text-zinc-500">신상품 · 정가 판매</p>
+        )}
+        <p className="mt-1.5 text-xs font-light text-zinc-500">{copy.perUseNote}</p>
+        <p className="mt-6 text-[14.5px] font-medium leading-relaxed text-zinc-200">{copy.lead}</p>
+        <p className="mb-7 mt-2 flex-1 text-[13px] font-light leading-[1.8] text-zinc-500">{copy.body}</p>
         {renderPaidPlanButton(product)}
       </div>
     );
@@ -365,7 +405,7 @@ export default function Entitlements() {
               {SEASONAL_DISCOUNT_LABEL}
             </p>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
               {/* 무료 체험 */}
               <div className="flex h-full flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 md:p-9">
                 <p className="text-lg font-bold tracking-tight text-zinc-200">
@@ -396,8 +436,7 @@ export default function Entitlements() {
                 </button>
               </div>
 
-              {renderPaidPlanCard("single")}
-              {renderPaidPlanCard("triple")}
+              {TIERS.map((tier) => renderTierCard(tier))}
             </div>
 
             {/* 어떤 이용권이든 리포트 구성은 동일하다 */}
@@ -411,6 +450,23 @@ export default function Entitlements() {
                     key={feature}
                     className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400"
                   >
+                    <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] px-7 py-6">
+              <p className="text-[14px] font-semibold text-zinc-200">
+                기업 분석 리포트에는 이런 게 담깁니다
+              </p>
+              <p className="mt-1 text-xs font-light text-zinc-500">
+                스탠다드·프리미엄에 포함되고, 베이직에서 따로 고를 수도 있어요. 세 곳을 준비하면 프리미엄이 {formatKrw(savingsFor(PRICING.premium))} 저렴합니다.
+              </p>
+              <ul className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
+                {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
+                  <li key={feature} className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400">
                     <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
                     {feature}
                   </li>
