@@ -69,12 +69,6 @@ describe("admin premium sales switch", () => {
     expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: false });
   });
 
-  it("returns both switches on GET", async () => {
-    const res = await invoke();
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: false });
-  });
-
   it("turns premium sales on through a single-key PATCH", async () => {
     const res = await invoke({ body: { premiumEnabled: true }, method: "PATCH" });
 
@@ -116,7 +110,7 @@ describe("admin premium sales switch", () => {
     [{ premiumEnabled: true, extra: 1 }],
     [{}],
     [undefined],
-  ])("rejects a PATCH body that is not exactly { premiumEnabled: boolean }: %j", async (body) => {
+  ])("rejects PATCH bodies that are not exactly one boolean switch: %j", async (body) => {
     const res = await invoke({ body, method: "PATCH" });
 
     expect(res.statusCode).toBe(400);
