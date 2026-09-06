@@ -6,6 +6,7 @@ import creditsHandler from "../../lib/admin-handlers/credits.js";
 import dashboardHandler from "../../lib/admin-handlers/dashboard.js";
 import entitlementsHandler from "../../lib/admin-handlers/entitlements.js";
 import feedbackHandler from "../../lib/admin-handlers/feedback.js";
+import productSettingsHandler from "../../lib/admin-handlers/product-settings.js";
 import promptDetailHandler from "../../lib/admin-handlers/prompt-detail.js";
 import promptsHandler from "../../lib/admin-handlers/prompts.js";
 import resumeAnalysisHandler from "../../lib/admin-handlers/resume-analysis.js";
@@ -26,6 +27,7 @@ const DEFAULT_HANDLERS = {
   dashboard: dashboardHandler,
   entitlements: entitlementsHandler,
   feedback: feedbackHandler,
+  "product-settings": productSettingsHandler,
   "prompt-detail": promptDetailHandler,
   prompts: promptsHandler,
   "resume-analysis": resumeAnalysisHandler,
