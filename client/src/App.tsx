@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Analyze from "./pages/Analyze";
 import AnalysisPending from "./pages/AnalysisPending";
 import CompanyAnalyze from "./pages/CompanyAnalyze";
+import CompanyReport from "./pages/CompanyReport";
 import ReportResult from "./pages/ReportResult";
 import MyProjects from "./pages/MyProjects";
 import Entitlements from "./pages/Entitlements";
@@ -38,6 +39,7 @@ function Router() {
       <Route path={"/analysis-pending"} component={AnalysisPending} />
       <Route path={"/report-new"} component={ReportResult} />
       <Route path={"/company-analysis"} component={CompanyAnalyze} />
+      <Route path={"/company-report"} component={CompanyReport} />
       <Route path={"/feedback"} component={FeedbackSurvey} />
       <Route path={"/entitlements"} component={Entitlements} />
       <Route path={"/checkout"} component={Checkout} />

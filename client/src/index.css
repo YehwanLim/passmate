@@ -738,6 +738,16 @@ html {
   }
 }
 
+/* ── Report: 공용 섹션 앵커 여백 — 기업 분석 리포트처럼 id 가 다른 리포트도 같은 값을 쓴다 ── */
+.report-section-anchor {
+  scroll-margin-top: 112px;
+}
+@media (min-width: 1280px) {
+  .report-section-anchor {
+    scroll-margin-top: 80px;
+  }
+}
+
 /* ── Report: 컴팩트 레이아웃 하단 코멘트 시트 ── */
 .report-sheet > div:first-child {
   background: rgba(255, 255, 255, 0.14);
