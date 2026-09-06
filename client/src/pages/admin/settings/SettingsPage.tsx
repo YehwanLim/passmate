@@ -5,6 +5,8 @@ import {
   updateCompanyAnalysisEnabled,
   updatePremiumSalesEnabled,
 } from "@/lib/admin-entitlements";
+import { fetchProductSettings, updateProductSetting, type AdminProductSetting } from "@/lib/admin-product-settings";
+import { productLabel } from "@/lib/pricing";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import {
   Card,
@@ -147,6 +149,42 @@ export default function SettingsPage() {
     }
   };
 
+  // 결제 상품 설정 — 상품별 Groble contentId·결제 URL·판매 여부. 행 단위로 저장한다.
+  const [productRows, setProductRows] = useState<AdminProductSetting[] | null>(null);
+  const [productDrafts, setProductDrafts] = useState<Record<string, { contentId: string; paymentUrl: string }>>({});
+  const [productBusy, setProductBusy] = useState<string | null>(null);
+  const [productError, setProductError] = useState<string | null>(null);
+
+  const applyProductRows = (rows: AdminProductSetting[]) => {
+    setProductRows(rows);
+    setProductDrafts(Object.fromEntries(rows.map((row) => [row.product, { contentId: row.contentId ?? "", paymentUrl: row.paymentUrl }])));
+  };
+
+  useEffect(() => {
+    fetchProductSettings()
+      .then(applyProductRows)
+      .catch((error: unknown) => setProductError(error instanceof Error ? error.message : "결제 상품 설정을 불러오지 못했습니다."));
+  }, []);
+
+  const handleProductSave = async (row: AdminProductSetting, active = row.active) => {
+    const draft = productDrafts[row.product] ?? { contentId: row.contentId ?? "", paymentUrl: row.paymentUrl };
+    setProductBusy(row.product);
+    setProductError(null);
+    try {
+      const rows = await updateProductSetting(row.product, {
+        contentId: draft.contentId.trim() === "" ? null : draft.contentId.trim(),
+        paymentUrl: draft.paymentUrl.trim(),
+        active,
+      });
+      applyProductRows(rows);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "결제 상품 설정을 저장하지 못했습니다.";
+      setProductError(message === "DUPLICATE_CONTENT_ID" ? "이미 다른 상품이 쓰는 contentId 입니다." : message);
+    } finally {
+      setProductBusy(null);
+    }
+  };
+
   // 공지 추가 폼
   const [newNoticeTitle, setNewNoticeTitle] = useState("");
   const [newNoticePinned, setNewNoticePinned] = useState(false);
@@ -277,6 +315,56 @@ export default function SettingsPage() {
               onCheckedChange={handleCompanyToggle}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">결제 상품 설정</CardTitle>
+          <CardDescription className="text-xs">
+            상품별 Groble contentId(웹훅이 결제 상품을 알아보는 값)와 결제 URL, 판매 여부. contentId 가 비어 있으면
+            1회권·3회권(구)은 환경 변수 값을 씁니다. 저장 즉시 서버에 반영됩니다. 3회권(구)은 판매하지 않습니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {productError ? <p className="text-xs text-destructive">{productError}</p> : null}
+          {productRows === null ? (
+            <p className="text-sm text-muted-foreground">상품 설정 불러오는 중...</p>
+          ) : (
+            productRows.map((row) => {
+              const draft = productDrafts[row.product] ?? { contentId: row.contentId ?? "", paymentUrl: row.paymentUrl };
+              const busy = productBusy === row.product;
+              return (
+                <div key={row.product} className="grid gap-2 rounded-lg border p-3.5 md:grid-cols-[160px_1fr_1fr_auto_auto] md:items-center">
+                  <div>
+                    <p className="text-sm font-semibold">{productLabel(row.product)}</p>
+                    <p className="text-[11px] text-muted-foreground">자소서 {row.resumeCredits} · 기업 {row.companyCredits} · {row.product}</p>
+                  </div>
+                  <Input
+                    aria-label={`${productLabel(row.product)} Groble contentId`}
+                    placeholder="Groble contentId"
+                    value={draft.contentId}
+                    disabled={busy}
+                    onChange={(event) => setProductDrafts((prev) => ({ ...prev, [row.product]: { ...draft, contentId: event.target.value } }))}
+                  />
+                  <Input
+                    aria-label={`${productLabel(row.product)} 결제 URL`}
+                    placeholder="결제 URL (https://…)"
+                    value={draft.paymentUrl}
+                    disabled={busy}
+                    onChange={(event) => setProductDrafts((prev) => ({ ...prev, [row.product]: { ...draft, paymentUrl: event.target.value } }))}
+                  />
+                  <label className="flex items-center gap-2 text-xs">
+                    <Switch checked={row.active} disabled={busy} onCheckedChange={(checked) => void handleProductSave(row, checked)} />
+                    판매
+                  </label>
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => void handleProductSave(row)}>
+                    <Save className="mr-1 h-3.5 w-3.5" />저장
+                  </Button>
+                </div>
+              );
+            })
+          )}
         </CardContent>
       </Card>
 

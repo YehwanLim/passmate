@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { KpiCard } from "./KpiCard";
 import type { KpiData, PaymentSummary } from "@/hooks/admin/useDashboardData";
-import { PRICING, formatKrw } from "@/lib/pricing";
+import { estimatedAmountFor, formatKrw, type PurchaseProduct } from "@/lib/pricing";
 
 interface KpiGridProps {
   data: KpiData | null;
@@ -32,11 +32,13 @@ interface KpiGridProps {
 export function KpiGrid({ data, paymentSummary, isLoading }: KpiGridProps) {
   const kpi = data;
 
-  // 결제 금액은 저장되지 않으므로(진실은 Groble) 현재 판매가로 되짚은 추정치다.
+  // 결제 금액은 저장되지 않으므로(진실은 Groble) 현재 판매가로 되짚은 추정치다. 상품을 모르는 결제(UNKNOWN)는 뺀다.
   const estimatedRevenue =
     paymentSummary != null
-      ? paymentSummary.byProduct.SINGLE * PRICING.single.salePrice +
-        paymentSummary.byProduct.TRIPLE * PRICING.triple.salePrice
+      ? Object.entries(paymentSummary.byProduct).reduce((sum, [product, count]) => {
+          if (product === "UNKNOWN") return sum;
+          return sum + count * (estimatedAmountFor(product as PurchaseProduct) ?? 0);
+        }, 0)
       : null;
 
   // AI 비용: USD → 소수 4자리까지 표시

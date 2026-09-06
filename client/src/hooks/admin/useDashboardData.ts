@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { adminApiFetch } from "@/lib/adminApi";
+import type { PurchaseProduct } from "@/lib/pricing";
 
 export interface KpiData { todayVisitors: number | null; todaySignups: number | null; todayAnalyses: number | null; todayAiCost: number | null; onlineUsers: number | null; }
-export interface PaymentSummary { total: number; today: number; byProduct: { SINGLE: number; TRIPLE: number; UNKNOWN: number }; }
+export interface PaymentSummary { total: number; today: number; byProduct: Record<PurchaseProduct | "UNKNOWN", number>; }
 export interface ChartPoint { date: string; count: number; }
 export interface ActivityItem { id: string; userEmail: string; status: "PENDING" | "SUCCESS" | "FAILED"; createdAt: string; modelName: string | null; }
 export interface DashboardData { kpi: KpiData; paymentSummary: PaymentSummary; signupChart: ChartPoint[]; analysisChart: ChartPoint[]; recentActivity: ActivityItem[]; }
