@@ -495,7 +495,7 @@ function ReportContent({
                         <div className="pointer-events-none absolute inset-px rounded-[15px] border border-white/[0.035]" />
 
                         <div className="relative flex min-w-0 flex-col gap-2 border-b border-white/[0.06] pb-4 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-                            <BrandName className="h-3.5" />
+                            <BrandName className="h-3.5 self-start" />
                             <span className="min-w-0 break-words sm:text-right">First Read · {targetCompany}</span>
                         </div>
 

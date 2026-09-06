@@ -34,6 +34,11 @@ describe("ReportResult identity display", () => {
     expect(source).not.toContain("<p>PassMate 2026. All rights reserved.</p>");
   });
 
+  it("keeps the header wordmark from stretching inside the mobile column layout", () => {
+    // 모바일에서 헤더는 flex-col이라 기본 align-items: stretch가 이미지를 가로로 늘린다.
+    expect(source).toContain('<BrandName className="h-3.5 self-start" />');
+  });
+
   it("renders lower mentor comments as a timestamped feedback thread", () => {
     const lowerMentorSection = source.split('id="section-pm-comment"')[1]
 
