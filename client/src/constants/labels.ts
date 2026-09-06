@@ -72,7 +72,6 @@ export const UI_LABELS = {
 
   // Next Steps
   WHATS_NEXT: "다음 단계",
-  EDIT_RESUME: "이 자소서 수정하기",
   ANALYZE_NEW: "새로운 자소서 분석하기",
   SAVE_REPORT: "리포트 저장하기",
 

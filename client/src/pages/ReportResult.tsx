@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, type CSSProperties, type ReactNode } from "react"
 import { useLocation } from "wouter"
-import { Check, ChevronDown, ArrowRight, ArrowLeft, Download, PenLine, PlusCircle, AlertTriangle, X, Pointer } from "lucide-react"
+import { Check, ChevronDown, ArrowRight, ArrowLeft, Download, PlusCircle, AlertTriangle, X, Pointer } from "lucide-react"
 import type { FeedbackCard, ReportData } from "../types/report"
 import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui/drawer"
 import {
@@ -1375,9 +1375,6 @@ function ReportContent({
                     <h3 className="text-xl font-medium text-white mb-8">{UI_LABELS.WHATS_NEXT}</h3>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button onClick={() => navigate("/analyze")} className="w-full sm:w-auto px-6 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2">
-                            <PenLine className="w-4 h-4" /><span>{UI_LABELS.EDIT_RESUME}</span>
-                        </button>
-                        <button onClick={() => navigate("/")} className="w-full sm:w-auto px-6 py-3.5 bg-zinc-800 text-white font-medium rounded-lg hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2">
                             <PlusCircle className="w-4 h-4" /><span>{UI_LABELS.ANALYZE_NEW}</span>
                         </button>
                         <button onClick={() => setIsPrinting(true)} className="w-full sm:w-auto px-6 py-3.5 bg-transparent border border-white/10 text-zinc-300 font-medium rounded-lg hover:bg-white/[0.02] transition-colors flex items-center justify-center gap-2">
