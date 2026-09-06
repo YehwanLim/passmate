@@ -6,3 +6,6 @@ declare const analyzeHandler: (
 ) => Promise<unknown>;
 
 export default analyzeHandler;
+
+export declare function createAnalyzeHandler(options?: Record<string, unknown>): typeof analyzeHandler;
+export declare function createCompanyAnalyzeHandler(options?: Record<string, unknown>): typeof analyzeHandler;

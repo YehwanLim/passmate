@@ -26,7 +26,14 @@ import {
 } from "../lib/analysis-request-lifecycle.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../lib/auth.js";
-import { consumeUserRateLimit, getAnalysisThroughputPolicy } from "../lib/rate-limit.js";
+import {
+  analyzeCompany,
+  buildCompanyProjectTitle,
+  companyAnalysisInput,
+  companyRequestHash,
+  normalizeCompanyRequest,
+} from "../lib/company-analysis.js";
+import { consumeUserRateLimit, getAnalysisThroughputPolicy, getCompanyAnalysisThroughputPolicy } from "../lib/rate-limit.js";
 import { createResumeSplitHandler } from "../lib/resume-split.js";
 import prisma from "../lib/prisma.js";
 import { MASTER_SYSTEM_PROMPT } from "../shared/prompts/reportPrompt.js";
@@ -153,6 +160,25 @@ function createInputText(questions) {
   return questions
     .map((question, index) => `[문항 ${index + 1}]\n${question.answer}`)
     .join("\n\n");
+}
+
+/** 자소서 분석의 Analysis 입력 컬럼. 기업 분석은 companyAnalysisInput 을 대신 쓴다. */
+function resumeAnalysisInput(request) {
+  return {
+    questionText: createQuestionText(request.questions),
+    inputText: createInputText(request.questions),
+    totalChars: request.totalChars,
+  };
+}
+
+/** 연결할 자소서 분석이 지정되면 본인 소유의 RESUME 분석인지 확인한다. */
+async function verifyCompanyRequest(request, { db, userId }) {
+  if (!request.resumeAnalysisId) return;
+  const owned = await db.analysis.findFirst({
+    where: { id: request.resumeAnalysisId, userId, kind: "RESUME" },
+    select: { id: true },
+  });
+  if (!owned) throw new ApiError("RESUME_ANALYSIS_NOT_FOUND", 404);
 }
 
 function buildUserPrompt(request) {
@@ -335,12 +361,15 @@ async function analyzeCoverLetter(request, db = prisma) {
 }
 
 async function allocateAnalysisRequest({
+  analysisInput,
+  buildProjectTitle: titleOf,
   consumeRateLimit,
   db,
   getSummary,
   getThroughputPolicy,
   hash,
   idempotencyKey,
+  kind,
   request,
   reserve,
   userId,
@@ -352,6 +381,7 @@ async function allocateAnalysisRequest({
 
     const summary = await getSummary(tx, userId);
     const policy = getThroughputPolicy(summary);
+    // 동시성은 kind 를 가리지 않고 계정 단위로 센다 — 함수 부하 보호가 목적이다.
     const activeCount = await tx.analysisRequest.count({
       where: {
         userId,
@@ -368,11 +398,11 @@ async function allocateAnalysisRequest({
     });
     if (!rate.allowed) return { type: "rate_limited", rate };
 
-    const reservation = await reserve(tx, userId);
+    const reservation = await reserve(tx, userId, kind);
     const project = await tx.project.create({
       data: {
         userId,
-        title: buildProjectTitle(request.company, request.jobKeyword),
+        title: titleOf(request.company, request.jobKeyword),
         company: request.company || null,
         jobKeyword: request.jobKeyword || null,
       },
@@ -381,9 +411,8 @@ async function allocateAnalysisRequest({
       data: {
         userId,
         projectId: project.id,
-        questionText: createQuestionText(request.questions),
-        inputText: createInputText(request.questions),
-        totalChars: request.totalChars,
+        kind,
+        ...analysisInput(request),
         status: "PENDING",
       },
     });
@@ -402,16 +431,25 @@ async function allocateAnalysisRequest({
 }
 
 export function createAnalyzeHandler({
+  analysisInput = resumeAnalysisInput,
+  buildProjectTitle: titleOf = buildProjectTitle,
   cancelReservation = cancelAnalysisReservation,
   consumeRateLimit = consumeUserRateLimit,
+  creditsExhaustedCode = "ANALYSIS_CREDITS_EXHAUSTED",
   db = prisma,
+  disabledCode = "ANALYSIS_DISABLED",
   enqueueBackgroundWork = (work) => waitUntil(work()),
   finalizeReservation = finalizeAnalysisReservation,
   getEntitlementSummary: getSummary = getEntitlementSummary,
   getAnalysisThroughputPolicy: getThroughputPolicy = getAnalysisThroughputPolicy,
+  hashRequest = requestHash,
+  isEnabled = (settings) => settings?.analysisEnabled === true,
+  kind = "RESUME",
   model = analyzeCoverLetter,
+  normalizeRequest: normalize = normalizeRequest,
   requireUser = requireActiveApplicationUser,
   reserveAnalysis: reserve = reserveAnalysis,
+  verifyRequest = async () => {},
 } = {}) {
   return async function handler(req, res) {
     return withApiHandler(req, res, async (requestId) => {
@@ -424,8 +462,9 @@ export function createAnalyzeHandler({
       if (!idempotencyKey) {
         throw new ApiError("INVALID_IDEMPOTENCY_KEY", 400);
       }
-      const request = normalizeRequest(req.body);
-      const hash = requestHash(request);
+      const request = normalize(req.body);
+      const hash = hashRequest(request);
+      await verifyRequest(request, { db, userId: applicationUser.id });
 
       // A completed request is a read-only replay: do not consume another rate
       // limit slot or allow a kill switch change to hide the original result.
@@ -489,21 +528,24 @@ export function createAnalyzeHandler({
 
       const settings = await db.entitlementSetting.findUnique({
         where: { id: SETTINGS_ID },
-        select: { analysisEnabled: true },
+        select: { analysisEnabled: true, companyAnalysisEnabled: true },
       });
-      if (!settings?.analysisEnabled) {
-        return sendError(res, 503, "ANALYSIS_DISABLED", requestId);
+      if (!isEnabled(settings)) {
+        return sendError(res, 503, disabledCode, requestId);
       }
 
       let allocation;
       try {
         allocation = await allocateAnalysisRequest({
+          analysisInput,
+          buildProjectTitle: titleOf,
           consumeRateLimit,
           db,
           getSummary,
           getThroughputPolicy,
           hash,
           idempotencyKey,
+          kind,
           request,
           reserve,
           userId: applicationUser.id,
@@ -513,7 +555,7 @@ export function createAnalyzeHandler({
           throw new ApiError("ANALYSIS_CONCURRENCY_LIMITED", 409);
         }
         if (error instanceof EntitlementUnavailableError) {
-          throw new ApiError("ANALYSIS_CREDITS_EXHAUSTED", 409);
+          throw new ApiError(error.code ?? creditsExhaustedCode, 409);
         }
         if (error?.code !== "P2002") throw error;
         const existing = await findExistingRequest(db, applicationUser.id, idempotencyKey);
@@ -577,11 +619,34 @@ export function createAnalyzeHandler({
 
 export const maxDuration = 120;
 
+const COMPANY_HANDLER_DEFAULTS = Object.freeze({
+  analysisInput: companyAnalysisInput,
+  buildProjectTitle: buildCompanyProjectTitle,
+  creditsExhaustedCode: "COMPANY_CREDITS_EXHAUSTED",
+  disabledCode: "COMPANY_ANALYSIS_DISABLED",
+  getAnalysisThroughputPolicy: getCompanyAnalysisThroughputPolicy,
+  hashRequest: companyRequestHash,
+  // 전체 분석 스위치가 꺼지면 기업 분석도 함께 멈춘다.
+  isEnabled: (settings) => settings?.analysisEnabled === true && settings?.companyAnalysisEnabled === true,
+  kind: "COMPANY",
+  model: analyzeCompany,
+  normalizeRequest: normalizeCompanyRequest,
+  verifyRequest: verifyCompanyRequest,
+});
+
+/** 기업 분석 리포트 핸들러. 자소서 핸들러와 같은 파이프라인에 kind 조각만 주입한다. */
+export function createCompanyAnalyzeHandler(overrides = {}) {
+  return createAnalyzeHandler({ ...COMPANY_HANDLER_DEFAULTS, ...overrides });
+}
+
 const analyzeHandler = createAnalyzeHandler();
+const companyAnalyzeHandler = createCompanyAnalyzeHandler();
 const resumeSplitHandler = createResumeSplitHandler();
 
-// /api/analyze/split은 rewrite로 ?split=1이 붙어 이 함수로 들어온다 (Hobby 12함수 제한).
+// /api/analyze/split → ?split=1, /api/analyze/company → ?kind=company 로 rewrite 되어
+// 이 함수 하나로 들어온다 (Hobby 12함수 제한).
 export default function handler(req, res) {
   if (req.query?.split === "1") return resumeSplitHandler(req, res);
+  if (req.query?.kind === "company") return companyAnalyzeHandler(req, res);
   return analyzeHandler(req, res);
 }
