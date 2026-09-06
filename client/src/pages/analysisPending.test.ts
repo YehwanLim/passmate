@@ -9,7 +9,7 @@ describe("AnalysisPending", () => {
     expect(source).toContain('fetch(`/api/analysis-requests/${encodeURIComponent(requestId)}`');
     expect(source).toContain("headers: await getAuthorizationHeader()");
     expect(source).toContain("setTimeout(poll, 3000)");
-    expect(source).toContain('navigate(`/report-new?analysisId=${encodeURIComponent(status.analysisId)}`)');
+    expect(source).toContain('navigate(status.kind === "COMPANY"');
     expect(source).toContain('status.status === "SUCCEEDED"');
     expect(source).toContain('status.status === "FAILED"');
   });
@@ -28,5 +28,12 @@ describe("AnalysisPending", () => {
   it("registers the pending route before the report route", () => {
     expect(appSource.indexOf('path={"/analysis-pending"}'))
       .toBeLessThan(appSource.indexOf('path={"/report-new"}'));
+  });
+
+  it("routes company reports to /company-report and tracks them as company_report", () => {
+    expect(source).toContain("/company-report?analysisId=${encodeURIComponent(status.analysisId)}");
+    expect(source).toContain("/report-new?analysisId=${encodeURIComponent(status.analysisId)}");
+    expect(source).toContain('status.kind === "COMPANY" ? "company_report" : "cover_letter"');
+    expect(source).toContain('navigate(kind === "COMPANY" ? "/company-analysis" : "/analyze")');
   });
 });

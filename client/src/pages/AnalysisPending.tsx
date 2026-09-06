@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import { trackAnalysisComplete, trackAnalysisFailed } from "@/lib/analytics";
-import { parseAnalysisRequestStatus } from "@/lib/analysisRequest";
+import { parseAnalysisRequestStatus, type AnalysisKind } from "@/lib/analysisRequest";
 
 type PendingView = "checking" | "failed" | "unavailable" | "timeout";
 
@@ -27,6 +27,7 @@ export default function AnalysisPending() {
   const [retryCount, setRetryCount] = useState(0);
   const [view, setView] = useState<PendingView>("checking");
   const [isContextIrrelevant, setIsContextIrrelevant] = useState(false);
+  const [kind, setKind] = useState<AnalysisKind>("RESUME");
 
   useEffect(() => {
     if (authLoading) return;
@@ -60,17 +61,18 @@ export default function AnalysisPending() {
         }
 
         const status = parseAnalysisRequestStatus(await response.json());
+        if (!cancelled) setKind(status.kind);
+        const analyticsType = status.kind === "COMPANY" ? "company_report" : "cover_letter";
         if (status.status === "SUCCEEDED" && status.analysisId) {
-          trackAnalysisComplete("cover_letter", Math.round(performance.now() - mountedAt.current));
-          navigate(`/report-new?analysisId=${encodeURIComponent(status.analysisId)}`);
+          trackAnalysisComplete(analyticsType, Math.round(performance.now() - mountedAt.current));
+          navigate(status.kind === "COMPANY"
+            ? `/company-report?analysisId=${encodeURIComponent(status.analysisId)}`
+            : `/report-new?analysisId=${encodeURIComponent(status.analysisId)}`);
           return;
         }
         if (status.status === "FAILED") {
           const contextIrrelevant = status.error === "CONTEXT_IRRELEVANT";
-          trackAnalysisFailed(
-            "cover_letter",
-            contextIrrelevant ? "context_irrelevant" : "server_error",
-          );
+          trackAnalysisFailed(analyticsType, contextIrrelevant ? "context_irrelevant" : "server_error");
           if (!cancelled) {
             setIsContextIrrelevant(contextIrrelevant);
             setView("failed");
@@ -108,6 +110,8 @@ export default function AnalysisPending() {
     setRetryCount((count) => count + 1);
   };
 
+  const isCompany = kind === "COMPANY";
+
   return (
     <main className="min-h-screen bg-[#0A0A0A] px-4 text-white">
       <section className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center text-center">
@@ -123,9 +127,13 @@ export default function AnalysisPending() {
 
         {view === "checking" && (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight">분석 결과를 확인 중이에요</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {isCompany ? "기업 분석을 정리하는 중이에요" : "분석 결과를 확인 중이에요"}
+            </h1>
             <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400">
-              완료되는 즉시 리포트를 자동으로 열어 드릴게요. 화면을 닫아도 분석은 계속됩니다.
+              {isCompany
+                ? "공개 자료를 검색해 정리하는 데 1분 정도 걸려요. 화면을 닫아도 분석은 계속됩니다."
+                : "완료되는 즉시 리포트를 자동으로 열어 드릴게요. 화면을 닫아도 분석은 계속됩니다."}
             </p>
           </>
         )}
@@ -153,15 +161,21 @@ export default function AnalysisPending() {
         {view === "failed" && (
           <>
             <h1 className="text-2xl font-semibold tracking-tight">
-              {isContextIrrelevant ? "자소서 내용을 확인해 주세요" : "분석을 완료하지 못했어요"}
+              {isContextIrrelevant
+                ? (isCompany ? "확인할 수 있는 기업이 아니에요" : "자소서 내용을 확인해 주세요")
+                : "분석을 완료하지 못했어요"}
             </h1>
             <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400">
               {isContextIrrelevant
-                ? "입력한 내용이 자기소개서로 보기 어려워 분석하지 못했어요. 실제 자소서 문항과 답변으로 다시 시도해 주세요."
+                ? (isCompany
+                    ? "입력한 회사명을 공개 자료에서 찾지 못했어요. 정확한 회사명으로 다시 시도해 주세요."
+                    : "입력한 내용이 자기소개서로 보기 어려워 분석하지 못했어요. 실제 자소서 문항과 답변으로 다시 시도해 주세요.")
                 : "입력 내용은 브라우저에 저장하지 않았습니다. 새 분석을 시작해 주세요."}{" "}
               이번 분석의 이용권은 차감되지 않았어요.
             </p>
-            <Button className="mt-7" onClick={() => navigate("/analyze")}>새 분석 시작</Button>
+            <Button className="mt-7" onClick={() => navigate(kind === "COMPANY" ? "/company-analysis" : "/analyze")}>
+              {isCompany ? "새 기업 분석 시작" : "새 분석 시작"}
+            </Button>
             <p className="mt-5 text-xs leading-5 text-zinc-500">
               문제가 반복되면{" "}
               <a
