@@ -14,6 +14,14 @@ describe("previous resume loading", () => {
     expect(analyzeSource).toContain("/api/analysis/${encodeURIComponent(analysisId)}");
   });
 
+  it("imports the shared comboboxes and keeps company projects out of the résumé picker", () => {
+    expect(analyzeSource).toContain('from "@/components/analyze/CompanyCombobox"');
+    expect(analyzeSource).toContain('from "@/components/analyze/JobRoleCombobox"');
+    expect(analyzeSource).not.toContain("function CompanyCombobox(");
+    expect(analyzeSource).not.toContain("function JobRoleCombobox(");
+    expect(analyzeSource).toContain('project.kind !== "COMPANY"');
+  });
+
   it("restores each saved question and answer into a separate form item", () => {
     expect(
       parseSavedQuestions(

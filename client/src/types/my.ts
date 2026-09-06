@@ -28,6 +28,8 @@ export interface ProjectSummary {
   /** 핵심 역량 키워드 — 현재 API 미반환, 프론트 Mock용 optional */
   // TODO: keywords 컬럼 향후 추가 시 required로 변경
   keywords?: string[];
+  /** 분석 종류. 구버전 응답에 없으면 RESUME 으로 본다. */
+  kind?: "RESUME" | "COMPANY";
 }
 
 /** 분석 상태 enum — DB AnalysisStatus와 동일 */

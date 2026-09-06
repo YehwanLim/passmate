@@ -14,7 +14,6 @@ import {
   BarChart3,
   CreditCard,
   Info,
-  Search,
   Building2,
   FileSearch,
   FileText,
@@ -27,14 +26,14 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import AuthButton from "@/components/AuthButton";
+import CompanyCombobox from "@/components/analyze/CompanyCombobox";
+import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { sanitizeText } from "@/utils/sanitize";
 import { checkDuplicateQuestions } from "@/utils/textSimilarity";
 import { UI_LABELS } from "@/constants/labels";
-import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
-import { filterJobRoleCategories } from "@/constants/jobRoles";
 import {
   trackResumeUpload,
   trackAnalysisStart,
@@ -213,235 +212,10 @@ function formatSavedDate(value: string) {
   }).format(date);
 }
 
-/* ──────────────────────────────────────────
-   지원 회사 콤보박스 (Search & Input)
-────────────────────────────────────────── */
-function CompanyCombobox({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const [isFocused, setIsFocused] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // 입력값으로 필터링된 목록
-  const filtered = useMemo(() => {
-    if (!value.trim()) return COMPANY_PRESETS;
-    const normalizedQuery = normalizeCompanyName(value);
-    return COMPANY_PRESETS.filter(c =>
-      normalizeCompanyName(c).includes(normalizedQuery)
-    );
-  }, [value]);
-
-  const showDropdown =
-    isFocused && (filtered.length > 0 || value.trim() !== "");
-
-  // 외부 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(e.target as Node)
-      ) {
-        setIsFocused(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
-        <Input
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          // 목록에서 고른 뒤에도 포커스가 인풋에 남아 있어 onFocus가 다시 오지 않는다
-          onClick={() => setIsFocused(true)}
-          maxLength={100}
-          placeholder="회사명을 검색하거나 직접 입력하세요"
-          className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
-        />
-        {value && (
-          <button
-            onClick={() => onChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/10 transition-colors"
-            aria-label="입력 초기화"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-
-      {/* 자동완성 드롭다운 */}
-      <AnimatePresence>
-        {showDropdown && (
-          <motion.ul
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18 }}
-            className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-white/[0.1] bg-[#141414] backdrop-blur-xl shadow-2xl shadow-black/40 py-1.5"
-          >
-            {filtered.length > 0 ? (
-              filtered.map(company => (
-                <li key={company}>
-                  <button
-                    type="button"
-                    onMouseDown={e => e.preventDefault()}
-                    onClick={() => {
-                      onChange(company);
-                      setIsFocused(false);
-                    }}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
-                      value === company
-                        ? "text-cyan-400 bg-cyan-400/[0.08]"
-                        : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
-                    }`}
-                  >
-                    <Building2 className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-                    {company}
-                  </button>
-                </li>
-              ))
-            ) : (
-              <li>
-                <button
-                  type="button"
-                  onMouseDown={e => e.preventDefault()}
-                  onClick={() => setIsFocused(false)}
-                  className="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06]"
-                >
-                  <Plus className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                  <span className="font-medium">"{value}"</span> 직접 입력하기
-                </button>
-              </li>
-            )}
-          </motion.ul>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────
-   직무 선택 (검색 + 직접 입력)
-────────────────────────────────────────── */
-function JobRoleCombobox({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const [isFocused, setIsFocused] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // 입력값으로 필터링된 카테고리별 직무 목록
-  const filtered = useMemo(() => filterJobRoleCategories(value), [value]);
-
-  const showDropdown =
-    isFocused && (filtered.length > 0 || value.trim() !== "");
-
-  // 외부 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(e.target as Node)
-      ) {
-        setIsFocused(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
-        <Input
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          // 목록에서 고른 뒤에도 포커스가 인풋에 남아 있어 onFocus가 다시 오지 않는다
-          onClick={() => setIsFocused(true)}
-          maxLength={100}
-          placeholder="직무를 검색하거나 직접 입력하세요"
-          className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
-        />
-        {value && (
-          <button
-            onClick={() => onChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/10 transition-colors"
-            aria-label="입력 초기화"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-
-      {/* 자동완성 드롭다운 */}
-      <AnimatePresence>
-        {showDropdown && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18 }}
-            className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-white/[0.1] bg-[#141414] backdrop-blur-xl shadow-2xl shadow-black/40 py-1.5"
-          >
-            {filtered.length > 0 ? (
-              filtered.map(category => (
-                <div key={category.name}>
-                  <p className="px-4 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-zinc-600">
-                    {category.name}
-                  </p>
-                  <ul>
-                    {category.roles.map(role => (
-                      <li key={role}>
-                        <button
-                          type="button"
-                          onMouseDown={e => e.preventDefault()}
-                          onClick={() => {
-                            onChange(role);
-                            setIsFocused(false);
-                          }}
-                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
-                            value === role
-                              ? "text-cyan-400 bg-cyan-400/[0.08]"
-                              : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
-                          }`}
-                        >
-                          <BriefcaseBusiness className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-                          {role}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            ) : (
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => setIsFocused(false)}
-                className="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06]"
-              >
-                <Plus className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                <span className="font-medium">"{value}"</span> 직접 입력하기
-              </button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+function readQueryParam(name: string): string {
+  if (typeof window === "undefined") return "";
+  const value = new URLSearchParams(window.location.search).get(name);
+  return typeof value === "string" ? value.slice(0, 100) : "";
 }
 
 /* ──────────────────────────────────────────
@@ -540,8 +314,9 @@ export default function Analyze() {
   } = useRequireAuth({
     redirectPath: "/analyze",
   });
-  const [company, setCompany] = useState("");
-  const [jobRole, setJobRole] = useState("");
+  // /company-report 의 CTA 가 회사·직무를 쿼리로 넘긴다. 없으면 빈 값.
+  const [company, setCompany] = useState(() => readQueryParam("company"));
+  const [jobRole, setJobRole] = useState(() => readQueryParam("jobKeyword"));
   const [questions, setQuestions] = useState<QuestionItem[]>([
     createEmptyQuestion(),
   ]);
@@ -656,8 +431,11 @@ export default function Analyze() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const projects: ProjectSummary[] = await response.json();
+      // 기업 분석 프로젝트는 자소서가 없어 불러올 것이 없다.
       setPreviousResumes(
-        projects.filter(project => project.latest_analysis_id)
+        projects.filter(
+          project => project.kind !== "COMPANY" && project.latest_analysis_id
+        )
       );
     } catch {
       setPreviousResumeError(
