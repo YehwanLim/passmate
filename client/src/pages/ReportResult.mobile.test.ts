@@ -39,7 +39,9 @@ describe("ReportResult mobile layout", () => {
   });
 
   it("hides the view mode toggle and forces list mode below lg", () => {
-    expect(source).toContain('className="view-mode-toggle print:hidden hidden lg:flex"');
+    // .view-mode-toggle의 display:flex는 레이어 밖 일반 CSS라 Tailwind hidden 유틸리티가 지지 않는다. CSS 미디어 규칙으로 숨긴다.
+    expect(css).toMatch(/@media \(max-width: 1023px\) \{\s*\.view-mode-toggle \{\s*display: none;/);
+    expect(source).not.toContain("hidden lg:flex");
     expect(source).toContain("(viewMode === 'list' || isPrinting || isCompactLayout)");
     expect(source).toContain("viewMode === 'focus' && !isPrinting && !isCompactLayout");
   });
@@ -65,6 +67,8 @@ describe("ReportResult mobile layout", () => {
     // 긴 원문은 본문의 20%가 한 화면에 들어오지 않으므로 첫 하이라이트 자체를 관찰한다.
     expect(source).toContain("const firstHighlight = document.getElementById(`source-sentence-${firstCardIndex}`)");
     expect(source).toContain("observer.observe(firstHighlight)");
+    // 원문에서 못 찾은 카드(indexOf -1)가 맨 앞에 오지 않도록 실제로 그려진 첫 하이라이트를 고른다.
+    expect(source).toContain("getFirstHighlightedCardIndex(");
     // 실제로 보여준 적이 있을 때만 "봤음"을 저장한다. 말풍선 전에 문장을 누른 사용자는 다음 방문에 다시 본다.
     expect(source).toMatch(/if \(!coachShownRef\.current\)[\s\S]{0,200}return[\s\S]{0,400}localStorage\.setItem\("preview:report-tap-coach-seen-v2"/);
   });

@@ -1284,6 +1284,13 @@ html {
   padding: 2px;
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
+/* 컴팩트 레이아웃(lg 미만)에서는 코멘트가 하단 시트로 열리므로 보기 모드 토글이 의미가 없다.
+   위 display:flex가 레이어 밖 일반 CSS라 Tailwind hidden 유틸리티로는 숨겨지지 않는다. */
+@media (max-width: 1023px) {
+  .view-mode-toggle {
+    display: none;
+  }
+}
 .view-mode-btn {
   padding: 5px 14px;
   font-size: 12px;

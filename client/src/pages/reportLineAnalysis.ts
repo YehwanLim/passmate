@@ -95,3 +95,23 @@ export function resolveCoachPlacement(input: {
     const tailX = Math.min(Math.max(badgeCenter - left - 5, 12), bubbleWidth - 22)
     return { left, tailX }
 }
+
+/**
+ * 원문에서 실제로 찾아진(=하이라이트가 그려진) 카드 중 가장 앞에 오는 카드의 인덱스.
+ * AI가 원문과 다르게 뽑아 indexOf가 -1인 카드는 화면에 없으므로 제외한다. 없으면 null.
+ */
+export function getFirstHighlightedCardIndex(
+    cards: ReadonlyArray<{ original: string }>,
+    fullAnswer: string
+): number | null {
+    let bestIndex: number | null = null
+    let bestPosition = Number.POSITIVE_INFINITY
+    cards.forEach((card, index) => {
+        const position = fullAnswer.indexOf(card.original)
+        if (position !== -1 && position < bestPosition) {
+            bestPosition = position
+            bestIndex = index
+        }
+    })
+    return bestIndex
+}

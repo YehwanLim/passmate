@@ -5,6 +5,7 @@ import type { FeedbackCard, ReportData } from "../types/report"
 import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui/drawer"
 import {
     animateScroll,
+    getFirstHighlightedCardIndex,
     getNeighborCardIndex,
     resolveCoachPlacement,
     scrollChildIntoHorizontalView,
@@ -539,7 +540,11 @@ function ReportContent({
     }, [])
 
     const sortedOrder = useMemo(() => sortedCards.map((c: any) => c._origIdx as number), [sortedCards])
-    const firstCardIndex: number | null = sortedOrder[0] ?? null
+    // 말풍선·링 대상: 실제로 하이라이트가 그려진 첫 카드. (sortedOrder[0]은 원문에서 못 찾은 카드(-1)가 올 수 있다.)
+    const firstCardIndex = useMemo(
+        () => getFirstHighlightedCardIndex(currentTab.feedbackCards, currentTab.fullAnswer),
+        [currentTab]
+    )
 
     // ── 첫 진입 안내 말풍선: 컴팩트 레이아웃에서 원문이 보이면 첫 하이라이트 위에. 계정당 한 번. ──
     useEffect(() => {
@@ -1071,7 +1076,7 @@ function ReportContent({
                         {/* Panel Header + View Mode Toggle */}
                         <div className="flex items-center justify-between mb-6 shrink-0">
                             <p className="text-[15.5px] font-semibold tracking-[-0.01em] text-zinc-50">{UI_LABELS.AI_COMMENTARY}</p>
-                            <div className="view-mode-toggle print:hidden hidden lg:flex">
+                            <div className="view-mode-toggle print:hidden">
                                 <button onClick={() => setViewMode('list')}
                                     className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}>
                                     {UI_LABELS.VIEW_MODE_LIST}

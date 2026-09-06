@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getFirstHighlightedCardIndex,
   getNeighborCardIndex,
   getHorizontalCenterOffset,
   getScrollPositionAt,
@@ -75,5 +76,24 @@ describe("resolveCoachPlacement", () => {
     const placement = resolveCoachPlacement({ badgeCenter: 5, containerWidth: 350, bubbleWidth: 150 });
     expect(placement.left).toBe(0);
     expect(placement.tailX).toBe(12);
+  });
+});
+
+describe("getFirstHighlightedCardIndex", () => {
+  const answer = "첫 문장입니다. 둘째 문장입니다. 셋째 문장입니다.";
+
+  it("returns the card that appears first in the answer", () => {
+    const cards = [{ original: "셋째 문장입니다." }, { original: "둘째 문장입니다." }];
+    expect(getFirstHighlightedCardIndex(cards, answer)).toBe(1);
+  });
+
+  it("skips cards whose original text is not found in the answer", () => {
+    // AI가 원문과 다르게 뽑은 카드는 하이라이트가 그려지지 않으므로 말풍선 대상이 될 수 없다.
+    const cards = [{ original: "원문에 없는 문장" }, { original: "둘째 문장입니다." }];
+    expect(getFirstHighlightedCardIndex(cards, answer)).toBe(1);
+  });
+
+  it("returns null when no card matches the answer", () => {
+    expect(getFirstHighlightedCardIndex([{ original: "없음" }], answer)).toBeNull();
   });
 });
