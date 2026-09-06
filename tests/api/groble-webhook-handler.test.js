@@ -213,6 +213,25 @@ describe("Groble webhook", () => {
     expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
   });
 
+  it("rejects every payment with the not-configured code while no product has a content id", async () => {
+    const noContentIdSettings = Object.fromEntries(
+      Object.entries(settingsWith()).map(([product, setting]) => [product, { ...setting, contentId: null }]),
+    );
+
+    const response = await invokeGrobleWebhook({
+      handler: createHandler({
+        readProductSettings: async () => noContentIdSettings,
+      }),
+      payload: paidPayload({ object: { content: { id: CONTENT_ID } } }),
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body.error).toBe("GROBLE_PREMIUM_PRODUCT_NOT_CONFIGURED");
+    expect(response.body.correlationId).toBe("unrecognized");
+    expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
+    expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
+  });
+
   it("grants by the paid product and logs when the intent was created for another product", async () => {
     // 사용자가 1회권 intent 의 ref 로 스탠다드를 결제한 크로스 케이스 —
     // 실제 지불액(웹훅 contentId) 기준으로 지급하고 진단만 남긴다.
