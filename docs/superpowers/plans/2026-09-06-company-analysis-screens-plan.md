@@ -1302,7 +1302,8 @@ describe("CompanyReport", () => {
     expect(screen.getByText("hyundai.com")).toBeTruthy();
     expect(screen.getByText("dart.fss.or.kr")).toBeTruthy();
     expect(screen.getByText(/투자 조언이 아닙니다/)).toBeTruthy();
-    expect(screen.getByText(/기준일 2026-09-06/)).toBeTruthy();
+    // 기준일은 표지와 부록 두 곳에 나온다.
+    expect(screen.getAllByText(/기준일 2026-09-06/).length).toBeGreaterThan(0);
     // 검색 제안 칩은 그대로 렌더된다(Google 약관).
     expect(document.querySelector('a[href="https://vertexaisearch.cloud.google.com/x"]')).toBeTruthy();
     // 항목별 각주 칩은 없다(스펙 §7-1).
