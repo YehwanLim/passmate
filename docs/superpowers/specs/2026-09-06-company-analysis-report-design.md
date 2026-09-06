@@ -388,3 +388,30 @@ export async function readPurchaseProductSettings(db)  // DB 행 + 레거시 env
 ### 7-2. 2단계 플랜 범위(화면)
 
 `docs/superpowers/plans/2026-09-06-company-analysis-screens-plan.md`로 작성한다. 포함: `MAX_SOURCES` 20, `/company-analysis` 신청 폼, `/company-report` 리포트 화면(8섹션 + 부록), `AnalysisPending` kind 분기, `/my` 목록 kind 배지, 관리자 설정의 `companyAnalysisEnabled` 토글, 관리자 크레딧 지급 UI의 kind 선택, `MyEntitlements` 기업 잔여 행, 자소서 폼(`Analyze`)의 이전 지원서 목록에서 기업 프로젝트 제외 + 쿼리 프리필. 제외(③④로): 상품·결제·가격 카드·`ReportResult` 하단 업셀 CTA·랜딩 노출·GNB·**정적 샘플 픽스처(`?sample=1`)** — 샘플은 실제 생성 결과를 사용자가 검수해 픽스처로 굳혀야 하므로 ④에서 프로브 `--out` 저장 옵션과 함께 다룬다.
+
+### 7-3. 가격·상품 구성 확정(2026-09-06) — 티어형. §3 가격안·§5-3 `PURCHASE_PRODUCTS`·§5-6의 add-on 토글 설계를 덮어쓴다
+
+2단계(화면)까지 `origin/main`에 반영(`46a2372`)한 뒤 오너와 여러 안(단품+번들 토글, 3티어 순수형, 세트형, 계단형)을 비교해 **"베이직 → 스탠다드 → 프리미엄" 티어형**으로 확정했다. 판단 기준: 저항감(기존 가격 5,900·14,900 유지), 한 축으로만 올라가는 사다리(단위 = 분석 1회, 어느 종류든 5,900원 가치), 모든 티어에 기업 분석이 있을 것, 위로 갈수록 회당 가격이 내려갈 것.
+
+| 티어 | `PurchaseProduct` | 쿼리 키 | 구성(자소서·기업) | 가격 | 따로 살 때 | 절약 | 회당 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 베이직 | `SINGLE` | `single` | 1 · 0 | 5,900(현행, 11/30까지 정가 9,900의 할인가) | | | 5,900 |
+| 베이직 | `COMPANY_SINGLE` | `company` | 0 · 1 | 5,900(신규, 정가=판매가) | | | 5,900 |
+| 스탠다드 | `STANDARD` | `standard` | 2 · 1 | 14,900 | 17,700 | 2,800 | 4,967 |
+| 프리미엄 | `PREMIUM` | `premium` | 3 · 3 | 25,900 | 35,400 | 9,500 | 4,317 |
+| (구) 3회권 | `TRIPLE` | `triple` | 3 · 0 | 14,900 — **판매 종료(레거시)** | | | |
+
+- **베이직은 카드 한 장에 선택 버튼 두 개**("자소서 진단 1회" / "기업 분석 1회"). 뒤에서는 상품 2개(`SINGLE`·`COMPANY_SINGLE`). 할인 배지(정가 9,900)는 자소서 선택 시에만 보인다.
+- **스탠다드는 지금 파는 3회권(자소서 3회, 14,900)의 구성 변경**이다. 가격은 같으므로 인상이 아니다. 그로블에서는 기존 3회권 상품(contentId 유지)의 이름·설명을 "자소서 2회 + 기업 분석 1회"로 고친다. 이미 지급된 크레딧은 영향 없음. 자소서만 3회 원하면 베이직을 하나 더 산다.
+- `TRIPLE`은 과거 결제 기록의 라벨("3회권(구)")과 전환 기간의 지급을 위해 enum·카탈로그에 남기되 판매하지 않는다(`active=false`).
+- 그로블 신규 등록 상품: **2개**(기업 분석 1회 5,900, 프리미엄 25,900). 1회권은 그대로.
+- 절약 표시: "따로 사면 17,700원 / 35,400원"은 실제 판매 중인 베이직(5,900) 단위 합과 비교하므로 표시광고법상 안전. 기업 단품에는 취소선 없음.
+- 프로모션 연동: 11/30에 1회권이 9,900으로 돌아가면 베이직 자소서 가격만 바뀌고 티어 사다리는 유지(스탠다드·프리미엄 재산정 여부는 그때 판단).
+
+**전환(컷오버) 절차** — 코드가 배포된 뒤 관리자가 순서대로:
+1. `pnpm exec prisma migrate deploy`(배포 **전**, 새 테이블 `purchase_product_settings`를 코드가 읽는다). 마이그레이션은 `STANDARD` 행에 기존 3회권 결제 URL을, `SINGLE` 행에 1회권 URL을 백필하고 둘 다 `active=true`로 둔다. `TRIPLE`·`COMPANY_SINGLE`·`PREMIUM` 행은 URL 없음·`active=false`.
+2. 배포 직후: 스탠다드 카드가 기존 3회권 URL로 팔리지만, 그 contentId는 아직 env(`GROBLE_PREMIUM_CONTENT_ID`) fallback으로 `TRIPLE`(자소서 3)에 대응하므로 **초과 지급(자소서 3)** 상태다. 부족 지급은 어느 순간에도 생기지 않는다.
+3. 그로블에서 3회권 상품 이름·설명을 스탠다드로 고친 뒤, 관리자 설정 화면에서 `STANDARD` 행에 그 contentId를 입력한다 → 이때부터 2+1 지급. DB 행의 contentId가 env 값과 겹치면 DB 행이 이기고 env fallback은 무시된다.
+4. 그로블에 기업 분석 1회·프리미엄 상품을 등록하고 contentId·결제 URL을 입력, `active`를 켠다. 마지막으로 `companyAnalysisEnabled`를 켠다(기업 크레딧이 든 상품은 이 스위치가 꺼져 있으면 팔리지 않는다).
+
+**3단계 플랜**: `docs/superpowers/plans/2026-09-06-company-analysis-products-plan.md`. 포함: 마이그레이션(enum 3값 + 상품 설정 테이블 백필), `entitlement-products.js` 카탈로그·설정 읽기, 웹훅 번들 지급, `checkoutUrls`·상품별 게이트, 관리자 상품 설정 엔드포인트·화면, `pricing.ts` 티어, 이용권 페이지 티어 카드 3장(베이직 선택 버튼), `Checkout`, 결제 내역 라벨. 제외(④): 랜딩 `PricingSection`·GNB·업셀 CTA·샘플.
