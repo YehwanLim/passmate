@@ -408,10 +408,15 @@ export async function readPurchaseProductSettings(db)  // DB 행 + 레거시 env
 - 절약 표시: "따로 사면 17,700원 / 35,400원"은 실제 판매 중인 베이직(5,900) 단위 합과 비교하므로 표시광고법상 안전. 기업 단품에는 취소선 없음.
 - 프로모션 연동: 11/30에 1회권이 9,900으로 돌아가면 베이직 자소서 가격만 바뀌고 티어 사다리는 유지(스탠다드·프리미엄 재산정 여부는 그때 판단).
 
-**전환(컷오버) 절차** — 코드가 배포된 뒤 관리자가 순서대로:
-1. `pnpm exec prisma migrate deploy`(배포 **전**, 새 테이블 `purchase_product_settings`를 코드가 읽는다). 마이그레이션은 `STANDARD` 행에 기존 3회권 결제 URL을, `SINGLE` 행에 1회권 URL을 백필하고 둘 다 `active=true`로 둔다. `TRIPLE`·`COMPANY_SINGLE`·`PREMIUM` 행은 URL 없음·`active=false`.
-2. 배포 직후: 스탠다드 카드가 기존 3회권 URL로 팔리지만, 그 contentId는 아직 env(`GROBLE_PREMIUM_CONTENT_ID`) fallback으로 `TRIPLE`(자소서 3)에 대응하므로 **초과 지급(자소서 3)** 상태다. 부족 지급은 어느 순간에도 생기지 않는다.
-3. 그로블에서 3회권 상품 이름·설명을 스탠다드로 고친 뒤, 관리자 설정 화면에서 `STANDARD` 행에 그 contentId를 입력한다 → 이때부터 2+1 지급. DB 행의 contentId가 env 값과 겹치면 DB 행이 이기고 env fallback은 무시된다.
-4. 그로블에 기업 분석 1회·프리미엄 상품을 등록하고 contentId·결제 URL을 입력, `active`를 켠다. 마지막으로 `companyAnalysisEnabled`를 켠다(기업 크레딧이 든 상품은 이 스위치가 꺼져 있으면 팔리지 않는다).
+**전환(컷오버) 절차** — 최종 리뷰(2026-09-07) 반영판. 코드는 "contentId 를 모르는 상품은 팔지 않는다"(웹훅이 지급을 판별할 수 없는 상품은 `checkoutUrls` 에서 null·구매 의도 503)와 "기업 크레딧이 든 상품은 `companyAnalysisEnabled` 가 켜져야 판다"를 강제한다. 따라서 **배포 직후 스탠다드는 잠시 판매 중단**되고, 아래 순서를 마쳐야 다시 열린다(몇 분 정도).
+1. 배포 **전** `pnpm exec prisma migrate deploy`(DIRECT_URL). 마이그레이션은 `20260907_add_purchase_product_enum_values`(enum) → `20260907_add_purchase_product_settings`(테이블·백필) 순서로 적용된다. 백필 결과: `SINGLE` 행에 1회권 URL·`STANDARD` 행에 구 3회권 URL(둘 다 active), `TRIPLE`·`COMPANY_SINGLE`·`PREMIUM` 은 URL 없음·inactive. 적용 후 `SELECT product, groble_content_id, payment_url, active FROM purchase_product_settings;` 가 5행인지 확인한다.
+2. 배포 직후 상태: 베이직(자소서 1회)만 팔린다. `STANDARD` 는 contentId 가 없고 기업 스위치도 꺼져 있어 판매 중단. 구 3회권 contentId 로 들어오는 결제(이미 진행 중이던 건)는 env `GROBLE_PREMIUM_CONTENT_ID` fallback 으로 `TRIPLE`(자소서 3)로 지급된다 — 초과 지급이며 부족 지급은 아니다.
+3. 그로블에서 3회권 상품의 이름·설명을 "스탠다드 · 자소서 진단 2회 + 기업 분석 1회"로 고친다.
+4. 관리자 설정 "결제 상품 설정"에서 **`STANDARD` 행에 그 contentId 를 입력**한다(TRIPLE 행은 건드리지 않는다 — 저장하면 env 값이 TRIPLE 에 굳어 4단계가 409 로 막힌다. 화면은 저장값과 env fallback 을 구분해 보여 준다). 이때부터 env fallback 은 무시되고 그 contentId 는 2+1 로 지급된다.
+5. 그로블에 기업 분석 1회(5,900)·프리미엄(25,900)을 등록하고 `COMPANY_SINGLE`·`PREMIUM` 행에 contentId·결제 URL 을 입력, `active` 를 켠다.
+6. 마지막으로 `companyAnalysisEnabled` 를 켠다 → 스탠다드·프리미엄·기업 단품이 열린다. (기업 스위치를 4단계보다 먼저 켜도 contentId 가 없는 상품은 팔리지 않으므로 부족 지급 경로는 없다.)
+7. `GROBLE_SINGLE_CONTENT_ID`·`GROBLE_PREMIUM_CONTENT_ID` 는 두 값이 모두 DB 행에 들어간 뒤에 Vercel 에서 지워도 된다.
+
+이월(④ 진입점 플랜): 비로그인 방문자에게는 판매 가용성을 알 공개 API 가 없어 미판매 티어의 구매 버튼이 활성으로 보이고, 클릭하면 로그인 뒤 "준비 중" 안내로 귀결한다. 랜딩 `PricingSection` 은 이 범위에서 3회권 카드를 스탠다드 카드로 최소 수정했고, 전체 재구성은 ④.
 
 **3단계 플랜**: `docs/superpowers/plans/2026-09-06-company-analysis-products-plan.md`. 포함: 마이그레이션(enum 3값 + 상품 설정 테이블 백필), `entitlement-products.js` 카탈로그·설정 읽기, 웹훅 번들 지급, `checkoutUrls`·상품별 게이트, 관리자 상품 설정 엔드포인트·화면, `pricing.ts` 티어, 이용권 페이지 티어 카드 3장(베이직 선택 버튼), `Checkout`, 결제 내역 라벨. 제외(④): 랜딩 `PricingSection`·GNB·업셀 CTA·샘플.
