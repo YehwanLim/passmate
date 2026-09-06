@@ -26,9 +26,8 @@ describe("Entitlements page", () => {
     expect(pageSource).toContain("무료 체험");
     // 티어 카드 3장: 베이직(선택 버튼 2개) + 스탠다드 + 프리미엄. 카드 수·순서는 pricing.ts 의 TIERS 가 정한다.
     expect(pageSource).toContain("TIERS.map(");
-    expect(pageSource).toContain('id="basic"');
-    expect(pageSource).toContain("자소서 진단 1회");
-    expect(pageSource).toContain("기업 분석 1회");
+    expect(pageSource).toContain("id={tier.key}");
+    expect(pageSource).toContain("PRICING[choice].label");
     expect(pageSource).toContain("COMPANY_REPORT_INCLUDED_FEATURES");
     // 정가는 취소선으로, 할인율 배지와 함께 보여준다.
     expect(pageSource).toContain("line-through");

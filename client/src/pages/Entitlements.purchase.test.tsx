@@ -215,4 +215,30 @@ describe("Entitlements purchase button", () => {
       expect(screen.getAllByRole("button", { name: /스탠다드 구매하기/ })[0].hasAttribute("disabled")).toBe(false);
     });
   });
+
+  it("gives the basic card the id the company deep link scrolls to", async () => {
+    signedIn();
+    render(<Entitlements />);
+
+    expect(document.getElementById("basic")).not.toBeNull();
+    expect(document.getElementById("standard")).not.toBeNull();
+    expect(document.getElementById("premium")).not.toBeNull();
+  });
+
+  it("preselects the company option when arriving at #company", async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    window.location.hash = "#company";
+    try {
+      signedIn();
+      render(<Entitlements />);
+
+      expect(screen.getByRole("radio", { name: /기업 분석 1회/ }).getAttribute("aria-checked")).toBe("true");
+      expect(scrollIntoView).toHaveBeenCalled();
+    } finally {
+      window.location.hash = "";
+      // @ts-expect-error jsdom이 scrollIntoView를 구현하지 않아 스텁을 심었다 — 다른 테스트로 새지 않게 제거한다.
+      delete Element.prototype.scrollIntoView;
+    }
+  });
 });

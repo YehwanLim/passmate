@@ -229,7 +229,6 @@ export default function Entitlements() {
     ].filter(Boolean).join(" + ");
 
     return (
-      // 베이직 카드는 id="basic" 로 /entitlements#company 딥링크의 스크롤 대상이 된다.
       <div
         key={tier.key}
         id={tier.key}
@@ -241,7 +240,6 @@ export default function Entitlements() {
           {tier.label}
         </p>
         {tier.key === "basic" ? (
-          // 선택지: 자소서 진단 1회 또는 기업 분석 1회 (PRICING.single/company.label과 일치해야 한다).
           <div role="radiogroup" aria-label="베이직 구성 선택" className="mt-3 grid grid-cols-2 gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] p-1">
             {tier.products.map((choice) => (
               <button
