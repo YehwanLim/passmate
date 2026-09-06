@@ -360,3 +360,31 @@ export async function readPurchaseProductSettings(db)  // DB 행 + 레거시 env
    **재무·주식 섹션** — 검색 기반 수치는 회계 기간·단위 오류 가능성이 있고, 주가 서술은 투자 조언으로 읽힐 위험이 있다. 수치 4개 상한 + 출처 필수 + 고지 문구로 방어하고, 정확도가 문제가 되면 DART 연동을 후속으로 검토한다.
 4. **`PurchaseProductSetting` 행 세팅 전** 신규 3상품 결제가 오면 422 — Groble 등록 → SQL 행 입력 → `companyAnalysisEnabled` ON 순서를 운영 절차로 고정.
 5. **관리자 집계 의미 변화** — `analysis.count`가 기업 리포트를 포함하게 됨. 대시보드에 kind 분리 표시는 후속.
+
+---
+
+## 7. 1차(서버) 구현 후 확인 사항 — 2026-09-06 프로브 결과와 결정
+
+1차 서버 플랜은 `origin/main` `b310168`까지 반영되었고 마이그레이션도 적용되었다. `scripts/manual/company-analysis-probe.mjs`를 현대자동차·전략기획으로 1회 실행한 결과:
+
+| 항목 | 측정값 | 결정 |
+| --- | --- | --- |
+| 1차 호출 지연 | 48.6s, 복구 호출 없음(`repaired: false`) | §5-5 하이브리드(단일 그라운딩 호출 + 실패 시 복구) 유지. 2단 호출로 바꾸지 않는다 |
+| 토큰 | prompt 3,642 / completion 7,647 / total 16,424 | 예산 안. 변경 없음 |
+| 섹션 개수 | 사업부문 2·주력 3·지표 4·이슈 3·직무 소식 3·후보 3·질문 6 | 프롬프트 제약 준수 확인 |
+| 출처 | 서버가 저장한 `sources[]`는 12개(상한), 모델이 본문에 쓴 `sourceIds`는 1~47 | **`sourceIds`는 화면에 각주 번호로 쓰지 않는다**(아래) |
+| 검색 제안 칩 HTML | 9.8KB, 인라인 `<style>` 1개 + `<a>` 12개(vertexaisearch.cloud.google.com), 스크립트·이미지 없음 | 현재 CSP(`style-src 'unsafe-inline'`)로 표시 가능. **`vercel.json` CSP 변경 불필요** |
+
+### 7-1. 출처 표기 방식 확정
+
+모델이 붙이는 `sourceIds`는 모델이 스스로 매긴 번호라 서버가 `groundingChunks`에서 뽑은 `sources[]` 번호와 대응하지 않는다(프로브에서 47 vs 12). 따라서:
+
+- **화면(2단계)은 항목별 각주 칩을 그리지 않는다.** 부록 "출처와 기준일"에 `sources[]` 전체를 번호·제목·발행처·링크로 나열하고, 각 섹션 끝에는 "출처는 부록 참고" 한 줄만 둔다. §2의 "출처 칩 `[1] [2]`" 설계는 폐기한다.
+- 프롬프트의 `sourceIds` 규칙은 **유지**한다. 번호 자체는 쓰지 않지만 "출처가 있을 때만 수치를 쓴다"는 규율을 모델에 강제하는 장치로 유효하다. JSON 스키마도 그대로 둔다(하위 호환).
+- `lib/company-analysis.js`의 `MAX_SOURCES`를 12 → **20**으로 올린다. 프로브에서 모델이 40개 이상 자료를 봤으므로 12개는 부록이 너무 얇다. 20개면 화면 한 섹션 분량이다. (2단계 플랜의 첫 Task)
+- 그라운딩 URL(`vertexaisearch.cloud.google.com/grounding-api-redirect/…`)은 수 주 뒤 만료될 수 있다. 부록은 **제목·발행처를 앞에, 링크는 뒤에** 두고 `reportMeta.asOf`(기준일)를 부록 상단에 표기한다.
+- 검색 제안 칩(`reportMeta.searchEntryPointHtml`)은 Google 약관상 표시 의무가 있다. 부록 하단에 그대로 렌더한다(`dangerouslySetInnerHTML`, 스크립트 없음 확인됨). `rel="noopener noreferrer"`는 칩 안 링크에는 붙일 수 없으므로 칩 컨테이너를 `<div>`로 감싸기만 한다.
+
+### 7-2. 2단계 플랜 범위(화면)
+
+`docs/superpowers/plans/2026-09-06-company-analysis-screens-plan.md`로 작성한다. 포함: `MAX_SOURCES` 20, `/company-analysis` 신청 폼, `/company-report` 리포트 화면(8섹션 + 부록), `AnalysisPending` kind 분기, `/my` 목록 kind 배지, 관리자 설정의 `companyAnalysisEnabled` 토글, 관리자 크레딧 지급 UI의 kind 선택, `MyEntitlements` 기업 잔여 행, 자소서 폼(`Analyze`)의 이전 지원서 목록에서 기업 프로젝트 제외 + 쿼리 프리필. 제외(③④로): 상품·결제·가격 카드·`ReportResult` 하단 업셀 CTA·랜딩 노출·GNB·**정적 샘플 픽스처(`?sample=1`)** — 샘플은 실제 생성 결과를 사용자가 검수해 픽스처로 굳혀야 하므로 ④에서 프로브 `--out` 저장 옵션과 함께 다룬다.
