@@ -323,6 +323,8 @@ function ReportContent({
     const [coachVisible, setCoachVisible] = useState(false)
     const [coachStyle, setCoachStyle] = useState<CSSProperties>({})
     const coachDismissedRef = useRef(false)
+    // 실제로 화면에 띄운 적이 있는지. 띄운 적 없이 문장을 먼저 누른 경우엔 "봤음"을 저장하지 않는다.
+    const coachShownRef = useRef(false)
     const coachRef = useRef<HTMLButtonElement>(null)
     const sourceBodyRef = useRef<HTMLDivElement>(null)
     const tabBarRef = useRef<HTMLDivElement>(null)
@@ -543,22 +545,25 @@ function ReportContent({
     useEffect(() => {
         if (!isCompactLayout || coachDismissedRef.current || firstCardIndex === null) return
         try {
-            if (window.localStorage.getItem("preview:report-tap-coach-seen") === "1") {
+            if (window.localStorage.getItem("preview:report-tap-coach-seen-v2") === "1") {
                 coachDismissedRef.current = true
                 return
             }
         } catch {
             // 프라이빗 모드 등에서 저장소 접근이 막히면 그냥 한 번 보여준다.
         }
-        const target = sourceBodyRef.current
-        if (!target) return
+        // 긴 원문은 본문의 일정 비율이 한 화면에 들어오는 순간이 없으므로,
+        // 말풍선이 붙을 첫 하이라이트 자체가 절반 이상 보일 때 띄운다.
+        const firstHighlight = document.getElementById(`source-sentence-${firstCardIndex}`)
+        if (!firstHighlight) return
         const observer = new IntersectionObserver(([entry]) => {
             if (entry.isIntersecting) {
+                coachShownRef.current = true
                 setCoachVisible(true)
                 observer.disconnect()
             }
-        }, { threshold: 0.2 })
-        observer.observe(target)
+        }, { threshold: 0.5 })
+        observer.observe(firstHighlight)
         return () => observer.disconnect()
     }, [isCompactLayout, firstCardIndex])
 
@@ -566,8 +571,10 @@ function ReportContent({
         if (coachDismissedRef.current) return
         coachDismissedRef.current = true
         setCoachVisible(false)
+        // 말풍선을 보기 전에 문장을 먼저 누른 사용자는 이번 방문에서만 숨기고, 다음 방문에 한 번 보여준다.
+        if (!coachShownRef.current) return
         try {
-            window.localStorage.setItem("preview:report-tap-coach-seen", "1")
+            window.localStorage.setItem("preview:report-tap-coach-seen-v2", "1")
         } catch {
             // 저장 실패는 무시한다. 다음 방문에 한 번 더 보일 뿐이다.
         }

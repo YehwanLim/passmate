@@ -57,10 +57,15 @@ describe("ReportResult mobile layout", () => {
     expect(source).toContain("UI_LABELS.TAP_HIGHLIGHT_GUIDE");
     expect(source).toContain("UI_LABELS.TAP_HIGHLIGHT_COACH");
     expect(source).toContain("resolveCoachPlacement");
-    expect(source).toContain('"preview:report-tap-coach-seen"');
+    expect(source).toContain('"preview:report-tap-coach-seen-v2"');
     // 프라이빗 모드에서 localStorage 접근이 throw 할 수 있으므로 try/catch로 감싼다.
-    const coachStorage = source.split('"preview:report-tap-coach-seen"');
+    const coachStorage = source.split('"preview:report-tap-coach-seen-v2"');
     expect(coachStorage.length).toBeGreaterThanOrEqual(3);
-    expect(source).toMatch(/try \{[^}]*preview:report-tap-coach-seen/);
+    expect(source).toMatch(/try \{[^}]*preview:report-tap-coach-seen-v2/);
+    // 긴 원문은 본문의 20%가 한 화면에 들어오지 않으므로 첫 하이라이트 자체를 관찰한다.
+    expect(source).toContain("const firstHighlight = document.getElementById(`source-sentence-${firstCardIndex}`)");
+    expect(source).toContain("observer.observe(firstHighlight)");
+    // 실제로 보여준 적이 있을 때만 "봤음"을 저장한다. 말풍선 전에 문장을 누른 사용자는 다음 방문에 다시 본다.
+    expect(source).toMatch(/if \(!coachShownRef\.current\)[\s\S]{0,200}return[\s\S]{0,400}localStorage\.setItem\("preview:report-tap-coach-seen-v2"/);
   });
 });
