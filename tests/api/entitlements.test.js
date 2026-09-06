@@ -101,6 +101,8 @@ describe("entitlement APIs", () => {
       premiumEnabled: false,
       premiumRemaining: 0,
       remaining: 1,
+      companyAnalysisEnabled: false,
+      companyRemaining: 0,
     });
   });
 
@@ -119,6 +121,8 @@ describe("entitlement APIs", () => {
       premiumRemaining: 0,
       remaining: 1,
       feedbackRewardClaimed: false,
+      companyAnalysisEnabled: false,
+      companyRemaining: 0,
     });
     // 조회 전용 요약 — 잠금 트랜잭션을 거치지 않고 prisma 로 바로 읽는다.
     expect(mocks.getEntitlementSummaryReadOnly).toHaveBeenCalledWith(
@@ -126,6 +130,27 @@ describe("entitlement APIs", () => {
       mocks.authenticatedUser.id,
     );
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("passes the company analysis pool through to the summary response", async () => {
+    mocks.getEntitlementSummaryReadOnly.mockResolvedValue({
+      freeRemaining: 0,
+      bonusRemaining: 0,
+      premiumEnabled: true,
+      premiumRemaining: 2,
+      remaining: 2,
+      companyAnalysisEnabled: true,
+      companyRemaining: 1,
+    });
+
+    const response = await invokeEntitlements();
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({
+      remaining: 2,
+      companyAnalysisEnabled: true,
+      companyRemaining: 1,
+    });
   });
 
   it("exposes the checkout URLs only while premium sales are enabled", async () => {
