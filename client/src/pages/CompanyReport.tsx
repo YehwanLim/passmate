@@ -11,6 +11,7 @@ import { COMPANY_HERO_ID, COMPANY_REPORT_NAV_SECTIONS } from "./companyReportNav
 import {
   COMPANY_REPORT_DISCLAIMER,
   CompanySectionHeading,
+  ExternalSourceLink,
   HeadlineCard,
   INVESTMENT_DISCLAIMER,
   PhaseBadge,
@@ -384,7 +385,7 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
               <ul className="space-y-3">
                 {problems.map((problem, index) => (
                   <li key={`${problem}-${index}`} className="flex items-start gap-2.5 text-[15px] leading-[1.7] text-zinc-200">
-                    <span className="mt-[9px] size-[5px] shrink-0 rounded-full bg-zinc-600" />{renderCompanyText(problem)}
+                    <span className="mt-[9px] size-[5px] shrink-0 rounded-full bg-zinc-600" /><span>{renderCompanyText(problem)}</span>
                   </li>
                 ))}
               </ul>
@@ -516,9 +517,9 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
               <ul className="space-y-2">
                 {primarySources.map((primary, index) => (
                   <li key={`${primary.label}-${index}`}>
-                    <a href={primary.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[15px] text-zinc-300 hover:text-white">
+                    <ExternalSourceLink href={primary.url} className="inline-flex items-center gap-2 text-[15px] text-zinc-300 hover:text-white">
                       <ExternalLink className="w-3.5 h-3.5 text-zinc-600" />{primary.label}
-                    </a>
+                    </ExternalSourceLink>
                   </li>
                 ))}
               </ul>
@@ -539,9 +540,9 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
                 <span className="min-w-0">
                   <span className="text-zinc-200">{source.title}</span>
                   {source.publisher && source.publisher !== source.title ? <span className="text-zinc-500"> · {source.publisher}</span> : null}
-                  <a href={source.url} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center gap-1 text-[13px] text-zinc-500 hover:text-white">
+                  <ExternalSourceLink href={source.url} className="ml-2 inline-flex items-center gap-1 text-[13px] text-zinc-500 hover:text-white">
                     <ExternalLink className="w-3 h-3" />열기
-                  </a>
+                  </ExternalSourceLink>
                 </span>
               </li>
             ))}

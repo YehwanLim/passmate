@@ -35,4 +35,21 @@ describe("admin credits client", () => {
     const result = await fetchUserCredits("u1");
     expect(result.summary.companyRemaining).toBe(0);
   });
+
+  it("parses the grant kind from history rows, defaulting older rows to RESUME", async () => {
+    const grant = (overrides: Record<string, unknown>) => ({
+      id: "g1", credits_granted: 1, granted_by_email: "admin@x.com",
+      source: "ADMIN_GRANT", note: null, created_at: "2026-09-06T00:00:00.000Z",
+      ...overrides,
+    });
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({
+      summary: SUMMARY,
+      grants: [grant({ id: "g1", kind: "COMPANY" }), grant({ id: "g2" })],
+    }));
+
+    const result = await fetchUserCredits("u1");
+
+    expect(result.grants[0].kind).toBe("COMPANY");
+    expect(result.grants[1].kind).toBe("RESUME");
+  });
 });

@@ -44,7 +44,7 @@ export default function CompanyAnalyze() {
   const [company, setCompany] = useState(() => readQueryParam("company"));
   const [jobKeyword, setJobKeyword] = useState(() => readQueryParam("jobKeyword"));
   const [postingText, setPostingText] = useState("");
-  const [resumeAnalysisId, setResumeAnalysisId] = useState(() => readQueryParam("resumeAnalysisId"));
+  const [resumeAnalysisId, setResumeAnalysisId] = useState("");
   const [previousResumes, setPreviousResumes] = useState<ProjectSummary[]>([]);
   const [summary, setSummary] = useState<EntitlementSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);

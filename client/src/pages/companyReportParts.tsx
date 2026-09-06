@@ -24,6 +24,28 @@ export function renderCompanyText(text: string | null | undefined, emphasize = f
   ));
 }
 
+/** http/https 만 링크로 취급한다(모델이 만들어낸 스킴 오남용 방지). */
+export function isHttpUrl(value: string): boolean {
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** 모델이 준 출처 URL이 http/https 일 때만 링크로, 아니면 평문으로 그린다. */
+export function ExternalSourceLink({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
+  if (!isHttpUrl(href)) {
+    return <span className={className}>{children}</span>;
+  }
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      {children}
+    </a>
+  );
+}
+
 export function CompanySectionNumber({ value }: { value: string }) {
   return <span className="mr-3.5 font-semibold tabular-nums text-zinc-700">{value}</span>;
 }
@@ -95,7 +117,7 @@ export function HeadlineCard({ headline, text, tone }: { headline: ReactNode; te
     <div className="mt-7 border-t border-white/[0.05] pt-7 first:mt-0 first:border-t-0 first:pt-0">
       <p className="mb-2.5 flex items-center gap-2.5 text-[17px] font-semibold leading-[1.45] tracking-[-0.01em] text-zinc-50">
         <span aria-hidden="true" className={`mx-[3px] inline-block size-[7px] shrink-0 rounded-full ${dot}`} />
-        {headline}
+        <span>{headline}</span>
       </p>
       <p className="pl-[23px] text-[15px] leading-[1.85] text-zinc-400">{renderCompanyText(text, true)}</p>
     </div>

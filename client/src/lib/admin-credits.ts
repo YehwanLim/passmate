@@ -19,6 +19,7 @@ export interface AdminCreditGrantRecord {
   source: string;
   note: string | null;
   created_at: string;
+  kind: AdminCreditKind;
 }
 
 export interface UserCreditsResponse {
@@ -50,6 +51,18 @@ function parseSummary(payload: unknown): UserCreditSummary | null {
       typeof summary.companyRemaining === "number" && Number.isInteger(summary.companyRemaining) && summary.companyRemaining >= 0
         ? summary.companyRemaining
         : 0,
+  };
+}
+
+function parseGrant(value: JsonRecord): AdminCreditGrantRecord {
+  return {
+    id: value.id as string,
+    credits_granted: value.credits_granted as number,
+    granted_by_email: value.granted_by_email as string,
+    source: value.source as string,
+    note: (value.note as string | null) ?? null,
+    created_at: value.created_at as string,
+    kind: value.kind === "COMPANY" ? "COMPANY" : "RESUME",
   };
 }
 
@@ -97,7 +110,7 @@ export async function fetchUserCredits(userId: string): Promise<UserCreditsRespo
   if (!summary || !Array.isArray(payload.grants)) throw new Error(fallback);
   return {
     summary,
-    grants: payload.grants as AdminCreditGrantRecord[],
+    grants: (payload.grants as JsonRecord[]).map(parseGrant),
   };
 }
 

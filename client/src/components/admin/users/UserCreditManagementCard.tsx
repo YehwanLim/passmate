@@ -183,8 +183,17 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
             <ul className="space-y-1">
               {grants.slice(0, 10).map((grant) => (
                 <li key={grant.id} className="flex items-baseline justify-between gap-2 text-xs">
-                  <span>
+                  <span className="flex items-center gap-1.5">
                     +{grant.credits_granted}회
+                    <span
+                      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-bold border ${
+                        grant.kind === "COMPANY"
+                          ? "bg-sky-500/15 text-sky-300 border-sky-400/25"
+                          : "bg-zinc-500/15 text-zinc-300 border-zinc-400/25"
+                      }`}
+                    >
+                      {grant.kind === "COMPANY" ? "기업" : "자소서"}
+                    </span>
                     {grant.note ? ` · ${grant.note}` : ""}
                   </span>
                   <span className="shrink-0 text-muted-foreground">

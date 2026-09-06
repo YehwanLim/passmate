@@ -36,4 +36,15 @@ describe("CompanyReport page", () => {
     expect(appSource.indexOf('path={"/company-analysis"}')).toBeLessThan(appSource.indexOf('path={"/company-report"}'));
     expect(appSource.indexOf('path={"/company-report"}')).toBeLessThan(appSource.indexOf('path={"/my"}'));
   });
+
+  it("only links model-provided source URLs when they are http/https", () => {
+    expect(source).toContain("ExternalSourceLink");
+    // 08 각주와 09 부록 링크가 더 이상 원시 <a href=...> 로 렌더되지 않는다(ExternalSourceLink 가 스킴을 검사한다).
+    expect(source).not.toContain("<a href={source.url}");
+    expect(source).not.toContain("<a href={primary.url}");
+  });
+
+  it("never uses the .container class name here (검색 제안 칩의 인라인 스타일이 .container 를 전역으로 덮으므로 이 페이지에서는 그 클래스를 쓰지 않는다)", () => {
+    expect(source).not.toContain('className="container"');
+  });
 });

@@ -37,4 +37,11 @@ describe("admin user credit management", () => {
     expect(card).toContain("companyRemaining");
     expect(read("client/src/lib/admin-credits.ts")).toContain("kind");
   });
+
+  it("shows the grant kind as a badge in the credit history row", () => {
+    const card = read("client/src/components/admin/users/UserCreditManagementCard.tsx");
+    expect(card).toContain('grant.kind === "COMPANY"');
+    expect(card).toContain("기업");
+    expect(card).toContain("자소서");
+  });
 });
