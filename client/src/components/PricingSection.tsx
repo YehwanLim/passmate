@@ -54,7 +54,7 @@ const COMPARISON_COLUMNS = [
   },
   {
     label: "회당",
-    note: "3회권 기준",
+    note: "스탠다드 기준",
     value: formatKrw(TRIPLE_PER_USE_PRICE),
     barHeight: 8,
     isPreview: true,
@@ -67,14 +67,16 @@ function PaidPlanCard({
   lead,
   body,
 }: {
-  planKey: "single" | "triple";
+  planKey: "single" | "standard";
   perUseNote: string;
   lead: string;
   body: string;
 }) {
   const [, navigate] = useLocation();
   const plan = PRICING[planKey];
-  const highlighted = planKey === "triple";
+  const highlighted = planKey === "standard";
+  // 번들 상품(자소서+기업 크레딧을 함께 담은 상품)은 "따로 사면"으로, 단일 상품은 "정가"로 표기한다.
+  const listPricePrefix = plan.uses + plan.companyUses > 1 && plan.companyUses > 0 ? "따로 사면" : "정가";
 
   return (
     <motion.div
@@ -100,7 +102,7 @@ function PaidPlanCard({
       </p>
       <p className="mt-3 flex flex-wrap items-baseline gap-x-3 text-base">
         <span className="font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
-          정가 {formatKrw(plan.listPrice)}
+          {listPricePrefix} {formatKrw(plan.listPrice)}
         </span>
         <span className="text-lg md:text-xl font-extrabold tracking-tight text-sky-300">
           {plan.discountLabel}
@@ -177,10 +179,10 @@ export default function PricingSection() {
             body="지금 쓴 자소서가 채용 담당자에게 어떻게 읽히는지, 제출 전에 확인해 보세요."
           />
           <PaidPlanCard
-            planKey="triple"
-            perUseNote={`회당 ${formatKrw(TRIPLE_PER_USE_PRICE)} — 커피 한 잔 값`}
-            lead="고쳐 쓰고, 다시 확인하고, 다음 지원까지."
-            body="지원하는 회사가 바뀌면 리포트의 기준도 바뀝니다. 고쳐 쓴 자소서가 정말 나아졌는지도 다시 확인해 보세요."
+            planKey="standard"
+            perUseNote="자소서 진단 2회 + 기업 분석 1회"
+            lead="한 회사를 제대로 준비하고, 고쳐 쓴 자소서까지 다시 확인."
+            body="기업 분석 1회로 지원 기업의 채용 기준을 파악하고, 자소서 진단 2회로 초안부터 고쳐 쓴 뒤까지 다시 확인해 보세요."
           />
         </motion.div>
 

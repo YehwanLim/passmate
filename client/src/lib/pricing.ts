@@ -56,7 +56,7 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
   },
   // 판매 종료. 과거 결제 기록의 라벨·추정 금액에만 쓴다.
   triple: {
-    label: "3회권",
+    label: "3회권(구)",
     listPrice: 29_700,
     salePrice: 14_900,
     discountLabel: "약 50% 할인",

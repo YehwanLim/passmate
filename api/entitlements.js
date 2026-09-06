@@ -25,13 +25,14 @@ const SWITCH_SELECT = { premiumEnabled: true, companyAnalysisEnabled: true };
 
 /**
  * 상품 하나의 결제 URL. 전체 판매 스위치 → (기업 크레딧 포함 상품이면) 기업 분석 스위치 →
- * 상품 행의 active 와 URL 순으로 닫힌다. 닫혀 있으면 null.
+ * 상품 행의 active·contentId·URL 순으로 닫힌다. 닫혀 있으면 null.
+ * contentId 가 없으면 웹훅이 어떤 상품을 구매 확정할지 알 수 없으므로 URL 이 있어도 팔지 않는다.
  */
 function checkoutUrlFor(product, productSettings, switches) {
   if (!switches?.premiumEnabled) return null;
   if (PURCHASE_PRODUCTS[product].companyCredits > 0 && !switches.companyAnalysisEnabled) return null;
   const setting = productSettings[product];
-  return setting.active && setting.paymentUrl ? setting.paymentUrl : null;
+  return setting.active && setting.contentId && setting.paymentUrl ? setting.paymentUrl : null;
 }
 
 function checkoutUrlsFor(productSettings, switches) {

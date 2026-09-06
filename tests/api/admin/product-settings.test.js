@@ -48,10 +48,11 @@ describe("admin product settings", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.products.map((row) => row.product)).toEqual(["SINGLE", "COMPANY_SINGLE", "STANDARD", "PREMIUM", "TRIPLE"]);
-    expect(res.body.products[0]).toEqual({ product: "SINGLE", contentId: "env-single", paymentUrl: "", active: false, resumeCredits: 1, companyCredits: 0 });
-    expect(res.body.products[2]).toEqual({ product: "STANDARD", contentId: "4SGBV5", paymentUrl: "https://www.groble.im/payment/4SGBV5", active: true, resumeCredits: 2, companyCredits: 1 });
+    // SINGLE 은 아직 행에 저장된 contentId 가 없어 env fallback 값만 참고용으로 노출한다.
+    expect(res.body.products[0]).toEqual({ product: "SINGLE", contentId: null, fallbackContentId: "env-single", paymentUrl: "", active: false, resumeCredits: 1, companyCredits: 0 });
+    expect(res.body.products[2]).toEqual({ product: "STANDARD", contentId: "4SGBV5", fallbackContentId: null, paymentUrl: "https://www.groble.im/payment/4SGBV5", active: true, resumeCredits: 2, companyCredits: 1 });
     // 구 3회권 env contentId 는 STANDARD 행이 이미 쓰므로 TRIPLE 에는 붙지 않는다(컷오버 완료 상태).
-    expect(res.body.products[4]).toEqual({ product: "TRIPLE", contentId: null, paymentUrl: "", active: false, resumeCredits: 3, companyCredits: 0 });
+    expect(res.body.products[4]).toEqual({ product: "TRIPLE", contentId: null, fallbackContentId: null, paymentUrl: "", active: false, resumeCredits: 3, companyCredits: 0 });
   });
 
   it("upserts one product's settings from a PATCH and returns the refreshed list", async () => {

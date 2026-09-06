@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const enumMigration = readFileSync(
-  new URL("../../prisma/migrations/20260907_add_tier_purchase_products/migration.sql", import.meta.url),
+  new URL("../../prisma/migrations/20260907_add_purchase_product_enum_values/migration.sql", import.meta.url),
   "utf8",
 );
 const tableMigration = readFileSync(

@@ -22,7 +22,7 @@ describe("Entitlements page", () => {
     expect(pageSource).toContain("PRICING[product]");
     expect(pageSource).toContain("TRIPLE_PER_USE_PRICE");
     expect(pageSource).not.toContain("9,900원");
-    // 무료 체험 + 1회권 + 3회권 카드는 로그인 여부와 무관하게 렌더된다.
+    // 무료 체험 + 베이직 + 스탠다드 + 프리미엄 카드는 로그인 여부와 무관하게 렌더된다.
     expect(pageSource).toContain("무료 체험");
     // 티어 카드 3장: 베이직(선택 버튼 2개) + 스탠다드 + 프리미엄. 카드 수·순서는 pricing.ts 의 TIERS 가 정한다.
     expect(pageSource).toContain("TIERS.map(");

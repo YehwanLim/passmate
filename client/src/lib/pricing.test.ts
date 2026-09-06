@@ -52,7 +52,7 @@ describe("pricing constants", () => {
 describe("product labels and estimated amounts", () => {
   it("names the server product keys in Korean", () => {
     expect(productLabel("SINGLE")).toBe("자소서 진단 1회");
-    expect(productLabel("TRIPLE")).toBe("3회권");
+    expect(productLabel("TRIPLE")).toBe("3회권(구)");
   });
 
   it("shows a dash when the product could not be identified", () => {

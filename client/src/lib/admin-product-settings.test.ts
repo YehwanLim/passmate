@@ -30,7 +30,15 @@ describe("admin product settings API client", () => {
 
   it("reads the product list with the active Supabase bearer token", async () => {
     const products = [
-      { product: "SINGLE", contentId: "6HteWn", paymentUrl: "", active: true, resumeCredits: 1, companyCredits: 0 },
+      {
+        product: "SINGLE",
+        contentId: "6HteWn",
+        fallbackContentId: null,
+        paymentUrl: "",
+        active: true,
+        resumeCredits: 1,
+        companyCredits: 0,
+      },
     ];
     mockedFetch().mockResolvedValue(jsonResponse({ products }));
 

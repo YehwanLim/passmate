@@ -4,6 +4,7 @@ import { supabase } from "./supabase";
 export interface AdminProductSetting {
   product: PurchaseProduct;
   contentId: string | null;
+  fallbackContentId: string | null;
   paymentUrl: string;
   active: boolean;
   resumeCredits: number;
@@ -24,6 +25,7 @@ function isProductSetting(value: unknown): value is AdminProductSetting {
   return (
     typeof row.product === "string" &&
     (row.contentId === null || typeof row.contentId === "string") &&
+    (row.fallbackContentId === null || typeof row.fallbackContentId === "string") &&
     typeof row.paymentUrl === "string" &&
     typeof row.active === "boolean" &&
     typeof row.resumeCredits === "number" &&

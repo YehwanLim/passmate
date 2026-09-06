@@ -412,6 +412,52 @@ describe("entitlement APIs", () => {
     expect(mocks.prisma.purchaseIntent.create).not.toHaveBeenCalled();
   });
 
+  it("refuses a product whose content id is unknown even when its URL is set", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      premiumEnabled: true,
+      companyAnalysisEnabled: true,
+    });
+    mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue(
+      buildProductRows({ COMPANY_SINGLE: { grobleContentId: null, paymentUrl: COMPANY_CHECKOUT_URL, active: true } }),
+    );
+
+    const purchaseResponse = await invokeEntitlements({
+      method: "POST",
+      path: "/api/entitlements/purchase-intents?product=company",
+      query: { product: "company" },
+    });
+
+    expect(purchaseResponse.statusCode).toBe(503);
+    expect(purchaseResponse.body).toEqual({ error: "PREMIUM_CHECKOUT_NOT_CONFIGURED" });
+    expect(mocks.prisma.purchaseIntent.create).not.toHaveBeenCalled();
+
+    const summaryResponse = await invokeEntitlements();
+    expect(summaryResponse.body.checkoutUrls.company).toBeNull();
+  });
+
+  it("refuses an inactive product even when its URL and content id are set", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      premiumEnabled: true,
+      companyAnalysisEnabled: true,
+    });
+    mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue(
+      buildProductRows({ STANDARD: { active: false, grobleContentId: "4SGBV5", paymentUrl: CHECKOUT_URL } }),
+    );
+
+    const purchaseResponse = await invokeEntitlements({
+      method: "POST",
+      path: "/api/entitlements/purchase-intents?product=standard",
+      query: { product: "standard" },
+    });
+
+    expect(purchaseResponse.statusCode).toBe(503);
+    expect(purchaseResponse.body).toEqual({ error: "PREMIUM_CHECKOUT_NOT_CONFIGURED" });
+    expect(mocks.prisma.purchaseIntent.create).not.toHaveBeenCalled();
+
+    const summaryResponse = await invokeEntitlements();
+    expect(summaryResponse.body.checkoutUrls.standard).toBeNull();
+  });
+
   it("rejects unknown purchase products before touching settings or the database", async () => {
     const response = await invokeEntitlements({
       method: "POST",
