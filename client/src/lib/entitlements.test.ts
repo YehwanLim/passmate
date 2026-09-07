@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   EntitlementApiError,
   fetchEntitlementSummary,
+  fetchSalesAvailability,
 } from "./entitlements";
 
 const entitlementClientSource = readFileSync(
@@ -42,6 +43,8 @@ describe("entitlements client", () => {
     ).resolves.toEqual({
       premiumEnabled: false,
       freeRemaining: 1,
+      // 구버전 서버 응답에 없으면 보너스는 0으로 읽는다
+      bonusRemaining: 0,
       premiumRemaining: 0,
       remaining: 1,
       groblePaymentUrl: null,
@@ -245,5 +248,27 @@ describe("createPurchaseIntent", () => {
     await expect(
       createPurchaseIntent("token", "triple", fetcher as typeof fetch),
     ).rejects.toThrow("PREMIUM_SALES_DISABLED");
+  });
+});
+
+describe("fetchSalesAvailability", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("reads booleans tolerantly and treats unknown keys as closed", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      companyAnalysisEnabled: true,
+      purchasable: { single: true, standard: "yes", premium: 1 },
+    }), { status: 200, headers: { "Content-Type": "application/json" } })));
+    const availability = await fetchSalesAvailability();
+    expect(fetch).toHaveBeenCalledWith("/api/entitlements?availability=1");
+    expect(availability).toEqual({
+      companyAnalysisEnabled: true,
+      purchasable: { single: true, company: false, standard: false, premium: false, triple: false },
+    });
+  });
+
+  it("throws on a non-2xx response", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
+    await expect(fetchSalesAvailability()).rejects.toThrow();
   });
 });

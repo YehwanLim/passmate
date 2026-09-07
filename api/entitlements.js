@@ -41,6 +41,27 @@ function checkoutUrlsFor(productSettings, switches) {
   );
 }
 
+function isSalesAvailabilityRequest(req) {
+  return req.query?.availability === "1";
+}
+
+/**
+ * 비로그인 방문자용 판매 가용성. 로그인 전 화면(이용권 페이지·랜딩)이 미판매 티어를
+ * 활성 버튼으로 보여 주지 않게 하려는 것이므로 상품별 boolean 만 준다.
+ * 결제 URL·contentId·사용자 정보는 절대 포함하지 않는다.
+ */
+async function getSalesAvailability(res) {
+  const [switches, productSettings] = await Promise.all([
+    prisma.entitlementSetting.findUnique({ where: { id: SETTINGS_ID }, select: SWITCH_SELECT }),
+    readPurchaseProductSettings(prisma),
+  ]);
+  const checkoutUrls = checkoutUrlsFor(productSettings, switches);
+  return res.status(200).json({
+    companyAnalysisEnabled: switches?.companyAnalysisEnabled === true,
+    purchasable: Object.fromEntries(Object.entries(checkoutUrls).map(([key, url]) => [key, Boolean(url)])),
+  });
+}
+
 function pathnameOf(req) {
   return new URL(req.url ?? "/", "http://localhost").pathname;
 }
@@ -150,6 +171,11 @@ export default async function handler(req, res) {
     // 웹훅은 Groble 서버가 호출하므로 사용자 인증 대신 HMAC 서명으로 검증한다.
     if (isGrobleWebhookPath(req)) {
       return await grobleWebhookHandler(req, res);
+    }
+
+    // 판매 가용성은 로그인 전 화면이 쓰므로 인증 없이 답한다(boolean 만).
+    if (req.method === "GET" && isEntitlementsPath(req) && isSalesAvailabilityRequest(req)) {
+      return getSalesAvailability(res);
     }
 
     const user = await getAuthenticatedUser(req, res);

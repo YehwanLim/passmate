@@ -505,3 +505,84 @@ describe("entitlement APIs", () => {
     expect(response.body).toEqual({ error: "Method Not Allowed" });
   });
 });
+
+describe("GET /api/entitlements?availability=1 (public sales availability)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requireActiveApplicationUser.mockResolvedValue({
+      authenticatedUser: mocks.authenticatedUser,
+      applicationUser: { id: mocks.authenticatedUser.id, deletionRequestedAt: null, role: "user" },
+    });
+    mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue(buildProductRows());
+  });
+
+  it("answers without authentication and never calls the user guard", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      premiumEnabled: true,
+      companyAnalysisEnabled: true,
+    });
+
+    const res = createResponse();
+    await entitlementsHandler(
+      { method: "GET", url: "/api/entitlements?availability=1", query: { availability: "1" }, headers: {} },
+      res,
+    );
+    expect(mocks.requireActiveApplicationUser).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({
+      companyAnalysisEnabled: true,
+      purchasable: { single: true, company: true, standard: true, premium: true, triple: false },
+    });
+  });
+
+  it("leaks no checkout url, content id, or user data", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      premiumEnabled: true,
+      companyAnalysisEnabled: true,
+    });
+
+    const res = createResponse();
+    await entitlementsHandler(
+      { method: "GET", url: "/api/entitlements?availability=1", query: { availability: "1" }, headers: {} },
+      res,
+    );
+    const serialized = JSON.stringify(res.body);
+    expect(serialized).not.toContain("groble.im");
+    expect(serialized).not.toContain("4SGBV5");
+    expect(Object.keys(res.body)).toEqual(["companyAnalysisEnabled", "purchasable"]);
+  });
+
+  it("closes company products when the company switch is off", async () => {
+    mocks.prisma.entitlementSetting.findUnique.mockResolvedValue({
+      premiumEnabled: true,
+      companyAnalysisEnabled: false,
+    });
+
+    const res = createResponse();
+    await entitlementsHandler(
+      { method: "GET", url: "/api/entitlements?availability=1", query: { availability: "1" }, headers: {} },
+      res,
+    );
+    expect(res.body.companyAnalysisEnabled).toBe(false);
+    expect(res.body.purchasable).toEqual({
+      single: true,
+      company: false,
+      standard: false,
+      premium: false,
+      triple: false,
+    });
+  });
+
+  it("still requires authentication for a POST with the availability flag", async () => {
+    mocks.requireActiveApplicationUser.mockRejectedValue(
+      new mocks.AuthorizationError("AUTHENTICATION_REQUIRED", 401, "Unauthorized"),
+    );
+
+    const res = createResponse();
+    await entitlementsHandler(
+      { method: "POST", url: "/api/entitlements?availability=1", query: { availability: "1" }, headers: {} },
+      res,
+    );
+    expect(res.statusCode).toBe(401);
+  });
+});

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Menu, RefreshCw, X } from "lucide-react";
+import { ArrowRight, Check, Menu, RefreshCw, X } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
 import { HOME_NAV_ITEMS } from "@/pages/Home";
@@ -9,8 +9,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getLoginRedirectPath } from "@/hooks/useRequireAuth";
 import {
   fetchEntitlementSummary,
+  fetchSalesAvailability,
   type EntitlementSummary,
   type PurchaseProductKey,
+  type SalesAvailability,
 } from "@/lib/entitlements";
 import {
   COMPANY_REPORT_INCLUDED_FEATURES,
@@ -18,7 +20,6 @@ import {
   REPORT_INCLUDED_FEATURES,
   SEASONAL_DISCOUNT_LABEL,
   TIERS,
-  TRIPLE_PER_USE_PRICE,
   formatKrw,
   savingsFor,
 } from "@/lib/pricing";
@@ -31,31 +32,31 @@ const PAYMENT_INQUIRY_MAILTO = `mailto:hansitoring@gmail.com?subject=${encodeURI
   "아래 내용을 채워 보내주시면 영업일 기준 3일 이내에 안내드릴게요.\n\n- 결제일:\n- 결제 확인 정보(주문번호 또는 결제 이메일):\n- 문의 내용(환불 요청 시 사유 포함):\n"
 )}`;
 
-const PAID_PLAN_COPY: Record<
-  "single" | "company" | "standard" | "premium",
-  { lead: string; body: string; perUseNote: string }
-> = {
-  single: {
-    lead: "당장 앞둔 마감 하나에 집중하고 싶다면.",
-    body: "지금 쓴 자소서가 채용 담당자에게 어떻게 읽히는지, 제출 전에 확인해 보세요.",
-    perUseNote: "이번 지원, 제출 전 마지막 점검",
-  },
-  company: {
-    lead: "자소서를 쓰기 전에 회사부터 알고 싶다면.",
-    body: "무엇을 팔아 돈을 버는지, 요즘 힘을 싣는 사업이 무엇인지, 자소서에 쓸 사업 소재까지 한 리포트로 받아 보세요.",
-    perUseNote: "회사 한 곳, 자소서 쓰기 전 조사",
+// 카드 문구: "언제 쓰는 이용권인지"(굵게) + 무엇을 받는지 한 줄. 세 카드가 같은 꼴로 읽히지 않게 상황으로 가른다.
+const TIER_COPY: Record<(typeof TIERS)[number]["key"], { when: string; what: Partial<Record<PurchaseProductKey, string>> }> = {
+  basic: {
+    when: "한 번만 필요할 때",
+    what: {
+      single: "자소서 한 편을 제출 전에 점검받아요.",
+      company: "지원할 회사 한 곳을 자소서 쓰기 전에 조사해요.",
+    },
   },
   standard: {
-    lead: "한 회사를 제대로 준비하고, 고쳐 쓴 자소서까지 다시 확인.",
-    body: "기업 분석으로 소재를 잡고, 자소서 진단을 두 번 받으세요. 고쳐 쓴 자소서가 정말 나아졌는지 확인할 수 있어요.",
-    perUseNote: `회당 ${formatKrw(TRIPLE_PER_USE_PRICE)} — 커피 한 잔 값`,
+    when: "한 회사를 제대로 준비할 때",
+    what: {
+      standard: "회사를 조사한 뒤 자소서를 쓰고, 고쳐 쓴 자소서를 한 번 더 진단받아요.",
+    },
   },
   premium: {
-    lead: "세 회사를 완전히 대비하고 싶다면.",
-    body: "회사마다 기업 분석 리포트와 자소서 진단을 한 번씩. 지원하는 회사가 바뀌면 리포트의 기준도 바뀝니다.",
-    perUseNote: "회사 세 곳, 조사부터 진단까지",
+    when: "여러 회사에 함께 지원할 때",
+    what: {
+      premium: "회사 세 곳을 조사하고, 회사마다 자소서 진단을 한 번씩 받아요. 세 곳이면 가장 저렴해요.",
+    },
   },
 };
+
+/** 추천 카드 — 랜딩의 "커피 한 잔" 기준과 같은 스탠다드. */
+const RECOMMENDED_TIER = "standard";
 
 type BasicChoice = "single" | "company";
 
@@ -70,6 +71,7 @@ export default function Entitlements() {
   // 팝업 차단 시 사용자가 직접 클릭해 열 수 있도록 체크아웃 URL을 보관한다.
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [basicChoice, setBasicChoice] = useState<BasicChoice>("single");
+  const [availability, setAvailability] = useState<SalesAvailability | null>(null);
 
   // 랜딩과 같은 GNB 메뉴를 유지한다. 섹션 타입은 랜딩으로 이동한 뒤 해당 섹션으로 스크롤.
   const handleNavClick = useCallback(
@@ -140,6 +142,23 @@ export default function Entitlements() {
     }
   }, [authLoading, isAuthenticated, loadEntitlements]);
 
+  // 비로그인 방문자는 이용권 요약을 못 받으므로, 판매 가용성만 따로 물어 미판매 티어를 활성 버튼으로 보여 주지 않는다.
+  // 실패하면 모르는 상태로 두고 로그인 버튼을 그대로 보여 준다(로그인 후 서버가 다시 판단).
+  useEffect(() => {
+    if (authLoading || isAuthenticated) return;
+    let cancelled = false;
+    fetchSalesAvailability()
+      .then((next) => {
+        if (!cancelled) setAvailability(next);
+      })
+      .catch(() => {
+        /* 모르면 로그인 버튼 유지 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated]);
+
   // /entitlements#company — 기업 분석 이용권이 없어서 온 사용자는 베이직 카드의 기업 분석을 바로 고른 상태로 만난다.
   useEffect(() => {
     if (window.location.hash === "#company") {
@@ -172,9 +191,9 @@ export default function Entitlements() {
   const renderPaidPlanButton = (product: PurchaseProductKey) => {
     const plan = PRICING[product];
     const buttonClassName =
-      product === "premium"
-        ? "h-11 w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:from-blue-400 hover:to-cyan-300 disabled:opacity-50"
-        : "h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1] disabled:opacity-50";
+      product === RECOMMENDED_TIER
+        ? "h-11 w-full rounded-xl bg-sky-500 text-sm font-semibold text-white transition-colors hover:bg-sky-400 disabled:opacity-50"
+        : "h-11 w-full rounded-xl border border-white/[0.2] bg-white/[0.06] text-sm font-semibold text-white transition-colors hover:bg-white/[0.12] disabled:opacity-50";
 
     // 아직 결제 URL을 모르는 동안은 "판매 준비 중"이 아니라 비활성 버튼을 보여준다 —
     // 로딩과 판매 중단은 다른 상태고, 섞으면 로그인한 사용자에게 틀린 안내가 깜빡인다.
@@ -183,6 +202,14 @@ export default function Entitlements() {
         <button type="button" disabled className={buttonClassName}>
           {plan.label} 구매하기
         </button>
+      );
+    }
+
+    if (!isAuthenticated && availability && !availability.purchasable[product]) {
+      return (
+        <p className="flex h-11 items-center justify-center text-xs text-zinc-500">
+          현재 추가 이용권 판매를 준비하고 있어요.
+        </p>
       );
     }
 
@@ -200,7 +227,7 @@ export default function Entitlements() {
 
     if (!canPurchase(product)) {
       return (
-        <p className="flex h-11 items-center justify-center text-xs text-zinc-600">
+        <p className="flex h-11 items-center justify-center text-xs text-zinc-500">
           현재 추가 이용권 판매를 준비하고 있어요.
         </p>
       );
@@ -220,27 +247,40 @@ export default function Entitlements() {
   const renderTierCard = (tier: (typeof TIERS)[number]) => {
     const product: PurchaseProductKey = tier.key === "basic" ? basicChoice : tier.products[0];
     const plan = PRICING[product];
-    const copy = PAID_PLAN_COPY[product as keyof typeof PAID_PLAN_COPY];
-    const highlighted = tier.key === "premium";
+    const recommended = tier.key === RECOMMENDED_TIER;
     const hasStrike = plan.listPrice > plan.salePrice;
     const usesLabel = [
       plan.uses > 0 ? `자소서 진단 ${plan.uses}회` : null,
       plan.companyUses > 0 ? `기업 분석 ${plan.companyUses}회` : null,
-    ].filter(Boolean).join(" + ");
+    ]
+      .filter(Boolean)
+      .join(" + ");
 
     return (
       <div
         key={tier.key}
         id={tier.key}
-        className={`flex h-full flex-col rounded-2xl border bg-white/[0.02] p-8 md:p-9 xl:p-6 ${
-          highlighted ? "border-blue-500/[0.25]" : "border-white/[0.06]"
+        className={`flex h-full flex-col rounded-2xl border p-6 md:p-7 ${
+          recommended
+            ? "border-sky-400/50 bg-white/[0.06]"
+            : "border-white/[0.12] bg-white/[0.035]"
         }`}
       >
-        <p className={`text-lg font-bold tracking-tight ${highlighted ? "text-blue-400" : "text-zinc-200"}`}>
+        <p className="flex items-center gap-2 text-[17px] font-bold tracking-tight text-white">
           {tier.label}
+          {recommended && (
+            <span className="rounded-md border border-sky-400/40 px-1.5 py-px text-[11px] font-medium text-sky-300">
+              추천
+            </span>
+          )}
         </p>
+
         {tier.key === "basic" ? (
-          <div role="radiogroup" aria-label="베이직 구성 선택" className="mt-3 grid grid-cols-2 gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] p-1 px-1">
+          <div
+            role="radiogroup"
+            aria-label="베이직 구성 선택"
+            className="mt-2.5 grid grid-cols-2 gap-1 rounded-lg border border-white/[0.12] bg-black/40 p-1"
+          >
             {tier.products.map((choice) => (
               <button
                 key={choice}
@@ -248,8 +288,8 @@ export default function Entitlements() {
                 role="radio"
                 aria-checked={basicChoice === choice}
                 onClick={() => setBasicChoice(choice)}
-                className={`h-8 whitespace-nowrap rounded-md text-[12px] font-semibold transition-colors xl:text-[11.5px] ${
-                  basicChoice === choice ? "bg-white/[0.12] text-white" : "text-zinc-500 hover:text-zinc-300"
+                className={`h-8 whitespace-nowrap rounded-md text-[12px] font-semibold transition-colors ${
+                  basicChoice === choice ? "bg-white text-[#0A0A0A]" : "text-zinc-400 hover:text-white"
                 }`}
               >
                 {PRICING[choice].label}
@@ -257,26 +297,35 @@ export default function Entitlements() {
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-[13px] font-medium text-zinc-400">{usesLabel}</p>
+          <p className="mt-1.5 text-[13.5px] text-zinc-300">{usesLabel}</p>
         )}
-        <p className="mt-4 whitespace-nowrap text-[2.4rem] font-bold leading-none tracking-tight text-white xl:text-[2rem]">
+
+        <p className="mt-5 whitespace-nowrap text-[2.4rem] font-bold leading-none tracking-tight text-white">
           {formatKrw(plan.salePrice)}
-          <span className="ml-1.5 text-[15px] font-medium text-zinc-500">/ {plan.uses + plan.companyUses}회</span>
+          <span className="ml-1.5 text-[14px] font-medium text-zinc-300">
+            / {plan.uses + plan.companyUses}회
+          </span>
         </p>
-        {hasStrike ? (
-          <p className="mt-3 flex flex-wrap items-baseline gap-x-3 text-[15px]">
-            <span className="font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
-              {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
-            </span>
-            <span className="text-lg font-extrabold tracking-tight text-sky-300">{plan.discountLabel}</span>
-          </p>
-        ) : (
-          <p className="mt-3 text-[15px] font-light text-zinc-500">신상품 · 정가 판매</p>
-        )}
-        <p className="mt-1.5 text-xs font-light text-zinc-500">{copy.perUseNote}</p>
-        <p className="mt-6 text-[14.5px] font-medium leading-relaxed text-zinc-200">{copy.lead}</p>
-        <p className="mb-7 mt-2 flex-1 text-[13px] font-light leading-[1.8] text-zinc-500">{copy.body}</p>
-        {renderPaidPlanButton(product)}
+
+        <div className="mt-3 flex h-6 items-center gap-2.5 text-[13.5px]">
+          {hasStrike ? (
+            <>
+              <span className="text-zinc-400 line-through decoration-zinc-400">
+                {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
+              </span>
+              <span className="font-bold text-sky-300">{plan.discountLabel}</span>
+            </>
+          ) : (
+            <span className="text-zinc-400">정가 판매</span>
+          )}
+        </div>
+
+        <div className="mt-5 flex-1">
+          <p className="text-[15px] font-semibold text-white">{TIER_COPY[tier.key].when}</p>
+          <p className="mt-1.5 text-[13.5px] leading-[1.7] text-zinc-300">{TIER_COPY[tier.key].what[product]}</p>
+        </div>
+
+        <div className="mt-6">{renderPaidPlanButton(product)}</div>
       </div>
     );
   };
@@ -361,18 +410,18 @@ export default function Entitlements() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.08 }}
         >
-          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">
+          <h1 className="text-2xl font-bold text-white tracking-tight mb-1">
             이용권
           </h1>
-          <p className="text-[14px] text-zinc-500 font-light">
-            무료 1회로 시작하고, 필요한 만큼만 이용권을 구매할 수 있어요.
+          <p className="text-[14px] text-zinc-400 font-light">
+            필요한 만큼만 사세요. 어떤 이용권이든 리포트는 같습니다.
             {isAuthenticated && (
               <>
                 {" "}
                 <button
                   type="button"
                   onClick={() => navigate("/my/entitlements")}
-                  className="text-zinc-400 underline underline-offset-4 transition-colors hover:text-zinc-200"
+                  className="text-zinc-300 underline underline-offset-4 transition-colors hover:text-white"
                 >
                   내 이용권 현황 보기
                 </button>
@@ -399,82 +448,73 @@ export default function Entitlements() {
 
           {/* 가격 카드 — 로그인 여부와 상관없이 항상 보여준다. */}
           <div className="space-y-6">
-            <p className="seasonal-discount-label w-fit text-[15px] font-bold">
+            {/* 무료 체험은 파는 물건이 아니라 입구다 — 카드 열에서 빼서 한 줄로. */}
+            <div className="flex flex-col gap-3 rounded-xl border border-white/[0.12] bg-white/[0.035] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[14.5px] text-zinc-200">
+                <span className="font-semibold text-white">첫 분석 1회는 무료</span>
+                <span className="text-zinc-500"> · </span>
+                가입만 하면 바로, 카드 등록 없이. 리포트는 유료와 똑같아요.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/analyze")}
+                className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-white underline underline-offset-4 transition-colors hover:text-sky-300"
+              >
+                무료로 분석하기
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
+
+            <p className="seasonal-discount-label w-fit pt-2 text-[14px] font-bold">
               {SEASONAL_DISCOUNT_LABEL}
             </p>
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {/* 무료 체험 */}
-              <div className="flex h-full flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 md:p-9 xl:p-6">
-                <p className="text-lg font-bold tracking-tight text-zinc-200">
-                  무료 체험
-                </p>
-                <p className="mt-4 whitespace-nowrap text-[2.4rem] font-bold leading-none tracking-tight text-white xl:text-[2rem]">
-                  0원
-                  <span className="ml-1 text-[15px] font-medium text-zinc-500">
-                    / 1회
-                  </span>
-                </p>
-                <p className="mt-1.5 text-[13px] font-light text-zinc-500">
-                  가입하면 바로 제공돼요
-                </p>
-                <p className="mt-6 text-[14.5px] font-medium leading-relaxed text-zinc-200">
-                  지금 쓴 자소서, 어떻게 읽히는지 먼저 확인해 보세요.
-                </p>
-                <p className="mb-7 mt-2 flex-1 text-[13px] font-light leading-[1.8] text-zinc-500">
-                  첫 분석은 가입만 하면 무료예요. 리포트는 유료와 똑같이 전체를
-                  드립니다. 카드 등록도 필요 없어요.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate("/analyze")}
-                  className="h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
-                >
-                  무료로 분석하기
-                </button>
-              </div>
-
+            <div className="grid gap-5 pt-1 md:grid-cols-3">
               {TIERS.map((tier) => renderTierCard(tier))}
             </div>
 
-            {/* 어떤 이용권이든 리포트 구성은 동일하다 */}
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] px-7 py-6">
-              <p className="text-[14px] font-semibold text-zinc-200">
-                어떤 이용권을 선택하든, 리포트에는 이 모든 게 담깁니다
-              </p>
-              <ul className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
-                {REPORT_INCLUDED_FEATURES.map(feature => (
-                  <li
-                    key={feature}
-                    className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400"
-                  >
-                    <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] px-7 py-6">
-              <p className="text-[14px] font-semibold text-zinc-200">
-                기업 분석 리포트에는 이런 게 담깁니다
-              </p>
-              <p className="mt-1 text-xs font-light text-zinc-500">
-                스탠다드·프리미엄에 포함되고, 베이직에서 따로 고를 수도 있어요. 세 곳을 준비하면 프리미엄이 {formatKrw(savingsFor(PRICING.premium))} 저렴합니다.
-              </p>
-              <ul className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
-                {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400">
-                    <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
+            {/* 리포트 구성 — 카드처럼 보이지 않게 상자 대신 구분선으로. */}
+            <div className="grid gap-8 border-t border-white/[0.1] pt-8 md:grid-cols-2 md:gap-10">
+              <div>
+                <p className="text-[12.5px] font-semibold text-sky-300">
+                  자소서 진단 리포트
+                </p>
+                <p className="mt-1.5 text-[14px] font-semibold text-white">
+                  어떤 이용권을 선택하든, 이 모든 게 담깁니다
+                </p>
+                <ul className="mt-4 space-y-2.5">
+                  {REPORT_INCLUDED_FEATURES.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2.5 text-[14px] text-zinc-200">
+                      <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" aria-hidden="true" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-[12.5px] font-semibold text-sky-300">
+                  기업 분석 리포트
+                </p>
+                <p className="mt-1.5 text-[14px] font-semibold text-white">
+                  스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요
+                </p>
+                <ul className="mt-4 space-y-2.5">
+                  {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2.5 text-[14px] text-zinc-200">
+                      <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" aria-hidden="true" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-[12.5px] text-zinc-400">
+                  세 곳을 준비하면 프리미엄이 따로 살 때보다 {formatKrw(savingsFor(PRICING.premium))} 저렴합니다.
+                </p>
+              </div>
             </div>
 
             {purchaseStarted && (
-              <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <p className="text-xs text-zinc-500">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                <p className="text-xs text-zinc-400">
                   새 탭에서 결제를 진행해 주세요. 결제를 완료하면 이용권이 곧 반영돼요.
                 </p>
                 <button
@@ -488,17 +528,17 @@ export default function Entitlements() {
             )}
 
             {!isAuthenticated && (
-              <p className="text-center text-xs text-zinc-600">
+              <p className="text-center text-xs text-zinc-500">
                 로그인하면 보유한 이용권을 확인하고 바로 구매할 수 있어요.
               </p>
             )}
 
             {isAuthenticated && (
-              <p className="text-right text-[11px] text-zinc-700">
+              <p className="text-right text-[12px] text-zinc-500">
                 결제에 문제가 있나요?{" "}
                 <a
                   href={PAYMENT_INQUIRY_MAILTO}
-                  className="underline underline-offset-2 hover:text-zinc-500"
+                  className="underline underline-offset-2 hover:text-zinc-300"
                 >
                   이메일로 문의하기
                 </a>

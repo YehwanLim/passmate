@@ -61,6 +61,13 @@ function signedIn({ authLoading = false } = {}) {
   });
 }
 
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 describe("Entitlements purchase button", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -225,6 +232,15 @@ describe("Entitlements purchase button", () => {
     expect(document.getElementById("premium")).not.toBeNull();
   });
 
+  it("marks the standard card, and only that card, as recommended", async () => {
+    signedIn();
+    render(<Entitlements />);
+
+    expect(document.getElementById("standard")?.textContent).toContain("추천");
+    expect(document.getElementById("basic")?.textContent).not.toContain("추천");
+    expect(document.getElementById("premium")?.textContent).not.toContain("추천");
+  });
+
   it("preselects the company option when arriving at #company", async () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
@@ -240,5 +256,30 @@ describe("Entitlements purchase button", () => {
       // @ts-expect-error jsdom이 scrollIntoView를 구현하지 않아 스텁을 심었다 — 다른 테스트로 새지 않게 제거한다.
       delete Element.prototype.scrollIntoView;
     }
+  });
+
+  it("shows the preparing notice instead of a login button for tiers a guest cannot buy", async () => {
+    mocks.useAuth.mockReturnValue({ user: null, isLoading: false, isAuthenticated: false });
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === "/api/entitlements?availability=1") {
+        return jsonResponse({ companyAnalysisEnabled: false, purchasable: { single: true, company: false, standard: false, premium: false, triple: false } });
+      }
+      throw new Error(`unexpected fetch ${String(input)}`);
+    }));
+    render(<Entitlements />);
+    await waitFor(() => expect(screen.getAllByText("현재 추가 이용권 판매를 준비하고 있어요.").length).toBeGreaterThanOrEqual(2));
+    // 베이직(자소서 선택 기본값)은 살 수 있으므로 로그인으로 이어지는 구매 버튼이 남는다.
+    expect(screen.getByRole("button", { name: "자소서 진단 1회 구매하기" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "프리미엄 구매하기" })).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps login buttons when the availability request fails", async () => {
+    mocks.useAuth.mockReturnValue({ user: null, isLoading: false, isAuthenticated: false });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
+    render(<Entitlements />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: "프리미엄 구매하기" })).toBeTruthy();
+    vi.unstubAllGlobals();
   });
 });

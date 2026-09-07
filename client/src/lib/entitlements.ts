@@ -5,6 +5,8 @@ export type { PurchaseProductKey };
 export type EntitlementSummary = {
   premiumEnabled: boolean;
   freeRemaining: number;
+  /** 피드백 참여·관리자 지급으로 받은 자소서 크레딧. remaining 합계에 포함된다. */
+  bonusRemaining: number;
   premiumRemaining: number;
   remaining: number;
   groblePaymentUrl: string | null;
@@ -103,6 +105,11 @@ function parseEntitlementSummary(payload: unknown): EntitlementSummary {
       payload.freeRemaining,
       "freeRemaining"
     ),
+    // 구버전 서버 응답에는 없다. 있으면 다른 잔여 수와 같은 엄격함으로 읽는다.
+    bonusRemaining:
+      payload.bonusRemaining === undefined
+        ? 0
+        : readNonNegativeInteger(payload.bonusRemaining, "bonusRemaining"),
     premiumRemaining: readNonNegativeInteger(
       payload.premiumRemaining,
       "premiumRemaining"
@@ -190,4 +197,27 @@ export async function createPurchaseIntent(
   }
 
   return parsePurchaseIntent(payload);
+}
+
+/** 비로그인 화면용 판매 가용성. 서버 `GET /api/entitlements?availability=1`. */
+export type SalesAvailability = {
+  companyAnalysisEnabled: boolean;
+  purchasable: Record<PurchaseProductKey, boolean>;
+};
+
+export async function fetchSalesAvailability(): Promise<SalesAvailability> {
+  const response = await fetch("/api/entitlements?availability=1");
+  if (!response.ok) {
+    throw new Error(`Sales availability request failed (${response.status})`);
+  }
+  const payload: unknown = await response.json();
+  const source = isRecord(payload) && isRecord(payload.purchasable) ? payload.purchasable : null;
+  const purchasable = {} as Record<PurchaseProductKey, boolean>;
+  for (const key of PURCHASE_PRODUCT_KEYS) {
+    purchasable[key] = source?.[key] === true;
+  }
+  return {
+    companyAnalysisEnabled: isRecord(payload) && payload.companyAnalysisEnabled === true,
+    purchasable,
+  };
 }
