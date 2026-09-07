@@ -3,11 +3,12 @@ import { ArrowRight, Check } from "lucide-react";
 import { useLocation } from "wouter";
 import { BrandName } from "@/components/BrandName";
 import {
+  COMPANY_REPORT_INCLUDED_FEATURES,
   PRICING,
   REPORT_INCLUDED_FEATURES,
   SEASONAL_DISCOUNT_LABEL,
+  STANDARD_PER_USE_PRICE,
   TIERS,
-  TRIPLE_PER_USE_PRICE,
   formatKrw,
 } from "@/lib/pricing";
 
@@ -58,7 +59,7 @@ const containerVariants: Variants = {
 };
 
 // 세로 막대 비교: 사설 첨삭 시세(일반적 범위) 대비 회당 가격.
-// 막대 높이(px)는 범위 상한 150,000원을 176px로 둔 비율값이고,
+// 막대 높이(px)는 범위 상한 15만원을 176px로 둔 비율값이고,
 // 최저 막대는 보이도록 8px로 클램프한다.
 const COMPARISON_COLUMNS = [
   {
@@ -78,7 +79,7 @@ const COMPARISON_COLUMNS = [
   {
     label: "회당",
     note: "스탠다드 기준",
-    value: formatKrw(TRIPLE_PER_USE_PRICE),
+    value: formatKrw(STANDARD_PER_USE_PRICE),
     barHeight: 8,
     isPreview: true,
   },
@@ -103,13 +104,13 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
           : "border-white/[0.06] hover:border-white/[0.1]"
       }`}
     >
-      <p
+      <h3
         className={`text-lg font-bold tracking-tight ${
           highlighted ? "text-blue-400" : "text-zinc-200"
         }`}
       >
         {tier.label}
-      </p>
+      </h3>
       <p className="mt-4 text-[2.6rem] md:text-[2.9rem] font-bold leading-none tracking-tight text-white">
         {formatKrw(plan.salePrice)}
         <span className="ml-1.5 text-base font-medium text-zinc-500">
@@ -191,28 +192,38 @@ export default function PricingSection() {
           ))}
         </motion.div>
 
-        {/* 리포트 공통 구성 — 어떤 이용권이든 같은 리포트 전체를 받는다 */}
+        {/* 리포트 구성 — 자소서·기업 두 리포트를 나란히. 이용권 페이지와 같은 문구 */}
         <motion.div
-          className="mt-10 max-w-3xl mx-auto rounded-2xl border border-white/[0.06] bg-white/[0.015] px-7 py-6"
+          className="mt-10 max-w-5xl mx-auto grid gap-8 rounded-2xl border border-white/[0.06] bg-white/[0.015] px-7 py-6 md:grid-cols-2 md:gap-10"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: EASE }}
           viewport={{ once: true, margin: "-80px" }}
         >
-          <p className="text-[14px] font-semibold text-zinc-200">
-            어떤 이용권을 선택하든, 리포트에는 이 모든 게 담깁니다
-          </p>
-          <ul className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
-            {REPORT_INCLUDED_FEATURES.map(feature => (
-              <li
-                key={feature}
-                className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400"
-              >
-                <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
-                {feature}
-              </li>
-            ))}
-          </ul>
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-sky-300">자소서 진단 리포트</p>
+            <p className="mt-1.5 text-[14px] font-semibold text-zinc-200">어떤 이용권을 선택하든, 이 모든 게 담깁니다</p>
+            <ul className="mt-4 space-y-2.5">
+              {REPORT_INCLUDED_FEATURES.map((feature) => (
+                <li key={feature} className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400">
+                  <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-sky-300">기업 분석 리포트</p>
+            <p className="mt-1.5 text-[14px] font-semibold text-zinc-200">스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요</p>
+            <ul className="mt-4 space-y-2.5">
+              {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
+                <li key={feature} className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400">
+                  <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
         </motion.div>
 
         {/* 무료 체험 안내 — 결제 전 부담을 없애는 문장이라 크게 둔다 */}

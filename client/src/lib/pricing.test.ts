@@ -3,8 +3,8 @@ import {
   PRICING,
   PRODUCT_KEY_BY_PRODUCT,
   PURCHASE_PRODUCT_KEYS,
+  STANDARD_PER_USE_PRICE,
   TIERS,
-  TRIPLE_PER_USE_PRICE,
   estimatedAmountFor,
   formatKrw,
   productLabel,
@@ -31,12 +31,14 @@ describe("pricing constants", () => {
     expect(PRICING.triple.discountLabel).toContain("50%");
   });
 
-  it("keeps the per-use price in sync with the triple plan sale price", () => {
-    expect(TRIPLE_PER_USE_PRICE).toBe(
-      Math.round(PRICING.triple.salePrice / PRICING.triple.uses)
+  it("keeps the per-use price in sync with the standard plan sale price", () => {
+    expect(STANDARD_PER_USE_PRICE).toBe(
+      Math.round(
+        PRICING.standard.salePrice / (PRICING.standard.uses + PRICING.standard.companyUses)
+      )
     );
     // "커피 한 잔 값" 카피의 전제: 회당 5,000원 미만
-    expect(TRIPLE_PER_USE_PRICE).toBeLessThan(5000);
+    expect(STANDARD_PER_USE_PRICE).toBeLessThan(5000);
   });
 
   it("keeps the single plan list price aligned with the triple plan per-unit list price", () => {

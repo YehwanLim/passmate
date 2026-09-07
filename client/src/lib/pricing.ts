@@ -73,7 +73,7 @@ export const TIERS = [
 ] as const;
 
 /** 스탠다드 기준 회당 가격(원, 14,900 / 3회). 반올림 값이며 pricing.test.ts가 산술 일치를 검증한다. */
-export const TRIPLE_PER_USE_PRICE = 4_967;
+export const STANDARD_PER_USE_PRICE = 4_967;
 
 export const SEASONAL_DISCOUNT_LABEL = "하반기 채용 시즌 기념 할인";
 
