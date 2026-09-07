@@ -24,7 +24,9 @@ describe("pricing constants", () => {
     );
 
     expect(singleDiscount).toBe(40);
-    expect(PRICING.single.discountLabel).toContain("40%");
+    // 단품도 번들과 같은 "N원 절약" 꼴로 — 베이직 카드에서 자소서/기업을 오갈 때 표기가 흔들리지 않는다.
+    expect(savingsFor(PRICING.single)).toBe(4_000);
+    expect(PRICING.single.discountLabel).toBe("4,000원 절약");
     expect(tripleDiscount).toBe(50);
     expect(PRICING.triple.discountLabel).toContain("50%");
   });
@@ -97,9 +99,11 @@ describe("tier pricing", () => {
     expect(PRICING.premium.discountLabel).toBe("9,500원 절약");
   });
 
-  it("gives the company single no strikethrough price", () => {
-    expect(PRICING.company.listPrice).toBe(PRICING.company.salePrice);
-    expect(PRICING.company.discountLabel).toBe("");
+  it("prices the company single like the resume single", () => {
+    expect(PRICING.company.listPrice).toBe(PRICING.single.listPrice);
+    expect(PRICING.company.salePrice).toBe(PRICING.single.salePrice);
+    expect(savingsFor(PRICING.company)).toBe(4_000);
+    expect(PRICING.company.discountLabel).toBe("4,000원 절약");
   });
 
   it("maps server product keys to pricing keys and labels", () => {
