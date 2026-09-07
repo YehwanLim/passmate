@@ -64,13 +64,21 @@ const PLAN_ACCENT_TEXT: Record<PurchaseProductKey, string> = {
   triple: "text-sky-300",
 };
 
-/** 티어별 구매 버튼 색. 상품 키 기준이라 베이직은 자소서·기업 어느 쪽을 골라도 같은 색이다. */
-const PLAN_BUTTON_TINT: Record<PurchaseProductKey, string> = {
-  single: "border-white/25 bg-white/[0.1] text-white hover:bg-white/[0.18]",
-  company: "border-white/25 bg-white/[0.1] text-white hover:bg-white/[0.18]",
-  standard: "border-sky-400/45 bg-sky-400/[0.14] text-sky-50 hover:bg-sky-400/25",
-  premium: "border-violet-400/45 bg-violet-400/[0.14] text-violet-50 hover:bg-violet-400/25",
-  triple: "border-white/25 bg-white/[0.1] text-white hover:bg-white/[0.18]",
+/**
+ * 티어별 구매 버튼 — 랜딩 이용권 섹션(PricingSection)에서 쓰는 버튼 디자인 그대로다.
+ * 베이직은 그 섹션의 일반 버튼, 스탠다드·프리미엄은 강조 버튼의 그라데이션에 색만 바꿨다.
+ * 상품 키 기준이라 베이직은 자소서·기업 어느 쪽을 골라도 같은 모양이다.
+ */
+const PLAN_BUTTON_BASIC =
+  "border border-white/[0.12] bg-white/[0.05] text-zinc-200 hover:bg-white/[0.1]";
+const PLAN_BUTTON_CLASS: Record<PurchaseProductKey, string> = {
+  single: PLAN_BUTTON_BASIC,
+  company: PLAN_BUTTON_BASIC,
+  standard:
+    "bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-lg shadow-blue-500/20 hover:from-blue-400 hover:to-cyan-300",
+  premium:
+    "bg-gradient-to-r from-violet-300 to-purple-200 text-[#2E1065] shadow-lg shadow-violet-400/20 hover:from-violet-200 hover:to-purple-100",
+  triple: PLAN_BUTTON_BASIC,
 };
 
 /** 추천 카드 — 랜딩의 "커피 한 잔" 기준과 같은 스탠다드. */
@@ -208,9 +216,7 @@ export default function Entitlements() {
 
   const renderPaidPlanButton = (product: PurchaseProductKey) => {
     const plan = PRICING[product];
-    // 티어를 색으로 구분하되 채도를 낮춰 세 장이 한 세트로 읽히게 둔다.
-    // 추천 딱지(꽉 찬 하늘색)와 버튼(반투명)은 채움이 달라 서로 안 헷갈린다.
-    const buttonClassName = `h-11 w-full rounded-xl border text-sm font-semibold transition-colors disabled:opacity-50 ${PLAN_BUTTON_TINT[product]}`;
+    const buttonClassName = `h-11 w-full rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${PLAN_BUTTON_CLASS[product]}`;
 
     // 아직 결제 URL을 모르는 동안은 "판매 준비 중"이 아니라 비활성 버튼을 보여준다 —
     // 로딩과 판매 중단은 다른 상태고, 섞으면 로그인한 사용자에게 틀린 안내가 깜빡인다.
@@ -278,7 +284,7 @@ export default function Entitlements() {
       <div
         key={tier.key}
         id={tier.key}
-        className={`plan-card flex h-full flex-col rounded-2xl border p-6 md:p-7 ${
+        className={`plan-card flex h-full flex-col rounded-2xl border p-7 md:p-8 ${
           recommended
             ? "plan-card--recommended border-white/[0.3] bg-white/[0.06]"
             : "border-white/[0.12] bg-white/[0.035]"
@@ -286,12 +292,14 @@ export default function Entitlements() {
       >
         {recommended && <span className="plan-badge">추천</span>}
 
-        <p className="text-[17px] font-bold tracking-tight text-white">
+        <p className="text-[21px] font-bold tracking-tight text-white">
           {tier.label}
         </p>
 
-        {tier.key === "basic" ? (
-          <div className="mt-2.5">
+        {/* 베이직만 토글이 들어가 아래 가격 줄이 밀리므로 구성 안내 영역 높이를 카드마다 맞춘다. */}
+        <div className="mt-2.5 min-h-[62px]">
+          {tier.key === "basic" ? (
+            <div>
             <p className="text-[11px] font-medium text-zinc-500">
               둘 중 하나를 골라 주세요
             </p>
@@ -307,20 +315,21 @@ export default function Entitlements() {
                   role="radio"
                   aria-checked={basicChoice === choice}
                   onClick={() => setBasicChoice(choice)}
-                  className={`h-9 whitespace-nowrap rounded-lg border text-[12px] font-semibold transition-colors ${
+                  className={`h-10 whitespace-nowrap rounded-xl border text-[12.5px] font-semibold transition-colors ${
                     basicChoice === choice
-                      ? "border-white bg-white text-[#0A0A0A]"
-                      : "border-white/[0.18] bg-white/[0.04] text-zinc-300 hover:border-white/40 hover:text-white"
+                      ? "border-white/40 bg-white/[0.12] text-white"
+                      : "border-white/[0.12] bg-white/[0.05] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200"
                   }`}
                 >
                   {PRICING[choice].label}
                 </button>
               ))}
             </div>
-          </div>
-        ) : (
-          <p className="mt-1.5 text-[13.5px] text-zinc-300">{usesLabel}</p>
-        )}
+            </div>
+          ) : (
+            <p className="text-[13.5px] text-zinc-300">{usesLabel}</p>
+          )}
+        </div>
 
         <p className="mt-5 whitespace-nowrap text-[2.4rem] font-bold leading-none tracking-tight text-white">
           {formatKrw(plan.salePrice)}
@@ -329,27 +338,30 @@ export default function Entitlements() {
           </span>
         </p>
 
-        {totalUses > 0 && (
-          <p className="mt-2 text-right text-[12.5px] text-zinc-400">
-            1회당{" "}
-            <span className="font-semibold text-white">
-              {formatKrw(Math.round(plan.salePrice / totalUses))}
-            </span>
+        {hasStrike ? (
+          <p className="mt-2 whitespace-nowrap text-[12px] text-zinc-500 line-through decoration-zinc-500">
+            {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
           </p>
+        ) : (
+          <p className="mt-2 text-[12px] text-zinc-500">정가 판매</p>
         )}
 
-        <div className="mt-3 flex h-6 items-center gap-2.5 text-[13.5px]">
-          {hasStrike ? (
-            <>
-              <span className="text-zinc-400 line-through decoration-zinc-400">
-                {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
+        <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap text-[12.5px] text-zinc-400">
+          {totalUses > 0 && (
+            <span>
+              1회당{" "}
+              <span className="font-semibold text-white">
+                {formatKrw(Math.round(plan.salePrice / totalUses))}
               </span>
-              <span className={`font-bold ${PLAN_ACCENT_TEXT[product]}`}>{plan.discountLabel}</span>
-            </>
-          ) : (
-            <span className="text-zinc-400">정가 판매</span>
+            </span>
           )}
-        </div>
+          {totalUses > 0 && hasStrike && <span className="text-zinc-600">·</span>}
+          {hasStrike && (
+            <span className={`font-bold ${PLAN_ACCENT_TEXT[product]}`}>
+              {plan.discountLabel}
+            </span>
+          )}
+        </p>
 
         <div className="mt-5 flex-1">
           <p className="text-[15px] font-semibold text-white">{TIER_COPY[tier.key].when}</p>
