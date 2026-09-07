@@ -44,7 +44,7 @@ export default function CompanyAnalyze() {
   const [company, setCompany] = useState(() => readQueryParam("company"));
   const [jobKeyword, setJobKeyword] = useState(() => readQueryParam("jobKeyword"));
   const [postingText, setPostingText] = useState("");
-  const [resumeAnalysisId, setResumeAnalysisId] = useState("");
+  const [resumeAnalysisId, setResumeAnalysisId] = useState(() => readQueryParam("resumeAnalysisId"));
   const [previousResumes, setPreviousResumes] = useState<ProjectSummary[]>([]);
   const [summary, setSummary] = useState<EntitlementSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,13 +68,20 @@ export default function CompanyAnalyze() {
       }
       try {
         const response = await fetch("/api/projects", { headers: await getAuthorizationHeader() });
-        if (!response.ok) return;
+        if (!response.ok) {
+          if (!cancelled) setResumeAnalysisId("");
+          return;
+        }
         const projects: ProjectSummary[] = await response.json();
         if (!cancelled) {
-          setPreviousResumes(projects.filter(project => project.kind !== "COMPANY" && project.latest_analysis_id));
+          const nextResumes = projects.filter(project => project.kind !== "COMPANY" && project.latest_analysis_id);
+          setPreviousResumes(nextResumes);
+          // 쿼리로 들어온 연결 대상은 내 목록에 있을 때만 유지한다 — 남의 id·삭제된 분석은 "연결하지 않기"로.
+          setResumeAnalysisId(current => nextResumes.some(project => project.latest_analysis_id === current) ? current : "");
         }
       } catch {
-        // 연결 목록은 선택 사항이다.
+        // 연결 목록은 선택 사항이다. 목록을 모르면 연결도 하지 않는다.
+        if (!cancelled) setResumeAnalysisId("");
       }
     };
     void load();

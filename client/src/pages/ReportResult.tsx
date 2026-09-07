@@ -206,6 +206,7 @@ function AuthenticatedReport() {
     const [reportData, setReportData] = useState<ReportData | null>(null)
     const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(requestedAnalysisId)
     const [targetCompany, setTargetCompany] = useState("")
+    const [targetJobRole, setTargetJobRole] = useState("")
     const [isReportLoading, setIsReportLoading] = useState(true)
     const [reportError, setReportError] = useState<string | null>(null)
 
@@ -241,6 +242,7 @@ function AuthenticatedReport() {
                 setReportData(payload.ai_response_json as ReportData)
                 setActiveAnalysisId(payload.id ?? requestedAnalysisId)
                 setTargetCompany(payload.company_name ?? "")
+                setTargetJobRole(payload.job_role ?? "")
             } catch (error) {
                 if (!cancelled) {
                     if (error instanceof AuthenticationRequiredError) {
@@ -282,6 +284,7 @@ function AuthenticatedReport() {
             reportData={reportData}
             activeAnalysisId={activeAnalysisId}
             targetCompany={targetCompany}
+            targetJobRole={targetJobRole}
             displayName={getFallbackDisplayName(user)}
         />
     )
@@ -291,6 +294,7 @@ type ReportContentProps = {
     reportData: ReportData
     activeAnalysisId: string
     targetCompany: string
+    targetJobRole: string
     displayName: string
 }
 
@@ -298,6 +302,7 @@ function ReportContent({
     reportData,
     activeAnalysisId,
     targetCompany,
+    targetJobRole,
     displayName,
 }: ReportContentProps) {
     const [, navigate] = useLocation()
@@ -1369,6 +1374,20 @@ function ReportContent({
                         rewardAvailable={feedbackRewardAvailable}
                     />
                 </div>
+
+                {/* 기업 분석 업셀 — 같은 회사·직무로 다음 상품. 인쇄에는 넣지 않는다. */}
+                <section className="print:hidden mt-10 rounded-xl border border-sky-500/[0.18] bg-sky-500/[0.04] px-6 py-8 md:px-10 md:py-9">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-sky-300">이 회사를 더 깊게 보기</p>
+                    <h3 className="mt-3 text-xl font-medium text-white text-balance">{targetCompany ? `${targetCompany} 기업 분석 리포트` : "지원 기업 분석 리포트"}</h3>
+                    <p className="mt-3 text-[15px] leading-relaxed text-zinc-400 text-pretty">무엇을 팔아 돈을 버는지, 요즘 힘을 싣는 사업이 무엇인지, 이 직무가 어떤 문제를 푸는지를 출처와 함께 정리해 자소서에 쓸 사업 소재까지 이어 드려요.</p>
+                    <button
+                        onClick={() => navigate(`/company-analysis?company=${encodeURIComponent(targetCompany)}&jobKeyword=${encodeURIComponent(targetJobRole)}&resumeAnalysisId=${encodeURIComponent(activeAnalysisId ?? "")}`)}
+                        className="mt-6 w-full sm:w-auto px-6 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <span>기업 분석 리포트 받기</span>
+                        <ArrowRight className="w-4 h-4" />
+                    </button>
+                </section>
 
                 {/* NEXT STEP */}
                 <section className="print:hidden py-16 mt-10 bg-white/[0.02] rounded-xl border border-white/[0.04] px-6 md:px-10 text-center">

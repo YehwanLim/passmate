@@ -33,4 +33,9 @@ describe("CompanyAnalyze page", () => {
     expect(appSource).toContain('path={"/company-analysis"} component={CompanyAnalyze}');
     expect(appSource.indexOf('path={"/analysis-pending"}')).toBeLessThan(appSource.indexOf('path={"/company-analysis"}'));
   });
+
+  it("prefills the linked resume analysis from the query and drops it when it is not in the user's list", () => {
+    expect(source).toContain('useState(() => readQueryParam("resumeAnalysisId"))');
+    expect(source).toContain("nextResumes.some(project => project.latest_analysis_id === current) ? current : \"\"");
+  });
 });
