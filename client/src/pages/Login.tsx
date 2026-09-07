@@ -1,10 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { createSignInNonce, loadGoogleIdentity } from "@/lib/googleIdentity";
 import Logo from "@/components/Logo";
 import MoodShiftBackground from "@/components/MoodShiftBackground";
-import { Shield, AlertCircle } from "lucide-react";
+import { Shield, AlertCircle, ArrowLeft } from "lucide-react";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as
+  | string
+  | undefined;
 
 // ============================================================
 // Google 아이콘 SVG
@@ -40,6 +46,11 @@ export default function Login() {
   const { isAuthenticated, isLoading: authLoading, signInWithGoogle } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // GIS(Google 공식 버튼) 상태: 로드 실패 시 기존 리다이렉트 방식으로 폴백
+  const [gisStatus, setGisStatus] = useState<"loading" | "ready" | "fallback">(
+    GOOGLE_CLIENT_ID ? "loading" : "fallback",
+  );
+  const googleButtonRef = useRef<HTMLDivElement>(null);
   const redirectPath = getSafeRedirectPath();
 
   // 이미 로그인된 사용자는 메인으로 리다이렉트
@@ -48,6 +59,61 @@ export default function Login() {
       navigate(redirectPath);
     }
   }, [authLoading, isAuthenticated, navigate, redirectPath]);
+
+  // GIS 초기화: Google이 그려주는 버튼 → ID 토큰 → signInWithIdToken.
+  // Supabase 서버를 경유하지 않아 동의 화면에 우리 도메인이 표시된다.
+  useEffect(() => {
+    if (authLoading || isAuthenticated || !GOOGLE_CLIENT_ID) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { nonce, hashedNonce } = await createSignInNonce();
+        const googleId = await loadGoogleIdentity();
+        const container = googleButtonRef.current;
+        if (cancelled || !container) return;
+
+        googleId.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          nonce: hashedNonce,
+          callback: async ({ credential }) => {
+            setError(null);
+            setIsSigningIn(true);
+            const { error: signInError } = await supabase.auth.signInWithIdToken({
+              provider: "google",
+              token: credential,
+              nonce,
+            });
+            if (signInError) {
+              setError(
+                "로그인 처리 중 오류가 발생했습니다. 다시 시도해 주세요.",
+              );
+              setIsSigningIn(false);
+            }
+            // 성공 시 onAuthStateChange → 위의 isAuthenticated effect가 이동 처리
+          },
+        });
+        googleId.renderButton(container, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "pill",
+          logo_alignment: "center",
+          width: Math.min(400, container.offsetWidth || 336),
+          locale: "ko",
+        });
+        setGisStatus("ready");
+      } catch {
+        if (!cancelled) setGisStatus("fallback");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated]);
 
   const handleGoogleLogin = async () => {
     if (isSigningIn) return; // 중복 클릭 방지
@@ -95,6 +161,14 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:left-6"
+          aria-label="홈으로 돌아가기"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
         <div className="cursor-pointer" onClick={() => navigate("/")}>
           <Logo className="h-6 w-auto" />
         </div>
@@ -141,35 +215,58 @@ export default function Login() {
               )}
             </AnimatePresence>
 
-            {/* Google 로그인 버튼 */}
-            <button
-              id="google-login-btn"
-              onClick={handleGoogleLogin}
-              disabled={isSigningIn}
-              className={[
-                "relative w-full flex items-center justify-center gap-3",
-                "h-12 px-6 rounded-xl font-medium text-[15px]",
-                "bg-white text-gray-900",
-                "border border-white/20",
-                "transition-all duration-200",
-                "hover:bg-gray-50 hover:scale-[1.01] active:scale-[0.99]",
-                "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100",
-                "shadow-[0_2px_8px_rgba(0,0,0,0.3)]",
-              ].join(" ")}
-              aria-label="Google로 계속하기"
-            >
-              {isSigningIn ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                  <span className="text-gray-600">연결 중...</span>
-                </>
-              ) : (
-                <>
-                  <GoogleIcon className="w-5 h-5 flex-shrink-0" />
-                  <span>Google로 계속하기</span>
-                </>
-              )}
-            </button>
+            {/* Google 로그인 버튼: GIS 공식 버튼 (실패 시 아래 폴백 버튼) */}
+            {gisStatus !== "fallback" && (
+              <div className="relative min-h-12">
+                <div
+                  ref={googleButtonRef}
+                  className={[
+                    "flex justify-center transition-opacity duration-200",
+                    gisStatus === "ready" && !isSigningIn
+                      ? "opacity-100"
+                      : "opacity-0 pointer-events-none",
+                  ].join(" ")}
+                />
+                {(gisStatus === "loading" || isSigningIn) && (
+                  <div className="absolute inset-0 flex items-center justify-center gap-3 rounded-xl bg-white/[0.04] border border-white/10">
+                    <div className="w-5 h-5 border-2 border-gray-500/40 border-t-gray-300 rounded-full animate-spin" />
+                    <span className="text-[14px] text-gray-400">
+                      {isSigningIn ? "연결 중..." : "로그인 준비 중..."}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            {gisStatus === "fallback" && (
+              <button
+                id="google-login-btn"
+                onClick={handleGoogleLogin}
+                disabled={isSigningIn}
+                className={[
+                  "relative w-full flex items-center justify-center gap-3",
+                  "h-12 px-6 rounded-xl font-medium text-[15px]",
+                  "bg-white text-gray-900",
+                  "border border-white/20",
+                  "transition-all duration-200",
+                  "hover:bg-gray-50 hover:scale-[1.01] active:scale-[0.99]",
+                  "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100",
+                  "shadow-[0_2px_8px_rgba(0,0,0,0.3)]",
+                ].join(" ")}
+                aria-label="Google로 계속하기"
+              >
+                {isSigningIn ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                    <span className="text-gray-600">연결 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <GoogleIcon className="w-5 h-5 flex-shrink-0" />
+                    <span>Google로 계속하기</span>
+                  </>
+                )}
+              </button>
+            )}
 
             {/* 구분선 + 보안 안내 */}
             <div className="mt-6 pt-6 border-t border-white/[0.06]">
