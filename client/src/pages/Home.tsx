@@ -20,6 +20,7 @@ import AuthButton from "@/components/AuthButton";
 export const HOME_NAV_ITEMS = [
   { label: "서비스 소개", type: "section", target: "service-intro" },
   { label: "자소서 분석", type: "route", target: "/analyze" },
+  { label: "기업 분석", type: "route", target: "/company-analysis" },
   { label: "이용권 구매", type: "route", target: "/entitlements" },
   { label: "내 지원서", type: "route", target: "/my" },
 ] as const;

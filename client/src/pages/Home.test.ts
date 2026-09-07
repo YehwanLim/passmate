@@ -13,9 +13,18 @@ describe("HOME_NAV_ITEMS", () => {
     expect(HOME_NAV_ITEMS.map(item => item.label)).toEqual([
       "서비스 소개",
       "자소서 분석",
+      "기업 분석",
       "이용권 구매",
       "내 지원서",
     ]);
+  });
+
+  it("routes the company analysis nav item to the company analysis form", () => {
+    expect(HOME_NAV_ITEMS).toContainEqual({
+      label: "기업 분석",
+      type: "route",
+      target: "/company-analysis",
+    });
   });
 
   it("routes the purchase nav item to the standalone entitlements page", () => {
