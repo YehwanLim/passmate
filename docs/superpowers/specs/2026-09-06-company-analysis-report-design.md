@@ -405,7 +405,7 @@ export async function readPurchaseProductSettings(db)  // DB 행 + 레거시 env
 - **스탠다드는 지금 파는 3회권(자소서 3회, 14,900)의 구성 변경**이다. 가격은 같으므로 인상이 아니다. 그로블에서는 기존 3회권 상품(contentId 유지)의 이름·설명을 "자소서 2회 + 기업 분석 1회"로 고친다. 이미 지급된 크레딧은 영향 없음. 자소서만 3회 원하면 베이직을 하나 더 산다.
 - `TRIPLE`은 과거 결제 기록의 라벨("3회권(구)")과 전환 기간의 지급을 위해 enum·카탈로그에 남기되 판매하지 않는다(`active=false`).
 - 그로블 신규 등록 상품: **2개**(기업 분석 1회 5,900, 프리미엄 25,900). 1회권은 그대로.
-- 절약 표시: "따로 사면 17,700원 / 35,400원"은 실제 판매 중인 베이직(5,900) 단위 합과 비교하므로 표시광고법상 안전. 기업 단품에는 취소선 없음.
+- 절약 표시: "따로 사면 17,700원 / 35,400원"은 실제 판매 중인 베이직(5,900) 단위 합과 비교하므로 표시광고법상 안전. 기업 단품은 원래 취소선 없이 두기로 했으나, 2026-09-07 26a363d 에서 자소서 1회와 같은 정가 9,900·"4,000원 절약" 표기로 바뀌었다(베이직 카드에서 두 상품을 오갈 때 표기가 흔들리지 않게). 신상품이라 종전 거래가격이 없다는 점은 그대로이므로, 표시광고 관점의 재검토는 오너 판단 사항으로 남긴다.
 - 프로모션 연동: 11/30에 1회권이 9,900으로 돌아가면 베이직 자소서 가격만 바뀌고 티어 사다리는 유지(스탠다드·프리미엄 재산정 여부는 그때 판단).
 
 **전환(컷오버) 절차** — 최종 리뷰(2026-09-07) 반영판. 코드는 "contentId 를 모르는 상품은 팔지 않는다"(웹훅이 지급을 판별할 수 없는 상품은 `checkoutUrls` 에서 null·구매 의도 503)와 "기업 크레딧이 든 상품은 `companyAnalysisEnabled` 가 켜져야 판다"를 강제한다. 따라서 **배포 직후 스탠다드는 잠시 판매 중단**되고, 아래 순서를 마쳐야 다시 열린다(몇 분 정도).
@@ -417,6 +417,8 @@ export async function readPurchaseProductSettings(db)  // DB 행 + 레거시 env
 6. 마지막으로 `companyAnalysisEnabled` 를 켠다 → 스탠다드·프리미엄·기업 단품이 열린다. (기업 스위치를 4단계보다 먼저 켜도 contentId 가 없는 상품은 팔리지 않으므로 부족 지급 경로는 없다.)
 7. `GROBLE_SINGLE_CONTENT_ID`·`GROBLE_PREMIUM_CONTENT_ID` 는 두 값이 모두 DB 행에 들어간 뒤에 Vercel 에서 지워도 된다.
 
-이월(④ 진입점 플랜): 비로그인 방문자에게는 판매 가용성을 알 공개 API 가 없어 미판매 티어의 구매 버튼이 활성으로 보이고, 클릭하면 로그인 뒤 "준비 중" 안내로 귀결한다. 랜딩 `PricingSection` 은 이 범위에서 3회권 카드를 스탠다드 카드로 최소 수정했고, 전체 재구성은 ④.
+④ 진입점 플랜에서 해결(2026-09-07): 비로그인 판매 가용성은 `GET /api/entitlements?availability=1`(인증 없음, 상품별 boolean 만 — 결제 URL·contentId 없음)로 조회하고, 이용권 페이지는 미판매 티어에 로그인 버튼 대신 "준비 중"을 보여 준다(조회 실패 시에는 로그인 버튼 유지). 랜딩 `PricingSection` 은 `TIERS` 기반 3티어 카드로 재구성했고 회당 가격 상수는 `STANDARD_PER_USE_PRICE`(14,900 / 3회)다.
+
+**4단계 플랜**: `docs/superpowers/plans/2026-09-07-company-analysis-entry-points-plan.md`(2026-09-07 실행 완료). 포함: 공개 판매 가용성 API·게스트 버튼, 랜딩 3티어 가격 섹션 + 기업 리포트 구성 열(`STANDARD_PER_USE_PRICE`), 프로브 `--out`, 공개 샘플 `/company-report?sample=1`(`client/src/constants/companyReportSample.ts` — 삼성전자·전략기획 실제 생성 결과, 출처 20건, 검색 제안 칩 포함), 랜딩 기업 분석 소개 섹션(샘플 링크) + GNB "기업 분석"(라우트 `/company-analysis`), 자소서 리포트 하단 업셀 CTA(회사·직무·`resumeAnalysisId` 프리필, `CompanyAnalyze`는 내 목록에 있는 id 만 유지), 자소서 폼의 조용한 기업 분석 링크, 소진 모달 → `/entitlements#standard`(이용권 페이지는 `#company`·`#standard`·`#premium` 해시로 카드 스크롤). 제외: `MyEntitlements` 진입 버튼(별도 커밋 976155a 로 반영됨), 관리자 대시보드 kind 분리, 스레드 공지. 샘플 리포트 문장은 손으로 고치지 않으며, 갱신은 프로브 재실행으로 한다.
 
 **3단계 플랜**: `docs/superpowers/plans/2026-09-06-company-analysis-products-plan.md`. 포함: 마이그레이션(enum 3값 + 상품 설정 테이블 백필), `entitlement-products.js` 카탈로그·설정 읽기, 웹훅 번들 지급, `checkoutUrls`·상품별 게이트, 관리자 상품 설정 엔드포인트·화면, `pricing.ts` 티어, 이용권 페이지 티어 카드 3장(베이직 선택 버튼), `Checkout`, 결제 내역 라벨. 제외(④): 랜딩 `PricingSection`·GNB·업셀 CTA·샘플.
