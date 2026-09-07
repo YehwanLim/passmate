@@ -3,13 +3,22 @@
 // 리포트 본문은 출력하지 않는다(로그에 AI 응답 금지 규칙). 구조 요약만 찍는다.
 // sourceIdsBySection/sourceIdRange 는 섹션별 sourceIds 가 출처 개수를 넘는지 사람이 눈으로
 // 확인하기 위한 것이고, searchEntryPointHtmlPath 는 본문 대신 임시 파일 경로만 출력한다.
+// --out <파일> 을 주면 리포트 전체(AI 응답 본문 포함)를 그 파일에 저장한다 — 샘플 픽스처 제작용. 이 파일은 로그가 아니므로 저장소·로그에 그대로 넣지 말고, 검수 후 constants/companyReportSample.ts 로 옮긴다.
 import os from "node:os";
 import path from "node:path";
 import { writeFileSync } from "node:fs";
 
 import { analyzeCompany } from "../../lib/company-analysis.js";
 
-const [company = "현대자동차", jobKeyword = "전략기획"] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const outFlagIndex = args.indexOf("--out");
+const outPath = outFlagIndex >= 0 ? args[outFlagIndex + 1] ?? null : null;
+if (outFlagIndex >= 0 && !outPath) {
+  console.error("--out 뒤에 저장할 파일 경로가 필요합니다.");
+  process.exit(2);
+}
+const positional = outFlagIndex >= 0 ? [...args.slice(0, outFlagIndex), ...args.slice(outFlagIndex + 2)] : args;
+const [company = "현대자동차", jobKeyword = "전략기획"] = positional;
 const db = { aiModelSetting: { findUnique: async () => null } };
 const startedAt = Date.now();
 
@@ -54,6 +63,13 @@ try {
     searchEntryPointHtmlPath = path.join(os.tmpdir(), "company-analysis-search-entry-point.html");
     writeFileSync(searchEntryPointHtmlPath, searchEntryPointHtml, "utf8");
   }
+  if (outPath) {
+    writeFileSync(
+      outPath,
+      JSON.stringify({ company, jobKeyword, generatedAt: new Date().toISOString(), result }, null, 2),
+      "utf8",
+    );
+  }
   const { sourceIdsBySection, sourceIdRange } = collectSourceIds(result);
   console.log(JSON.stringify({
     outcome: "ok",
@@ -67,6 +83,7 @@ try {
     searchQueries: result.reportMeta.searchQueries,
     searchEntryPointHtmlLength: searchEntryPointHtml?.length ?? 0,
     searchEntryPointHtmlPath,
+    outPath,
     sectionKeys: Object.keys(result).filter((key) => !["sources", "reportMeta", "analysisMeta"].includes(key)),
     counts: {
       segments: result.businessMap?.segments?.length ?? 0,
