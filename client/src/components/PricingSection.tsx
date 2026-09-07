@@ -6,9 +6,32 @@ import {
   PRICING,
   REPORT_INCLUDED_FEATURES,
   SEASONAL_DISCOUNT_LABEL,
+  TIERS,
   TRIPLE_PER_USE_PRICE,
   formatKrw,
 } from "@/lib/pricing";
+
+type TierKey = (typeof TIERS)[number]["key"];
+
+// 티어별 소개 문구. 이용권 페이지(Entitlements TIER_COPY)와 같은 상황 구분을 쓴다.
+// 베이직은 자소서·기업 중 하나를 고르는 상품이라 대표 가격(single)으로 보여주고, 선택은 이용권 페이지에서 한다.
+const TIER_INTRO: Record<TierKey, { perUseNote: string; lead: string; body: string }> = {
+  basic: {
+    perUseNote: "자소서 진단 1회 또는 기업 분석 1회",
+    lead: "한 번만 필요할 때.",
+    body: "자소서 한 편을 제출 전에 점검받거나, 지원할 회사 한 곳을 자소서 쓰기 전에 조사해 보세요.",
+  },
+  standard: {
+    perUseNote: "자소서 진단 2회 + 기업 분석 1회",
+    lead: "한 회사를 제대로 준비할 때.",
+    body: "기업 분석으로 채용 기준을 파악하고, 자소서 진단 2회로 초안부터 고쳐 쓴 뒤까지 다시 확인해 보세요.",
+  },
+  premium: {
+    perUseNote: "자소서 진단 3회 + 기업 분석 3회",
+    lead: "여러 회사에 함께 지원할 때.",
+    body: "회사 세 곳을 조사하고, 회사마다 자소서 진단을 한 번씩 받아 보세요.",
+  },
+};
 
 /* ─────────────────────────────────────────────────────────
    PricingSection — 랜딩 가격 안내
@@ -61,20 +84,13 @@ const COMPARISON_COLUMNS = [
   },
 ];
 
-function PaidPlanCard({
-  planKey,
-  perUseNote,
-  lead,
-  body,
-}: {
-  planKey: "single" | "standard";
-  perUseNote: string;
-  lead: string;
-  body: string;
-}) {
+function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
   const [, navigate] = useLocation();
-  const plan = PRICING[planKey];
-  const highlighted = planKey === "standard";
+  // 베이직은 두 상품(자소서 1회 / 기업 1회)이 같은 가격이라 첫 상품을 대표로 보여준다.
+  const plan = PRICING[tier.products[0]];
+  const intro = TIER_INTRO[tier.key];
+  const highlighted = tier.key === "standard";
+  const totalUses = plan.uses + plan.companyUses;
   // 번들 상품(자소서+기업 크레딧을 함께 담은 상품)은 "따로 사면"으로, 단일 상품은 "정가"로 표기한다.
   const listPricePrefix = plan.uses + plan.companyUses > 1 && plan.companyUses > 0 ? "따로 사면" : "정가";
 
@@ -92,34 +108,32 @@ function PaidPlanCard({
           highlighted ? "text-blue-400" : "text-zinc-200"
         }`}
       >
-        {plan.label}
+        {tier.label}
       </p>
       <p className="mt-4 text-[2.6rem] md:text-[2.9rem] font-bold leading-none tracking-tight text-white">
         {formatKrw(plan.salePrice)}
         <span className="ml-1.5 text-base font-medium text-zinc-500">
-          / {plan.uses}회
+          / {totalUses}회
         </span>
       </p>
-      <p className="mt-3 flex flex-wrap items-baseline gap-x-3 text-base">
-        <span className="font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
-          {listPricePrefix} {formatKrw(plan.listPrice)}
-        </span>
-        <span className="text-lg md:text-xl font-extrabold tracking-tight text-sky-300">
-          {plan.discountLabel}
-        </span>
+      <p className="mt-3 text-base font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
+        {listPricePrefix} {formatKrw(plan.listPrice)}
+      </p>
+      <p className="mt-0.5 text-right text-lg md:text-xl font-extrabold tracking-tight text-sky-300">
+        {plan.discountLabel}
       </p>
       <p
         className={`mt-1 text-xs font-light ${
           highlighted ? "text-zinc-300" : "text-zinc-500"
         }`}
       >
-        {perUseNote}
+        {intro.perUseNote}
       </p>
       <p className="mt-6 text-[14.5px] font-medium leading-relaxed text-zinc-200">
-        {lead}
+        {intro.lead}
       </p>
       <p className="mb-7 mt-2 flex-1 text-[13px] font-light leading-[1.8] text-zinc-500">
-        {body}
+        {intro.body}
       </p>
       {/* 실제 결제·로그인 처리는 이용권 페이지에서 이어진다 */}
       <button
@@ -131,7 +145,7 @@ function PaidPlanCard({
             : "h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
         }
       >
-        {plan.label} 구매하기
+        {tier.label} 구매하기
       </button>
     </motion.div>
   );
@@ -164,26 +178,17 @@ export default function PricingSection() {
           </p>
         </motion.div>
 
-        {/* 가격 카드 */}
+        {/* 가격 카드 — 티어 순서는 pricing.ts TIERS 를 따른다 */}
         <motion.div
-          className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto"
+          className="grid gap-6 md:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
         >
-          <PaidPlanCard
-            planKey="single"
-            perUseNote="이번 지원, 제출 전 마지막 점검"
-            lead="당장 앞둔 마감 하나에 집중하고 싶다면."
-            body="지금 쓴 자소서가 채용 담당자에게 어떻게 읽히는지, 제출 전에 확인해 보세요."
-          />
-          <PaidPlanCard
-            planKey="standard"
-            perUseNote="자소서 진단 2회 + 기업 분석 1회"
-            lead="한 회사를 제대로 준비하고, 고쳐 쓴 자소서까지 다시 확인."
-            body="기업 분석 1회로 지원 기업의 채용 기준을 파악하고, 자소서 진단 2회로 초안부터 고쳐 쓴 뒤까지 다시 확인해 보세요."
-          />
+          {TIERS.map(tier => (
+            <TierCard key={tier.key} tier={tier} />
+          ))}
         </motion.div>
 
         {/* 리포트 공통 구성 — 어떤 이용권이든 같은 리포트 전체를 받는다 */}
