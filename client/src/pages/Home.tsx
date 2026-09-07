@@ -4,6 +4,7 @@ import SocialProofSection from "@/components/SocialProofSection";
 import { BrandName } from "@/components/BrandName";
 import ProcessSection from "@/components/ProcessSection";
 import PricingSection from "@/components/PricingSection";
+import CompanyReportIntroSection from "@/components/CompanyReportIntroSection";
 import CompanyMarqueeSection from "@/components/CompanyMarqueeSection";
 import FounderSection, {
   FounderNoteSection,
@@ -376,6 +377,9 @@ export default function Home() {
           (구 "이렇게 읽습니다" 방법론은 장면별 lens 문구로 병합)
           ══════════════════════════════════════════════════ */}
       <ReportShowcase />
+
+      {/* ── 기업 분석 리포트 소개 — 자소서 쇼케이스 다음, 가격 앞. 두 상품을 다 본 뒤 가격을 만나게 ── */}
+      <CompanyReportIntroSection />
 
       {/* ── Pricing Section — 리포트를 본 직후 가격 대비가 가장 강하게 남는다 ── */}
       <PricingSection />

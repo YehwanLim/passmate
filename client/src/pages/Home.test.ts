@@ -44,6 +44,13 @@ describe("HOME_NAV_ITEMS", () => {
     expect(homeSource).not.toContain("9,900원");
   });
 
+  it("introduces the company report on the landing page through its own section", () => {
+    expect(homeSource).toContain(
+      'import CompanyReportIntroSection from "@/components/CompanyReportIntroSection"'
+    );
+    expect(homeSource).toContain("<CompanyReportIntroSection />");
+  });
+
   it("does not expose coming soon navigation states", () => {
     expect(HOME_NAV_ITEMS.every(item => item.type !== "coming_soon")).toBe(
       true
@@ -114,6 +121,9 @@ describe("HOME_NAV_ITEMS", () => {
     const beforeAfterIndex = homeSource.indexOf("합격하는 자소서는 구조부터");
     const marqueeIndex = homeSource.indexOf("<CompanyMarqueeSection />");
     const reportShowcaseIndex = homeSource.indexOf("<ReportShowcase />");
+    const companyIntroIndex = homeSource.indexOf(
+      "<CompanyReportIntroSection />"
+    );
     const socialProofIndex = homeSource.indexOf("<SocialProofSection />");
     const founderNoteIndex = homeSource.indexOf("<FounderNoteSection />");
     const processIndex = homeSource.indexOf("<ProcessSection />");
@@ -124,8 +134,10 @@ describe("HOME_NAV_ITEMS", () => {
     expect(beforeAfterIndex).toBeGreaterThan(painIndex);
     expect(marqueeIndex).toBeGreaterThan(beforeAfterIndex);
     expect(reportShowcaseIndex).toBeGreaterThan(marqueeIndex);
+    // 기업 분석 소개는 자소서 쇼케이스 다음 — 두 상품을 다 본 뒤 가격을 만난다.
+    expect(companyIntroIndex).toBeGreaterThan(reportShowcaseIndex);
     // 가격은 리포트 실물을 본 직후 — "이 리포트가 커피 한 잔 값"의 대비가 가장 강한 지점이다.
-    expect(pricingIndex).toBeGreaterThan(reportShowcaseIndex);
+    expect(pricingIndex).toBeGreaterThan(companyIntroIndex);
     expect(socialProofIndex).toBeGreaterThan(pricingIndex);
     expect(founderNoteIndex).toBeGreaterThan(socialProofIndex);
     expect(processIndex).toBeGreaterThan(founderNoteIndex);
