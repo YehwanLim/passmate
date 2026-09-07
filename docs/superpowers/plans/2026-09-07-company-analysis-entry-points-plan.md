@@ -841,6 +841,33 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 > ```
 >
 > `Home.tsx`의 import 는 `import CompanyReportIntroSection from "@/components/CompanyReportIntroSection";`(named export `COMPANY_REPORT_INTRO_ID`는 섹션 파일에 그대로 두되 Home 에서 import 하지 않는다). 커밋 메시지는 `feat(landing): introduce the company report with a link to the public sample`.
+>
+> **2차 개정(2026-09-07 22:13 이후) — 이 블록이 위 개정 블록보다 우선한다.** 다른 세션이 3930423 으로 `CompanyReportIntroSection.tsx`(+테스트)와 `Home.tsx` 배치·`Home.test.ts` 단언까지 만들었다(CTA 두 개: "기업 분석 시작하기" → `/company-analysis`, "이용권 보기" → `/entitlements#company`, 우측 카드는 `COMPANY_REPORT_NAV_SECTIONS` 목차). 이 Task 의 남은 범위는 **그 섹션에 공개 샘플 링크 하나를 더하는 것뿐**이다:
+> 1. `client/src/components/CompanyReportIntroSection.tsx`: import 에 `import { COMPANY_REPORT_SAMPLE } from "@/constants/companyReportSample";` 추가. CTA 행(`div.mt-8.flex`)에서 "기업 분석 시작하기" 버튼은 그대로 두고, "이용권 보기" 버튼 **앞**에 샘플 버튼을 넣는다:
+>
+> ```tsx
+>               <button
+>                 type="button"
+>                 onClick={() => navigate("/company-report?sample=1")}
+>                 className="h-11 rounded-xl border border-white/[0.12] bg-white/[0.05] px-5 text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
+>               >
+>                 샘플 리포트 보기 · {COMPANY_REPORT_SAMPLE.company}
+>               </button>
+> ```
+>
+> 2. `client/src/components/CompanyReportIntroSection.test.tsx`: 기존 테스트는 손대지 않고 아래 하나를 추가한다.
+>
+> ```tsx
+>   it("opens the public sample report for the sample company", () => {
+>     render(<CompanyReportIntroSection />);
+>     screen
+>       .getByRole("button", { name: new RegExp(`샘플 리포트 보기.*${COMPANY_REPORT_SAMPLE.company}`) })
+>       .click();
+>     expect(mocks.navigate).toHaveBeenCalledWith("/company-report?sample=1");
+>   });
+> ```
+>
+> (`COMPANY_REPORT_SAMPLE`을 테스트 파일에서 import 한다.) `Home.tsx`·`Home.test.ts`는 **건드리지 않는다**. 검증: `pnpm exec vitest run client/src/components/CompanyReportIntroSection.test.tsx client/src/pages/Home.test.ts && pnpm check`. 커밋 파일은 위 두 개만, 메시지 `feat(landing): link the public sample report from the company report intro`.
 
 **Files:**
 - Create: `client/src/components/CompanyReportIntroSection.tsx`
