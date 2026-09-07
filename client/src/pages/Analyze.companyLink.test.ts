@@ -8,7 +8,10 @@ describe("Analyze company report link", () => {
     expect(source).toContain("기업 분석 리포트 먼저 받기");
     expect(source).toContain("/company-analysis?company=${encodeURIComponent(company.trim())}&jobKeyword=${encodeURIComponent(jobRole.trim())}");
     expect(source).toContain("company.trim().length > 0 && (");
-    expect(source).toContain('window.open(path, "_blank", "noopener")');
+    // "noopener" 피처는 window.open 이 항상 null 을 돌려줘 폴백(같은 탭 이동)이 매번 발동한다 — 쓰지 않는다.
+    expect(source).toContain('window.open(path, "_blank")');
+    expect(source).not.toContain('"noopener"');
+    expect(source).toContain("opened.opener = null");
   });
 
   it("sends an exhausted user to the standard tier by default", () => {
