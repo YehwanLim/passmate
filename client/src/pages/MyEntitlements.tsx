@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, Building2, FileText, RefreshCw } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
 import { getLoginRedirectPath, useRequireAuth } from "@/hooks/useRequireAuth";
@@ -11,19 +11,66 @@ import {
 } from "@/lib/entitlements";
 import { supabase } from "@/lib/supabase";
 
+const ACTION_BUTTON_BASE =
+  "h-11 w-full rounded-xl text-sm font-semibold transition-colors";
+const PRIMARY_ACTION_CLASS = `${ACTION_BUTTON_BASE} bg-white text-black hover:bg-zinc-200`;
+const SECONDARY_ACTION_CLASS = `${ACTION_BUTTON_BASE} border border-white/30 bg-white/[0.16] text-white hover:bg-white/[0.24]`;
+
 function CreditSkeleton() {
   return (
-    <div
-      className="border-y border-white/5"
-      aria-label="이용권 정보를 불러오는 중"
-    >
-      {[1, 2, 3, 4].map(row => (
+    <div className="space-y-4" aria-label="이용권 정보를 불러오는 중">
+      {[248, 96].map(height => (
         <div
-          key={row}
-          className="h-[76px] border-b border-white/5 bg-white/[0.015] last:border-b-0 animate-pulse"
+          key={height}
+          style={{ height }}
+          className="rounded-2xl border border-white/[0.08] bg-white/[0.02] animate-pulse"
         />
       ))}
     </div>
+  );
+}
+
+/**
+ * 분석 종류(자소서·기업)를 카드 한 장으로 묶는다. 두 크레딧 풀은 서로 쓸 수 없어서,
+ * 경계가 흐리면 합계를 잘못 읽는다 — 카드·아이콘으로 소속을 눈에 띄게 나눈다.
+ */
+function CreditGroupCard({
+  icon,
+  title,
+  description,
+  remaining,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  remaining: number;
+  children?: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.05] text-zinc-300">
+            {icon}
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-zinc-100">{title}</p>
+            <p className="mt-1 text-xs text-zinc-500">{description}</p>
+          </div>
+        </div>
+        <p className="shrink-0 text-2xl font-semibold tracking-tight text-white">
+          {remaining}
+          <span className="ml-0.5 text-sm font-medium text-zinc-500">회</span>
+        </p>
+      </div>
+
+      {children ? (
+        <div className="mt-4 divide-y divide-white/[0.06] border-t border-white/[0.06]">
+          {children}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -51,7 +98,7 @@ function CreditSummaryRow({
 }
 
 /**
- * MyEntitlements — 프로필 메뉴 > 이용권에서 보는 보유 현황 페이지.
+ * MyEntitlements — 프로필 메뉴 > 내 이용권에서 보는 보유 현황 페이지.
  * 가격표·구매는 /entitlements(이용권 구매)로 분리되어 있다.
  */
 export default function MyEntitlements() {
@@ -92,6 +139,13 @@ export default function MyEntitlements() {
       void loadEntitlements();
     }
   }, [authLoading, user?.id, loadEntitlements]);
+
+  // 남은 횟수가 있을 때만 분석 진입을 주 행동으로 올린다 — 0회면 /analyze 는 제출 단계에서 막힌다.
+  // 아직 못 불러왔으면(로딩·에러) 어느 쪽도 강조하지 않는다.
+  const hasEssayCredit = (summary?.remaining ?? 0) > 0;
+  const hasCompanyCredit = Boolean(
+    summary?.companyAnalysisEnabled && summary.companyRemaining > 0
+  );
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28 text-white">
@@ -161,52 +215,71 @@ export default function MyEntitlements() {
             </div>
           ) : summary ? (
             <div className="space-y-4">
-              <div className="border-y border-white/5">
-                <div className="flex items-center justify-between gap-5 py-4">
-                  <div>
-                    <p className="text-sm font-medium text-zinc-300">
-                      남은 분석
-                    </p>
-                    <p className="mt-0.5 text-xl font-semibold tracking-tight text-white">
-                      {summary.remaining}
-                      <span className="ml-0.5 text-sm font-medium text-zinc-500">
-                        회
-                      </span>
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-600">
-                      분석 결과가 저장될 때 차감돼요.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="divide-y divide-white/5">
+              <CreditGroupCard
+                icon={<FileText className="h-4 w-4" />}
+                title="자소서 분석"
+                description="아래 세 이용권을 합한 횟수예요. 분석 결과가 저장될 때 차감돼요."
+                remaining={summary.remaining}
+              >
                 <CreditSummaryRow
                   title="무료 이용권"
                   description="가입 후 제공되는 무료 분석 이용권이에요."
                   remaining={summary.freeRemaining}
                 />
                 <CreditSummaryRow
+                  title="보너스 이용권"
+                  description="피드백 참여 보상 등으로 받은 이용권이에요."
+                  remaining={summary.bonusRemaining}
+                />
+                <CreditSummaryRow
                   title="프리미엄 이용권"
                   description="구매 후 사용할 수 있는 추가 분석 이용권이에요."
                   remaining={summary.premiumRemaining}
                 />
-                <CreditSummaryRow
-                  title="기업 분석 이용권"
-                  description="회사·직무를 넣으면 기업 분석 리포트를 만들어 드려요."
-                  remaining={summary.companyRemaining}
-                />
-              </div>
+              </CreditGroupCard>
+
+              <CreditGroupCard
+                icon={<Building2 className="h-4 w-4" />}
+                title="기업 분석"
+                description="회사·직무를 넣으면 기업 분석 리포트를 만들어 드려요."
+                remaining={summary.companyRemaining}
+              />
             </div>
           ) : null}
 
-          <button
-            type="button"
-            onClick={() => navigate("/entitlements")}
-            className="h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
-          >
-            이용권 구매하기
-          </button>
+          <div className="space-y-2.5">
+            <button
+              type="button"
+              onClick={() => navigate("/analyze")}
+              className={
+                hasEssayCredit ? PRIMARY_ACTION_CLASS : SECONDARY_ACTION_CLASS
+              }
+            >
+              자소서 분석하기
+            </button>
+
+            {hasCompanyCredit ? (
+              <button
+                type="button"
+                onClick={() => navigate("/company-analysis")}
+                className={SECONDARY_ACTION_CLASS}
+              >
+                기업 분석하기
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => navigate("/entitlements")}
+              className={
+                summary && !hasEssayCredit && !hasCompanyCredit
+                  ? PRIMARY_ACTION_CLASS
+                  : SECONDARY_ACTION_CLASS
+              }
+            >
+              이용권 구매하기
+            </button>
+          </div>
         </section>
       </main>
     </div>

@@ -23,6 +23,8 @@ describe("AuthButton header polish", () => {
     expect(logoutIndex).toBeGreaterThan(entitlementsIndex);
     expect(source).toContain('handleNavigate("/my")');
     expect(source).toContain('handleNavigate("/my/entitlements")');
+    // 메뉴 명칭은 도착 페이지 제목(내 이용권)과 같아야 한다.
+    expect(source).toContain("내 이용권");
     expect(source).toContain("navigate(path)");
     expect(source).toContain("setDropdownOpen(false)");
   });
