@@ -57,12 +57,17 @@ function createResponse() {
   return {
     body: undefined,
     statusCode: 200,
+    headers: {},
     json(payload) {
       this.body = payload;
       return this;
     },
     status(statusCode) {
       this.statusCode = statusCode;
+      return this;
+    },
+    setHeader(name, value) {
+      this.headers[name] = value;
       return this;
     },
   };
@@ -154,6 +159,8 @@ describe("entitlement APIs", () => {
       mocks.authenticatedUser.id,
     );
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
+    // 공개 가용성 응답용 캐시 헤더가 인증된 요약 응답에는 붙지 않는다.
+    expect(response.headers?.["Cache-Control"]).toBeUndefined();
   });
 
   it("passes the company analysis pool through to the summary response", async () => {
@@ -533,6 +540,7 @@ describe("GET /api/entitlements?availability=1 (public sales availability)", () 
       companyAnalysisEnabled: true,
       purchasable: { single: true, company: true, standard: true, premium: true, triple: false },
     });
+    expect(res.headers["Cache-Control"]).toBe("public, s-maxage=60, stale-while-revalidate=300");
   });
 
   it("leaks no checkout url, content id, or user data", async () => {

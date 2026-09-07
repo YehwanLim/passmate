@@ -843,7 +843,12 @@ export default function Analyze() {
               {company.trim().length > 0 && (
                 <button
                   type="button"
-                  onClick={() => navigate(`/company-analysis?company=${encodeURIComponent(company.trim())}&jobKeyword=${encodeURIComponent(jobRole.trim())}`)}
+                  onClick={() => {
+                    const path = `/company-analysis?company=${encodeURIComponent(company.trim())}&jobKeyword=${encodeURIComponent(jobRole.trim())}`;
+                    // 작성 중인 자소서를 잃지 않도록 새 탭으로 연다. 팝업이 막히면 같은 탭으로 이동한다.
+                    const opened = window.open(path, "_blank", "noopener");
+                    if (!opened) navigate(path);
+                  }}
                   className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] text-zinc-500 transition-colors hover:text-sky-300"
                 >
                   {company.trim()} 기업 분석 리포트 먼저 받기

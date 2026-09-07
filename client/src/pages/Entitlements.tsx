@@ -463,7 +463,7 @@ export default function Entitlements() {
             이용권
           </h1>
           <p className="text-[14px] text-zinc-400 font-light">
-            필요한 만큼만 사세요. 어떤 이용권이든 리포트는 같습니다.
+            필요한 만큼만 사세요. 어떤 이용권이든 자소서 리포트는 같습니다.
             {isAuthenticated && (
               <>
                 {" "}

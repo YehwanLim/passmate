@@ -56,6 +56,8 @@ async function getSalesAvailability(res) {
     readPurchaseProductSettings(prisma),
   ]);
   const checkoutUrls = checkoutUrlsFor(productSettings, switches);
+  // 사용자별 차이가 없는 boolean 뭉치라 엣지 캐시로 비로그인 트래픽을 흡수한다(스위치 변경 반영 최대 60초 지연).
+  res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
   return res.status(200).json({
     companyAnalysisEnabled: switches?.companyAnalysisEnabled === true,
     purchasable: Object.fromEntries(Object.entries(checkoutUrls).map(([key, url]) => [key, Boolean(url)])),

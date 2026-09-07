@@ -1,4 +1,5 @@
 import type { CompanyReportData } from "@/types/companyReport";
+import { COMPANY_REPORT_SAMPLE_COMPANY, COMPANY_REPORT_SAMPLE_JOB_ROLE } from "./companyReportSampleMeta";
 
 /**
  * 공개 샘플 리포트(/company-report?sample=1, 랜딩 소개 섹션).
@@ -12,8 +13,8 @@ export const COMPANY_REPORT_SAMPLE: {
   jobRole: string;
   report: CompanyReportData;
 } = {
-  company: "삼성전자",
-  jobRole: "전략기획",
+  company: COMPANY_REPORT_SAMPLE_COMPANY,
+  jobRole: COMPANY_REPORT_SAMPLE_JOB_ROLE,
   report: {
     brief: {
       oneLiner:

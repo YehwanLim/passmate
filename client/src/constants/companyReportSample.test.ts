@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import { isRenderableCompanyReport } from "@/types/companyReport";
 import { COMPANY_REPORT_SAMPLE } from "./companyReportSample";
+import { COMPANY_REPORT_SAMPLE_COMPANY } from "./companyReportSampleMeta";
 
 describe("COMPANY_REPORT_SAMPLE", () => {
   it("is a renderable company report for a named company and role", () => {
     expect(COMPANY_REPORT_SAMPLE.company.trim().length).toBeGreaterThan(0);
     expect(COMPANY_REPORT_SAMPLE.jobRole.trim().length).toBeGreaterThan(0);
     expect(isRenderableCompanyReport(COMPANY_REPORT_SAMPLE.report)).toBe(true);
+  });
+
+  it("keeps the report's company name in sync with the landing-safe meta constant", () => {
+    expect(COMPANY_REPORT_SAMPLE.company).toBe(COMPANY_REPORT_SAMPLE_COMPANY);
   });
 
   it("carries real sources with http(s) links and a report date", () => {

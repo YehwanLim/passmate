@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 
-import { COMPANY_REPORT_SAMPLE } from "@/constants/companyReportSample";
+import { COMPANY_REPORT_SAMPLE_COMPANY } from "@/constants/companyReportSampleMeta";
 import { PRICING, formatKrw } from "@/lib/pricing";
 import { COMPANY_REPORT_NAV_SECTIONS } from "@/pages/companyReportNavigation";
 
@@ -67,7 +67,7 @@ export default function CompanyReportIntroSection() {
                 onClick={() => navigate("/company-report?sample=1")}
                 className="h-11 rounded-xl border border-white/[0.12] bg-white/[0.05] px-5 text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
               >
-                샘플 리포트 보기 · {COMPANY_REPORT_SAMPLE.company}
+                샘플 리포트 보기 · {COMPANY_REPORT_SAMPLE_COMPANY}
               </button>
               {/* 이용권 페이지는 #company 로 베이직 카드의 기업 분석 선택을 켠 채 연다 */}
               <button

@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { COMPANY_REPORT_SAMPLE } from "@/constants/companyReportSample";
+import { COMPANY_REPORT_SAMPLE_COMPANY } from "@/constants/companyReportSampleMeta";
 import { COMPANY_REPORT_NAV_SECTIONS } from "@/pages/companyReportNavigation";
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn() }));
@@ -76,8 +76,12 @@ describe("CompanyReportIntroSection", () => {
   it("opens the public sample report for the sample company", () => {
     render(<CompanyReportIntroSection />);
     screen
-      .getByRole("button", { name: new RegExp(`샘플 리포트 보기.*${COMPANY_REPORT_SAMPLE.company}`) })
+      .getByRole("button", { name: new RegExp(`샘플 리포트 보기.*${COMPANY_REPORT_SAMPLE_COMPANY}`) })
       .click();
     expect(mocks.navigate).toHaveBeenCalledWith("/company-report?sample=1");
+  });
+
+  it("never pulls the large report constant into the intro section's bundle", () => {
+    expect(source).not.toContain("@/constants/companyReportSample\"");
   });
 });

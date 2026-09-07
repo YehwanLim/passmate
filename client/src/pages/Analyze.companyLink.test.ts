@@ -8,6 +8,7 @@ describe("Analyze company report link", () => {
     expect(source).toContain("기업 분석 리포트 먼저 받기");
     expect(source).toContain("/company-analysis?company=${encodeURIComponent(company.trim())}&jobKeyword=${encodeURIComponent(jobRole.trim())}");
     expect(source).toContain("company.trim().length > 0 && (");
+    expect(source).toContain('window.open(path, "_blank", "noopener")');
   });
 
   it("sends an exhausted user to the standard tier by default", () => {

@@ -117,12 +117,16 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
           / {totalUses}회
         </span>
       </p>
-      <p className="mt-3 text-base font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
-        {listPricePrefix} {formatKrw(plan.listPrice)}
-      </p>
-      <p className="mt-0.5 text-lg md:text-xl font-extrabold tracking-tight text-sky-300">
-        {plan.discountLabel}
-      </p>
+      {plan.listPrice > plan.salePrice ? (
+        <>
+          <p className="mt-3 text-base font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
+            {listPricePrefix} {formatKrw(plan.listPrice)}
+          </p>
+          <p className="mt-0.5 text-lg md:text-xl font-extrabold tracking-tight text-sky-300">
+            {plan.discountLabel}
+          </p>
+        </>
+      ) : null}
       <p
         className={`mt-1 text-xs font-light ${
           highlighted ? "text-zinc-300" : "text-zinc-500"
