@@ -301,6 +301,13 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ### Task 2: 가격 상수 이름 정리와 랜딩 가격 섹션 3티어 재구성
 
+> **개정(2026-09-07, 실행 중 재조정) — 이 블록이 아래 원문보다 우선한다.** 다른 세션이 52f6903·0799638로 `PricingSection`을 이미 `TIERS.map` 기반 3티어 카드(`TIER_INTRO`)로 바꿨고, 26a363d로 `pricing.ts`의 할인 표기를 "N원 절약" 꼴로 통일했다(기업 1회도 정가 9,900 취소선 — 사용자 결정). 따라서 이 Task 의 남은 범위는 셋뿐이다:
+> 1. `pricing.ts`의 `TRIPLE_PER_USE_PRICE` → `STANDARD_PER_USE_PRICE`(값 4,967, 주석은 아래 Step 2 그대로), `pricing.test.ts`의 import·두 단언·테스트 이름 갱신(Step 1), `PricingSection.tsx`의 import·`COMPARISON_COLUMNS` 사용처 갱신.
+> 2. `PricingSection.tsx`의 "리포트 공통 구성" 블록을 아래 Step 4 의 **두 열(자소서 진단 리포트 / 기업 분석 리포트)** 마크업으로 교체(`COMPANY_REPORT_INCLUDED_FEATURES` import 추가). 티어 카드·`TIER_INTRO`·`TierCard`는 **그대로 둔다** — 단, 카드의 티어 이름 요소가 `<p>`이면 `<h3>`로 바꿔 렌더 테스트의 `getByRole("heading")`이 잡히게 한다(클래스는 유지).
+> 3. `PricingSection.test.tsx` 신설(Step 3 그대로). 테스트의 리터럴 금지 정규식 `/\d,\d{3}원/` 때문에 기존 주석 "범위 상한 150,000원을" 은 "범위 상한 15만원을"로 고친다.
+>
+> Step 4 의 `TIER_COPY`·`TierCard`·카드 그리드 코드는 **적용하지 않는다**(이미 다른 형태로 구현됨). 커밋 메시지는 `refactor(pricing): name the per-use price after the standard tier and list the company report contents on the landing`.
+
 **Files:**
 - Modify: `client/src/lib/pricing.ts` (`TRIPLE_PER_USE_PRICE` → `STANDARD_PER_USE_PRICE`)
 - Modify: `client/src/lib/pricing.test.ts`
@@ -819,6 +826,21 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ---
 
 ### Task 5: 랜딩 기업 분석 소개 섹션과 GNB 항목
+
+> **개정(2026-09-07, 실행 중 재조정) — 이 블록이 아래 원문보다 우선한다.** GNB "기업 분석" 항목은 다른 세션이 d1c4a50 으로 **라우트(`/company-analysis`)** 로 이미 추가했고 `Home.test.ts`가 그 형태를 핀한다. 이 Task 는 `HOME_NAV_ITEMS`와 그 테스트를 **건드리지 않는다**(Step 3 의 라벨 배열 변경·`toContainEqual({ label: "기업 분석", type: "section" … })` 단언은 적용하지 않는다). 남은 범위: `CompanyReportIntroSection.tsx`(+테스트) 신설과 `Home.tsx` 배치(`<ReportShowcase />` 다음, `<PricingSection />` 앞), 그리고 `Home.test.ts`에 아래 단언만 추가:
+>
+> ```ts
+>   it("introduces the company report between the showcase and the pricing", () => {
+>     expect(homeSource).toContain(
+>       'import CompanyReportIntroSection from "@/components/CompanyReportIntroSection"'
+>     );
+>     expect(homeSource).toContain("<CompanyReportIntroSection />");
+>     expect(homeSource.indexOf("<ReportShowcase />")).toBeLessThan(homeSource.indexOf("<CompanyReportIntroSection />"));
+>     expect(homeSource.indexOf("<CompanyReportIntroSection />")).toBeLessThan(homeSource.indexOf("<PricingSection />"));
+>   });
+> ```
+>
+> `Home.tsx`의 import 는 `import CompanyReportIntroSection from "@/components/CompanyReportIntroSection";`(named export `COMPANY_REPORT_INTRO_ID`는 섹션 파일에 그대로 두되 Home 에서 import 하지 않는다). 커밋 메시지는 `feat(landing): introduce the company report with a link to the public sample`.
 
 **Files:**
 - Create: `client/src/components/CompanyReportIntroSection.tsx`
