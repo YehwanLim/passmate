@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   ArrowLeft,
+  ArrowRight,
   Plus,
   Trash2,
   Loader2,
@@ -613,7 +614,7 @@ export default function Analyze() {
             title: "이용권 소진",
             message: getAnalyzeErrorMessage(errorData),
             actionLabel: "이용권 확인하기",
-            actionHref: "/entitlements",
+            actionHref: "/entitlements#standard",
           });
           return;
         }
@@ -838,6 +839,17 @@ export default function Analyze() {
                 지원 회사
               </label>
               <CompanyCombobox value={company} onChange={setCompany} />
+              {/* 회사를 고른 순간의 조용한 진입점. 크레딧 유무는 기업 분석 폼과 서버가 판단한다. */}
+              {company.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/company-analysis?company=${encodeURIComponent(company.trim())}&jobKeyword=${encodeURIComponent(jobRole.trim())}`)}
+                  className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] text-zinc-500 transition-colors hover:text-sky-300"
+                >
+                  {company.trim()} 기업 분석 리포트 먼저 받기
+                  <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             {/* 지원 직무 */}

@@ -258,6 +258,25 @@ describe("Entitlements purchase button", () => {
     }
   });
 
+  it("scrolls to the standard card for /entitlements#standard", async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    window.location.hash = "#standard";
+    try {
+      signedIn();
+      render(<Entitlements />);
+
+      await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+      expect(document.getElementById("standard")).not.toBeNull();
+      // 베이직 선택은 기본값(자소서)에서 바뀌지 않는다.
+      expect(screen.getByRole("radio", { name: /자소서 진단 1회/ }).getAttribute("aria-checked")).toBe("true");
+    } finally {
+      window.location.hash = "";
+      // @ts-expect-error jsdom이 scrollIntoView를 구현하지 않아 스텁을 심었다 — 다른 테스트로 새지 않게 제거한다.
+      delete Element.prototype.scrollIntoView;
+    }
+  });
+
   it("shows the preparing notice instead of a login button for tiers a guest cannot buy", async () => {
     mocks.useAuth.mockReturnValue({ user: null, isLoading: false, isAuthenticated: false });
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {

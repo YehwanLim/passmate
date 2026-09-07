@@ -186,10 +186,16 @@ export default function Entitlements() {
   }, [authLoading, isAuthenticated]);
 
   // /entitlements#company — 기업 분석 이용권이 없어서 온 사용자는 베이직 카드의 기업 분석을 바로 고른 상태로 만난다.
+  // /entitlements#standard·#premium — 소진 모달 등에서 추천 티어로 바로 스크롤한다.
   useEffect(() => {
     if (window.location.hash === "#company") {
       setBasicChoice("company");
       document.getElementById("basic")?.scrollIntoView({ block: "start" });
+      return;
+    }
+    const targetId = window.location.hash.slice(1);
+    if (TIERS.some((tier) => tier.key === targetId)) {
+      document.getElementById(targetId)?.scrollIntoView({ block: "start" });
     }
   }, []);
 
