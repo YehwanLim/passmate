@@ -104,4 +104,24 @@ describe("CompanyReport", () => {
     render(<CompanyReport />);
     expect(screen.getByText("로그인이 필요해요")).toBeTruthy();
   });
+
+  it("renders the public sample without login and without fetching", async () => {
+    mocks.useAuth.mockReturnValue({ user: null, isLoading: false, isAuthenticated: false });
+    window.history.replaceState({}, "", "/company-report?sample=1");
+    const fetchSpy = vi.fn(async () => { throw new Error("sample must not fetch"); });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<CompanyReport />);
+    expect(await screen.findByText(/샘플 리포트/)).toBeTruthy();
+    expect(screen.queryByText("로그인이 필요해요")).toBeNull();
+    expect(screen.getByRole("button", { name: /내 지원 기업으로 기업 분석 받기/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "내 지원서" })).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("still gates a real report id behind login", async () => {
+    mocks.useAuth.mockReturnValue({ user: null, isLoading: false, isAuthenticated: false });
+    window.history.replaceState({}, "", "/company-report?analysisId=analysis-1");
+    render(<CompanyReport />);
+    expect(await screen.findByText("로그인이 필요해요")).toBeTruthy();
+  });
 });

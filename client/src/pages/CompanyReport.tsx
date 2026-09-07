@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, X } from "luci
 
 import AuthButton from "@/components/AuthButton";
 import { BrandName } from "@/components/BrandName";
+import { COMPANY_REPORT_SAMPLE } from "@/constants/companyReportSample";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import { isRenderableCompanyReport, type CompanyReportData } from "@/types/companyReport";
@@ -90,6 +91,7 @@ interface LoadedReport {
   company: string;
   jobRole: string;
   report: CompanyReportData;
+  sample?: boolean;
 }
 
 function AuthenticatedCompanyReport() {
@@ -155,7 +157,7 @@ function AuthenticatedCompanyReport() {
 
 // ── 본문 ──────────────────────────────────────────────────────────────────────
 
-function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
+function CompanyReportContent({ company, jobRole, report, sample = false }: LoadedReport) {
   const [, navigate] = useLocation();
   const [activeSection, setActiveSection] = useState(COMPANY_REPORT_NAV_SECTIONS[0].id);
   const [openQuestionIndex, setOpenQuestionIndex] = useState<number | null>(0);
@@ -207,9 +209,15 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
             <span>뒤로</span>
           </button>
           <div className="flex items-center gap-2">
-            <button className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200" onClick={() => navigate("/my")}>
-              내 지원서
-            </button>
+            {sample ? (
+              <button className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200" onClick={() => navigate("/company-analysis")}>
+                기업 분석 시작하기
+              </button>
+            ) : (
+              <button className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200" onClick={() => navigate("/my")}>
+                내 지원서
+              </button>
+            )}
             <AuthButton />
           </div>
         </div>
@@ -217,6 +225,12 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
       </div>
 
       <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10 pt-4">
+        {sample ? (
+          <div role="note" className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-4 py-3 text-[13px] text-sky-200">
+            <span className="font-semibold">샘플 리포트 · {company} · {asOf} 기준</span>
+            <span className="text-sky-200/70 text-pretty">실제 리포트는 지원 기업과 직무를 입력하면 같은 구성으로 새로 생성돼요.</span>
+          </div>
+        ) : null}
         {/* 표지 */}
         <header id={COMPANY_HERO_ID} className="pt-8 pb-[6.5rem] section-divider">
           <div className="relative min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0B0B0E] px-5 py-5 sm:px-8 sm:py-7 md:px-10 md:py-9">
@@ -467,23 +481,41 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
               </div>
             ))}
           </div>
-          <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
-            <button
-              onClick={() => navigate(`/analyze?company=${encodeURIComponent(company)}&jobKeyword=${encodeURIComponent(jobRole)}`)}
-              className="w-full sm:w-auto px-6 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
-            >
-              <span>이 각도로 쓴 자소서, 채용 담당자 시선으로 확인하기</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            {report.reportMeta?.linkedResumeAnalysisId ? (
+          {sample ? (
+            <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
               <button
-                onClick={() => navigate(`/report-new?analysisId=${encodeURIComponent(report.reportMeta?.linkedResumeAnalysisId ?? "")}`)}
+                onClick={() => navigate("/company-analysis")}
+                className="w-full sm:w-auto px-6 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+              >
+                <span>내 지원 기업으로 기업 분석 받기</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => navigate("/entitlements#company")}
                 className="w-full sm:w-auto px-6 py-3.5 bg-zinc-800 text-white font-medium rounded-lg hover:bg-zinc-700 transition-colors"
               >
-                연결된 자소서 분석 보기
+                이용권 보기
               </button>
-            ) : null}
-          </div>
+            </div>
+          ) : (
+            <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
+              <button
+                onClick={() => navigate(`/analyze?company=${encodeURIComponent(company)}&jobKeyword=${encodeURIComponent(jobRole)}`)}
+                className="w-full sm:w-auto px-6 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+              >
+                <span>이 각도로 쓴 자소서, 채용 담당자 시선으로 확인하기</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              {report.reportMeta?.linkedResumeAnalysisId ? (
+                <button
+                  onClick={() => navigate(`/report-new?analysisId=${encodeURIComponent(report.reportMeta?.linkedResumeAnalysisId ?? "")}`)}
+                  className="w-full sm:w-auto px-6 py-3.5 bg-zinc-800 text-white font-medium rounded-lg hover:bg-zinc-700 transition-colors"
+                >
+                  연결된 자소서 분석 보기
+                </button>
+              ) : null}
+            </div>
+          )}
           <SourceNote />
         </section>
 
@@ -566,6 +598,19 @@ function CompanyReportContent({ company, jobRole, report }: LoadedReport) {
 
 export default function CompanyReport() {
   const { isLoading, isAuthenticated } = useAuth();
+  // 공개 샘플은 로그인·조회 없이 굳힌 상수를 그대로 렌더한다.
+  const isSample = new URLSearchParams(window.location.search).get("sample") === "1";
+  if (isSample) {
+    return (
+      <CompanyReportContent
+        analysisId="sample"
+        company={COMPANY_REPORT_SAMPLE.company}
+        jobRole={COMPANY_REPORT_SAMPLE.jobRole}
+        report={COMPANY_REPORT_SAMPLE.report}
+        sample
+      />
+    );
+  }
   if (isLoading) {
     return <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-zinc-400">로그인 정보를 확인하는 중이에요.</main>;
   }
