@@ -25,15 +25,16 @@ import { scrollChildIntoHorizontalView } from "./reportLineAnalysis";
 
 /**
  * 표지 한 줄의 글자 크기. 프롬프트는 28자 이내를 요구하지만 모델이 30~45자를 자주 내놓는다.
- * 서버가 자르면 문장이 깨지니 화면에서 줄인다. 한글 한 자는 약 1em 폭이고 컨테이너(max-w-3xl)는
- * 768px 이므로, 데스크톱에서 두 줄에 들어가려면 글자 크기 ≤ 1536px / 글자 수 여야 한다.
+ * 서버가 자르면 문장이 깨지니 화면에서 줄인다. 프로덕션 실측(2026-09-08)으로 한 글자 평균 폭이 약 0.83em
+ * (띄어쓰기·영문 포함)이고 컨테이너(max-w-3xl)가 768px 이므로, 데스크톱에서 두 줄에 들어가려면
+ * 글자 크기 ≤ 1850px / 글자 수 여야 한다. 28자면 기본 4.05rem(64.8px)이 딱 맞는다.
  */
 export function heroTitleSizeClass(oneLiner: string): string {
   const length = oneLiner.replace(/\*\*/g, "").trim().length;
-  if (length > 44) return "text-[1.6rem] sm:text-[1.9rem] md:text-[2rem]";
-  if (length > 36) return "text-[1.7rem] sm:text-[2.1rem] md:text-[2.2rem]";
-  if (length > 30) return "text-[1.85rem] sm:text-[2.4rem] md:text-[2.7rem]";
-  if (length > 24) return "text-[2rem] sm:text-[2.8rem] md:text-[3.2rem]";
+  if (length > 46) return "text-[1.7rem] sm:text-[2rem] md:text-[2.2rem]";
+  if (length > 40) return "text-[1.8rem] sm:text-[2.2rem] md:text-[2.5rem]";
+  if (length > 34) return "text-[1.9rem] sm:text-[2.5rem] md:text-[2.85rem]";
+  if (length > 28) return "text-[1.95rem] sm:text-[2.8rem] md:text-[3.4rem]";
   return "text-[2.08rem] sm:text-[3.15rem] md:text-[4.05rem]";
 }
 
