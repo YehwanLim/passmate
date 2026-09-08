@@ -1,4 +1,3 @@
-import { motion, type Variants } from "framer-motion";
 import {
   ClipboardPaste,
   Building2,
@@ -40,33 +39,13 @@ const steps = [
   },
 ];
 
-const containerVariants: Variants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.15, delayChildren: 0.2 },
-  },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 32 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, ease: [0.21, 0.47, 0.32, 0.98] },
-  },
-};
-
 export default function ProcessSection() {
   return (
     <section className="py-28 md:py-36 border-t border-white/[0.04]">
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
         {/* Heading */}
-        <motion.div
+        <div
           className="text-center mb-20"
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-          viewport={{ once: true, margin: "-80px" }}
         >
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
             리포트까지, 3단계면 충분합니다
@@ -75,24 +54,19 @@ export default function ProcessSection() {
             붙여넣고, 회사를 알려주고, 1분 기다리면 됩니다. 예약도 견적도 필요
             없습니다.
           </p>
-        </motion.div>
+        </div>
 
         {/* Timeline */}
-        <motion.div
+        <div
           className="relative max-w-3xl mx-auto"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
         >
           {/* Vertical connecting line */}
           <div className="absolute left-[27px] md:left-[31px] top-8 bottom-8 w-px bg-gradient-to-b from-blue-500/20 via-purple-500/20 to-emerald-500/20" />
 
           {steps.map(
             ({ num, title, description, icon: Icon, color, glowColor }, i) => (
-              <motion.div
+              <div
                 key={num}
-                variants={itemVariants}
                 className="relative pl-20 md:pl-24 pb-14 last:pb-0"
               >
                 {/* Node circle */}
@@ -142,10 +116,10 @@ export default function ProcessSection() {
                     <ArrowRight className="w-3 h-3 text-gray-700 rotate-90" />
                   </div>
                 )}
-              </motion.div>
+              </div>
             )
           )}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

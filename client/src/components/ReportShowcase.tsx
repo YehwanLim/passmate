@@ -665,8 +665,10 @@ function InterviewAndActionPreview() {
 function ActiveReportScene({ activeIndex }: { activeIndex: number }) {
   const activeScene = REPORT_PREVIEW_SCENES[activeIndex];
 
+  // initial={false}: 첫 마운트에선 등장 애니메이션을 건너뛴다. 프리렌더 HTML 에 opacity:0 이 구워지면
+  // JS 가 올 때까지 리포트 미리보기가 통째로 비어 보인다. 장면 전환(퇴장→등장)은 그대로다.
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={activeScene.id}
         initial={{ opacity: 0, y: 22, filter: "blur(6px)" }}

@@ -1,4 +1,3 @@
-import { motion, type Variants } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import { useLocation } from "wouter";
 import { BrandName } from "@/components/BrandName";
@@ -40,24 +39,6 @@ const TIER_INTRO: Record<TierKey, { perUseNote: string; lead: string; body: stri
    대비를 만든다. 실제 구매·잔여 조회는 /entitlements 가 담당한다.
    ───────────────────────────────────────────────────────── */
 
-const EASE = [0.21, 0.47, 0.32, 0.98] as const;
-
-const revealVariants: Variants = {
-  hidden: { opacity: 0, y: 32 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, ease: EASE },
-  },
-};
-
-const containerVariants: Variants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.15, delayChildren: 0.2 },
-  },
-};
-
 // 세로 막대 비교: 사설 첨삭 시세(일반적 범위) 대비 회당 가격.
 // 막대 높이(px)는 범위 상한 15만원을 176px로 둔 비율값이고,
 // 최저 막대는 보이도록 8px로 클램프한다.
@@ -96,8 +77,7 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
   const listPricePrefix = plan.uses + plan.companyUses > 1 && plan.companyUses > 0 ? "따로 사면" : "정가";
 
   return (
-    <motion.div
-      variants={revealVariants}
+    <div
       className={`flex h-full flex-col rounded-2xl border bg-white/[0.02] p-8 backdrop-blur-sm transition-all duration-300 ${
         highlighted
           ? "border-blue-500/[0.25] hover:border-blue-400/[0.35]"
@@ -152,7 +132,7 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
       >
         {tier.label} 구매하기
       </button>
-    </motion.div>
+    </div>
   );
 }
 
@@ -163,12 +143,8 @@ export default function PricingSection() {
     <section id="pricing" className="py-28 md:py-36 border-t border-white/[0.04]">
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
         {/* Heading */}
-        <motion.div
+        <div
           className="text-center mb-14"
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: EASE }}
-          viewport={{ once: true, margin: "-80px" }}
         >
           <p className="seasonal-discount-label mx-auto w-fit text-lg md:text-xl font-bold">
             {SEASONAL_DISCOUNT_LABEL}
@@ -181,28 +157,20 @@ export default function PricingSection() {
           <p className="mt-4 text-gray-500 font-light text-[15px] leading-[1.8] max-w-lg mx-auto">
             복잡한 구독 없이, 필요한 만큼만 담으세요.
           </p>
-        </motion.div>
+        </div>
 
         {/* 가격 카드 — 티어 순서는 pricing.ts TIERS 를 따른다 */}
-        <motion.div
+        <div
           className="grid gap-6 md:grid-cols-3"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
         >
           {TIERS.map(tier => (
             <TierCard key={tier.key} tier={tier} />
           ))}
-        </motion.div>
+        </div>
 
         {/* 리포트 구성 — 자소서·기업 두 리포트를 나란히. 이용권 페이지와 같은 문구 */}
-        <motion.div
+        <div
           className="mt-10 max-w-5xl mx-auto grid gap-8 rounded-2xl border border-white/[0.06] bg-white/[0.015] px-7 py-6 md:grid-cols-2 md:gap-10"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: EASE }}
-          viewport={{ once: true, margin: "-80px" }}
         >
           <div>
             <p className="text-[12px] font-semibold uppercase tracking-wider text-sky-300">자소서 진단 리포트</p>
@@ -228,15 +196,11 @@ export default function PricingSection() {
               ))}
             </ul>
           </div>
-        </motion.div>
+        </div>
 
         {/* 무료 체험 안내 — 결제 전 부담을 없애는 문장이라 크게 둔다 */}
-        <motion.div
+        <div
           className="mt-12 text-center"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: EASE }}
-          viewport={{ once: true, margin: "-80px" }}
         >
           <p className="text-2xl md:text-[1.75rem] font-bold tracking-tight text-white">
             가입하면 <span className="text-sky-300">첫 분석 1회는 무료</span>입니다
@@ -244,15 +208,11 @@ export default function PricingSection() {
           <p className="mt-2.5 text-[15px] font-light text-zinc-400">
             카드 등록 없이, 유료와 똑같은 리포트 전체를 받아볼 수 있어요.
           </p>
-        </motion.div>
+        </div>
 
         {/* 시세 비교 — 세로 막대로 가격 차이를 한눈에 보여준다 */}
-        <motion.div
+        <div
           className="mt-20 max-w-3xl mx-auto"
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: EASE }}
-          viewport={{ once: true, margin: "-80px" }}
         >
           <p className="text-center text-xl md:text-2xl font-bold tracking-tight text-white">
             자소서 첨삭, 보통 얼마가 들까요?
@@ -275,17 +235,13 @@ export default function PricingSection() {
                   >
                     {column.value}
                   </p>
-                  <motion.div
+                  <div
                     className={`w-full shrink-0 origin-bottom rounded-t-lg ${
                       column.isPreview
                         ? "bg-gradient-to-t from-blue-500 to-cyan-400 shadow-[0_0_24px_rgba(59,130,246,0.45)]"
                         : "bg-gradient-to-t from-zinc-500/[0.28] to-zinc-500/[0.1]"
                     }`}
                     style={{ height: column.barHeight }}
-                    initial={{ scaleY: 0 }}
-                    whileInView={{ scaleY: 1 }}
-                    transition={{ duration: 0.8, delay: 0.15 * index, ease: EASE }}
-                    viewport={{ once: true, margin: "-80px" }}
                   />
                 </div>
                 <div className="mt-3.5 text-center">
@@ -320,15 +276,11 @@ export default function PricingSection() {
             * 사설 첨삭 비용은 일반적인 시세 범위로, 업체·범위에 따라 달라질 수
             있습니다.
           </p>
-        </motion.div>
+        </div>
 
         {/* CTA */}
-        <motion.div
+        <div
           className="mt-16 text-center"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: EASE }}
-          viewport={{ once: true, margin: "-80px" }}
         >
           <button
             type="button"
@@ -341,7 +293,7 @@ export default function PricingSection() {
           <p className="mt-4 text-[12.5px] font-light text-zinc-500">
             결제 전, 무료 분석으로 리포트를 먼저 경험해 보세요.
           </p>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

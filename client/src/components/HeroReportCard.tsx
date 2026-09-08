@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import type { CSSProperties } from "react";
 import { AlertTriangle, Check } from "lucide-react";
 import { BrandName } from "@/components/BrandName";
 import {
@@ -15,11 +15,9 @@ import {
 
 export default function HeroReportCard() {
   return (
-    <motion.div
-      className="relative mx-auto mt-16 w-full max-w-[880px] text-left md:mt-20"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.95, duration: 1, ease: [0.21, 0.47, 0.32, 0.98] }}
+    <div
+      className="landing-rise relative mx-auto mt-16 w-full max-w-[880px] text-left md:mt-20"
+      style={{ "--rise-delay": "0.95s", "--rise-y": "40px", "--rise-duration": "1s" } as CSSProperties}
     >
       <div
         className="pointer-events-none absolute -inset-x-[10%] -inset-y-[6%] -z-10 blur-2xl"
@@ -136,6 +134,6 @@ export default function HeroReportCard() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

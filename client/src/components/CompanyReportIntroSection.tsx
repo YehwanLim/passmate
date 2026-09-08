@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -15,8 +14,6 @@ import { COMPANY_REPORT_NAV_SECTIONS } from "@/pages/companyReportNavigation";
 
 export const COMPANY_REPORT_INTRO_ID = "company-report-intro";
 
-const EASE = [0.21, 0.47, 0.32, 0.98] as const;
-
 export default function CompanyReportIntroSection() {
   const [, navigate] = useLocation();
 
@@ -26,12 +23,8 @@ export default function CompanyReportIntroSection() {
       className="py-28 md:py-36 border-t border-white/[0.04]"
     >
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
-        <motion.div
+        <div
           className="grid gap-12 md:grid-cols-[1.1fr_1fr] md:items-center"
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: EASE }}
-          viewport={{ once: true, margin: "-80px" }}
         >
           {/* 설명 */}
           <div>
@@ -103,7 +96,7 @@ export default function CompanyReportIntroSection() {
               원문에서 확인할 수 있어요.
             </p>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

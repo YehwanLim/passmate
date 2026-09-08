@@ -729,6 +729,30 @@
   }
 }
 
+/* ── 랜딩 첫 화면 등장 ──
+   framer-motion 의 initial 은 프리렌더 HTML 에 인라인 opacity:0 으로 구워져, JS 가 내려와 하이드레이션할 때까지
+   본문이 투명하다(폰에서 h1 만 5초). 첫 화면(내비·부제·CTA·리포트 카드)은 CSS 키프레임으로 등장시켜
+   HTML 파싱 직후 JS 없이 바로 재생되게 한다. h1 은 LCP 라 페이드 없이 그대로 둔다(Home.tsx HERO_TITLE_MOTION). */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-y, 24px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.landing-rise {
+  animation: landing-rise var(--rise-duration, 0.9s) cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+  animation-delay: var(--rise-delay, 0s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-rise {
+    animation: none;
+  }
+}
+
 /* ── 랜딩 문서 배경 ──
    body 는 라이트 테마(흰색)라 iOS 오버스크롤(당겼다 놓을 때)과 아직 안 그려진 타일에 흰색이 비친다.
    랜딩은 Home.tsx 가 <html> 에 이 클래스를 붙이고(프리렌더 HTML 은 scripts/prerender-landing.mjs 가

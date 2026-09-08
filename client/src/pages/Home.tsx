@@ -13,7 +13,7 @@ import MoodShiftBackground from "@/components/MoodShiftBackground";
 import HeroReportCard from "@/components/HeroReportCard";
 import Logo from "@/components/Logo";
 import { ArrowRight, CheckCircle2, Menu, X } from "lucide-react";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, type CSSProperties } from "react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import AuthButton from "@/components/AuthButton";
@@ -54,30 +54,19 @@ const SHOW_SOCIAL_PROOF = false;
    Helper Components
    ───────────────────────────────────────────────────────── */
 
-/** Scroll-reveal wrapper – fade-in + slide-up on viewport entry */
+/** 섹션 래퍼. 예전엔 스크롤 등장(opacity 0→1)이었지만, 그 시작 상태가 프리렌더 HTML 에 구워져
+ *  폰에서 JS 가 올 때까지 섹션이 통째로 투명했다. 첫 진입엔 내용이 먼저 보이는 쪽을 택했다. */
 function ScrollReveal({
   children,
-  delay = 0,
   className = "",
 }: {
   children: React.ReactNode;
-  delay?: number;
   className?: string;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 32 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.8,
-        delay,
-        ease: [0.21, 0.47, 0.32, 0.98],
-      }}
-      viewport={{ once: true, margin: "-80px" }}
-      className={className}
-    >
+    <div className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -139,11 +128,9 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           GNB
           ══════════════════════════════════════════════════ */}
-      <motion.nav
-        className="sticky top-0 z-50 bg-[#050505]/10 backdrop-blur-2xl border-b border-white/[0.045]"
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+      <nav
+        className="landing-rise sticky top-0 z-50 bg-[#050505]/10 backdrop-blur-2xl border-b border-white/[0.045]"
+        style={{ "--rise-y": "-24px", "--rise-duration": "0.5s" } as CSSProperties}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between h-14 px-6 lg:px-10">
           <div
@@ -207,7 +194,7 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.nav>
+      </nav>
 
       {/* ══════════════════════════════════════════════════
           HERO  (Step 1 – Premium Centered Hero)
@@ -230,31 +217,20 @@ export default function Home() {
           </motion.h1>
 
           {/* Sub copy */}
-          <motion.p
-            className="text-[16px] md:text-[18px] text-gray-400 max-w-2xl mx-auto leading-[1.75] font-light mb-12"
-            initial={{ opacity: 0, y: 24, filter: "blur(6px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{
-              delay: 0.5,
-              duration: 0.9,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
+          <p
+            className="landing-rise text-[16px] md:text-[18px] text-gray-400 max-w-2xl mx-auto leading-[1.75] font-light mb-12"
+            style={{ "--rise-delay": "0.5s" } as CSSProperties}
           >
             강점은 더 선명하게, 빈틈은 더 꼼꼼하게.
             <br />
             현직자의 시선으로 &lsquo;같이 일하고 싶은 사람&rsquo;으로 기억될 수
             있도록 피드백합니다.
-          </motion.p>
+          </p>
 
           {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: 0.7,
-              duration: 0.7,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
+          <div
+            className="landing-rise"
+            style={{ "--rise-delay": "0.7s", "--rise-y": "20px", "--rise-duration": "0.7s" } as CSSProperties}
           >
             <button
               className="landing-primary-cta group"
@@ -267,7 +243,7 @@ export default function Home() {
               첫 분석 무료 <span className="text-zinc-700">·</span> 리포트는 1분
               안에
             </p>
-          </motion.div>
+          </div>
 
           <HeroReportCard />
         </div>
@@ -287,30 +263,15 @@ export default function Home() {
         />
 
         <div className="relative max-w-3xl mx-auto px-6 lg:px-10 text-center">
-          <motion.h2
+          <h2
             className="text-[1.75rem] md:text-[2.25rem] lg:text-[2.75rem] font-bold leading-[1.25] tracking-[-0.02em] mb-6"
-            initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{
-              duration: 0.9,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
-            viewport={{ once: true, margin: "-80px" }}
           >
             아직도 AI로 만든 자소서 <br className="hidden md:inline" />
             그대로 복붙하세요?
-          </motion.h2>
+          </h2>
 
-          <motion.p
+          <p
             className="text-[15px] md:text-[17px] text-gray-400 font-light leading-[1.85] max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{
-              duration: 0.9,
-              delay: 0.15,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
-            viewport={{ once: true, margin: "-80px" }}
           >
             매끈한 문장은 이제 누구나 씁니다.
             <br />
@@ -319,7 +280,7 @@ export default function Home() {
             <BrandName />는 문장을 다듬는 대신, 지원한 회사의 채용 기준으로
             <br />
             당신의 자소서가 어떻게 읽히는지 알려드립니다.
-          </motion.p>
+          </p>
         </div>
       </section>
 
@@ -357,7 +318,7 @@ export default function Home() {
             </ScrollReveal>
 
             {/* After */}
-            <ScrollReveal delay={0.1}>
+            <ScrollReveal>
               <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm h-full hover:border-blue-500/[0.15] transition-all duration-300">
                 <div className="flex items-center gap-2.5 mb-6">
                   <div className="w-6 h-6 rounded-full bg-emerald-500/[0.08] flex items-center justify-center">

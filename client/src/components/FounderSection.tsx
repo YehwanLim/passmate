@@ -25,12 +25,7 @@ export function FounderNoteSection() {
   return (
     <section className="py-28 md:py-36 border-t border-white/[0.04]">
       <div className="max-w-6xl mx-auto px-6 lg:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-          viewport={{ once: true, margin: "-80px" }}
-        >
+        <div>
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
             <div>
               <h2 className="text-2xl md:text-4xl font-bold leading-tight tracking-tight mb-6">
@@ -85,7 +80,7 @@ export function FounderNoteSection() {
               </ul>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -122,39 +117,18 @@ export default function FounderSection() {
         />
 
         <div className="relative max-w-3xl mx-auto text-center px-6 lg:px-10">
-          <motion.h2
+          <h2
             className="text-3xl md:text-4xl font-bold tracking-tight mb-5"
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-            viewport={{ once: true, margin: "-80px" }}
           >
             지금 바로 자소서를 분석해보세요
-          </motion.h2>
-          <motion.p
+          </h2>
+          <p
             className="text-gray-500 font-light text-[15px] leading-[1.8] mb-10 max-w-md mx-auto"
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.8,
-              delay: 0.1,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
-            viewport={{ once: true, margin: "-80px" }}
           >
             첫 분석은 무료입니다. 지금 자소서가 어떻게 읽히는지 먼저
             확인해보세요.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.7,
-              delay: 0.2,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
-            viewport={{ once: true, margin: "-80px" }}
-          >
+          </p>
+          <div>
             <button
               className="landing-primary-cta group"
               onClick={() => navigate("/analyze")}
@@ -165,7 +139,7 @@ export default function FounderSection() {
             <p className="mt-3.5 text-[12.5px] text-zinc-500">
               자소서 본문은 분석에만 사용하고, 서버 로그에 남기지 않습니다.
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
