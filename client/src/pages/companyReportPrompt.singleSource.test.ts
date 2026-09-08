@@ -51,4 +51,25 @@ describe("company report prompt single source", () => {
     expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("CONTEXT_IRRELEVANT");
     expect(COMPANY_REPORT_SYSTEM_PROMPT).not.toContain("점수");
   });
+
+  it("keeps the rules added after the first sample review", () => {
+    // 섹션 간 같은 사실 재사용 금지, 07 은 02 와 다른 사업 포함
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("# [섹션 간 중복 금지]");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("focusBusinesses.items 에 없는 사업");
+    // 인재상은 검색으로 확인한 회사 문구만, 못 찾으면 빈 배열. 금지 예시 단어를 프롬프트에 나열하지 않는다(모델이 그대로 베낀 사례)
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("translatedTalentKeywords 는 빈 배열");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).not.toContain("도전정신");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).not.toContain("주인의식");
+    // 신입 수위·존칭 금지·공채 일정 제외
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("신입");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("회장님");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("공채 일정");
+    // seedSentence 는 미완성구, 전망 문장 강조 금지, 라벨에 기간 금지, 날짜는 실제 사건 달
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("하고 싶습니다");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("할 것입니다");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("label 에 기간을 넣지 않는다");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("사건이 실제로 일어난 달");
+    // 계열사 사업을 이 회사 사업으로 쓰지 않는다(샘플에서 삼성SDS 데이터센터가 07 후보로 나온 사례)
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("다른 계열사");
+  });
 });
