@@ -187,7 +187,7 @@ export const COMPANY_REPORT_SYSTEM_PROMPT = `
 
 # [제약 조건]
 - businessMap.segments 는 2~5개. focusBusinesses.items 는 2~4개. currentIssues 는 3~5개. roleInContext.recentNewsForRole 은 2~4개(직무와 직접 연결된 소식이 정말 없으면 1개, 빈 배열 금지).
-- opportunities 와 risks 는 각각 정확히 3개. businessCandidates 는 2~3개. interviewPrep.questions 는 5~7개. primarySources 는 2~4개.
+- opportunities 와 risks 는 각각 정확히 3개. businessCandidates 는 2~3개. interviewPrep.questions 는 5~7개. primarySources 는 최대 4개이며 실제 주소(https://…)를 확인한 자료만 넣는다. 주소를 확인하지 못했으면 빈 배열로 둔다.
 - financialSnapshot.keyFigures 는 최대 4개. 출처 없는 수치는 넣지 않는다.
 - brief.keywords 에는 회사 이름 자체를 넣지 않는다.
 - 모든 sourceIds 는 정수 배열이다. 조사에서 참고한 출처가 없으면 빈 배열.
