@@ -13,6 +13,21 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const ROOT_PLACEHOLDER = '<div id="root"></div>';
+// Home.tsx 가 마운트 시 <html> 에 붙이는 클래스(index.css `html.landing-canvas`). 프리렌더 HTML 에 미리 넣어
+// 하이드레이션 전에도 iOS 오버스크롤·미도색 타일이 흰색이 아니라 검게 보이게 한다.
+export const LANDING_CANVAS_CLASS = "landing-canvas";
+
+export function markLandingCanvas(html) {
+  const matches = html.match(/<html\b[^>]*>/g) ?? [];
+  if (matches.length !== 1) {
+    throw new Error(`expected exactly one <html> tag (found ${matches.length})`);
+  }
+  const [tag] = matches;
+  if (/\bclass=/.test(tag)) {
+    throw new Error(`<html> already has a class attribute: ${tag}`);
+  }
+  return html.replace(tag, tag.replace(/>$/, ` class="${LANDING_CANVAS_CLASS}">`));
+}
 
 export function injectPrerenderedRoot(shellHtml, renderedMarkup) {
   const occurrences = shellHtml.split(ROOT_PLACEHOLDER).length - 1;
@@ -40,7 +55,7 @@ async function main() {
     throw new Error(`prerendered landing markup is suspiciously short (${markup?.length ?? 0} chars)`);
   }
 
-  writeFileSync(indexPath, injectPrerenderedRoot(shellHtml, markup));
+  writeFileSync(indexPath, markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)));
   console.log(
     `[prerender] landing → ${path.relative(rootDir, indexPath)} (${Math.round(markup.length / 1024)}KB markup), shell → ${path.relative(rootDir, shellPath)}`
   );

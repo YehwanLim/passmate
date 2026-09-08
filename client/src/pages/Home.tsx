@@ -13,7 +13,7 @@ import MoodShiftBackground from "@/components/MoodShiftBackground";
 import HeroReportCard from "@/components/HeroReportCard";
 import Logo from "@/components/Logo";
 import { ArrowRight, CheckCircle2, Menu, X } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import AuthButton from "@/components/AuthButton";
@@ -109,6 +109,15 @@ export default function Home() {
     stiffness: 100,
     damping: 30,
   });
+  // 랜딩 문서 배경을 검게. body 는 라이트 테마라 iOS 오버스크롤·미도색 타일에 흰색이 비친다(index.css 참고).
+  // 프리렌더 HTML 은 scripts/prerender-landing.mjs 가 같은 클래스를 미리 붙여 두므로 첫 진입은 하이드레이션 전에도 검다.
+  useEffect(() => {
+    document.documentElement.classList.add("landing-canvas");
+    return () => {
+      document.documentElement.classList.remove("landing-canvas");
+    };
+  }, []);
+
   /* ─── Render ─── */
   return (
     <div

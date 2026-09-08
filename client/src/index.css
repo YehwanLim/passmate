@@ -729,6 +729,15 @@
   }
 }
 
+/* ── 랜딩 문서 배경 ──
+   body 는 라이트 테마(흰색)라 iOS 오버스크롤(당겼다 놓을 때)과 아직 안 그려진 타일에 흰색이 비친다.
+   랜딩은 Home.tsx 가 <html> 에 이 클래스를 붙이고(프리렌더 HTML 은 scripts/prerender-landing.mjs 가
+   미리 붙여 하이드레이션 전에도 검다), 떠날 때 뗀다. */
+html.landing-canvas,
+html.landing-canvas body {
+  background-color: #050505;
+}
+
 /* ── Editorial Report: Smooth Scroll ── */
 html {
   scroll-behavior: smooth;
