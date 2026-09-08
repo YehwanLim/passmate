@@ -35,6 +35,9 @@ export default function CompanyMarqueeSection() {
                     src={company.logoSrc}
                     alt=""
                     aria-hidden="true"
+                    // 첫 화면 아래라 지연 로드. 프리렌더 시 React 가 <link rel=preload> 를 17개 넣어
+                    // 히어로 CSS·JS 와 대역폭을 다투는 것도 막는다.
+                    loading="lazy"
                     className="social-proof-logo"
                     style={
                       { "--logo-scale": company.logoScale } as CSSProperties

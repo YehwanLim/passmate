@@ -1,4 +1,4 @@
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App";
 import "./fonts/pretendard-variable-dynamic-subset.css";
 import "./index.css";
@@ -48,5 +48,17 @@ if (import.meta.env.PROD && GA_ID && GA_ID !== "G-XXXXXXXXXX") {
   }
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// 랜딩(`/`)은 빌드 때 프리렌더된 HTML(scripts/prerender-landing.mjs)로 오므로 하이드레이션하고,
+// 다른 경로는 빈 껍데기(app.html)라 지금처럼 새로 그린다.
+// `pnpm preview`처럼 모든 경로에 index.html을 주는 서버에서는 /analyze 에 랜딩 마크업이 실려 오는데,
+// 그걸 하이드레이션하면 트리가 달라 React 가 경고하므로 비우고 새로 그린다.
+const rootElement = document.getElementById("root")!;
+const isPrerenderedLanding =
+  rootElement.hasChildNodes() && window.location.pathname === "/";
+if (isPrerenderedLanding) {
+  hydrateRoot(rootElement, <App />);
+} else {
+  rootElement.replaceChildren();
+  createRoot(rootElement).render(<App />);
+}
 
