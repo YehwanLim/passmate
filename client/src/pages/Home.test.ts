@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { HOME_NAV_ITEMS } from "./Home";
+import { HERO_TITLE_MOTION, HOME_NAV_ITEMS } from "./Home";
 
 const homeSource = readFileSync(new URL("./Home.tsx", import.meta.url), "utf8");
 const cssSource = readFileSync(
   new URL("../index.css", import.meta.url),
   "utf8"
 );
+
+describe("HERO_TITLE_MOTION", () => {
+  // 히어로 h1은 랜딩의 LCP 요소다. opacity 0에서 시작하는 등장 애니메이션은
+  // 브라우저가 애니메이션이 끝날 때까지 LCP를 미루고(모바일 Lighthouse LCP 7.7s → 3.2s),
+  // blur 필터 애니메이션은 큰 글자를 매 프레임 다시 그린다. 이동(transform)만 허용한다.
+  it("never hides the LCP headline behind an opacity or blur entrance", () => {
+    expect(HERO_TITLE_MOTION.initial).not.toHaveProperty("opacity");
+    expect(HERO_TITLE_MOTION.initial).not.toHaveProperty("filter");
+    expect(HERO_TITLE_MOTION.animate).not.toHaveProperty("filter");
+    expect(homeSource).toContain("<motion.h1");
+    expect(homeSource).toContain("{...HERO_TITLE_MOTION}");
+  });
+});
 
 describe("HOME_NAV_ITEMS", () => {
   it("shows only immediately usable top navigation items", () => {

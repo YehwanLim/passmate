@@ -26,6 +26,15 @@ export const HOME_NAV_ITEMS = [
   { label: "내 지원서", type: "route", target: "/my" },
 ] as const;
 
+// 히어로 h1은 랜딩의 LCP 요소다. opacity 0 → 1 등장은 브라우저가 애니메이션이 끝날 때까지
+// LCP를 미루고(모바일 Lighthouse 7.7s), blur 필터는 큰 글자를 매 프레임 다시 그린다.
+// 그래서 제목만 이동(transform)으로 등장시키고 페이드·블러는 아래 요소들에만 남긴다.
+export const HERO_TITLE_MOTION = {
+  initial: { y: 24 },
+  animate: { y: 0 },
+  transition: { duration: 0.9, ease: [0.21, 0.47, 0.32, 0.98] },
+} as const;
+
 // 소셜 프루프(후기·지표)는 실제 사용자 후기를 확보할 때까지 숨긴다.
 // 실후기로 교체한 뒤 true로 되돌리면 기존 위치에 그대로 복귀한다.
 // 로고 마퀴는 CompanyMarqueeSection이 "분석 지원 기업" 프레임으로 상시
@@ -199,13 +208,7 @@ export default function Home() {
           {/* H1 */}
           <motion.h1
             className="text-[2.75rem] md:text-[3.75rem] lg:text-[4.5rem] font-bold leading-[1.1] tracking-[-0.03em] mb-7"
-            initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{
-              delay: 0.3,
-              duration: 0.9,
-              ease: [0.21, 0.47, 0.32, 0.98],
-            }}
+            {...HERO_TITLE_MOTION}
           >
             서류 탈락의 <br className="sm:hidden" />
             진짜 이유,

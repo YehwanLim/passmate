@@ -1,5 +1,3 @@
-import { supabase } from "@/lib/supabase";
-
 /**
  * 방문 핑 — 관리자 대시보드의 방문자·실시간 집계용.
  *
@@ -60,8 +58,11 @@ export function resetVisitorIdForTests(): void {
   memoryVisitorId = null;
 }
 
+// Supabase 클라이언트는 랜딩 진입 번들에서 빼기 위해 지연 로드한다(AuthContext와 같은 이유).
+// 정적 import로 되돌리면 App → VisitTracker → 여기 경로로 @supabase/*가 진입 청크에 도로 들어간다.
 async function readAccessToken(): Promise<string | null> {
   try {
+    const { supabase } = await import("@/lib/supabase");
     const { data } = await supabase.auth.getSession();
     return data.session?.access_token ?? null;
   } catch {

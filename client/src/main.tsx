@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import "./fonts/pretendard-variable-dynamic-subset.css";
 import "./index.css";
 
 // ──────────────────────────────────────────────────────────────
@@ -25,10 +26,26 @@ if (import.meta.env.PROD && GA_ID && GA_ID !== "G-XXXXXXXXXX") {
   });
 
   // 2) gtag.js 외부 스크립트 삽입 (CSP script-src에 googletagmanager.com 허용됨)
-  const gtagScript = document.createElement("script");
-  gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
-  gtagScript.async = true;
-  document.head.appendChild(gtagScript);
+  //    위의 gtag 스텁이 이벤트를 dataLayer에 쌓아 두므로 스크립트 자체는 첫 화면이 끝난 뒤 받아도 유실이 없다.
+  //    170KB짜리 gtag.js가 폰트 조각·지연 청크와 대역폭을 다투지 않도록 load 이후 유휴 시간에 넣는다.
+  const injectGtagScript = () => {
+    const gtagScript = document.createElement("script");
+    gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+    gtagScript.async = true;
+    document.head.appendChild(gtagScript);
+  };
+  const scheduleGtagScript = () => {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(injectGtagScript, { timeout: 3000 });
+    } else {
+      window.setTimeout(injectGtagScript, 1);
+    }
+  };
+  if (document.readyState === "complete") {
+    scheduleGtagScript();
+  } else {
+    window.addEventListener("load", scheduleGtagScript, { once: true });
+  }
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

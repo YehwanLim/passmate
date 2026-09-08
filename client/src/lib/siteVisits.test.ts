@@ -102,3 +102,15 @@ describe("siteVisits", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 });
+
+describe("siteVisits bundle boundary", () => {
+  // App → VisitTracker → siteVisits 는 랜딩 진입 청크에 포함된다. 여기서 Supabase 클라이언트를
+  // 정적으로 import 하면 @supabase/* 전체(gzip ~55KB)가 첫 화면 JS 에 도로 들어간다.
+  it("loads the Supabase client lazily instead of importing it statically", async () => {
+    const { readFileSync } = await import("node:fs");
+    const path = await import("node:path");
+    const source = readFileSync(path.resolve(__dirname, "siteVisits.ts"), "utf8");
+    expect(source).not.toMatch(/^import\s+\{[^}]*supabase[^}]*\}\s+from\s+"@\/lib\/supabase"/m);
+    expect(source).toContain('import("@/lib/supabase")');
+  });
+});
