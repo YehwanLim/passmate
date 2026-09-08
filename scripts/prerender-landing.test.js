@@ -1,7 +1,10 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  FULL_CSS_ATTR,
+  inlineCriticalCss,
   LANDING_CANVAS_CLASS,
   LANDING_CANVAS_STYLE,
   ROOT_PLACEHOLDER,
@@ -49,6 +52,73 @@ describe("markLandingCanvas", () => {
     expect(css).toContain(`html.${LANDING_CANVAS_CLASS}`);
     expect(home).toContain(`classList.add("${LANDING_CANVAS_CLASS}")`);
     expect(home).toContain(`classList.remove("${LANDING_CANVAS_CLASS}")`);
+  });
+});
+
+describe("inlineCriticalCss", () => {
+  function buildFixture() {
+    const dir = mkdtempSync(path.join(tmpdir(), "prerender-css-"));
+    mkdirSync(path.join(dir, "assets"));
+    writeFileSync(
+      path.join(dir, "assets", "index-abc.css"),
+      [
+        "@layer base{h1{margin:0}}",
+        ".used{color:red}",
+        ".used:hover{color:pink}",
+        "@media (min-width:768px){.used{color:green}}",
+        ".unused{color:blue}",
+        "@keyframes rise{from{transform:translateY(24px)}to{transform:none}}",
+        "@keyframes unused-kf{from{opacity:0}}",
+        ".rise{animation:rise 1s}",
+        '@font-face{font-family:"Pretendard";src:url(/x.woff2)}',
+        "@property --tw-x{syntax:'*';inherits:false;initial-value:0}",
+        ":where(.space-y-2>:not(:last-child)){margin-block-end:8px}",
+        ".group-hover\\:opacity-100:is(:where(.group):hover *){opacity:1}",
+      ].join("\n")
+    );
+    const html =
+      '<!doctype html><html lang="ko"><head><link rel="stylesheet" crossorigin href="/assets/index-abc.css"></head>' +
+      '<body><div id="root"><h1 class="used rise">hi</h1></div></body></html>';
+    return { dir, html };
+  }
+
+  it("inlines only the rules the landing uses and turns the stylesheet into a preload", async () => {
+    // 렌더 차단 CSS 를 기다리는 동안 첫 화면이 비어 있었다. 쓰는 규칙만 인라인하고 전체 CSS 는
+    // preload 로 두면 HTML 도착 즉시 그려진다. 전체 CSS 는 main.tsx 가 하이드레이션 직전에 적용한다.
+    const { dir, html } = buildFixture();
+    const result = await inlineCriticalCss(html, dir);
+    const style = result.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
+    expect(style).toContain(".used{color:red}");
+    expect(style).toContain(".used:hover");
+    expect(style).toContain("@media (min-width:768px)");
+    expect(style).toContain("@keyframes rise");
+    expect(style).toContain("@layer base");
+    expect(style).toContain("@property --tw-x");
+    // Tailwind 4 의 :where(...) 선택자는 beasties 가 못 맞추므로 allowRules 로 강제 포함한다
+    expect(style).toContain(":where(.space-y-2>:not(:last-child))");
+    expect(style).toContain(":where(.group):hover");
+    expect(style).not.toContain(".unused");
+    expect(style).not.toContain("unused-kf");
+    // 폰트 선언은 인라인하지 않는다(한글 서브셋 19개, 첫 화면 뒤에 받는다)
+    expect(style).not.toContain("@font-face");
+    expect(result).toContain(
+      `<link rel="preload" as="style" crossorigin href="/assets/index-abc.css" ${FULL_CSS_ATTR}>`
+    );
+    expect(result).not.toContain('rel="stylesheet"');
+  });
+
+  it("uses the attribute name main.tsx's applyFullStylesheet looks for", () => {
+    const client = readFileSync(path.join(ROOT_DIR, "client/src/applyFullStylesheet.ts"), "utf8");
+    expect(client).toContain(`FULL_CSS_ATTR = "${FULL_CSS_ATTR}"`);
+    const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
+    expect(main).toContain("applyFullStylesheet();");
+  });
+
+  it("throws when the shell has no single stylesheet link to defer", async () => {
+    const { dir } = buildFixture();
+    await expect(inlineCriticalCss("<html><head></head><body></body></html>", dir)).rejects.toThrow(
+      /stylesheet link/
+    );
   });
 });
 

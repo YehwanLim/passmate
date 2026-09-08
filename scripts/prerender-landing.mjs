@@ -11,6 +11,7 @@
 import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import Beasties from "beasties";
 
 export const ROOT_PLACEHOLDER = '<div id="root"></div>';
 // Home.tsx 가 마운트 시 <html> 에 붙이는 클래스(index.css `html.landing-canvas`). 프리렌더 HTML 에 미리 넣어
@@ -45,6 +46,39 @@ export function injectPrerenderedRoot(shellHtml, renderedMarkup) {
   return shellHtml.replace(ROOT_PLACEHOLDER, `<div id="root">${renderedMarkup}</div>`);
 }
 
+// 전체 CSS(약 50KB gz)는 렌더 차단이라 느린 망에서 첫 픽셀이 2~3초 늦었다. 랜딩 HTML 이 실제로 쓰는 규칙만
+// <style> 로 인라인해 HTML 도착 즉시 그려지게 하고, 전체 CSS 는 preload 만 건다. 메뉴·토스트처럼 JS 뒤에
+// 생기는 UI 는 전체 CSS 가 필요하므로 main.tsx(applyFullStylesheet)가 하이드레이션 직전에 stylesheet 로 되돌린다.
+// CSP 가 인라인 스크립트를 막아 beasties 의 onload/스크립트 기반 전략은 쓸 수 없다.
+export const FULL_CSS_ATTR = "data-full-css";
+const STYLESHEET_LINK_RE = /<link rel="stylesheet" crossorigin href="(\/assets\/[^"]+\.css)">/g;
+
+export async function inlineCriticalCss(html, publicDir) {
+  const beasties = new Beasties({
+    path: publicDir,
+    publicPath: "/",
+    preload: false, // 링크는 아래서 직접 preload 로 바꾼다
+    fonts: false, // @font-face 는 인라인·preload 하지 않는다(한글 서브셋이 19개라 전체 CSS 에 맡긴다)
+    reduceInlineStyles: false,
+    // Tailwind 4 는 space-y-*/group-hover 를 `:where(...)` 선택자로 내보내는데 beasties 가 이를 매칭하지 못해
+    // 목록 간격이 빠진다(계산된 스타일 비교로 발견). 해당 규칙은 사용 여부와 무관하게 포함한다(수백 바이트).
+    allowRules: [/\.space-[xy]-/, /:where\(\.group\)/],
+    logLevel: "warn",
+  });
+  const processed = await beasties.process(html);
+  const links = processed.match(STYLESHEET_LINK_RE) ?? [];
+  if (links.length !== 1) {
+    throw new Error(`expected exactly one stylesheet link to defer (found ${links.length})`);
+  }
+  if (!processed.includes("<style>")) {
+    throw new Error("beasties produced no inline <style>");
+  }
+  return processed.replace(
+    STYLESHEET_LINK_RE,
+    `<link rel="preload" as="style" crossorigin href="$1" ${FULL_CSS_ATTR}>`
+  );
+}
+
 async function main() {
   const rootDir = path.resolve(import.meta.dirname, "..");
   const publicDir = path.join(rootDir, "dist", "public");
@@ -61,9 +95,14 @@ async function main() {
     throw new Error(`prerendered landing markup is suspiciously short (${markup?.length ?? 0} chars)`);
   }
 
-  writeFileSync(indexPath, markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)));
+  const landingHtml = await inlineCriticalCss(
+    markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)),
+    publicDir
+  );
+  writeFileSync(indexPath, landingHtml);
+  const inlineCss = landingHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
   console.log(
-    `[prerender] landing → ${path.relative(rootDir, indexPath)} (${Math.round(markup.length / 1024)}KB markup), shell → ${path.relative(rootDir, shellPath)}`
+    `[prerender] landing → ${path.relative(rootDir, indexPath)} (${Math.round(markup.length / 1024)}KB markup, ${Math.round(inlineCss.length / 1024)}KB critical CSS inlined), shell → ${path.relative(rootDir, shellPath)}`
   );
 }
 
