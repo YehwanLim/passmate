@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "./entry-server";
 
@@ -27,6 +29,15 @@ describe("entry-server render", () => {
     expect(html).not.toMatch(/opacity:\s*0[;"]/);
     // 유일하게 허용하는 scale(0) 은 화면 맨 위 1px 스크롤 진행 막대(스크롤 0 이라 폭 0 이 맞다).
     expect(html.match(/scale[XY]?\(0\)/g)).toEqual(["scaleX(0)"]);
+  });
+
+  it("keeps the CSS entrance animation transform-only so a stalled animation never hides content", () => {
+    // iPhone WebKit 은 첫 페인트 직후 JS 번들 평가에 메인 스레드가 막히면 CSS 애니메이션도 시작하지 못한다.
+    // 키프레임이 opacity 에서 출발하면 그동안 h1 만 보이므로, 이동(transform)만 애니메이션한다.
+    const css = readFileSync(path.resolve(import.meta.dirname, "index.css"), "utf8");
+    const keyframes = css.match(/@keyframes landing-rise \{[\s\S]*?\n\}/)?.[0];
+    expect(keyframes).toBeDefined();
+    expect(keyframes).not.toContain("opacity");
   });
 
   it("renders the landing, not the 404 fallback, for the root path", () => {

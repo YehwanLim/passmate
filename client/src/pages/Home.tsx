@@ -128,10 +128,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           GNB
           ══════════════════════════════════════════════════ */}
-      <nav
-        className="landing-rise sticky top-0 z-50 bg-[#050505]/10 backdrop-blur-2xl border-b border-white/[0.045]"
-        style={{ "--rise-y": "-24px", "--rise-duration": "0.5s" } as CSSProperties}
-      >
+      <nav className="sticky top-0 z-50 bg-[#050505]/10 backdrop-blur-2xl border-b border-white/[0.045]">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-14 px-6 lg:px-10">
           <div
             className="flex items-center cursor-pointer"

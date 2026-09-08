@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   LANDING_CANVAS_CLASS,
+  LANDING_CANVAS_STYLE,
   ROOT_PLACEHOLDER,
   injectPrerenderedRoot,
   markLandingCanvas,
@@ -25,16 +26,21 @@ describe("injectPrerenderedRoot", () => {
 });
 
 describe("markLandingCanvas", () => {
-  it("adds the landing canvas class to the html tag so the page is dark before hydration", () => {
+  it("adds the landing canvas class and an inline background to the html tag", () => {
     // body 는 라이트 테마라 iOS 오버스크롤·미도색 타일이 흰색으로 비친다. 프리렌더 HTML 에는
     // Home.tsx 가 마운트 후 붙이는 클래스를 미리 넣어 첫 진입부터 검게 보이게 한다.
+    // 인라인 style 은 렌더 차단 CSS 가 오기 전(느린 망 2~3초)의 빈 화면까지 검게 만든다.
     const result = markLandingCanvas('<!doctype html>\n<html lang="ko">\n<head></head><body></body></html>');
-    expect(result).toContain(`<html lang="ko" class="${LANDING_CANVAS_CLASS}">`);
+    expect(result).toContain(
+      `<html lang="ko" class="${LANDING_CANVAS_CLASS}" style="${LANDING_CANVAS_STYLE}">`
+    );
+    expect(LANDING_CANVAS_STYLE).toContain("#050505");
   });
 
-  it("throws when there is no single html tag or it already carries a class", () => {
+  it("throws when there is no single html tag or it already carries a class or style", () => {
     expect(() => markLandingCanvas("<body></body>")).toThrow(/<html>/);
-    expect(() => markLandingCanvas('<html class="x"><body></body></html>')).toThrow(/class/);
+    expect(() => markLandingCanvas('<html class="x"><body></body></html>')).toThrow(/class or style/);
+    expect(() => markLandingCanvas('<html style="x"><body></body></html>')).toThrow(/class or style/);
   });
 
   it("uses the same class name as index.css and Home.tsx", () => {

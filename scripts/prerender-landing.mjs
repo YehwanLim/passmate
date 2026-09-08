@@ -16,6 +16,9 @@ export const ROOT_PLACEHOLDER = '<div id="root"></div>';
 // Home.tsx 가 마운트 시 <html> 에 붙이는 클래스(index.css `html.landing-canvas`). 프리렌더 HTML 에 미리 넣어
 // 하이드레이션 전에도 iOS 오버스크롤·미도색 타일이 흰색이 아니라 검게 보이게 한다.
 export const LANDING_CANVAS_CLASS = "landing-canvas";
+// 같은 색을 인라인 style 로도 박는다. 렌더 차단 CSS(약 50KB gz)가 JS 와 대역폭을 나눠 쓰느라 느린 망에서
+// 2~3초 뒤에 오는데, 그동안 브라우저가 그리는 빈 화면이 흰색이 아니라 랜딩 배경색이게 한다(CSP 는 style 인라인 허용).
+export const LANDING_CANVAS_STYLE = "background-color:#050505";
 
 export function markLandingCanvas(html) {
   const matches = html.match(/<html\b[^>]*>/g) ?? [];
@@ -23,10 +26,13 @@ export function markLandingCanvas(html) {
     throw new Error(`expected exactly one <html> tag (found ${matches.length})`);
   }
   const [tag] = matches;
-  if (/\bclass=/.test(tag)) {
-    throw new Error(`<html> already has a class attribute: ${tag}`);
+  if (/\b(class|style)=/.test(tag)) {
+    throw new Error(`<html> already has a class or style attribute: ${tag}`);
   }
-  return html.replace(tag, tag.replace(/>$/, ` class="${LANDING_CANVAS_CLASS}">`));
+  return html.replace(
+    tag,
+    tag.replace(/>$/, ` class="${LANDING_CANVAS_CLASS}" style="${LANDING_CANVAS_STYLE}">`)
+  );
 }
 
 export function injectPrerenderedRoot(shellHtml, renderedMarkup) {
