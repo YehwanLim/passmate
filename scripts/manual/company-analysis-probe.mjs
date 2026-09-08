@@ -1,5 +1,5 @@
 // 실제 Gemini 를 1회 호출해 그라운딩 조합·지연·출처를 기록하는 수동 프로브.
-// 실행: GEMINI_API_KEY=... node scripts/manual/company-analysis-probe.mjs "현대자동차" "전략기획"
+// 실행: GEMINI_API_KEY=... node scripts/manual/company-analysis-probe.mjs "현대자동차" "전략기획" [--single | --two-stage]  (기본: 라이브러리 기본값)
 // 리포트 본문은 출력하지 않는다(로그에 AI 응답 금지 규칙). 구조 요약만 찍는다.
 // sourceIdsBySection/sourceIdRange 는 섹션별 sourceIds 가 출처 개수를 넘는지 사람이 눈으로
 // 확인하기 위한 것이고, searchEntryPointHtmlPath 는 본문 대신 임시 파일 경로만 출력한다.
@@ -17,7 +17,8 @@ if (outFlagIndex >= 0 && !outPath) {
   console.error("--out 뒤에 저장할 파일 경로가 필요합니다.");
   process.exit(2);
 }
-const positional = outFlagIndex >= 0 ? [...args.slice(0, outFlagIndex), ...args.slice(outFlagIndex + 2)] : args;
+const pipeline = args.includes("--single") ? "single" : args.includes("--two-stage") ? "two-stage" : undefined;
+const positional = (outFlagIndex >= 0 ? [...args.slice(0, outFlagIndex), ...args.slice(outFlagIndex + 2)] : args).filter((arg) => arg !== "--two-stage" && arg !== "--single");
 const [company = "현대자동차", jobKeyword = "전략기획"] = positional;
 const db = { aiModelSetting: { findUnique: async () => null } };
 const startedAt = Date.now();
@@ -51,7 +52,7 @@ function collectSourceIds(result) {
 }
 
 try {
-  const result = await analyzeCompany({ company, jobKeyword, postingText: "", resumeAnalysisId: null }, db);
+  const result = await analyzeCompany({ company, jobKeyword, postingText: "", resumeAnalysisId: null }, db, pipeline ? { pipeline } : {});
   const elapsedMs = Date.now() - startedAt;
   if (result.error) {
     console.log(JSON.stringify({ outcome: result.error, elapsedMs }, null, 2));
@@ -75,6 +76,8 @@ try {
     outcome: "ok",
     elapsedMs,
     repaired: result.reportMeta.repaired,
+    pipeline: result.analysisMeta.pipeline,
+    stages: result.analysisMeta.stages,
     modelName: result.analysisMeta.modelName,
     tokenUsage: result.analysisMeta.tokenUsage,
     sourceCount: result.sources.length,

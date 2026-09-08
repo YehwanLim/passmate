@@ -39,6 +39,8 @@ export const COMPANY_REPORT_SYSTEM_PROMPT = `
 - when 은 "YYYY-MM" 형식으로 쓴다. 월을 확인할 수 없으면 "YYYY" 만 쓴다.
 - when 은 그 사건이 실제로 일어난 달이다. 오래된 발언이나 사건을 최근 기사가 다시 언급했다고 해서 기사 날짜를 붙이지 않는다. 12개월보다 오래된 사건은 항목 자체를 빼고 businessMap 의 맥락 문장으로만 쓴다.
 - currentIssues 는 지원 직무 지원자에게 뜻이 있는 사건을 우선 고른다. 주주환원·배당·자사주처럼 투자자 관점의 사건은 financialSnapshot.recentDisclosures 로 보내고 currentIssues 에 넣지 않는다.
+- currentIssues 는 focusBusinesses·recentNewsForRole 에 쓴 사건과 다른 사건이되, 여전히 이 직무와 관계있는 사업·조직·시장의 변화여야 한다. ESG 행사, 포럼 개최, 수상, 사회공헌처럼 직무와 무관한 홍보성 사건으로 자리를 채우지 않는다. 그런 사건밖에 없으면 개수를 줄인다(최소 3개).
+- 지원자가 면접에서 입 밖에 낼 수 없는 사건은 어느 섹션에도 쓰지 않는다: 사내 의혹·비위·수사, 개인 비리, 복지·수당 논란, 소송·분쟁의 세부, 임직원 개인 신상. 노사 문제는 실적·조직에 직접 영향을 주는 확정 사실만 risks 에 한 줄로 쓴다. interviewPrep.questions 는 이런 사건을 묻지 않는다.
 
 # [재무·주식 규칙]
 - financialSnapshot.keyFigures 는 최대 4개다. 각 항목에 회계 기간(period)과 sourceIds 를 반드시 붙인다. label 에 기간을 넣지 않는다("매출", "영업이익"처럼 지표 이름만). 기간은 period 에만 쓴다.

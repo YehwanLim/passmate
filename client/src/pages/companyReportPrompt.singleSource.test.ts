@@ -71,5 +71,9 @@ describe("company report prompt single source", () => {
     expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("사건이 실제로 일어난 달");
     // 계열사 사업을 이 회사 사업으로 쓰지 않는다(샘플에서 삼성SDS 데이터센터가 07 후보로 나온 사례)
     expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("다른 계열사");
+    // 사내 의혹·복지 논란 같은 가십은 이슈·면접 질문에 쓰지 않는다(2단 프로브에서 주거 지원금 의혹이 면접 질문이 된 사례)
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("입 밖에 낼 수 없는 사건");
+    // 04 는 02·05 와 다른 사건이되 직무와 관계있는 변화. 홍보성 사건으로 채우지 않는다(병렬 2단 프로브에서 ESG·포럼이 04 를 채운 사례)
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("홍보성 사건");
   });
 });
