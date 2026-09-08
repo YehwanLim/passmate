@@ -32,8 +32,10 @@ describe("heroTitleSizeClass", () => {
     expect(heroTitleSizeClass("반도체, 모바일, 가전을 아우르는 글로벌 전자 기업")).toContain("md:text-[4.05rem]");
     // 34자: 프로덕션 실측으로 3.4rem(54.4px)에서 두 줄
     expect(heroTitleSizeClass("반도체와 AI 기반 스마트 기기로 글로벌 시장을 선도하는 기업")).toContain("md:text-[3.4rem]");
-    // 45자: 두 줄에 들어가려면 41px 이하
-    expect(heroTitleSizeClass("메모리 반도체와 스마트폰을 기반으로 AI, 파운드리, 전장 등 미래 기술을 선도하는 기업")).toContain("md:text-[2.5rem]");
+    // 49자(옛 샘플): 두 줄에 들어가려면 38px 이하
+    expect(heroTitleSizeClass("메모리 반도체와 스마트폰을 기반으로 AI, 파운드리, 전장 등 미래 기술을 선도하는 기업")).toContain("md:text-[2.2rem]");
+    // 45자: 41px 이하
+    expect(heroTitleSizeClass("메모리 반도체와 스마트폰을 기반으로 AI, 파운드리, 전장 등 미래 기술을 선도")).toContain("md:text-[2.5rem]");
     // 강조 마커는 글자 수에 넣지 않는다.
     expect(heroTitleSizeClass("**전동화로 체급을 바꾸는 완성차**")).toContain("md:text-[4.05rem]");
   });
