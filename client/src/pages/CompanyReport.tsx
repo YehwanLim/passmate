@@ -23,6 +23,11 @@ import {
 } from "./companyReportParts";
 import { scrollChildIntoHorizontalView } from "./reportLineAnalysis";
 
+/** 발행처가 제목과 같거나 검색 제공자의 리다이렉트 호스트(옛 리포트·샘플)면 숨긴다. */
+function isVisiblePublisher(source: { title: string; publisher: string }): boolean {
+  return source.publisher.length > 0 && source.publisher !== source.title && !source.publisher.endsWith("vertexaisearch.cloud.google.com");
+}
+
 // ── 목차 ───────────────────────────────────────────────────────────────────────
 
 function MiniNavigator({ activeSection }: { activeSection: string }) {
@@ -571,10 +576,11 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
                 <span className="tabular-nums text-zinc-600">{source.id}.</span>
                 <span className="min-w-0">
                   <span className="text-zinc-200">{source.title}</span>
-                  {source.publisher && source.publisher !== source.title ? <span className="text-zinc-500"> · {source.publisher}</span> : null}
+                  {isVisiblePublisher(source) ? <span className="text-zinc-500"> · {source.publisher}</span> : null}
                   <ExternalSourceLink href={source.url} className="ml-2 inline-flex items-center gap-1 text-[13px] text-zinc-500 hover:text-white">
                     <ExternalLink className="w-3 h-3" />열기
                   </ExternalSourceLink>
+                  {source.excerpt ? <span className="block text-[13px] leading-[1.7] text-zinc-500">{source.excerpt}</span> : null}
                 </span>
               </li>
             ))}

@@ -64,6 +64,24 @@ describe("CompanyReport", () => {
     expect(screen.queryByText(/저장|다운로드|인쇄|PDF/)).toBeNull();
   });
 
+  it("shows what each source backed and hides the search provider's redirect host as publisher", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({
+      id: "analysis-1", kind: "COMPANY", company_name: "현대자동차", job_role: "전략기획",
+      ai_response_json: buildCompanyReportFixture({
+        sources: [
+          { id: 1, title: "hyundai.com", url: "https://vertexaisearch.cloud.google.com/grounding-api-redirect/a", publisher: "hyundai.com", excerpt: "(2026-07) 전동화 투자를 2배로 늘렸다." },
+          { id: 2, title: "dart.fss.or.kr", url: "https://vertexaisearch.cloud.google.com/grounding-api-redirect/b", publisher: "vertexaisearch.cloud.google.com", excerpt: null },
+        ],
+      }),
+    })));
+
+    render(<CompanyReport />);
+
+    await waitFor(() => expect(screen.getByText("(2026-07) 전동화 투자를 2배로 늘렸다.")).toBeTruthy());
+    expect(screen.queryByText(/vertexaisearch\.cloud\.google\.com/)).toBeNull();
+    expect(screen.getByText("dart.fss.or.kr")).toBeTruthy();
+  });
+
   it("sends a résumé analysis id to the résumé report instead of rendering it here", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ id: "analysis-2", kind: "RESUME", ai_response_json: { questionTabs: [] } })));
 

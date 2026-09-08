@@ -107,6 +107,8 @@ export interface CompanySource {
   title: string;
   url: string;
   publisher: string;
+  /** 이 출처가 뒷받침한 사실 한 줄(groundingSupports). 옛 리포트·샘플에는 없다. */
+  excerpt?: string | null;
 }
 
 export interface CompanyReportMeta {
