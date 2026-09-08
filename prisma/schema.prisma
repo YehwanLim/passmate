@@ -38,6 +38,7 @@ model User {
   purchaseIntents PurchaseIntent[]
   paymentEntitlements PaymentEntitlement[]
   feedbackCreditGrant FeedbackCreditGrant?
+  siteVisits SiteVisit[]
   receivedAdminCreditGrants AdminCreditGrant[] @relation("AdminCreditGrantRecipient")
   issuedAdminCreditGrants   AdminCreditGrant[] @relation("AdminCreditGrantAdministrator")
 
@@ -612,4 +613,24 @@ model FeedbackCreditGrant {
 
   @@index([feedbackId])
   @@map("feedback_credit_grants")
+}
+
+// =============================================================================
+// SiteVisit — 페이지 방문 기록 (관리자 대시보드 방문자·실시간 집계용)
+// =============================================================================
+// 분석을 돌리지 않아도 사이트에 들어오기만 하면 한 줄 쌓인다. visitor_id 는
+// 브라우저가 스스로 만들어 저장한 무작위 ID라 이메일·IP 와 무관하고,
+// user_id 는 로그인 상태였을 때만 채워지며 계정이 지워지면 NULL 이 된다.
+model SiteVisit {
+  id        String   @id @default(uuid()) @db.Uuid
+  visitorId String   @map("visitor_id") @db.VarChar(64)
+  userId    String?  @map("user_id") @db.Uuid
+  path      String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("site_visits")
 }

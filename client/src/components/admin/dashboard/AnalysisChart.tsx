@@ -28,6 +28,7 @@ const chartConfig: ChartConfig = {
 
 interface AnalysisChartProps {
   data: ChartPoint[];
+  days: number;
   isLoading: boolean;
 }
 
@@ -38,12 +39,12 @@ interface AnalysisChartProps {
  * 일별 이산 데이터이므로 Area보다 Bar가 적합합니다.
  * 가입 차트와 색상을 다르게 하여 시각적으로 구분합니다.
  */
-export function AnalysisChart({ data, isLoading }: AnalysisChartProps) {
+export function AnalysisChart({ data, days, isLoading }: AnalysisChartProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold">분석 건수 추이</CardTitle>
-        <CardDescription className="text-xs">최근 7일</CardDescription>
+        <CardDescription className="text-xs">최근 {days}일</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -66,6 +67,8 @@ export function AnalysisChart({ data, isLoading }: AnalysisChartProps) {
                 axisLine={false}
                 tick={{ fontSize: 11 }}
                 tickMargin={6}
+                interval="preserveStartEnd"
+                minTickGap={24}
               />
               <YAxis
                 tickLine={false}

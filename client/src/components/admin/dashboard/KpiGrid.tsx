@@ -49,22 +49,26 @@ export function KpiGrid({ data, paymentSummary, isLoading }: KpiGridProps) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      {/* 1. 현재 온라인 사용자 — 실시간 강조 */}
+      {/* 1. 현재 온라인 — 최근 30분 안에 방문 핑을 보낸 세션 수 */}
       <KpiCard
         title="현재 온라인"
         value={kpi?.onlineUsers ?? null}
         icon={Activity}
-        description="최근 30분 활성"
+        description="최근 30분 방문"
         variant="highlight"
         isLoading={isLoading}
       />
 
-      {/* 2. 오늘 방문자 (분석 시작 유저 수로 proxy) */}
+      {/* 2. 오늘 방문자 — 분석 여부와 무관하게 사이트에 들어온 세션 수 */}
       <KpiCard
         title="오늘 방문자"
         value={kpi?.todayVisitors ?? null}
         icon={Users}
-        description="분석 시작 기준"
+        description={
+          kpi?.todayPageViews != null
+            ? `페이지뷰 ${kpi.todayPageViews.toLocaleString("ko-KR")}`
+            : "세션 기준"
+        }
         isLoading={isLoading}
       />
 

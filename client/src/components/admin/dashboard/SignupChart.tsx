@@ -28,6 +28,7 @@ const chartConfig: ChartConfig = {
 
 interface SignupChartProps {
   data: ChartPoint[];
+  days: number;
   isLoading: boolean;
 }
 
@@ -37,12 +38,12 @@ interface SignupChartProps {
  * 최근 7일 신규 가입자 추이 — Area Chart.
  * Area fill로 볼륨감을 강조하여 트렌드를 직관적으로 파악할 수 있습니다.
  */
-export function SignupChart({ data, isLoading }: SignupChartProps) {
+export function SignupChart({ data, days, isLoading }: SignupChartProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold">신규 가입 추이</CardTitle>
-        <CardDescription className="text-xs">최근 7일</CardDescription>
+        <CardDescription className="text-xs">최근 {days}일</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -78,6 +79,8 @@ export function SignupChart({ data, isLoading }: SignupChartProps) {
                 axisLine={false}
                 tick={{ fontSize: 11 }}
                 tickMargin={6}
+                interval="preserveStartEnd"
+                minTickGap={24}
               />
               <YAxis
                 tickLine={false}

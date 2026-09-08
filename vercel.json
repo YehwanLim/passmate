@@ -46,6 +46,10 @@
       "destination": "/api/account/[...route]?route=:path*"
     },
     {
+      "source": "/api/visits",
+      "destination": "/api/auth/me?visit=1"
+    },
+    {
       "source": "/api/webhooks/groble",
       "destination": "/api/entitlements?grobleWebhook=1"
     },
