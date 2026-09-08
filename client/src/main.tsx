@@ -56,7 +56,12 @@ const rootElement = document.getElementById("root")!;
 const isPrerenderedLanding =
   rootElement.hasChildNodes() && window.location.pathname === "/";
 if (isPrerenderedLanding) {
-  hydrateRoot(rootElement, <App />);
+  // 빠른 회선에서는 파서가 끝날 때 JS 가 이미 와 있어 브라우저가 첫 프레임을 그리기 전에
+  // 이 모듈을 실행한다. 그러면 프리렌더한 HTML 이 하이드레이션 뒤에야 보인다(Lighthouse 5.3s vs 2.1s).
+  // 한 프레임을 그린 뒤(rAF → 다음 태스크)에 하이드레이션해 HTML 이 먼저 보이게 한다.
+  window.requestAnimationFrame(() => {
+    window.setTimeout(() => hydrateRoot(rootElement, <App />), 0);
+  });
 } else {
   rootElement.replaceChildren();
   createRoot(rootElement).render(<App />);
