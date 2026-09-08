@@ -296,21 +296,50 @@ export async function readPurchaseProductSettings(db)  // DB 행 + 레거시 env
 - `GET /api/analysis-requests/:id`, `GET /api/analysis/:id`, `GET /api/projects` 응답에 `kind` 가산. 클라이언트 `parseAnalysisRequestStatus`는 알려진 키만 읽어 안전하나 `tests/api/analysis-request-status.test.js`·`protected-user-routes.test.js`의 `toEqual`은 갱신.
 - 신규 에러 코드: `COMPANY_CREDITS_EXHAUSTED`(409), `COMPANY_ANALYSIS_DISABLED`(503). 회사 식별 불가는 모델이 `CONTEXT_IRRELEVANT`를 내도록 프롬프트에 규정 → lifecycle·폴링 파서 무변경.
 
-### 5-5. Gemini 호출 — `lib/company-analysis.js`
+### 5-5. Gemini 호출 — `lib/company-analysis.js` (2026-09-08 개정: 2단 병렬 파이프라인)
 
-§1의 제약(2.5는 검색+JSON 동시 불가, 3.x는 출처 유실 사례)을 흡수하는 **하이브리드**:
+처음 배포한 단일 그라운딩 호출(검색 + "JSON만 출력", 실패 시 복구 호출)은 §7-4의 품질 검토에서 **섹션 간 같은 사실 재활용**을 프롬프트 규칙으로 잡지 못했다. 2026-09-08 프로브 비교 후 기본값을 **2단(조사 → 구성)** 으로 바꿨다(`COMPANY_DEFAULT_PIPELINE = "two-stage"`). 단일 호출은 `pipeline: "single"`(프로브 `--single`)로 비교·복귀용으로만 남긴다.
 
-1. 1차: `COMPANY_RESEARCH_MODEL`(하드코딩 상수, `resume-split.js`의 `SPLIT_MODEL` 선례) + `tools:[{ google_search: {} }]`, `responseMimeType` 없음, 프롬프트에 "JSON만 출력", `thinkingBudget` 낮게. 응답은 `parts[].text`를 **모두 join**(grounded 응답은 parts가 여러 개).
-2. `parseModelJsonTolerant`: 코드펜스 제거 → 첫 `{`~마지막 `}` → `JSON.parse`.
-3. 실패 시에만 2차 "복구" 호출: 기본 모델 + `responseMimeType: application/json`, 입력 = 1차 원문. 출처는 여전히 1차의 `groundingMetadata`.
-4. `sources[]`는 서버가 `groundingChunks[].web.{uri,title}`에서 채움(중복 제거·최대 12). `webSearchQueries`, `searchEntryPoint.renderedContent`를 `reportMeta`에 저장.
-5. 데드라인: 총 95s 공유 `fetchWithDeadline`. 1차 ≤ 65s, 2차는 잔여(20s 미만이면 생략 → `PARSE_ERROR`). 100s 모델 < 125s TTL < 120s maxDuration 유지(함정 4).
-6. 품질이 부족하면 §1의 2단(조사 → 구성) 방식으로 전환할 수 있게 `analyzeCompany` 내부를 단계 함수로 나눈다. 재무·주식·직무 소식이 추가되어 조사 범위가 넓어졌으므로, 1차 호출 프롬프트에 검색 지시를 주제별로 명시한다(사업부문 / 최근 주력 사업 / 최근 실적·공시·주가 / 직무 관련 소식 / 최근 이슈). 출력 JSON이 커지는 만큼 `thinkingBudget`은 낮게 유지하고, 수동 프로브에서 1차 지연이 65s를 자주 넘기면 2단 방식으로 확정한다.
-7. 재무 수치는 검색 스니펫에서 오므로 회계 기간 표기가 어긋날 수 있다. 서버는 값을 검증하지 않고 출처 칩으로 원문 확인을 유도한다. DART OpenAPI 연동(정확한 재무)은 후속 과제로 남긴다.
+**1단 조사 — 검색 그라운딩, 자유 텍스트 메모, 두 그룹 병렬**
 
-프롬프트: `shared/prompts/companyReportPrompt.js` `COMPANY_REPORT_SYSTEM_PROMPT`(§1 스키마·규칙). 서버 미러는 만들지 않음. 타입 `client/src/types/companyReport.ts`.
+- 모델 `COMPANY_RESEARCH_MODEL`(gemini-2.5-flash) + `tools:[{ google_search: {} }]`, `responseMimeType` 없음, temperature 0.2, thinkingBudget 512. 각 호출 ≤ 55s(`COMPANY_RESEARCH_STAGE_TIMEOUT_MS`).
+- 주제 일곱 개를 두 그룹으로 나눠 `Promise.all`로 동시에 돌린다(`COMPANY_RESEARCH_TOPIC_GROUPS`). 한 호출에 전부 맡기면 주제 1(사업부문)에 검색을 몰아 써서 인재상·공시·주가를 "확인하지 못함"으로 비우는 실행이 잦았다.
+  - `business`(1~3): 사업부문과 돈 버는 구조 / 24개월 안의 주력·신사업과 실제 움직임 / 2~3년 실적 방향·12개월 공시·IR·기준일 무렵 주가(비상장은 투자 유치·기업가치).
+  - `role`(4~7): 직무가 붙는 조직의 실제 이름과 그 조직의 12개월 프로젝트·개편(채용 공고·공채 일정 제외) / 12개월 핵심 사건 / 공식 인재상·핵심가치 원문 / 1차 자료(IR·뉴스룸·채용·DART)의 실제 주소.
+- 프롬프트 `buildCompanyResearchPrompt(request, asOf, topics)`: 리포트가 아니라 사실 메모만("- (YYYY-MM) 사실 — 출처 도메인", 월 모르면 (YYYY)), 주제별 검색 최소 2회, 날짜는 사건이 실제 일어난 달, 계열사 사실은 줄 앞에 "[계열사 이름]", 면접에서 말할 수 없는 사건(사내 의혹·수당 논란·소송 세부 등) 제외, 해석·전망 금지.
+- 마스터 프롬프트는 여기에 넣지 않는다.
 
-**컴플라이언스 확인(오너)**: Grounding with Google Search 약관은 그라운딩 결과를 사용자에게 보일 때 `searchEntryPoint.renderedContent`(Google 검색 제안 칩)를 표시하도록 요구한다. 부록 출처 섹션 하단에 그대로 렌더하고, `vercel.json` CSP(`style-src`·`img-src`·링크 도메인)가 막지 않는지 PR3 수동 프로브에서 확인(함정 6).
+**2단 구성 — 검색 없이 JSON 모드**
+
+- 모델 `COMPANY_COMPOSE_MODEL`(gemini-2.5-flash), `responseMimeType: application/json`, temperature 0.4, thinkingBudget 2048(섹션 배분을 맡기는 값). 예산은 총 95s에서 조사가 쓰고 남은 시간.
+- 입력 = `COMPANY_REPORT_SYSTEM_PROMPT` + 두 메모(`## 사업·신사업·재무`, `## 직무·이슈·인재상`). 메모에 없는 사실 추가 금지, "[계열사 이름]" 줄은 이 회사 사업으로 쓰지 않고 계열사 공시는 `recentDisclosures`에 넣지 않음, 주소 없는 1차 자료는 뺌(빈 배열 허용), 의혹·수당·보상 불만 줄은 버림, 주가·시가총액은 기준일 근처 날짜가 붙은 값만.
+- 두 메모가 모두 비면 `PARSE_ERROR`, 한쪽만 있어도 진행. 구성 결과가 JSON이 아니면 `PARSE_ERROR`(복구 호출은 단일 경로에만 있다).
+
+**출처(`sources[]`)**
+
+- 응답마다 `extractGroundingSources`: `groundingChunks[].web.{uri,title}`, uri 중복 제거, 상한 `MAX_SOURCES` 20. `publisher`는 리다이렉트 호스트 대신 사이트명. `excerpt`는 `groundingSupports`에서 그 출처가 뒷받침한 메모 문장(머리표·"(YYYY)" 자리표시자·" — 출처" 꼬리 제거, 140자, 같은 문장은 출처 간 분산). 제목이 도메인뿐이라 독자가 출처를 고를 근거는 이 발췌다(§7-1 보완).
+- 두 응답은 `mergeGroundingSources`가 **번갈아** 합친다. 한쪽을 먼저 다 넣으면 상한 20에 다른 쪽이 굶는다(프로브에서 16:4, 0:20 사례).
+- `webSearchQueries`는 합치고, 검색 제안 칩 `searchEntryPoint.renderedContent`는 먼저 온 응답 것을 쓴다(칩 두 벌을 겹쳐 그리지 않는다).
+
+**사후 정리 `tidyCompanyReport(parsed, asOf)`** — 두 파이프라인 공통, 반환 직전
+
+- 키워드 6개·`keyFigures` 4개 컷, `label`에서 `period` 중복 제거("2026년 2분기 매출" → "매출").
+- `currentIssues`·`recentNewsForRole`에서 기준일 12개월 초과 항목 제거("YYYY"만 있으면 12월로 후하게, 형식 불명은 남김, 전부 빠지면 원본 유지).
+- `interviewPrep.primarySources`에서 http(s) 아닌 url 제거.
+- 문장·오타·영어는 손대지 않는다(내용 변경 금지).
+
+**메타**
+
+- `reportMeta`는 그대로(`kind, schemaVersion, asOf, searchQueries, searchEntryPointHtml, linkedResumeAnalysisId, repaired`) → 클라이언트 무변경.
+- `analysisMeta`에 `pipeline`, `stages[]`(`research-business`·`research-role`: `responseTimeMs, searchCount, sourceCount, memoChars` / `compose`), `modelName = "gemini-2.5-flash+gemini-2.5-flash"`, 토큰은 세 호출 합.
+
+**측정(2026-09-08 프로브, 삼성전자·전략기획 ×6, 토스·서비스 기획 ×1)**: 55~62s(조사 13~22s 병렬 + 구성 38~44s), 토큰 20~25k, 출처 20. 100s 모델 < 125s TTL < 120s maxDuration 유지(함정 4). 비용은 그라운딩 2회로 단일 대비 2배(건당 약 100원, 판매가 5,900원의 2% 미만).
+
+프롬프트: `shared/prompts/companyReportPrompt.js` `COMPANY_REPORT_SYSTEM_PROMPT`(§1 스키마·규칙 + §7-4 보강). 서버 미러는 만들지 않음. 타입 `client/src/types/companyReport.ts`(`CompanySource.excerpt?`).
+
+재무 수치는 검색 스니펫에서 오므로 회계 기간·단위가 어긋날 수 있다. 서버는 값을 검증하지 않고 부록 발췌와 고지 문구로 원문 확인을 유도한다. DART OpenAPI 연동(정확한 재무)은 후속 과제로 남긴다.
+
+**컴플라이언스 확인(오너)**: Grounding with Google Search 약관은 그라운딩 결과를 사용자에게 보일 때 `searchEntryPoint.renderedContent`(Google 검색 제안 칩)를 표시하도록 요구한다. 부록 출처 섹션 하단에 그대로 렌더하고, `vercel.json` CSP(`style-src`·`img-src`·링크 도메인)가 막지 않는지 PR3 수동 프로브에서 확인(함정 6). 리다이렉트 URL을 서버가 열어 기사 제목을 긁는 방식은 같은 약관 위험 때문에 쓰지 않는다.
 
 ### 5-6. 클라이언트
 
@@ -384,6 +413,7 @@ export async function readPurchaseProductSettings(db)  // DB 행 + 레거시 env
 - `lib/company-analysis.js`의 `MAX_SOURCES`를 12 → **20**으로 올린다. 프로브에서 모델이 40개 이상 자료를 봤으므로 12개는 부록이 너무 얇다. 20개면 화면 한 섹션 분량이다. (2단계 플랜의 첫 Task)
 - 그라운딩 URL(`vertexaisearch.cloud.google.com/grounding-api-redirect/…`)은 수 주 뒤 만료될 수 있다. 부록은 **제목·발행처를 앞에, 링크는 뒤에** 두고 `reportMeta.asOf`(기준일)를 부록 상단에 표기한다.
 - 검색 제안 칩(`reportMeta.searchEntryPointHtml`)은 Google 약관상 표시 의무가 있다. 부록 하단에 그대로 렌더한다(`dangerouslySetInnerHTML`, 스크립트 없음 확인됨). `rel="noopener noreferrer"`는 칩 안 링크에는 붙일 수 없으므로 칩 컨테이너를 `<div>`로 감싸기만 한다.
+- (2026-09-08 추가) 출처 제목이 도메인뿐인 문제는 `groundingSupports`로 보완했다. 각 출처에 그 출처가 뒷받침한 메모 문장(`excerpt`)을 붙여 부록에 제목 아래 한 줄로 보인다. 발행처가 리다이렉트 호스트인 옛 리포트·샘플은 클라이언트가 그 값을 숨긴다. 상세는 §5-5.
 
 ### 7-2. 2단계 플랜 범위(화면)
 
@@ -422,3 +452,15 @@ export async function readPurchaseProductSettings(db)  // DB 행 + 레거시 env
 **4단계 플랜**: `docs/superpowers/plans/2026-09-07-company-analysis-entry-points-plan.md`(2026-09-07 실행 완료). 포함: 공개 판매 가용성 API·게스트 버튼, 랜딩 3티어 가격 섹션 + 기업 리포트 구성 열(`STANDARD_PER_USE_PRICE`), 프로브 `--out`, 공개 샘플 `/company-report?sample=1`(`client/src/constants/companyReportSample.ts` — 삼성전자·전략기획 실제 생성 결과, 출처 20건, 검색 제안 칩 포함), 랜딩 기업 분석 소개 섹션(샘플 링크) + GNB "기업 분석"(라우트 `/company-analysis`), 자소서 리포트 하단 업셀 CTA(회사·직무·`resumeAnalysisId` 프리필, `CompanyAnalyze`는 내 목록에 있는 id 만 유지), 자소서 폼의 조용한 기업 분석 링크, 소진 모달 → `/entitlements#standard`(이용권 페이지는 `#company`·`#standard`·`#premium` 해시로 카드 스크롤). 제외: `MyEntitlements` 진입 버튼(별도 커밋 976155a 로 반영됨), 관리자 대시보드 kind 분리, 스레드 공지. 샘플 리포트 문장은 손으로 고치지 않으며, 갱신은 프로브 재실행으로 한다.
 
 **3단계 플랜**: `docs/superpowers/plans/2026-09-06-company-analysis-products-plan.md`. 포함: 마이그레이션(enum 3값 + 상품 설정 테이블 백필), `entitlement-products.js` 카탈로그·설정 읽기, 웹훅 번들 지급, `checkoutUrls`·상품별 게이트, 관리자 상품 설정 엔드포인트·화면, `pricing.ts` 티어, 이용권 페이지 티어 카드 3장(베이직 선택 버튼), `Checkout`, 결제 내역 라벨. 제외(④): 랜딩 `PricingSection`·GNB·업셀 CTA·샘플.
+
+### 7-4. 품질 검토와 생성 파이프라인 전환(2026-09-08) — §5-5를 덮어쓴 결정의 이력
+
+공개 샘플(삼성전자·전략기획, 단일 호출)을 검토한 결과: 같은 사실 5개가 9섹션에 재활용, 05 직무·07 소재가 어느 회사에나 붙는 문장, 인재상 `stated`가 프롬프트 규칙 5의 금지 예시("도전정신·주인의식…")를 그대로 베낌, 오래된 발언에 최신 `when`, oneLiner 28자·키워드 6개 초과, `keyFigures.label`에 기간 중복, 출처 부록은 도메인명뿐. 순서대로 반영했다.
+
+1. **프롬프트 보강**(1f56e8d): [섹션 간 중복 금지] 신설(한 사실은 한 자리, 07은 02에 없는 사업 포함, 면접 질문은 서로 다른 소재), 규칙 5에서 예시 단어 삭제·확인한 문구만·못 찾으면 빈 배열, 신입 수위·실제 조직명·공채 소식 제외·존칭 금지, seedSentence 미완성구·학생 경험, 전망 문장 강조 금지, `label`에 기간 금지, `when`은 실제 사건 달, 계열사 사업 금지(핵심 원칙 8), 04는 02·05와 다른 사건이되 직무 관련·홍보성 사건 금지, 면접에서 말할 수 없는 사건(의혹·수당·소송 세부) 금지. 같은 지시를 스키마 필드 설명에도 넣었다(규칙 섹션만으로는 안 따르던 사례).
+2. **서버 사후 정리** `tidyCompanyReport`(1f56e8d, dab6968) — §5-5.
+3. **2단 파이프라인 시험 → 병렬 분할 → 기본값 전환**(27cdf06): 단일 호출은 중복 금지 규칙을 넣어도 세 소재를 6섹션에 되풀이했고, 2단은 구조·정직성(못 찾으면 "확인하지 못함")·비상장 처리에서 나았다. 단일 조사 호출은 주제 1에 검색을 몰아 써 인재상·공시·주가를 비우는 실행이 잦아 조사를 두 그룹 병렬로 나눴다. 이후 삼성전자 실행에서 섹션 간 중복이 사실상 사라졌다.
+4. **출처 발췌**(c459a6c) — §5-5·§7-1.
+5. **공개 샘플**은 그때그때 기본 파이프라인의 실제 실행 결과로 교체했고 문장은 손대지 않는다(`constants/companyReportSample.ts` 헤더 참고).
+
+남은 편차(프로브 약 12회 관찰): 같은 입력으로도 실행에 따라 가십성 이슈(사내 의혹·보상 불만)·옛 주가·홍보성 사건이 섞이고, 인재상은 4회 중 1회만 찾았으며, 24개월 밖 근거(갤럭시 S24)가 반복된다. 프롬프트로 더 조이기보다 실제 사용자 리포트를 몇 건 쌓아 `analysisMeta.stages`(검색·출처·메모 수)와 함께 보고 결정한다.
