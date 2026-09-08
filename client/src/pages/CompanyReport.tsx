@@ -23,6 +23,17 @@ import {
 } from "./companyReportParts";
 import { scrollChildIntoHorizontalView } from "./reportLineAnalysis";
 
+/**
+ * 표지 한 줄의 글자 크기. 프롬프트는 28자 이내를 요구하지만 모델이 30~45자를 자주 내놓아
+ * 데스크톱에서 세 줄로 접힌다. 서버가 자르면 문장이 깨지니 화면에서 한 단계씩 줄인다.
+ */
+export function heroTitleSizeClass(oneLiner: string): string {
+  const length = oneLiner.replace(/\*\*/g, "").trim().length;
+  if (length > 40) return "text-[1.7rem] sm:text-[2.4rem] md:text-[3rem]";
+  if (length > 28) return "text-[1.9rem] sm:text-[2.7rem] md:text-[3.4rem]";
+  return "text-[2.08rem] sm:text-[3.15rem] md:text-[4.05rem]";
+}
+
 /** 발행처가 제목과 같거나 검색 제공자의 리다이렉트 호스트(옛 리포트·샘플)면 숨긴다. */
 function isVisiblePublisher(source: { title: string; publisher: string }): boolean {
   return source.publisher.length > 0 && source.publisher !== source.title && !source.publisher.endsWith("vertexaisearch.cloud.google.com");
@@ -247,7 +258,7 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
             </div>
             <div className="relative min-w-0 py-12 text-center sm:py-14 md:py-[4.25rem]">
               <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{company}는</p>
-              <h1 className="mx-auto max-w-3xl text-[2.08rem] sm:text-[3.15rem] md:text-[4.05rem] font-semibold leading-[1.04] tracking-tight text-white text-balance">
+              <h1 className={`mx-auto max-w-3xl ${heroTitleSizeClass(report.brief.oneLiner)} font-semibold leading-[1.04] tracking-tight text-white text-balance`}>
                 {renderCompanyText(report.brief.oneLiner)}
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-[16px] sm:text-[19px] leading-[1.8] text-zinc-300 text-balance">

@@ -19,11 +19,21 @@ vi.mock("@/lib/apiAuth", async (importOriginal) => ({
 vi.mock("@/components/AuthButton", () => ({ default: () => null }));
 vi.mock("@/components/Logo", () => ({ default: () => null }));
 
-import CompanyReport from "./CompanyReport";
+import CompanyReport, { heroTitleSizeClass } from "./CompanyReport";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
+
+describe("heroTitleSizeClass", () => {
+  it("steps the cover headline down when the model overshoots the 28-character limit", () => {
+    expect(heroTitleSizeClass("전동화로 체급을 바꾸는 완성차")).toContain("md:text-[4.05rem]");
+    expect(heroTitleSizeClass("반도체와 AI 기반 스마트 기기로 글로벌 시장을 선도하는 기업")).toContain("md:text-[3.4rem]");
+    expect(heroTitleSizeClass("메모리 반도체와 스마트폰을 기반으로 AI, 파운드리, 전장 등 미래 기술을 선도하는 기업")).toContain("md:text-[3rem]");
+    // 강조 마커는 글자 수에 넣지 않는다.
+    expect(heroTitleSizeClass("**전동화로 체급을 바꾸는 완성차**")).toContain("md:text-[4.05rem]");
+  });
+});
 
 describe("CompanyReport", () => {
   beforeEach(() => {
