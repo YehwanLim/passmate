@@ -127,20 +127,17 @@ export default function MoodShiftBackground() {
           width="140%"
           height="140%"
         >
+          {/* baseFrequency 를 <animate> 로 드리프트시키지 않는다. SMIL 로 노이즈가 매 프레임 바뀌면
+              WebKit 이 전체 화면 displacement 필터를 매 프레임 다시 그려 GPU 프로세스가 유휴 상태에서도
+              CPU 200%+ 를 쓴다(폰에서는 하이드레이션 지연·스크롤 중 흰 타일로 나타났다).
+              꿀렁임은 아래 rAF 루프가 마우스 속도로 scale 만 바꿔서 낸다. */}
           <feTurbulence
             type="fractalNoise"
             baseFrequency="0.006 0.010"
             numOctaves="2"
             seed="7"
             result="wobble-noise"
-          >
-            <animate
-              attributeName="baseFrequency"
-              dur="16s"
-              values="0.006 0.010;0.0085 0.013;0.006 0.010"
-              repeatCount="indefinite"
-            />
-          </feTurbulence>
+          />
           <feDisplacementMap
             ref={displacementRef}
             in="SourceGraphic"
