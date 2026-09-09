@@ -2,10 +2,6 @@ import { startTransition } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App";
 import { applyFullStylesheet } from "./applyFullStylesheet";
-import { mountPerfOverlay } from "./perfOverlay";
-
-// `/?perf=1` 진단 오버레이가 "번들 평가가 언제 시작됐나"를 보여 주기 위한 표식.
-performance.mark("app-module-start");
 import "./fonts/pretendard-variable-dynamic-subset.css";
 import "./index.css";
 
@@ -59,10 +55,6 @@ if (import.meta.env.PROD && GA_ID && GA_ID !== "G-XXXXXXXXXX") {
 // `pnpm preview`처럼 모든 경로에 index.html을 주는 서버에서는 /analyze 에 랜딩 마크업이 실려 오는데,
 // 그걸 하이드레이션하면 트리가 달라 React 가 경고하므로 비우고 새로 그린다.
 const rootElement = document.getElementById("root")!;
-// /perf-nobg.html 은 배경을 끈 랜딩 사본(진단용). 하이드레이션 전에 주소를 랜딩으로 바꿔 wouter 가 404 를 그리지 않게 한다.
-if (window.location.pathname === "/perf-nobg.html") {
-  window.history.replaceState(null, "", "/?perf=1");
-}
 const isPrerenderedLanding =
   rootElement.hasChildNodes() && window.location.pathname === "/";
 if (isPrerenderedLanding) {
@@ -75,13 +67,8 @@ if (isPrerenderedLanding) {
   window.requestAnimationFrame(() => {
     window.setTimeout(() => {
       applyFullStylesheet();
-      performance.mark("hydrate-start");
       startTransition(() => {
         hydrateRoot(rootElement, <App />);
-      });
-      window.requestAnimationFrame(() => {
-        performance.mark("frame-after-hydrate");
-        mountPerfOverlay();
       });
     }, 0);
   });

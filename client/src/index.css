@@ -757,7 +757,7 @@
 
 /* ── 무드 배경 꿀렁임 필터 ──
    MoodShiftBackground 의 SVG 변위 필터. WebKit 은 이 필터를 CPU 로 그려서 iPhone(3배 해상도)에선
-   첫 화면이 5~6초 비고 스크롤한 타일이 안 그려졌다(배경을 끈 /perf-nobg.html 은 즉시 떴다).
+   첫 화면이 5~6초 비고 스크롤한 타일이 안 그려졌다(09-09, 배경을 끈 사본은 폰에서 즉시 떴다).
    마우스가 있는 기기에서만 건다. 폰에선 그라데이션·글로우만 남고 마우스 반응 효과는 원래 없다. */
 @media (hover: hover) and (pointer: fine) {
   .mood-shift-wobble {

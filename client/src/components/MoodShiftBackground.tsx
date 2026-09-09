@@ -118,8 +118,6 @@ export default function MoodShiftBackground() {
     <div
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden="true"
-      // 진단 페이지(/perf-nobg.html)가 CSS 로 배경을 통째로 끄는 데 쓰는 표식(scripts/prerender-landing.mjs)
-      data-mood-shift=""
     >
       <svg width="0" height="0" className="absolute">
         <filter
@@ -153,7 +151,7 @@ export default function MoodShiftBackground() {
 
       {/* 꿀렁임(SVG 변위 필터)은 index.css `.mood-shift-wobble` 이 마우스 있는 기기에서만 건다.
           인라인 style 로 걸면 프리렌더 HTML 에 그대로 실려 iPhone 이 CPU 로 전체 화면을 필터링하느라
-          첫 화면 5초·스크롤 시 빈 타일이 났다(배경을 끈 /perf-nobg.html 과 대조해 확인). */}
+          첫 화면 5초·스크롤 시 빈 타일이 났다(09-09, 배경을 끈 사본과 폰에서 대조해 확인). */}
       <div className={reduceMotion ? "absolute inset-0" : "absolute inset-0 mood-shift-wobble"}>
         {/* 베이스: 검정이 아니라 네 방향에서 은은하게 색을 띠는 바탕.
             inset-[-10%] 블리드는 패럴랙스 이동 시 가장자리가 비지 않게 한다 */}
