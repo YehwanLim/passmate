@@ -8,7 +8,7 @@
  *
  * 설계: docs/superpowers/specs/2026-09-08-랜딩-프리렌더-design.md
  */
-import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import Beasties from "beasties";
@@ -79,6 +79,22 @@ export async function inlineCriticalCss(html, publicDir) {
   );
 }
 
+// 진입 번들을 <link rel="modulepreload"> + /landing-boot.js 로 바꾼다. LTE 에선 번들이 HTML 과 거의 동시에
+// 와서 WebKit 이 첫 페인트 전에 번들을 평가해 폰에서 흰 화면이 수 초 이어졌다(client/public/landing-boot.js 참고).
+export const BOOT_SCRIPT = "/landing-boot.js";
+const ENTRY_SCRIPT_RE = /<script type="module" crossorigin src="(\/assets\/[^"]+\.js)"><\/script>/g;
+
+export function deferEntryScript(html) {
+  const matches = html.match(ENTRY_SCRIPT_RE) ?? [];
+  if (matches.length !== 1) {
+    throw new Error(`expected exactly one module entry script to defer (found ${matches.length})`);
+  }
+  return html.replace(
+    ENTRY_SCRIPT_RE,
+    `<link rel="modulepreload" crossorigin href="$1" data-entry><script defer src="${BOOT_SCRIPT}"></script>`
+  );
+}
+
 async function main() {
   const rootDir = path.resolve(import.meta.dirname, "..");
   const publicDir = path.join(rootDir, "dist", "public");
@@ -95,9 +111,11 @@ async function main() {
     throw new Error(`prerendered landing markup is suspiciously short (${markup?.length ?? 0} chars)`);
   }
 
-  const landingHtml = await inlineCriticalCss(
-    markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)),
-    publicDir
+  if (!existsSync(path.join(publicDir, BOOT_SCRIPT))) {
+    throw new Error(`${BOOT_SCRIPT} is missing from ${publicDir} (client/public/landing-boot.js)`);
+  }
+  const landingHtml = deferEntryScript(
+    await inlineCriticalCss(markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)), publicDir)
   );
   writeFileSync(indexPath, landingHtml);
   const inlineCss = landingHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";

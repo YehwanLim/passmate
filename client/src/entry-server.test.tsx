@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "./entry-server";
 
@@ -31,13 +29,13 @@ describe("entry-server render", () => {
     expect(html.match(/scale[XY]?\(0\)/g)).toEqual(["scaleX(0)"]);
   });
 
-  it("keeps the CSS entrance animation transform-only so a stalled animation never hides content", () => {
-    // iPhone WebKit 은 첫 페인트 직후 JS 번들 평가에 메인 스레드가 막히면 CSS 애니메이션도 시작하지 못한다.
-    // 키프레임이 opacity 에서 출발하면 그동안 h1 만 보이므로, 이동(transform)만 애니메이션한다.
-    const css = readFileSync(path.resolve(import.meta.dirname, "index.css"), "utf8");
-    const keyframes = css.match(/@keyframes landing-rise \{[\s\S]*?\n\}/)?.[0];
-    expect(keyframes).toBeDefined();
-    expect(keyframes).not.toContain("opacity");
+  it("renders the CTAs as real links so they work before the deferred bundle hydrates", () => {
+    // landing-boot.js 가 번들 평가를 첫 프레임 뒤로 미루므로, 그 사이 탭한 CTA 는 일반 링크로 이동해야 한다.
+    const html = render("/");
+    const ctas = (html.match(/<a [^>]*>/g) ?? []).filter(
+      tag => tag.includes('href="/analyze"') && tag.includes("landing-primary-cta")
+    );
+    expect(ctas).toHaveLength(2);
   });
 
   it("renders the landing, not the 404 fallback, for the root path", () => {

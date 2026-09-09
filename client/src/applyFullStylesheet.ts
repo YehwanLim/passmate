@@ -9,8 +9,9 @@ export function applyFullStylesheet(doc: Document = document): number {
     `link[rel="preload"][as="style"][${FULL_CSS_ATTR}]`
   );
   links.forEach(link => {
-    link.removeAttribute("as");
+    // rel 을 먼저 바꾼다. as 를 먼저 떼면 잠깐 as 없는 preload 가 되어 Chrome 이 경고를 낸다.
     link.rel = "stylesheet";
+    link.removeAttribute("as");
   });
   return links.length;
 }

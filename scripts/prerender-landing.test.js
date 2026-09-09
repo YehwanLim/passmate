@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  BOOT_SCRIPT,
+  deferEntryScript,
   FULL_CSS_ATTR,
   inlineCriticalCss,
   LANDING_CANVAS_CLASS,
@@ -119,6 +121,33 @@ describe("inlineCriticalCss", () => {
     await expect(inlineCriticalCss("<html><head></head><body></body></html>", dir)).rejects.toThrow(
       /stylesheet link/
     );
+  });
+});
+
+describe("deferEntryScript", () => {
+  it("swaps the module entry for a modulepreload plus the boot script", () => {
+    // LTE 에선 번들이 HTML 과 거의 동시에 와서 WebKit 이 첫 페인트 전에 번들을 평가한다(폰 흰 화면 수 초).
+    // 다운로드는 미리(modulepreload), 평가는 landing-boot.js 가 첫 프레임 뒤로 미룬다.
+    const html =
+      '<head><script type="module" crossorigin src="/assets/index-abc.js"></script><style></style></head>';
+    const result = deferEntryScript(html);
+    expect(result).toContain('<link rel="modulepreload" crossorigin href="/assets/index-abc.js" data-entry>');
+    expect(result).toContain(`<script defer src="${BOOT_SCRIPT}"></script>`);
+    expect(result).not.toContain('type="module"');
+  });
+
+  it("throws unless exactly one module entry script is present", () => {
+    expect(() => deferEntryScript("<head></head>")).toThrow(/entry script/);
+  });
+
+  it("ships the boot script from client/public so vite copies it into the build", () => {
+    const boot = readFileSync(path.join(ROOT_DIR, "client/public", BOOT_SCRIPT), "utf8");
+    expect(boot).toContain('link[rel="modulepreload"][data-entry]');
+  });
+
+  it("hydrates inside startTransition so WebKit can paint tiles while hydration yields", () => {
+    const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
+    expect(main).toMatch(/startTransition\(\(\) => \{?\s*hydrateRoot\(/);
   });
 });
 

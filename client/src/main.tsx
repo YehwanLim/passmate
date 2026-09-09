@@ -1,3 +1,4 @@
+import { startTransition } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App";
 import { applyFullStylesheet } from "./applyFullStylesheet";
@@ -57,14 +58,18 @@ const rootElement = document.getElementById("root")!;
 const isPrerenderedLanding =
   rootElement.hasChildNodes() && window.location.pathname === "/";
 if (isPrerenderedLanding) {
-  // 빠른 회선에서는 파서가 끝날 때 JS 가 이미 와 있어 브라우저가 첫 프레임을 그리기 전에
-  // 이 모듈을 실행한다. 그러면 프리렌더한 HTML 이 하이드레이션 뒤에야 보인다(Lighthouse 5.3s vs 2.1s).
-  // 한 프레임을 그린 뒤(rAF → 다음 태스크)에 하이드레이션해 HTML 이 먼저 보이게 한다.
-  // 전체 CSS 는 preload 만 걸려 있다(첫 화면 CSS 는 HTML 에 인라인). JS 뒤에 생기는 UI 를 위해 여기서 적용한다.
+  // 프로덕션에서는 public/landing-boot.js 가 이 모듈의 평가 자체를 첫 프레임 뒤로 미룬다. 여기서는 한 프레임을
+  // 더 양보한 뒤(rAF → 다음 태스크) 하이드레이션해, 모듈이 첫 페인트 전에 실행되는 환경(pnpm preview 등)에서도
+  // 프리렌더한 HTML 이 먼저 보이게 한다. 전체 CSS 는 preload 만 걸려 있어(첫 화면 CSS 는 HTML 에 인라인)
+  // JS 뒤에 생기는 UI 를 위해 여기서 적용한다.
+  // startTransition: 하이드레이션을 잘게 나눠 브라우저에 양보한다. WebKit 은 타일을 메인 스레드에서 그리므로
+  // 통째로 하이드레이션하면 그동안 스크롤한 영역이 빈 채로 남는다(폰에서 "아래가 텅 빈" 증상).
   window.requestAnimationFrame(() => {
     window.setTimeout(() => {
       applyFullStylesheet();
-      hydrateRoot(rootElement, <App />);
+      startTransition(() => {
+        hydrateRoot(rootElement, <App />);
+      });
     }, 0);
   });
 } else {

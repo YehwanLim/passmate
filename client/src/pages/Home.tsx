@@ -15,7 +15,7 @@ import Logo from "@/components/Logo";
 import { ArrowRight, CheckCircle2, Menu, X } from "lucide-react";
 import { useState, useCallback, useEffect, type CSSProperties } from "react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import AuthButton from "@/components/AuthButton";
 
 export const HOME_NAV_ITEMS = [
@@ -229,13 +229,12 @@ export default function Home() {
             className="landing-rise"
             style={{ "--rise-delay": "0.7s", "--rise-y": "20px", "--rise-duration": "0.7s" } as CSSProperties}
           >
-            <button
-              className="landing-primary-cta group"
-              onClick={() => navigate("/analyze")}
-            >
+            {/* 일반 링크: 번들 평가가 첫 프레임 뒤로 미뤄져 있어(public/landing-boot.js) 그 사이 탭해도 이동해야 한다.
+                하이드레이션 뒤에는 wouter 가 클라이언트 라우팅으로 가로챈다. */}
+            <Link href="/analyze" className="landing-primary-cta group">
               <span className="relative z-10">내 자소서 분석하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-            </button>
+            </Link>
             <p className="mt-3.5 text-[12.5px] text-zinc-500">
               첫 분석 무료 <span className="text-zinc-700">·</span> 리포트는 1분
               안에

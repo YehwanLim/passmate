@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { BrandName } from "@/components/BrandName";
 import Logo from "@/components/Logo";
 
@@ -87,7 +87,6 @@ export function FounderNoteSection() {
 }
 
 export default function FounderSection() {
-  const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
 
@@ -129,13 +128,11 @@ export default function FounderSection() {
             확인해보세요.
           </p>
           <div>
-            <button
-              className="landing-primary-cta group"
-              onClick={() => navigate("/analyze")}
-            >
+            {/* 일반 링크: 번들 평가가 첫 프레임 뒤로 미뤄져 있어 그 사이 탭해도 이동해야 한다(Home.tsx CTA 와 동일). */}
+            <Link href="/analyze" className="landing-primary-cta group">
               <span className="relative z-10">무료 분석 시작하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-            </button>
+            </Link>
             <p className="mt-3.5 text-[12.5px] text-zinc-500">
               자소서 본문은 분석에만 사용하고, 서버 로그에 남기지 않습니다.
             </p>

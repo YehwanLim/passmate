@@ -732,14 +732,16 @@
 /* ── 랜딩 첫 화면 등장 ──
    framer-motion 의 initial 은 프리렌더 HTML 에 인라인 opacity:0 으로 구워져, JS 가 내려와 하이드레이션할 때까지
    본문이 투명하다(폰에서 h1 만 5초). 첫 화면(부제·CTA·리포트 카드)은 CSS 키프레임으로 등장시킨다.
-   단, 투명도는 건드리지 않는다: iPhone WebKit 은 첫 페인트 직후 JS 번들 평가(느린 폰에서 2~3초)에 메인 스레드가
-   막히면 CSS 애니메이션도 그동안 시작하지 못해, opacity 0 에서 출발하면 그 시간 내내 h1 만 보인다.
-   이동만 애니메이션하면 늦게 시작해도 내용은 처음부터 보인다(h1 의 HERO_TITLE_MOTION 과 같은 방식). */
+   iPhone WebKit 은 JS 번들 평가에 메인 스레드가 막히면 CSS 애니메이션도 시작하지 못하는데, 프로덕션에서는
+   public/landing-boot.js 가 번들 평가를 첫 프레임 뒤 1.2초로 미루므로 이 애니메이션은 그 전에 끝난다.
+   h1 은 LCP 라 페이드 없이 그대로 둔다(Home.tsx HERO_TITLE_MOTION). */
 @keyframes landing-rise {
   from {
+    opacity: 0;
     transform: translateY(var(--rise-y, 24px));
   }
   to {
+    opacity: 1;
     transform: none;
   }
 }
