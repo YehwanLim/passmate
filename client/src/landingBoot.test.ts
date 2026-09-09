@@ -10,9 +10,15 @@ function runBoot() {
   new Function(BOOT)();
 }
 
+const FULL_CSS = '<link rel="preload" as="style" crossorigin href="/assets/index-a.css" data-full-css>';
+function stubPointer(mouse: boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({ matches: mouse, media: query }));
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => window.setTimeout(() => cb(0), 16));
+  stubPointer(false);
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -45,6 +51,29 @@ describe("landing-boot", () => {
     vi.advanceTimersByTime(4999);
     expect(document.querySelector("script[type=module]")).toBeNull();
     vi.advanceTimersByTime(1);
+    expect(document.querySelector("script[type=module]")).not.toBeNull();
+  });
+
+  it("applies the full stylesheet right after the first frame on mouse devices only", () => {
+    // PC 는 글꼴 조각 요청을 첫 페인트 직후 보내 교체가 스크롤 전에 끝나게, 폰은 하이드레이션 직전까지 미룬다.
+    document.head.innerHTML =
+      FULL_CSS + '<link rel="modulepreload" crossorigin href="/assets/index-abc.js" data-entry>';
+    stubPointer(true);
+    runBoot();
+    expect(document.querySelector("link[data-full-css]")!.getAttribute("rel")).toBe("preload");
+    vi.advanceTimersByTime(16);
+    const link = document.querySelector("link[data-full-css]")!;
+    expect(link.getAttribute("rel")).toBe("stylesheet");
+    expect(link.hasAttribute("as")).toBe(false);
+  });
+
+  it("leaves the full stylesheet as a preload on touch devices", () => {
+    document.head.innerHTML =
+      FULL_CSS + '<link rel="modulepreload" crossorigin href="/assets/index-abc.js" data-entry>';
+    stubPointer(false);
+    runBoot();
+    vi.advanceTimersByTime(16 + 1300);
+    expect(document.querySelector("link[data-full-css]")!.getAttribute("rel")).toBe("preload");
     expect(document.querySelector("script[type=module]")).not.toBeNull();
   });
 
