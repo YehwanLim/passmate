@@ -11,4 +11,9 @@ describe("MoodShiftBackground", () => {
     expect(html).toContain("<feTurbulence");
     expect(html).not.toContain("<animate");
   });
+
+  it("marks its root so the no-background diagnostic page can hide it with CSS", () => {
+    const html = renderToString(<MoodShiftBackground />);
+    expect(html).toContain('data-mood-shift=""');
+  });
 });

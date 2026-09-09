@@ -118,6 +118,8 @@ export default function MoodShiftBackground() {
     <div
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden="true"
+      // 진단 페이지(/perf-nobg.html)가 CSS 로 배경을 통째로 끄는 데 쓰는 표식(scripts/prerender-landing.mjs)
+      data-mood-shift=""
     >
       <svg width="0" height="0" className="absolute">
         <filter

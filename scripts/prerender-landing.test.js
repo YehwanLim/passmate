@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import {
   BOOT_SCRIPT,
   deferEntryScript,
+  NO_BACKGROUND_PAGE,
+  withoutMoodBackground,
   FULL_CSS_ATTR,
   inlineCriticalCss,
   LANDING_CANVAS_CLASS,
@@ -148,6 +150,18 @@ describe("deferEntryScript", () => {
   it("hydrates inside startTransition so WebKit can paint tiles while hydration yields", () => {
     const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
     expect(main).toMatch(/startTransition\(\(\) => \{?\s*hydrateRoot\(/);
+  });
+});
+
+describe("withoutMoodBackground", () => {
+  it("hides the mood-shift background with a head style for the diagnostic page", () => {
+    const html = "<html><head><title>x</title></head><body><div data-mood-shift=\"\"></div></body></html>";
+    const result = withoutMoodBackground(html);
+    expect(result).toContain("[data-mood-shift]{display:none!important}</style></head>");
+    expect(() => withoutMoodBackground("<body></body>")).toThrow(/<\/head>/);
+    // main.tsx 가 같은 경로를 랜딩으로 취급해야 하이드레이션 뒤에도 404 로 바뀌지 않는다
+    const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
+    expect(main).toContain(`"/${NO_BACKGROUND_PAGE}"`);
   });
 });
 

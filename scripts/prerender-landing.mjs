@@ -95,6 +95,18 @@ export function deferEntryScript(html) {
   );
 }
 
+// 폰(iOS WebKit)에서 스크롤한 영역의 타일이 한동안 안 그려지는 증상의 범인이 전체 화면 SVG 변위 필터 배경인지
+// 대조하려고, 배경만 CSS 로 끈 사본을 /perf-nobg.html 로 같이 낸다. main.tsx 가 이 경로를 랜딩으로 취급한다.
+export const NO_BACKGROUND_PAGE = "perf-nobg.html";
+const NO_BACKGROUND_STYLE = "<style>[data-mood-shift]{display:none!important}</style>";
+
+export function withoutMoodBackground(html) {
+  if (html.split("</head>").length !== 2) {
+    throw new Error("expected exactly one </head> to inject the no-background style before");
+  }
+  return html.replace("</head>", `${NO_BACKGROUND_STYLE}</head>`);
+}
+
 async function main() {
   const rootDir = path.resolve(import.meta.dirname, "..");
   const publicDir = path.join(rootDir, "dist", "public");
@@ -118,6 +130,7 @@ async function main() {
     await inlineCriticalCss(markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)), publicDir)
   );
   writeFileSync(indexPath, landingHtml);
+  writeFileSync(path.join(publicDir, NO_BACKGROUND_PAGE), withoutMoodBackground(landingHtml));
   const inlineCss = landingHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
   console.log(
     `[prerender] landing → ${path.relative(rootDir, indexPath)} (${Math.round(markup.length / 1024)}KB markup, ${Math.round(inlineCss.length / 1024)}KB critical CSS inlined), shell → ${path.relative(rootDir, shellPath)}`
