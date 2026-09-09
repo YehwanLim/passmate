@@ -95,13 +95,14 @@ describe("beta deployment security configuration", () => {
       { source: "/api/entitlements/purchase-intents", destination: "/api/entitlements?purchaseIntent=1" },
       { source: "/api/analyze/split", destination: "/api/analyze?split=1" },
       { source: "/api/analyze/company", destination: "/api/analyze?kind=company" },
-      { source: "/((?!api/).*)", destination: "/index.html" },
+      // 랜딩 프리렌더 이후 SPA 셸은 app.html이다(scripts/prerender-landing.mjs 참고).
+      { source: "/((?!api/).*)", destination: "/app.html" },
     ]);
 
     // API rewrite가 SPA fallback보다 먼저 와야 한다. fallback의 부정 lookahead가
     // /api/ 를 걸러내긴 하지만, 순서까지 고정해 회귀를 막는다.
     const fallbackIndex = config.rewrites.findIndex(
-      (rule) => rule.destination === "/index.html",
+      (rule) => rule.destination === "/app.html",
     );
     expect(fallbackIndex).toBe(config.rewrites.length - 1);
   });

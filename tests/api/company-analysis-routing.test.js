@@ -13,7 +13,7 @@ describe("company analysis routing", () => {
   it("rewrites /api/analyze/company to ?kind=company on Vercel before the SPA fallback", () => {
     const rewrites = vercelConfig.rewrites;
     const companyIndex = rewrites.findIndex((rule) => rule.source === "/api/analyze/company");
-    const fallbackIndex = rewrites.findIndex((rule) => rule.destination === "/index.html");
+    const fallbackIndex = rewrites.findIndex((rule) => rule.destination === "/app.html");
     expect(companyIndex).toBeGreaterThan(-1);
     expect(rewrites[companyIndex].destination).toBe("/api/analyze?kind=company");
     expect(companyIndex).toBeLessThan(fallbackIndex);
