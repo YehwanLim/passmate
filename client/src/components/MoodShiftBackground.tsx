@@ -151,14 +151,10 @@ export default function MoodShiftBackground() {
         </filter>
       </svg>
 
-      <div
-        className="absolute inset-0"
-        style={
-          reduceMotion
-            ? undefined
-            : { filter: `url(#${WOBBLE_FILTER_ID})`, willChange: "filter" }
-        }
-      >
+      {/* 꿀렁임(SVG 변위 필터)은 index.css `.mood-shift-wobble` 이 마우스 있는 기기에서만 건다.
+          인라인 style 로 걸면 프리렌더 HTML 에 그대로 실려 iPhone 이 CPU 로 전체 화면을 필터링하느라
+          첫 화면 5초·스크롤 시 빈 타일이 났다(배경을 끈 /perf-nobg.html 과 대조해 확인). */}
+      <div className={reduceMotion ? "absolute inset-0" : "absolute inset-0 mood-shift-wobble"}>
         {/* 베이스: 검정이 아니라 네 방향에서 은은하게 색을 띠는 바탕.
             inset-[-10%] 블리드는 패럴랙스 이동 시 가장자리가 비지 않게 한다 */}
         <motion.div

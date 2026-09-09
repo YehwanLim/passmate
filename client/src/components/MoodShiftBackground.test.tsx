@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { renderToString } from "react-dom/server";
 import MoodShiftBackground from "./MoodShiftBackground";
@@ -10,6 +12,18 @@ describe("MoodShiftBackground", () => {
     const html = renderToString(<MoodShiftBackground />);
     expect(html).toContain("<feTurbulence");
     expect(html).not.toContain("<animate");
+  });
+
+  it("applies the wobble filter through the pointer-gated CSS class, never inline", () => {
+    // 인라인 filter 는 프리렌더 HTML 에 실려 iPhone 이 전체 화면을 CPU 로 필터링한다(첫 화면 5초, 빈 타일).
+    // index.css 가 (hover: hover) and (pointer: fine) 안에서만 거는 클래스로 대신한다.
+    const html = renderToString(<MoodShiftBackground />);
+    expect(html).not.toContain("filter:url(");
+    expect(html).toContain("mood-shift-wobble\"");
+    const css = readFileSync(path.resolve(import.meta.dirname, "../index.css"), "utf8");
+    const gated = css.match(/@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+    expect(gated).toContain(".mood-shift-wobble");
+    expect(gated).toContain("filter: url(#mood-shift-wobble)");
   });
 
   it("marks its root so the no-background diagnostic page can hide it with CSS", () => {
