@@ -95,6 +95,61 @@ export function deferEntryScript(html) {
   );
 }
 
+// 글꼴 선언(@font-face 92개, 14KB gz)은 크리티컬 CSS 에서 뺐더니 전체 CSS 가 적용되는 하이드레이션 직전(첫 프레임 +1.2s)에야
+// 조각 요청이 시작돼, 스크롤 중에 시스템 글꼴 → Pretendard 교체가 눈에 띄었다. 랜딩 텍스트에 실제로 쓰이는
+// 글자가 속한 조각의 선언만 골라 인라인하면(대개 20개 안팎, ~3KB gz) 첫 페인트 때 요청이 나간다.
+export const FONT_CSS_PATH = "client/src/fonts/pretendard-variable-dynamic-subset.css";
+
+function decodeEntities(text) {
+  return text
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&(amp|lt|gt|quot|apos|nbsp);/g, (_, name) =>
+      ({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0" })[name]
+    );
+}
+
+export function collectCodePoints(html) {
+  const text = decodeEntities(
+    html
+      .replace(/<(style|script|svg)\b[^>]*>[\s\S]*?<\/\1>/g, " ")
+      .replace(/<[^>]+>/g, " ")
+  );
+  const points = new Set();
+  for (const ch of text) points.add(ch.codePointAt(0));
+  return points;
+}
+
+function rangeCovers(unicodeRange, points) {
+  for (const part of unicodeRange.split(",")) {
+    const m = part.trim().match(/^U\+([0-9a-f?]+)(?:-([0-9a-f]+))?$/i);
+    if (!m) continue;
+    const start = parseInt(m[1].replace(/\?/g, "0"), 16);
+    const end = m[2] ? parseInt(m[2], 16) : parseInt(m[1].replace(/\?/g, "f"), 16);
+    for (const p of points) if (p >= start && p <= end) return true;
+  }
+  return false;
+}
+
+export function usedFontFaces(fontCss, points) {
+  const faces = fontCss.match(/@font-face\{[^}]*\}/g) ?? [];
+  return faces.filter(face => {
+    const range = face.match(/unicode-range:([^;}]+)/)?.[1];
+    return !range || rangeCovers(range, points);
+  });
+}
+
+export function inlineUsedFontFaces(html, fontCss) {
+  const faces = usedFontFaces(fontCss, collectCodePoints(html));
+  if (faces.length === 0) {
+    throw new Error("no @font-face matched the landing text; the font CSS format may have changed");
+  }
+  if (html.split("</style>").length !== 2) {
+    throw new Error("expected exactly one inline <style> to append the font faces to");
+  }
+  return { html: html.replace("</style>", `${faces.join("")}</style>`), count: faces.length };
+}
+
 async function main() {
   const rootDir = path.resolve(import.meta.dirname, "..");
   const publicDir = path.join(rootDir, "dist", "public");
@@ -114,13 +169,16 @@ async function main() {
   if (!existsSync(path.join(publicDir, BOOT_SCRIPT))) {
     throw new Error(`${BOOT_SCRIPT} is missing from ${publicDir} (client/public/landing-boot.js)`);
   }
-  const landingHtml = deferEntryScript(
-    await inlineCriticalCss(markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)), publicDir)
+  const fontCss = readFileSync(path.join(rootDir, FONT_CSS_PATH), "utf8");
+  const withFonts = inlineUsedFontFaces(
+    await inlineCriticalCss(markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)), publicDir),
+    fontCss
   );
+  const landingHtml = deferEntryScript(withFonts.html);
   writeFileSync(indexPath, landingHtml);
   const inlineCss = landingHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
   console.log(
-    `[prerender] landing → ${path.relative(rootDir, indexPath)} (${Math.round(markup.length / 1024)}KB markup, ${Math.round(inlineCss.length / 1024)}KB critical CSS inlined), shell → ${path.relative(rootDir, shellPath)}`
+    `[prerender] landing → ${path.relative(rootDir, indexPath)} (${Math.round(markup.length / 1024)}KB markup, ${Math.round(inlineCss.length / 1024)}KB critical CSS + ${withFonts.count} font faces inlined), shell → ${path.relative(rootDir, shellPath)}`
   );
 }
 
