@@ -4,10 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   BOOT_SCRIPT,
-  collectCodePoints,
   deferEntryScript,
-  FONT_CSS_PATH,
-  inlineUsedFontFaces,
   FULL_CSS_ATTR,
   inlineCriticalCss,
   LANDING_CANVAS_CLASS,
@@ -151,47 +148,6 @@ describe("deferEntryScript", () => {
   it("hydrates inside startTransition so WebKit can paint tiles while hydration yields", () => {
     const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
     expect(main).toMatch(/startTransition\(\(\) => \{?\s*hydrateRoot\(/);
-  });
-});
-
-describe("inlineUsedFontFaces", () => {
-  const fontCss =
-    "@font-face{font-family:'P';src:url(a.woff2);unicode-range:U+ac00-ac0f}" +
-    "@font-face{font-family:'P';src:url(b.woff2);unicode-range:U+d000-d7a3}" +
-    "@font-face{font-family:'P';src:url(c.woff2);unicode-range:U+0041-005a,U+0061-007a}" +
-    "@font-face{font-family:'P';src:url(d.woff2)}";
-
-  it("keeps only the faces whose unicode-range covers characters in the landing text", () => {
-    // 가(U+AC00)는 a, 힣(U+D7A3)은 b, 라틴은 c. 범위 없는 d 는 항상 포함.
-    const html = "<head><style>.x{}</style></head><body><h1>가</h1><p>&#x27;hi&#x27;</p><svg><text>힣</text></svg></body>";
-    const { html: result, count } = inlineUsedFontFaces(html, fontCss);
-    expect(count).toBe(3);
-    expect(result).toContain("url(a.woff2)");
-    expect(result).toContain("url(c.woff2)");
-    expect(result).toContain("url(d.woff2)");
-    // <svg> 안 텍스트(로고 등)와 <style>/<script> 안 문자는 세지 않는다
-    expect(result).not.toContain("url(b.woff2)");
-    expect(result).toMatch(/@font-face\{[^}]*d\.woff2\)\}<\/style>/);
-  });
-
-  it("decodes entities so quotes and ampersands count as their real characters", () => {
-    const points = collectCodePoints("<p>&lsquo;x&rsquo; &amp; &#8217;</p>");
-    expect(points.has(0x26)).toBe(true); // &
-    expect(points.has(0x2019)).toBe(true); // ’
-  });
-
-  it("throws when nothing matches or there is no single inline style", () => {
-    expect(() => inlineUsedFontFaces("<style></style><p>가</p>", "")).toThrow(/no @font-face/);
-    expect(() => inlineUsedFontFaces("<p>가</p>", fontCss)).toThrow(/inline <style>/);
-  });
-
-  it("matches the real Pretendard sheet against the real landing markup", () => {
-    const real = readFileSync(path.join(ROOT_DIR, FONT_CSS_PATH), "utf8");
-    const total = (real.match(/@font-face\{/g) ?? []).length;
-    const { count } = inlineUsedFontFaces("<style></style><p>서류 탈락의 진짜 이유, 현직자는 10초면 압니다.</p>", real);
-    expect(total).toBeGreaterThan(80);
-    expect(count).toBeGreaterThan(0);
-    expect(count).toBeLessThan(total / 4);
   });
 });
 
