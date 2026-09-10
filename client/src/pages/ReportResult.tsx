@@ -309,7 +309,6 @@ function ReportContent({
     const { isAuthenticated } = useAuth()
     const feedbackRewardAvailable = useFeedbackRewardAvailable()
 
-    const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
     const [activeTab, setActiveTab] = useState(0)
     const [openQuestionIndex, setOpenQuestionIndex] = useState<number | null>(0)
     const [completedTasks, setCompletedTasks] = useState<number[]>([])
@@ -384,13 +383,6 @@ function ReportContent({
         })
         return () => observers.forEach((o) => o.disconnect())
     }, [])
-
-    useEffect(() => {
-        if (toastMessage) {
-            const timer = setTimeout(() => setToastMessage(null), 4000)
-            return () => clearTimeout(timer)
-        }
-    }, [toastMessage])
 
     const handleTabChange = (index: number) => {
         setActiveTab(index)
@@ -1414,15 +1406,6 @@ function ReportContent({
             </article>
             </ReportAccessGate>
 
-
-            {/* Toast */}
-            {toastMessage && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] animate-fade-in">
-                    <div className={`px-5 py-3 rounded-xl border shadow-2xl shadow-black/40 backdrop-blur-xl text-sm font-medium max-w-md ${toastMessage.type === 'success' ? 'bg-zinc-900/95 border-green-500/30 text-green-400' : 'bg-zinc-900/95 border-red-500/30 text-red-400'}`}>
-                        {toastMessage.text}
-                    </div>
-                </div>
-            )}
         </main>
     )
 }

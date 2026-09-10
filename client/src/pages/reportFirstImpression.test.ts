@@ -3,7 +3,6 @@ import {
   buildEditorialKeywords,
   buildHiringMemoryItems,
   compressPersonaForHero,
-  emphasizeHeroSummaryCopy,
   getHeroIdentity,
   getHeroSummary,
   limitSectionHighlights,
@@ -13,7 +12,6 @@ import {
   resolveHiringMemoryItems,
   splitPersonaForHeroLines,
   splitMentorComment,
-  tokenizeCommentKeywords,
 } from "./reportFirstImpression"
 
 describe("report first impression editorial helpers", () => {
@@ -52,13 +50,6 @@ describe("report first impression editorial helpers", () => {
     expect(summary.endsWith("…")).toBe(true)
     expect(summary.startsWith("국제 경험과 비즈니스 통찰력을 바탕으로")).toBe(true)
     expect(summary).not.toContain("성장 기회를 사업으로 연결하려는 지원자")
-  })
-
-  it("emphasizes the core expression in the hero summary copy", () => {
-    expect(emphasizeHeroSummaryCopy("시장 변화를 읽고 전략으로 엮어 성과를 만드는 기획형 마케터"))
-      .toBe("시장 변화를 읽고 전략으로 엮어 **성과를 만드는 기획형 마케터**")
-    expect(emphasizeHeroSummaryCopy("시장 변화를 읽고 전략으로 연결하는 전략형 기획자"))
-      .toBe("시장 변화를 읽고 **전략으로 연결하는 전략형 기획자**")
   })
 
   it("splits compressed persona copy into balanced hero lines", () => {
@@ -193,20 +184,6 @@ describe("report first impression editorial helpers", () => {
 
     expect(blocks.map((block) => block.text).join(" ")).toBe(comment)
     expect(blocks.map((block) => block.title)).toEqual(["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"])
-  })
-
-  it("marks only matching editorial keywords for inline emphasis", () => {
-    expect(tokenizeCommentKeywords("식량사업의 시장분석 경험이 보입니다.", ["식량사업", "시장분석"])
-      .filter((token) => token.highlighted)
-      .map((token) => token.text)).toEqual(["식량사업", "시장분석"])
-  })
-
-  it("highlights each supplied keyword once and preserves the original text", () => {
-    const text = "식량사업을 분석하고 식량사업의 가능성을 확인했습니다."
-    const tokens = tokenizeCommentKeywords(text, ["식량사업", "", "식량사업"])
-
-    expect(tokens.map((token) => token.text).join("")).toBe(text)
-    expect(tokens.filter((token) => token.highlighted).map((token) => token.text)).toEqual(["식량사업"])
   })
 
   it("expands legacy keyword emphasis to the full sentence and strips span markup", () => {

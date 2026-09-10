@@ -220,29 +220,6 @@ function parseModelJson(rawText) {
   }
 }
 
-function getAnalyzeApiErrorResponse(error) {
-  if (error?.name === "AbortError") {
-    return {
-      status: 504,
-      body: { error: "TIMEOUT", message: "분석 시간이 초과되었습니다. 다시 시도해 주세요." },
-    };
-  }
-
-  if (error?.statusCode === 503) {
-    return {
-      status: 503,
-      body: {
-        error: "MODEL_OVERLOADED",
-        message: "AI 모델 사용량이 잠시 몰렸어요. 작성하신 내용은 안전하게 보관 중이니 잠시 후 다시 시도해 주세요.",
-      },
-    };
-  }
-
-  return { status: 500, body: { error: "ANALYSIS_FAILED" } };
-}
-
-export { getAnalyzeApiErrorResponse };
-
 async function fetchWithTimeout(url, options) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ANALYSIS_MODEL_TIMEOUT_MS);

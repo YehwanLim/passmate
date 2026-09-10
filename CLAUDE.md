@@ -49,7 +49,7 @@ Prisma 7 + Supabase Postgres · Supabase Auth(Google) · Gemini · Vitest · **p
 | `prisma/` | Prisma 스키마와 DB 설정 |
 | `tests/api/` | API 대상 Vitest. 클라이언트 테스트는 보통 `*.test.ts(x)`로 같은 폴더에 둔다 |
 | `scripts/` | 검증·수동 개발 유틸. **의존하기 전에 스크립트를 먼저 읽는다.** |
-| `docs/superpowers/{specs,plans}` | 과거·현재 설계 문서. 맥락으로 쓰되 요청 없이 고치지 않는다 |
+| `docs/superpowers/{specs,plans}` | 과거·현재 설계 문서. 맥락으로 쓰되 요청 없이 고치지 않는다. **요청 없이 `docs/`를 grep·Read 하지 않는다**(60여 파일, 검색마다 컨텍스트를 잡아먹음) |
 
 별칭: `@/` = `client/src`, `@shared/` = `shared`, `@assets/` = `attached_assets`.
 

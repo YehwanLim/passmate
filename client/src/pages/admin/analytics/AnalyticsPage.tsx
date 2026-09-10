@@ -150,19 +150,6 @@ function formatDuration(ms: number) {
   return `${minutes}m ${seconds}s`;
 }
 
-function getPeriodStart(period: PeriodKey, now = new Date()) {
-  const start = new Date(now);
-
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-    return start;
-  }
-
-  start.setDate(start.getDate() - (period === "7d" ? 6 : 29));
-  start.setHours(0, 0, 0, 0);
-  return start;
-}
-
 function getTrendLabels(period: PeriodKey, now = new Date()) {
   if (period === "today") {
     return Array.from({ length: 6 }, (_, index) =>

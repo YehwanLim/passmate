@@ -58,17 +58,15 @@ describe("beta deployment security configuration", () => {
 
   it("removes diagnostic AI routes and routes local runtimes through the secured analysis handler", () => {
     const viteConfig = read("vite.config.ts");
-    const expressServer = read("server/index.ts");
 
     expect(viteConfig).not.toContain("/api/test-gemini");
     expect(viteConfig).not.toContain("manus-debug-collector");
     expect(viteConfig).not.toContain("sessionReplay");
     expect(existsSync(`${root}/client/public/__manus__/debug-collector.js`)).toBe(false);
     expect(existsSync(`${root}/data/ai-model-settings.json`)).toBe(false);
-    expect(expressServer).not.toContain("/api/test-gemini");
     expect(viteConfig).not.toContain("./server/api/analyze");
-    expect(expressServer).toContain("../api/analyze.js");
-    expect(expressServer).not.toContain("analyzeCoverLetter");
+    // 옛 Express 호스트는 Vercel이 쓰지 않아 제거했다. 분석은 api/analyze.js 하나로만 들어온다.
+    expect(existsSync(`${root}/server`)).toBe(false);
   });
 
   it("runs the protected account-purge job daily", () => {

@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { MASTER_SYSTEM_PROMPT } from "../../../shared/prompts/reportPrompt.js";
 
-const serverPrompt = readFileSync(new URL("../../../server/prompts/reportPrompt.ts", import.meta.url), "utf8");
 const apiAnalyze = readFileSync(new URL("../../../api/analyze.js", import.meta.url), "utf8");
 const sharedPrompt = readFileSync(new URL("../../../shared/prompts/reportPrompt.js", import.meta.url), "utf8");
 const outputMarker = "# [출력: JSON만, 마크다운 코드 블록 없이]";
@@ -24,14 +23,13 @@ describe("report prompt single source", () => {
   it("keeps the prompt body in the shared prompt module only", () => {
     expect(sharedPrompt).toContain("export const MASTER_SYSTEM_PROMPT");
     expect(sharedPrompt).toContain("당신은 국내 대기업");
-    expect(serverPrompt).toContain("../../shared/prompts/reportPrompt.js");
-    expect(serverPrompt).not.toContain("당신은 국내 대기업");
     expect(apiAnalyze).not.toContain("const MASTER_SYSTEM_PROMPT = `");
   });
 
   it("uses the shared prompt from the only supported analysis implementation", () => {
     expect(apiAnalyze).toContain("../shared/prompts/reportPrompt.js");
-    expect(existsSync(new URL("../../../server/api/analyze.ts", import.meta.url))).toBe(false);
+    // 옛 Express 호스트(server/)는 제거됐다. 되살리지 않는다.
+    expect(existsSync(new URL("../../../server", import.meta.url))).toBe(false);
   });
 
   it("keeps editorial interpretation rules in the canonical prompt", () => {

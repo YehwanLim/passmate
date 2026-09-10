@@ -30,11 +30,6 @@ export type MentorCommentBlock = {
   text: string
 }
 
-export type CommentKeywordToken = {
-  text: string
-  highlighted: boolean
-}
-
 export type HighlightedTextSegment = {
   text: string
   kind: "text" | "bold"
@@ -120,27 +115,6 @@ export function getHeroIdentity(persona: string, hashtags: string[]): string {
 
 export function getHeroSummary(summary: string): string {
   return limitReportText(summary, HERO_SUMMARY_MAX_LENGTH)
-}
-
-export function emphasizeHeroSummaryCopy(summary: string): string {
-  const trimmed = summary.trim()
-  if (!trimmed || trimmed.includes("**")) return summary
-
-  const patterns = [
-    /(성과를 만드는\s+[^\s.!?。]+(?:\s+[^\s.!?。]+){0,2})$/,
-    /(전략(?:으로|에)\s*(?:연결|엮어)[^.!?。]{0,18})$/,
-    /((?:기획형|전략형|분석형|실행형)\s*(?:마케터|기획자|지원자))$/,
-    /([^\s.!?。]{2,12}(?:마케터|기획자))$/,
-  ]
-
-  for (const pattern of patterns) {
-    const match = trimmed.match(pattern)
-    if (match?.[1] && match.index !== undefined && match.index > 0) {
-      return `${trimmed.slice(0, match.index)}**${match[1]}**`
-    }
-  }
-
-  return summary
 }
 
 export function splitPersonaForHeroLines(persona: string): string[] {
@@ -266,38 +240,6 @@ export function splitMentorComment(comment: string): MentorCommentBlock[] {
     sentences.slice(perBlock, perBlock * 2).join(" "),
     sentences.slice(perBlock * 2).join(" "),
   ])
-}
-
-export function tokenizeCommentKeywords(text: string, keywords: string[]): CommentKeywordToken[] {
-  const normalizedKeywords = Array.from(new Set(keywords.map((keyword) => keyword.trim()).filter(Boolean)))
-    .sort((left, right) => right.length - left.length)
-  const selections: Array<{ start: number; end: number }> = []
-
-  for (const keyword of normalizedKeywords) {
-    let start = text.indexOf(keyword)
-    while (start !== -1) {
-      const end = start + keyword.length
-      const overlaps = selections.some((selection) => start < selection.end && end > selection.start)
-      if (!overlaps) {
-        selections.push({ start, end })
-        break
-      }
-      start = text.indexOf(keyword, start + 1)
-    }
-  }
-
-  const sortedSelections = selections.sort((left, right) => left.start - right.start)
-  const tokens: CommentKeywordToken[] = []
-  let cursor = 0
-
-  for (const selection of sortedSelections) {
-    if (selection.start > cursor) tokens.push({ text: text.slice(cursor, selection.start), highlighted: false })
-    tokens.push({ text: text.slice(selection.start, selection.end), highlighted: true })
-    cursor = selection.end
-  }
-
-  if (cursor < text.length) tokens.push({ text: text.slice(cursor), highlighted: false })
-  return tokens
 }
 
 export function parseHighlightedText(text: string): HighlightedTextSegment[] {

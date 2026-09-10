@@ -126,5 +126,13 @@ temp/
 # 일회성 점검·디버깅 스크립트
 tmp-*
 
+# 에이전트 스킬 부산물(브레인스토밍 시안 html·서브에이전트 리뷰 diff)과 도구 로그.
+# 설계 문서 본문은 docs/superpowers/에 있고 그것만 추적한다.
+.superpowers/
+.manus-logs/
+
+# pnpm 전용. npm 락파일이 생기면 추적하지 않는다.
+package-lock.json
+
 # 통합 테스트 로컬 산출물
 tests/integration/.tmp/
