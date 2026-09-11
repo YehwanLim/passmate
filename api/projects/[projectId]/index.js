@@ -1,15 +1,8 @@
 import prisma from "../../../lib/prisma.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../../../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../../../lib/auth.js";
-
-function extractSummary(aiResponseJson) {
-  try {
-    const data = typeof aiResponseJson === "string" ? JSON.parse(aiResponseJson) : aiResponseJson;
-    return data?.summary ?? null;
-  } catch {
-    return null;
-  }
-}
+// 목록(api/projects.js)과 같은 규칙으로 요약을 읽는다. 예전엔 여기만 구버전 summary 필드만 봤다.
+import { extractSummary } from "../../../lib/report-fields.js";
 
 export function createProjectDetailHandler({
   db = prisma,

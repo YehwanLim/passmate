@@ -1,17 +1,7 @@
 import prisma from "../../lib/prisma.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../../lib/auth.js";
-
-function sanitizeAiResponse(json) {
-  try {
-    const data = typeof json === "string" ? JSON.parse(json) : json;
-    if (!data || typeof data !== "object") return null;
-    const { score, ...rest } = data;
-    return rest;
-  } catch {
-    return null;
-  }
-}
+import { sanitizeAiResponse } from "../../lib/report-fields.js";
 
 export function createAnalysisHandler({
   db = prisma,
