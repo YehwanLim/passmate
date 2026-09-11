@@ -13,6 +13,9 @@ const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.ur
 const supabaseSource = readFileSync(new URL("../lib/supabase.ts", import.meta.url), "utf8");
 // 접수 POST 자체는 자소서·기업 분석이 함께 쓰는 lib/analysisSubmit.ts 가 한다.
 const submitSource = readFileSync(new URL("../lib/analysisSubmit.ts", import.meta.url), "utf8");
+// 저장된 리포트 조회와 로그인 게이트도 두 리포트가 함께 쓴다.
+const reportLoaderSource = readFileSync(new URL("../hooks/useAnalysisReport.ts", import.meta.url), "utf8");
+const reportAuthGateSource = readFileSync(new URL("../components/report/ReportAuthGate.tsx", import.meta.url), "utf8");
 
 describe("authenticated client flow", () => {
   it("uses the same idempotency key for a retry of unchanged analysis input and sends its receipt to the protected pending page", () => {
@@ -29,7 +32,7 @@ describe("authenticated client flow", () => {
   });
 
   it("uses authenticated own-data and feedback requests without client user ids or mock fallbacks", () => {
-    for (const source of [projectsSource, analysesSource, reportSource, feedbackSource]) {
+    for (const source of [projectsSource, analysesSource, reportLoaderSource, feedbackSource]) {
       expect(source).toContain("getAuthorizationHeader");
     }
     expect(projectsSource).not.toContain("userId=");
@@ -37,7 +40,7 @@ describe("authenticated client flow", () => {
     expect(projectsSource).not.toContain("MOCK_");
     expect(reportSource).not.toContain("FALLBACK_DATA");
     expect(reportSource).not.toContain("EMPTY_REPORT_DATA");
-    expect(reportSource).toContain("useState<ReportData | null>(null)");
+    expect(reportLoaderSource).toContain("useState<T | null>(null)");
     expect(feedbackSource).not.toContain("userId,");
     expect(feedbackSource).not.toContain("getAnonymousUserId");
     // 안내 카드는 아무것도 제출하지 않는다.
@@ -46,8 +49,9 @@ describe("authenticated client flow", () => {
   });
 
   it("keeps the report DOM empty of report data until authentication resolves successfully", () => {
-    expect(reportSource).toContain("if (authLoading)");
-    expect(reportSource).toContain("if (!isAuthenticated)");
+    expect(reportAuthGateSource).toContain("if (isLoading)");
+    expect(reportAuthGateSource).toContain("if (!isAuthenticated)");
+    expect(reportSource).toContain("<ReportAuthGate");
     expect(reportSource).toContain("로그인 후 분석 리포트를 확인할 수 있어요.");
   });
 

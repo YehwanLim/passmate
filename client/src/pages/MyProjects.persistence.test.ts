@@ -6,6 +6,7 @@ const myProjectsSource = readFileSync(new URL("./MyProjects.tsx", import.meta.ur
 const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.url), "utf8");
 const reportSource = readFileSync(new URL("./ReportResult.tsx", import.meta.url), "utf8");
 const submitSource = readFileSync(new URL("../lib/analysisSubmit.ts", import.meta.url), "utf8");
+const reportLoaderSource = readFileSync(new URL("../hooks/useAnalysisReport.ts", import.meta.url), "utf8");
 
 describe("analysis persistence into My Projects", () => {
   it("uses the server analysis transaction as the only persistence path", () => {
@@ -37,8 +38,9 @@ describe("analysis persistence into My Projects", () => {
     expect(myProjectsSource).toContain("project.latest_analysis_id");
     expect(myProjectsSource).toContain("analysisId=${encodeURIComponent(project.latest_analysis_id)}");
     expect(reportSource).toContain("requestedAnalysisId");
-    expect(reportSource).toContain("fetch(`/api/analysis/${encodeURIComponent(requestedAnalysisId)}`");
-    expect(reportSource).toContain("setReportData(payload.ai_response_json as ReportData)");
+    // 저장된 분석 조회는 자소서·기업 리포트가 함께 쓰는 hooks/useAnalysisReport.ts 가 한다.
+    expect(reportLoaderSource).toContain("fetch(`/api/analysis/${encodeURIComponent(requestedAnalysisId)}`");
+    expect(reportSource).toContain("reportData: payload.ai_response_json as ReportData");
   });
 
   it("opens company reports at /company-report and résumé reports at /report-new", () => {

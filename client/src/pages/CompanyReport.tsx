@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, X } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, X } from "lucide-react";
 
-import AuthButton from "@/components/AuthButton";
-import { BrandName } from "@/components/BrandName";
 import { COMPANY_REPORT_SAMPLE } from "@/constants/companyReportSample";
-import { useAuth } from "@/contexts/AuthContext";
-import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
+import { AccordionQuestionRow } from "@/components/report/AccordionQuestionRow";
+import { MiniNavigator } from "@/components/report/MiniNavigator";
+import { ReportAuthGate } from "@/components/report/ReportAuthGate";
+import { ReportHeroFrame } from "@/components/report/ReportHeroFrame";
+import { REPORT_NAV_ACTION_CLASS, ReportTopNav } from "@/components/report/ReportTopNav";
+import { useAnalysisReport } from "@/hooks/useAnalysisReport";
+import { useScrollSpy } from "@/hooks/useScrollSpy";
 import { isRenderableCompanyReport, type CompanyReportData } from "@/types/companyReport";
 import { COMPANY_HERO_ID, COMPANY_REPORT_NAV_SECTIONS } from "./companyReportNavigation";
 import {
@@ -21,7 +24,6 @@ import {
   Timeline,
   renderCompanyText,
 } from "./companyReportParts";
-import { scrollChildIntoHorizontalView } from "./reportLineAnalysis";
 
 /**
  * 표지 한 줄의 글자 크기. 프롬프트는 28자 이내를 요구하지만 모델이 30~45자를 자주 내놓는다.
@@ -43,67 +45,6 @@ function isVisiblePublisher(source: { title: string; publisher: string }): boole
   return source.publisher.length > 0 && source.publisher !== source.title && !source.publisher.endsWith("vertexaisearch.cloud.google.com");
 }
 
-// ── 목차 ───────────────────────────────────────────────────────────────────────
-
-function MiniNavigator({ activeSection }: { activeSection: string }) {
-  return (
-    <nav className="report-nav hidden xl:block" aria-label="리포트 목차">
-      <div className="report-nav-list">
-        {COMPANY_REPORT_NAV_SECTIONS.map((section) => (
-          <a
-            key={section.id}
-            href={`#${section.id}`}
-            className={`report-nav-item ${activeSection === section.id ? "active" : ""}`}
-            aria-current={activeSection === section.id ? "location" : undefined}
-            onClick={(event) => {
-              event.preventDefault();
-              document.getElementById(section.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-            <span className="report-nav-index">{section.indexLabel}.</span>
-            <span>{section.label}</span>
-          </a>
-        ))}
-      </div>
-    </nav>
-  );
-}
-
-function SectionChipBar({ activeSection }: { activeSection: string }) {
-  const barRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const bar = barRef.current;
-    const chip = bar?.querySelector<HTMLElement>(`[data-section="${activeSection}"]`) ?? null;
-    scrollChildIntoHorizontalView(bar, chip);
-  }, [activeSection]);
-
-  return (
-    <nav ref={barRef} className="xl:hidden mx-auto flex max-w-4xl gap-2 overflow-x-auto hide-scrollbar whitespace-nowrap px-6 pb-3 md:px-8" aria-label="리포트 목차">
-      {COMPANY_REPORT_NAV_SECTIONS.map((section) => {
-        const isActive = activeSection === section.id;
-        return (
-          <a
-            key={section.id}
-            href={`#${section.id}`}
-            data-section={section.id}
-            aria-current={isActive ? "location" : undefined}
-            className={`inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition-colors ${
-              isActive ? "border-emerald-300/[0.22] bg-emerald-300/[0.08] text-emerald-100/80" : "border-white/[0.07] bg-white/[0.03] text-zinc-500"
-            }`}
-            onClick={(event) => {
-              event.preventDefault();
-              document.getElementById(section.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-            <span className={`text-[11px] font-semibold tabular-nums ${isActive ? "text-emerald-100/80" : "text-zinc-600"}`}>{section.indexLabel}</span>
-            <span>{section.label}</span>
-          </a>
-        );
-      })}
-    </nav>
-  );
-}
-
 // ── 데이터 로딩 ──────────────────────────────────────────────────────────────
 
 interface LoadedReport {
@@ -114,63 +55,38 @@ interface LoadedReport {
   sample?: boolean;
 }
 
+const MISSING_MESSAGE = "기업 분석 리포트를 찾을 수 없습니다.";
+const FAILED_MESSAGE = "기업 분석 리포트를 불러오지 못했습니다.";
+
 function AuthenticatedCompanyReport() {
   const [, navigate] = useLocation();
   const requestedAnalysisId = new URLSearchParams(window.location.search).get("analysisId");
-  const [loaded, setLoaded] = useState<LoadedReport | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!requestedAnalysisId) {
-      setError("기업 분석 리포트를 찾을 수 없습니다.");
-      setIsLoading(false);
-      return;
-    }
-    let cancelled = false;
-    const load = async () => {
-      try {
-        setLoaded(null); setError(null); setIsLoading(true);
-        const response = await fetch(`/api/analysis/${encodeURIComponent(requestedAnalysisId)}`, {
-          headers: await getAuthorizationHeader(),
-        });
-        const payload = await response.json();
-        if (cancelled) return;
-        if (!response.ok) {
-          throw new Error(payload?.message || payload?.error || "기업 분석 리포트를 불러오지 못했습니다.");
-        }
-        // 자소서 분석 id 로 들어오면 자소서 리포트로 보낸다.
-        if (payload?.kind === "RESUME") {
-          navigate(`/report-new?analysisId=${encodeURIComponent(payload.id ?? requestedAnalysisId)}`);
-          return;
-        }
-        if (!isRenderableCompanyReport(payload?.ai_response_json)) {
-          throw new Error("저장된 기업 분석 리포트 형식이 올바르지 않습니다.");
-        }
-        setLoaded({
-          analysisId: payload.id ?? requestedAnalysisId,
-          company: payload.company_name ?? "",
-          jobRole: payload.job_role ?? "",
-          report: payload.ai_response_json,
-        });
-      } catch (caught) {
-        if (cancelled) return;
-        setError(caught instanceof AuthenticationRequiredError
-          ? "로그인이 만료되었어요. 다시 로그인한 뒤 리포트를 열어 주세요."
-          : caught instanceof Error ? caught.message : "기업 분석 리포트를 불러오지 못했습니다.");
-      } finally {
-        if (!cancelled) setIsLoading(false);
+  const { data: loaded, isLoading, error } = useAnalysisReport<LoadedReport>(requestedAnalysisId, {
+    missingMessage: MISSING_MESSAGE,
+    failedMessage: FAILED_MESSAGE,
+    parse: (payload) => {
+      // 자소서 분석 id 로 들어오면 자소서 리포트로 보낸다.
+      if (payload?.kind === "RESUME") {
+        navigate(`/report-new?analysisId=${encodeURIComponent(payload.id ?? requestedAnalysisId ?? "")}`);
+        return null;
       }
-    };
-    void load();
-    return () => { cancelled = true; };
-  }, [navigate, requestedAnalysisId]);
+      if (!isRenderableCompanyReport(payload?.ai_response_json)) {
+        throw new Error("저장된 기업 분석 리포트 형식이 올바르지 않습니다.");
+      }
+      return {
+        analysisId: payload.id ?? requestedAnalysisId ?? "",
+        company: payload.company_name ?? "",
+        jobRole: payload.job_role ?? "",
+        report: payload.ai_response_json,
+      };
+    },
+  });
 
   if (isLoading) {
     return <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-zinc-400">기업 분석 리포트를 불러오는 중이에요.</main>;
   }
   if (error || !loaded) {
-    return <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-red-400">{error ?? "기업 분석 리포트를 불러오지 못했습니다."}</main>;
+    return <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-red-400">{error ?? FAILED_MESSAGE}</main>;
   }
   return <CompanyReportContent {...loaded} />;
 }
@@ -179,7 +95,7 @@ function AuthenticatedCompanyReport() {
 
 function CompanyReportContent({ company, jobRole, report, sample = false }: LoadedReport) {
   const [, navigate] = useLocation();
-  const [activeSection, setActiveSection] = useState(COMPANY_REPORT_NAV_SECTIONS[0].id);
+  const activeSection = useScrollSpy(COMPANY_REPORT_NAV_SECTIONS);
   const [openQuestionIndex, setOpenQuestionIndex] = useState<number | null>(0);
   const asOf = report.reportMeta?.asOf || report.brief.asOf || "";
   const numbers = report.financialSnapshot;
@@ -201,48 +117,28 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
   const questions = report.interviewPrep.questions ?? [];
   const primarySources = report.interviewPrep.primarySources ?? [];
 
-  useEffect(() => {
-    const observers: IntersectionObserver[] = [];
-    COMPANY_REPORT_NAV_SECTIONS.forEach((section) => {
-      const element = document.getElementById(section.id);
-      if (!element) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveSection(section.id); },
-        { rootMargin: "-20% 0px -60% 0px", threshold: 0 },
-      );
-      observer.observe(element);
-      observers.push(observer);
-    });
-    return () => observers.forEach((observer) => observer.disconnect());
-  }, []);
-
   const sectionClass = "py-24 section-divider report-section-anchor";
 
   return (
     <main className="min-h-screen bg-[#09090B] text-zinc-100 font-sans selection:bg-indigo-500/20">
-      <MiniNavigator activeSection={activeSection} />
+      <MiniNavigator sections={COMPANY_REPORT_NAV_SECTIONS} activeSection={activeSection} />
 
-      <div className="sticky top-0 z-50 w-full bg-[#09090B]/95 backdrop-blur-md border-b border-white/[0.05]">
-        <div className="max-w-4xl mx-auto px-6 md:px-8 pt-4 pb-3 sm:pt-6 sm:pb-4 flex items-center justify-between">
-          <button onClick={() => window.history.back()} className="inline-flex items-center gap-2.5 text-sm text-zinc-500 hover:text-white transition-colors group">
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span>뒤로</span>
-          </button>
-          <div className="flex items-center gap-2">
-            {sample ? (
-              <button className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200" onClick={() => navigate("/company-analysis")}>
-                기업 분석 시작하기
-              </button>
-            ) : (
-              <button className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200" onClick={() => navigate("/my")}>
-                내 지원서
-              </button>
-            )}
-            <AuthButton />
-          </div>
-        </div>
-        <SectionChipBar activeSection={activeSection} />
-      </div>
+      <ReportTopNav
+        sections={COMPANY_REPORT_NAV_SECTIONS}
+        activeSection={activeSection}
+        backLabel="뒤로"
+        actions={
+          sample ? (
+            <button className={REPORT_NAV_ACTION_CLASS} onClick={() => navigate("/company-analysis")}>
+              기업 분석 시작하기
+            </button>
+          ) : (
+            <button className={REPORT_NAV_ACTION_CLASS} onClick={() => navigate("/my")}>
+              내 지원서
+            </button>
+          )
+        }
+      />
 
       <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10 pt-4">
         {sample ? (
@@ -253,13 +149,7 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
         ) : null}
         {/* 표지 */}
         <header id={COMPANY_HERO_ID} className="pt-8 pb-[6.5rem] section-divider">
-          <div className="relative min-w-0 max-w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0B0B0E] px-5 py-5 sm:px-8 sm:py-7 md:px-10 md:py-9">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.09),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent_48%)]" />
-            <div className="pointer-events-none absolute inset-px rounded-[15px] border border-white/[0.035]" />
-            <div className="relative flex min-w-0 flex-col gap-2 border-b border-white/[0.06] pb-4 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-              <BrandName className="h-3.5 self-start" />
-              <span className="min-w-0 break-words sm:text-right">Company Brief · {company}{jobRole ? ` · ${jobRole}` : ""}</span>
-            </div>
+          <ReportHeroFrame eyebrow={<>Company Brief · {company}{jobRole ? ` · ${jobRole}` : ""}</>}>
             <div className="relative min-w-0 py-12 text-center sm:py-14 md:py-[4.25rem]">
               <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{company}는</p>
               <h1 className={`mx-auto max-w-3xl ${heroTitleSizeClass(report.brief.oneLiner)} font-semibold leading-[1.04] tracking-tight text-white text-balance`}>
@@ -277,7 +167,7 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
             <p className="relative text-center text-[11px] uppercase tracking-[0.14em] text-zinc-600">
               기준일 {asOf} · 출처 {sources.length}건
             </p>
-          </div>
+          </ReportHeroFrame>
         </header>
 
         {/* 01 돈 버는 구조 */}
@@ -544,23 +434,18 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <CompanySectionHeading index="08" title="면접 예상 질문과 읽을 자료" />
           <div className="space-y-0">
             {questions.map((item, index) => (
-              <div key={`${index}-${item.question}`} className="border-b border-white/[0.04] last:border-0">
-                <button
-                  onClick={() => setOpenQuestionIndex(openQuestionIndex === index ? null : index)}
-                  aria-expanded={openQuestionIndex === index}
-                  className="w-full py-6 flex items-start gap-5 text-left group"
-                >
-                  <span className="text-xs uppercase tracking-[0.12em] text-zinc-500 mt-1 min-w-[50px] font-medium">Q{index + 1}</span>
-                  <span className="flex-1 text-[17px] text-zinc-300 group-hover:text-white transition-colors leading-[1.6]">{renderCompanyText(item.question)}</span>
-                  <ChevronDown aria-hidden="true" className={`w-5 h-5 text-zinc-600 transition-transform mt-0.5 ${openQuestionIndex === index ? "rotate-180" : ""}`} />
-                </button>
-                {openQuestionIndex === index ? (
-                  <div className="pb-8 pl-[70px]">
-                    <p className="text-xs uppercase tracking-[0.12em] text-zinc-500 mb-3 font-medium">답변 방향</p>
-                    <p className="text-[15px] text-zinc-400 leading-[1.8]">{renderCompanyText(item.direction, true)}</p>
-                  </div>
-                ) : null}
-              </div>
+              <AccordionQuestionRow
+                key={`${index}-${item.question}`}
+                index={index}
+                question={renderCompanyText(item.question)}
+                open={openQuestionIndex === index}
+                onToggle={() => setOpenQuestionIndex(openQuestionIndex === index ? null : index)}
+              >
+                <div className="pb-8 pl-[70px]">
+                  <p className="text-xs uppercase tracking-[0.12em] text-zinc-500 mb-3 font-medium">답변 방향</p>
+                  <p className="text-[15px] text-zinc-400 leading-[1.8]">{renderCompanyText(item.direction, true)}</p>
+                </div>
+              </AccordionQuestionRow>
             ))}
           </div>
           {primarySources.length > 0 ? (
@@ -618,7 +503,6 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
 }
 
 export default function CompanyReport() {
-  const { isLoading, isAuthenticated } = useAuth();
   // 공개 샘플은 로그인·조회 없이 굳힌 상수를 그대로 렌더한다.
   const isSample = new URLSearchParams(window.location.search).get("sample") === "1";
   if (isSample) {
@@ -632,20 +516,10 @@ export default function CompanyReport() {
       />
     );
   }
-  if (isLoading) {
-    return <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-zinc-400">로그인 정보를 확인하는 중이에요.</main>;
-  }
-  if (!isAuthenticated) {
-    const redirect = `${window.location.pathname}${window.location.search}`;
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center">
-        <section className="max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8">
-          <h1 className="text-lg font-semibold text-white">로그인이 필요해요</h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">로그인 후 기업 분석 리포트를 확인할 수 있어요.</p>
-          <a href={`/login?redirect=${encodeURIComponent(redirect)}`} className="mt-6 inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-zinc-900">로그인하기</a>
-        </section>
-      </main>
-    );
-  }
-  return <AuthenticatedCompanyReport />;
+  const redirect = `${window.location.pathname}${window.location.search}`;
+  return (
+    <ReportAuthGate loginRedirect={redirect} message="로그인 후 기업 분석 리포트를 확인할 수 있어요.">
+      <AuthenticatedCompanyReport />
+    </ReportAuthGate>
+  );
 }

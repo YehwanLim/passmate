@@ -6,6 +6,7 @@ import {
   getScrollPositionAt,
   resolveCoachPlacement,
   scrollChildIntoHorizontalView,
+  tokenizeAnswerParagraph,
 } from "./reportLineAnalysis";
 
 describe("getNeighborCardIndex", () => {
@@ -104,5 +105,32 @@ describe("getFirstHighlightedCardIndex", () => {
 
   it("returns null when no card matches the answer", () => {
     expect(getFirstHighlightedCardIndex([{ original: "없음" }], answer)).toBeNull();
+  });
+});
+
+describe("tokenizeAnswerParagraph", () => {
+  it("splits a paragraph into plain text, card highlights and the subtitle in source order", () => {
+    const paragraph = "소제목입니다. 첫 문장은 좋았다. 그런데 둘째 문장은 약하다. 끝.";
+    const tokens = tokenizeAnswerParagraph(paragraph, ["둘째 문장은 약하다", "첫 문장은 좋았다"], "소제목입니다");
+
+    expect(tokens).toEqual([
+      { kind: "subtitle", text: "소제목입니다" },
+      { kind: "text", text: ". " },
+      { kind: "card", text: "첫 문장은 좋았다", cardIndex: 1 },
+      { kind: "text", text: ". 그런데 " },
+      { kind: "card", text: "둘째 문장은 약하다", cardIndex: 0 },
+      { kind: "text", text: ". 끝." },
+    ]);
+  });
+
+  it("returns the whole paragraph as text when nothing matches, and gives a repeated sentence to the first card", () => {
+    expect(tokenizeAnswerParagraph("아무 하이라이트도 없다", ["없는 문장"], "")).toEqual([
+      { kind: "text", text: "아무 하이라이트도 없다" },
+    ]);
+    expect(tokenizeAnswerParagraph("같다 같다", ["같다", "같다"], "")).toEqual([
+      { kind: "card", text: "같다", cardIndex: 0 },
+      { kind: "text", text: " " },
+      { kind: "card", text: "같다", cardIndex: 0 },
+    ]);
   });
 });

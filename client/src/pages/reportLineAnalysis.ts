@@ -117,3 +117,60 @@ export function getFirstHighlightedCardIndex(
     })
     return bestIndex
 }
+
+export type AnswerToken =
+  | { kind: "text"; text: string }
+  | { kind: "subtitle"; text: string }
+  | { kind: "card"; text: string; cardIndex: number };
+
+/**
+ * 원문 문단을 하이라이트 단위로 자른다. 매번 가장 앞에 나오는 문장을 먼저 잡고,
+ * 소제목 원문이 그보다 앞이면 소제목으로 표시한다. 어디에도 안 맞는 나머지는 평문이다.
+ * 같은 문장이 여러 카드에 있으면 첫 카드가 가져간다(카드 순서 = 배열 순서).
+ */
+export function tokenizeAnswerParagraph(
+  paragraph: string,
+  highlights: string[],
+  subtitleOriginal: string,
+): AnswerToken[] {
+  const SUBTITLE_MATCH = -2;
+  const tokens: AnswerToken[] = [];
+  let remaining = paragraph;
+
+  while (remaining.length > 0) {
+    let earliestIdx = remaining.length;
+    let matchedHighlight = "";
+    let matchedCardIdx = -1;
+    highlights.forEach((highlight, index) => {
+      const pos = remaining.indexOf(highlight);
+      if (pos !== -1 && pos < earliestIdx) {
+        earliestIdx = pos;
+        matchedHighlight = highlight;
+        matchedCardIdx = index;
+      }
+    });
+    if (subtitleOriginal) {
+      const pos = remaining.indexOf(subtitleOriginal);
+      if (pos !== -1 && pos < earliestIdx) {
+        earliestIdx = pos;
+        matchedHighlight = subtitleOriginal;
+        matchedCardIdx = SUBTITLE_MATCH;
+      }
+    }
+
+    if (matchedHighlight) {
+      if (earliestIdx > 0) tokens.push({ kind: "text", text: remaining.slice(0, earliestIdx) });
+      if (matchedCardIdx === SUBTITLE_MATCH) {
+        tokens.push({ kind: "subtitle", text: matchedHighlight });
+      } else {
+        tokens.push({ kind: "card", text: matchedHighlight, cardIndex: matchedCardIdx });
+      }
+      remaining = remaining.slice(earliestIdx + matchedHighlight.length);
+    } else {
+      tokens.push({ kind: "text", text: remaining });
+      remaining = "";
+    }
+  }
+
+  return tokens;
+}
