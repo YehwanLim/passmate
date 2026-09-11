@@ -50,8 +50,14 @@ describe("admin routing", () => {
       "client/src/pages/admin/ai-settings/AiSettingsPage.tsx"
     );
 
-    expect(aiModelsPage).toContain("Default Model");
-    expect(aiModelsPage).toContain("Fallback Model");
+    // 기본/폴백 선택 UI 는 AI Models 페이지가 쓰는 ModelsTable 에 있다.
+    const modelsTable = readFileSync(
+      new URL("../../components/admin/ai-models/ModelsTable.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(aiModelsPage).toContain("ModelsTable");
+    expect(modelsTable).toContain("Default Model");
+    expect(modelsTable).toContain("Fallback Model");
     expect(aiSettingsPage).not.toContain("Default Model");
     expect(aiSettingsPage).not.toContain("Fallback Model");
     expect(aiSettingsPage).not.toContain("defaultModel");
