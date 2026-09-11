@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check, Menu, RefreshCw, X } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
+import { PlanPurchaseButton } from "@/components/entitlements/PlanPurchaseButton";
+import { TierCard } from "@/components/entitlements/TierCard";
 import { HOME_NAV_ITEMS } from "@/pages/Home";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLoginRedirectPath } from "@/hooks/useRequireAuth";
@@ -24,67 +26,7 @@ import {
   savingsFor,
 } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase";
-
-// 환불을 포함한 결제 문의는 메일로 받는다 — Groble이 부분 환불을 지원하지 않아 수동 처리가 전제다.
-const PAYMENT_INQUIRY_MAILTO = `mailto:hansitoring@gmail.com?subject=${encodeURIComponent(
-  "[Pre:View] 결제 문의"
-)}&body=${encodeURIComponent(
-  "아래 내용을 채워 보내주시면 영업일 기준 3일 이내에 안내드릴게요.\n\n- 결제일:\n- 결제 확인 정보(주문번호 또는 결제 이메일):\n- 문의 내용(환불 요청 시 사유 포함):\n"
-)}`;
-
-// 카드 문구: "언제 쓰는 이용권인지"(굵게) + 무엇을 받는지 한 줄. 세 카드가 같은 꼴로 읽히지 않게 상황으로 가른다.
-const TIER_COPY: Record<(typeof TIERS)[number]["key"], { when: string; what: Partial<Record<PurchaseProductKey, string>> }> = {
-  basic: {
-    when: "한 번만 필요할 때",
-    what: {
-      single: "자소서 한 편을 제출 전에 점검받아요.",
-      company: "지원할 회사 한 곳을 자소서 쓰기 전에 조사해요.",
-    },
-  },
-  standard: {
-    when: "한 회사를 제대로 준비할 때",
-    what: {
-      standard: "회사를 조사한 뒤 자소서를 쓰고, 고쳐 쓴 자소서를 한 번 더 진단받아요.",
-    },
-  },
-  premium: {
-    when: "여러 회사에 함께 지원할 때",
-    what: {
-      premium: "회사 세 곳을 조사하고, 회사마다 자소서 분석을 한 번씩 할 수 있어요.",
-    },
-  },
-};
-
-/** 티어별 강조 글자색 — 할인 문구가 그 카드의 버튼 색과 같은 계열로 읽히게 한다. */
-const PLAN_ACCENT_TEXT: Record<PurchaseProductKey, string> = {
-  single: "text-sky-300",
-  company: "text-sky-300",
-  standard: "text-sky-300",
-  premium: "text-violet-300",
-  triple: "text-sky-300",
-};
-
-/**
- * 티어별 구매 버튼 — 랜딩 이용권 섹션(PricingSection)에서 쓰는 버튼 디자인 그대로다.
- * 베이직은 그 섹션의 일반 버튼, 스탠다드·프리미엄은 강조 버튼의 그라데이션에 색만 바꿨다.
- * 상품 키 기준이라 베이직은 자소서·기업 어느 쪽을 골라도 같은 모양이다.
- */
-const PLAN_BUTTON_BASIC =
-  "border border-white/[0.12] bg-white/[0.05] text-zinc-200 hover:bg-white/[0.1]";
-const PLAN_BUTTON_CLASS: Record<PurchaseProductKey, string> = {
-  single: PLAN_BUTTON_BASIC,
-  company: PLAN_BUTTON_BASIC,
-  standard:
-    "bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-lg shadow-blue-500/20 hover:from-blue-400 hover:to-cyan-300",
-  premium:
-    "bg-gradient-to-r from-violet-300 to-purple-200 text-[#2E1065] shadow-lg shadow-violet-400/20 hover:from-violet-200 hover:to-purple-100",
-  triple: PLAN_BUTTON_BASIC,
-};
-
-/** 추천 카드 — 랜딩의 "커피 한 잔" 기준과 같은 스탠다드. */
-const RECOMMENDED_TIER = "standard";
-
-type BasicChoice = "single" | "company";
+import { PAYMENT_INQUIRY_MAILTO, type BasicChoice } from "./entitlementsCopy";
 
 export default function Entitlements() {
   const [, navigate] = useLocation();
@@ -218,165 +160,6 @@ export default function Entitlements() {
   const canPurchase = (product: PurchaseProductKey) => {
     if (!summary) return false;
     return Boolean(summary.checkoutUrls[product]);
-  };
-
-  const renderPaidPlanButton = (product: PurchaseProductKey) => {
-    const plan = PRICING[product];
-    const buttonClassName = `h-11 w-full rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${PLAN_BUTTON_CLASS[product]}`;
-
-    // 아직 결제 URL을 모르는 동안은 "판매 준비 중"이 아니라 비활성 버튼을 보여준다 —
-    // 로딩과 판매 중단은 다른 상태고, 섞으면 로그인한 사용자에게 틀린 안내가 깜빡인다.
-    if (authLoading || (isAuthenticated && isLoading)) {
-      return (
-        <button type="button" disabled className={buttonClassName}>
-          {plan.label} 구매하기
-        </button>
-      );
-    }
-
-    if (!isAuthenticated && availability && !availability.purchasable[product]) {
-      return (
-        <p className="flex h-11 items-center justify-center text-xs text-zinc-500">
-          현재 추가 이용권 판매를 준비하고 있어요.
-        </p>
-      );
-    }
-
-    if (!isAuthenticated) {
-      return (
-        <button
-          type="button"
-          onClick={() => navigate(getLoginRedirectPath("/entitlements"))}
-          className={buttonClassName}
-        >
-          {plan.label} 구매하기
-        </button>
-      );
-    }
-
-    if (!canPurchase(product)) {
-      return (
-        <p className="flex h-11 items-center justify-center text-xs text-zinc-500">
-          현재 추가 이용권 판매를 준비하고 있어요.
-        </p>
-      );
-    }
-
-    return (
-      <button
-        type="button"
-        onClick={() => startCheckout(product)}
-        className={buttonClassName}
-      >
-        {`${plan.label} 구매하기`}
-      </button>
-    );
-  };
-
-  const renderTierCard = (tier: (typeof TIERS)[number]) => {
-    const product: PurchaseProductKey = tier.key === "basic" ? basicChoice : tier.products[0];
-    const plan = PRICING[product];
-    const recommended = tier.key === RECOMMENDED_TIER;
-    const hasStrike = plan.listPrice > plan.salePrice;
-    const totalUses = plan.uses + plan.companyUses;
-    const usesLabel = [
-      plan.uses > 0 ? `자소서 진단 ${plan.uses}회` : null,
-      plan.companyUses > 0 ? `기업 분석 ${plan.companyUses}회` : null,
-    ]
-      .filter(Boolean)
-      .join(" + ");
-
-    return (
-      <div
-        key={tier.key}
-        id={tier.key}
-        className={`plan-card flex h-full flex-col rounded-2xl border p-7 md:p-8 ${
-          recommended
-            ? "plan-card--recommended border-white/[0.3] bg-white/[0.06]"
-            : "border-white/[0.12] bg-white/[0.035]"
-        }`}
-      >
-        {recommended && <span className="plan-badge">추천</span>}
-
-        <p className="text-[21px] font-bold tracking-tight text-white">
-          {tier.label}
-        </p>
-
-        {/* 베이직만 토글이 들어가 아래 가격 줄이 밀리므로 구성 안내 영역 높이를 카드마다 맞춘다. */}
-        <div className="mt-2.5 min-h-[62px]">
-          {tier.key === "basic" ? (
-            <div>
-            <p className="text-[11px] font-medium text-zinc-500">
-              둘 중 하나를 골라 주세요
-            </p>
-            <div
-              role="radiogroup"
-              aria-label="베이직 구성 선택"
-              className="mt-1.5 grid grid-cols-2 gap-2"
-            >
-              {tier.products.map((choice) => (
-                <button
-                  key={choice}
-                  type="button"
-                  role="radio"
-                  aria-checked={basicChoice === choice}
-                  onClick={() => setBasicChoice(choice)}
-                  className={`h-10 whitespace-nowrap rounded-xl border text-[12.5px] font-semibold transition-colors ${
-                    basicChoice === choice
-                      ? "border-white/40 bg-white/[0.12] text-white"
-                      : "border-white/[0.12] bg-white/[0.05] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200"
-                  }`}
-                >
-                  {PRICING[choice].label}
-                </button>
-              ))}
-            </div>
-            </div>
-          ) : (
-            <p className="text-[13.5px] text-zinc-300">{usesLabel}</p>
-          )}
-        </div>
-
-        <p className="mt-5 whitespace-nowrap text-[2.4rem] font-bold leading-none tracking-tight text-white">
-          {formatKrw(plan.salePrice)}
-          <span className="ml-1.5 text-[14px] font-medium text-zinc-300">
-            / {totalUses}회
-          </span>
-        </p>
-
-        {hasStrike ? (
-          <p className="mt-2 whitespace-nowrap text-[12px] text-zinc-500 line-through decoration-zinc-500">
-            {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
-          </p>
-        ) : (
-          <p className="mt-2 text-[12px] text-zinc-500">정가 판매</p>
-        )}
-
-        <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap text-[12.5px] text-zinc-400">
-          {totalUses > 0 && (
-            <span>
-              1회당{" "}
-              <span className="font-semibold text-white">
-                {formatKrw(Math.round(plan.salePrice / totalUses))}
-              </span>
-            </span>
-          )}
-          {totalUses > 0 && hasStrike && <span className="text-zinc-600">·</span>}
-          {hasStrike && (
-            <span className={`font-bold ${PLAN_ACCENT_TEXT[product]}`}>
-              {plan.discountLabel}
-            </span>
-          )}
-        </p>
-
-        <div className="mt-5 flex-1">
-          <p className="text-[15px] font-semibold text-white">{TIER_COPY[tier.key].when}</p>
-          <p className="mt-1.5 text-[13.5px] leading-[1.7] text-zinc-300">{TIER_COPY[tier.key].what[product]}</p>
-        </div>
-
-        <div className="mt-6">{renderPaidPlanButton(product)}</div>
-      </div>
-    );
   };
 
   return (
@@ -519,7 +302,28 @@ export default function Entitlements() {
             </p>
 
             <div className="grid gap-5 pt-1 md:grid-cols-3">
-              {TIERS.map((tier) => renderTierCard(tier))}
+              {TIERS.map((tier) => {
+                const product: PurchaseProductKey = tier.key === "basic" ? basicChoice : tier.products[0];
+                return (
+                  <TierCard
+                    key={tier.key}
+                    tier={tier}
+                    basicChoice={basicChoice}
+                    onBasicChoice={setBasicChoice}
+                  >
+                    <PlanPurchaseButton
+                      product={product}
+                      authLoading={authLoading}
+                      isAuthenticated={isAuthenticated}
+                      isLoading={isLoading}
+                      availability={availability}
+                      canPurchase={canPurchase(product)}
+                      onBuy={startCheckout}
+                      onLogin={() => navigate(getLoginRedirectPath("/entitlements"))}
+                    />
+                  </TierCard>
+                );
+              })}
             </div>
 
             {/* 리포트 구성 — 카드처럼 보이지 않게 상자 대신 구분선으로. */}
