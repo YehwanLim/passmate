@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-
-import { adminApiFetch } from "@/lib/adminApi";
+import { useAdminPagedResource } from "./useAdminPagedResource";
 
 export type FeedbackSegment = "ALL" | "PROMOTER" | "DETRACTOR" | "LEGACY";
 
@@ -43,68 +41,26 @@ const EMPTY_SUMMARY: FeedbackSummary = {
   questionAverages: {},
 };
 
-export function useFeedbackData({
-  search,
-  segment,
-  commentsOnly,
-  page,
-  pageSize,
-}: UseFeedbackDataParams) {
-  const [items, setItems] = useState<FeedbackItem[]>([]);
-  const [summary, setSummary] = useState<FeedbackSummary>(EMPTY_SUMMARY);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-  const [lastRefreshed, setLastRefreshed] = useState(new Date());
+interface FeedbackPayload {
+  items: FeedbackItem[];
+  total: number;
+  summary: FeedbackSummary;
+}
 
-  const refresh = useCallback(() => setTick(value => value + 1), []);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const params = new URLSearchParams({
-          search,
-          segment,
-          commentsOnly: String(commentsOnly),
-          page: String(page),
-          pageSize: String(pageSize),
-        });
-        const data = await adminApiFetch<{
-          items: FeedbackItem[];
-          total: number;
-          summary: FeedbackSummary;
-        }>(`/api/admin/feedback?${params}`);
-        if (cancelled) return;
-        setItems(data.items);
-        setTotal(data.total);
-        setSummary(data.summary ?? EMPTY_SUMMARY);
-        setIsLoading(false);
-        setLastRefreshed(new Date());
-      } catch (cause) {
-        if (cancelled) return;
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : "피드백을 불러오지 못했습니다."
-        );
-        setIsLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [commentsOnly, page, pageSize, search, segment, tick]);
+export function useFeedbackData({ search, segment, commentsOnly, page, pageSize }: UseFeedbackDataParams) {
+  const { rows: items, data, total, totalPages, isLoading, error, refresh, lastRefreshed } = useAdminPagedResource<FeedbackItem, FeedbackPayload>(
+    "/api/admin/feedback",
+    { search, segment, commentsOnly, page, pageSize },
+    pageSize,
+    { select: (payload) => ({ rows: payload.items, total: payload.total }), errorMessage: "피드백을 불러오지 못했습니다." },
+  );
 
   return {
     items,
-    summary,
+    // 요약은 필터와 무관한 전체 기준이라 마지막 성공 응답의 값을 그대로 쓴다.
+    summary: data?.summary ?? EMPTY_SUMMARY,
     total,
-    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    totalPages,
     isLoading,
     error,
     refresh,

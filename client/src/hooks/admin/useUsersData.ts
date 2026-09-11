@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-
-import { adminApiFetch } from "@/lib/adminApi";
+import { useAdminPagedResource } from "./useAdminPagedResource";
 
 export type UserSortField = "created_at" | "email" | "name" | "updated_at";
 export type SortDir = "asc" | "desc";
@@ -9,20 +7,11 @@ export interface UseUsersDataParams { search: string; sortField: UserSortField; 
 interface UseUsersDataResult { users: AdminUserRow[]; total: number; totalPages: number; isLoading: boolean; error: string | null; refresh: () => void; }
 
 export function useUsersData({ search, sortField, sortDir, page, pageSize }: UseUsersDataParams): UseUsersDataResult {
-  const [users, setUsers] = useState<AdminUserRow[]>([]); const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [tick, setTick] = useState(0);
-  const refresh = useCallback(() => setTick((value) => value + 1), []);
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setIsLoading(true); setError(null);
-      try {
-        const params = new URLSearchParams({ search, sortField, sortDir, page: String(page), pageSize: String(pageSize) });
-        const data = await adminApiFetch<{ users: AdminUserRow[]; total: number }>(`/api/admin/users?${params}`);
-        if (!cancelled) { setUsers(data.users); setTotal(data.total); setIsLoading(false); }
-      } catch (cause) { if (!cancelled) { setError(cause instanceof Error ? cause.message : "사용자 데이터를 불러오지 못했습니다."); setIsLoading(false); } }
-    };
-    load(); return () => { cancelled = true; };
-  }, [page, pageSize, search, sortDir, sortField, tick]);
-  return { users, total, totalPages: Math.max(1, Math.ceil(total / pageSize)), isLoading, error, refresh };
+  const { rows: users, total, totalPages, isLoading, error, refresh } = useAdminPagedResource<AdminUserRow, { users: AdminUserRow[]; total: number }>(
+    "/api/admin/users",
+    { search, sortField, sortDir, page, pageSize },
+    pageSize,
+    { select: (data) => ({ rows: data.users, total: data.total }), errorMessage: "사용자 데이터를 불러오지 못했습니다." },
+  );
+  return { users, total, totalPages, isLoading, error, refresh };
 }

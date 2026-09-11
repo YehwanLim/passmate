@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminPagination } from "@/components/admin/shared/AdminPagination";
+import { AdminRefreshControl } from "@/components/admin/shared/AdminRefreshControl";
 import { LogsTable } from "@/components/admin/logs/LogsTable";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -11,36 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
 import { useErrorLogs, type ErrorTypeFilter } from "@/hooks/admin/useErrorLogs";
-import { AlertCircle, RefreshCw, Search, ShieldAlert } from "lucide-react";
+import { Search, ShieldAlert } from "lucide-react";
 
 const PAGE_SIZE = 15;
-
-function getPageNumbers(current: number, total: number): (number | "ellipsis")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-
-  const pages: (number | "ellipsis")[] = [1];
-
-  if (current > 3) pages.push("ellipsis");
-
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-
-  if (current < total - 2) pages.push("ellipsis");
-  pages.push(total);
-
-  return pages;
-}
 
 const ERROR_TYPE_OPTIONS: { value: ErrorTypeFilter; label: string }[] = [
   { value: "ALL", label: "전체 에러 유형" },
@@ -74,14 +49,6 @@ export default function LogsPage() {
       pageSize: PAGE_SIZE,
     });
 
-  const pageNumbers = getPageNumbers(page, totalPages);
-  const refreshLabel = lastRefreshed
-    ? `${lastRefreshed.getHours().toString().padStart(2, "0")}:${lastRefreshed
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")} 갱신`
-    : "";
-
   return (
     <div className="space-y-5">
       {/* 헤더 */}
@@ -90,33 +57,17 @@ export default function LogsPage() {
         description="시스템 분석 실패 로그를 실시간 추적하고 인프라 오작동을 분석합니다."
         actions={
           <div className="flex items-center gap-2">
-            {refreshLabel && (
-              <span className="text-xs text-muted-foreground hidden sm:block">
-                {refreshLabel}
-              </span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refresh}
-              disabled={isLoading}
-              className="gap-1.5"
+            <AdminRefreshControl
+              lastRefreshed={lastRefreshed}
+              isLoading={isLoading}
+              onRefresh={refresh}
               id="logs-refresh-btn"
-            >
-              <RefreshCw className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              새로고침
-            </Button>
+            />
           </div>
         }
       />
 
-      {/* 에러 피드백 */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <AdminErrorAlert message={error} />
 
       {/* 검색 및 필터 패널 */}
       <div className="flex flex-col sm:flex-row items-center gap-2">
@@ -157,57 +108,7 @@ export default function LogsPage() {
       {/* 테이블 */}
       <LogsTable logs={logs} isLoading={isLoading} />
 
-      {/* 페이지네이션 */}
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (page > 1) setPage(page - 1);
-                }}
-                className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-                aria-disabled={page <= 1}
-              />
-            </PaginationItem>
-
-            {pageNumbers.map((p, i) =>
-              p === "ellipsis" ? (
-                <PaginationItem key={`ellipsis-${i}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={p}>
-                  <PaginationLink
-                    href="#"
-                    isActive={p === page}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPage(p);
-                    }}
-                  >
-                    {p}
-                  </PaginationLink>
-                </PaginationItem>
-              )
-            )}
-
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (page < totalPages) setPage(page + 1);
-                }}
-                className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
-                aria-disabled={page >= totalPages}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

@@ -21,10 +21,9 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { Button } from "@/components/ui/button";
 import {
-  AlertCircle,
   ArrowLeft,
   CheckCircle2,
   XCircle,
@@ -156,10 +155,7 @@ export default function UserDetailPage() {
             목록으로
           </Link>
         </Button>
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <AdminErrorAlert message={error} />
       </div>
     );
   }

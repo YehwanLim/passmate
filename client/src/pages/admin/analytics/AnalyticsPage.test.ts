@@ -4,7 +4,7 @@ import {
   FUNNEL_STAGES,
   buildFunnelAnalytics,
   getFunnelAnalytics,
-} from "./AnalyticsPage";
+} from "./funnelAnalytics";
 
 describe("AnalyticsPage funnel analytics", () => {
   it("defines the requested period selector options", () => {

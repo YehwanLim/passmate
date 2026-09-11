@@ -9,9 +9,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Coins } from "lucide-react";
+import { Coins } from "lucide-react";
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import {
   fetchUserCredits,
   grantUserCredits,
@@ -101,10 +101,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
         {loading ? (
           <Skeleton className="h-16 w-full" />
         ) : loadError ? (
-          <Alert variant="destructive">
-            <AlertCircle className="size-4" />
-            <AlertDescription>{loadError}</AlertDescription>
-          </Alert>
+          <AdminErrorAlert message={loadError} />
         ) : summary ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="rounded-md border p-2">

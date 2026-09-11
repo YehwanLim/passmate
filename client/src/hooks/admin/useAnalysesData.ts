@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { adminApiFetch } from "@/lib/adminApi";
+import { useAdminPagedResource } from "./useAdminPagedResource";
 
 // ============================================================
 // 타입
@@ -88,57 +89,19 @@ export function useAnalysesData({
   page,
   pageSize,
 }: UseAnalysesDataParams) {
-  const [rows, setRows] = useState<AnalysisRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-  const refresh = useCallback(() => setTick((t) => t + 1), []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchAnalyses = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams({
-        search,
-        status,
-        model,
-        sortField,
-        sortDir,
-        page: String(page),
-        pageSize: String(pageSize),
-      });
-
-      try {
-        const payload = await adminApiFetch<{ rows?: AnalysisRow[]; total?: number }>(
-          `/api/admin/resume-analysis?${params.toString()}`,
-        );
-
-        if (cancelled) return;
-
+  const { rows, total, totalPages, isLoading, error, refresh } = useAdminPagedResource<AnalysisRow, { rows?: AnalysisRow[]; total?: number }>(
+    "/api/admin/resume-analysis",
+    { search, status, model, sortField, sortDir, page, pageSize },
+    pageSize,
+    {
+      select: (payload) => {
         const processed = (payload.rows ?? []) as AnalysisRow[];
-        setRows(processed);
-        setTotal(payload.total ?? processed.length);
-      } catch (qErr) {
-        if (cancelled) return;
-        setRows([]);
-        setTotal(0);
-        setError(qErr instanceof Error ? qErr.message : "분석 목록을 불러오지 못했습니다.");
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    fetchAnalyses();
-    return () => {
-      cancelled = true;
-    };
-  }, [search, status, model, sortField, sortDir, page, pageSize, tick]);
-
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        return { rows: processed, total: payload.total ?? processed.length };
+      },
+      errorMessage: "분석 목록을 불러오지 못했습니다.",
+      resetOnError: true,
+    },
+  );
   return { rows, total, totalPages, isLoading, error, refresh };
 }
 

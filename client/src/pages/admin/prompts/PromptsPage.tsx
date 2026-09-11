@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, ArrowRight, MessageSquareCode } from "lucide-react";
+import { ArrowRight, MessageSquareCode } from "lucide-react";
 import { Link } from "wouter";
 
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -160,12 +160,7 @@ export default function PromptsPage() {
         description="AI 프롬프트를 버전별로 검토하고 운영 버전을 관리합니다."
       />
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <AdminErrorAlert message={error} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {isLoading

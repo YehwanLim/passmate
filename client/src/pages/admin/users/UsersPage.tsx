@@ -1,46 +1,12 @@
 import { useState, useCallback } from "react";
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminPagination } from "@/components/admin/shared/AdminPagination";
 import { UsersFilters } from "@/components/admin/users/UsersFilters";
 import { UsersTable } from "@/components/admin/users/UsersTable";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
 import { useUsersData, type UserSortField, type SortDir } from "@/hooks/admin/useUsersData";
-import { AlertCircle } from "lucide-react";
 
 const PAGE_SIZE = 20;
-
-// ============================================================
-// 페이지네이션 숫자 계산
-// ============================================================
-
-function getPageNumbers(current: number, total: number): (number | "ellipsis")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-
-  const pages: (number | "ellipsis")[] = [1];
-
-  if (current > 3) pages.push("ellipsis");
-
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-
-  if (current < total - 2) pages.push("ellipsis");
-  pages.push(total);
-
-  return pages;
-}
-
-// ============================================================
-// UsersPage
-// ============================================================
 
 /**
  * UsersPage
@@ -70,8 +36,6 @@ export default function UsersPage() {
     pageSize: PAGE_SIZE,
   });
 
-  const pageNumbers = getPageNumbers(page, totalPages);
-
   return (
     <div className="space-y-5">
       {/* 헤더 */}
@@ -80,13 +44,7 @@ export default function UsersPage() {
         description="가입 사용자 목록을 조회하고 관리합니다."
       />
 
-      {/* 에러 */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <AdminErrorAlert message={error} />
 
       {/* 필터 */}
       <UsersFilters
@@ -103,57 +61,7 @@ export default function UsersPage() {
       {/* 테이블 */}
       <UsersTable users={users} isLoading={isLoading} />
 
-      {/* 페이지네이션 */}
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (page > 1) setPage(page - 1);
-                }}
-                className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-                aria-disabled={page <= 1}
-              />
-            </PaginationItem>
-
-            {pageNumbers.map((p, i) =>
-              p === "ellipsis" ? (
-                <PaginationItem key={`ellipsis-${i}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={p}>
-                  <PaginationLink
-                    href="#"
-                    isActive={p === page}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPage(p);
-                    }}
-                  >
-                    {p}
-                  </PaginationLink>
-                </PaginationItem>
-              )
-            )}
-
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (page < totalPages) setPage(page + 1);
-                }}
-                className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
-                aria-disabled={page >= totalPages}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {/* 현재 페이지 정보 */}
       {!isLoading && total > 0 && (

@@ -1,12 +1,13 @@
 import { useCallback, useState } from "react";
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminPagination } from "@/components/admin/shared/AdminPagination";
+import { AdminRefreshControl } from "@/components/admin/shared/AdminRefreshControl";
 import { AdminStatCard } from "@/components/admin/shared/AdminStatCard";
 import { FeedbackTable } from "@/components/admin/feedback/FeedbackTable";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -15,49 +16,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
   useFeedbackData,
   type FeedbackSegment,
 } from "@/hooks/admin/useFeedbackData";
 import { UI_LABELS } from "@/constants/labels";
 import {
-  AlertCircle,
   ClipboardList,
   Gauge,
   MessageSquare,
-  RefreshCw,
   Search,
 } from "lucide-react";
 
 const PAGE_SIZE = 15;
-
-function getPageNumbers(
-  current: number,
-  total: number
-): (number | "ellipsis")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-
-  const pages: (number | "ellipsis")[] = [1];
-
-  if (current > 3) pages.push("ellipsis");
-
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-
-  if (current < total - 2) pages.push("ellipsis");
-  pages.push(total);
-
-  return pages;
-}
 
 // 추천 의향 점수로 나눈 구간. 기준은 NPS 관례(9~10 추천 / 6 이하 비추천)를 따른다.
 const SEGMENT_OPTIONS: { value: FeedbackSegment; label: string }[] = [
@@ -109,7 +79,6 @@ export default function FeedbackPage() {
     pageSize: PAGE_SIZE,
   });
 
-  const pageNumbers = getPageNumbers(page, totalPages);
   const averages = summary.questionAverages ?? {};
   const answeredAverages = UI_LABELS.FEEDBACK_SURVEY_QUESTIONS.map(
     item => averages[item.key]
@@ -119,10 +88,6 @@ export default function FeedbackPage() {
       ? answeredAverages.reduce((sum, value) => sum + value, 0) /
         answeredAverages.length
       : null;
-  const refreshLabel = `${lastRefreshed.getHours().toString().padStart(2, "0")}:${lastRefreshed
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")} 갱신`;
 
   return (
     <div className="space-y-5">
@@ -131,32 +96,17 @@ export default function FeedbackPage() {
         description="리포트 만족도 설문 응답을 확인합니다."
         actions={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground hidden sm:block">
-              {refreshLabel}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refresh}
-              disabled={isLoading}
-              className="gap-1.5"
+            <AdminRefreshControl
+              lastRefreshed={lastRefreshed}
+              isLoading={isLoading}
+              onRefresh={refresh}
               id="feedback-refresh-btn"
-            >
-              <RefreshCw
-                className={`size-3.5 ${isLoading ? "animate-spin" : ""}`}
-              />
-              새로고침
-            </Button>
+            />
           </div>
         }
       />
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <AdminErrorAlert message={error} />
 
       {/* 요약 통계 (필터와 무관한 전체 기준) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -253,58 +203,7 @@ export default function FeedbackPage() {
 
       <FeedbackTable items={items} isLoading={isLoading} />
 
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={e => {
-                  e.preventDefault();
-                  if (page > 1) setPage(page - 1);
-                }}
-                className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-                aria-disabled={page <= 1}
-              />
-            </PaginationItem>
-
-            {pageNumbers.map((p, i) =>
-              p === "ellipsis" ? (
-                <PaginationItem key={`ellipsis-${i}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={p}>
-                  <PaginationLink
-                    href="#"
-                    isActive={p === page}
-                    onClick={e => {
-                      e.preventDefault();
-                      setPage(p);
-                    }}
-                  >
-                    {p}
-                  </PaginationLink>
-                </PaginationItem>
-              )
-            )}
-
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={e => {
-                  e.preventDefault();
-                  if (page < totalPages) setPage(page + 1);
-                }}
-                className={
-                  page >= totalPages ? "pointer-events-none opacity-50" : ""
-                }
-                aria-disabled={page >= totalPages}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

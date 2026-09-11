@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -11,18 +11,16 @@ import {
 import {
   ArrowDown,
   BarChart3,
-  AlertCircle,
   CheckCircle2,
   Clock3,
   MousePointerClick,
-  RefreshCw,
   TrendingDown,
   UsersRound,
 } from "lucide-react";
 
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
-import { adminApiFetch } from "@/lib/adminApi";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AdminRefreshControl } from "@/components/admin/shared/AdminRefreshControl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,79 +36,14 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFunnelAnalyticsData } from "@/hooks/admin/useFunnelAnalyticsData";
 import { cn } from "@/lib/utils";
-
-export const ANALYTICS_PERIODS = [
-  { key: "today", label: "Today" },
-  { key: "7d", label: "7 Days" },
-  { key: "30d", label: "30 Days" },
-] as const;
-
-export const FUNNEL_STAGES = [
-  "Landing",
-  "Login",
-  "Resume Upload",
-  "AI Analysis",
-  "Payment",
-  "Completed",
-] as const;
-
-export type PeriodKey = (typeof ANALYTICS_PERIODS)[number]["key"];
-type FunnelStage = (typeof FUNNEL_STAGES)[number];
-type AnalysisStatus = "PENDING" | "SUCCESS" | "FAILED";
-
-interface FunnelStep {
-  stage: FunnelStage;
-  users: number;
-  conversionRate: number;
-  dropOffRate: number;
-}
-
-interface AnalyticsTrendPoint {
-  label: string;
-  conversion: number;
-  completed: number;
-}
-
-interface FunnelAnalytics {
-  kpis: {
-    overallConversion: string;
-    avgCompletionTime: string;
-    topDropOff: string;
-  };
-  funnel: FunnelStep[];
-  trend: AnalyticsTrendPoint[];
-}
-
-interface SourceAnalysis {
-  created_at: string;
-  status: AnalysisStatus;
-}
-
-interface FunnelAnalyticsSource {
-  signedUpUsers: number;
-  resumeUploadUsers: number;
-  analysisUsers: number;
-  successUsers: number;
-  avgCompletionMs: number;
-  analyses: SourceAnalysis[];
-  now?: Date;
-}
-
-interface AsyncState<T> {
-  data: T;
-  isLoading: boolean;
-  error: string | null;
-}
-
-const EMPTY_SOURCE: FunnelAnalyticsSource = {
-  signedUpUsers: 0,
-  resumeUploadUsers: 0,
-  analysisUsers: 0,
-  successUsers: 0,
-  avgCompletionMs: 0,
-  analyses: [],
-};
+import {
+  ANALYTICS_PERIODS,
+  FUNNEL_STAGES,
+  formatNumber,
+  type PeriodKey,
+} from "./funnelAnalytics";
 
 const conversionChartConfig: ChartConfig = {
   conversion: {
@@ -123,246 +56,8 @@ const conversionChartConfig: ChartConfig = {
   },
 };
 
-export function getFunnelAnalytics(period: PeriodKey): FunnelAnalytics {
-  return buildFunnelAnalytics(period, EMPTY_SOURCE);
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
-}
-
-function roundRate(value: number) {
-  return Math.round(value * 10) / 10;
-}
-
-function formatPercent(value: number) {
-  return `${value.toFixed(1)}%`;
-}
-
-function formatDuration(ms: number) {
-  if (!Number.isFinite(ms) || ms <= 0) return "0s";
-
-  const totalSeconds = Math.round(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  if (minutes === 0) return `${seconds}s`;
-  return `${minutes}m ${seconds}s`;
-}
-
-function getTrendLabels(period: PeriodKey, now = new Date()) {
-  if (period === "today") {
-    return Array.from({ length: 6 }, (_, index) =>
-      String(index * 4).padStart(2, "0")
-    );
-  }
-
-  const dayCount = period === "7d" ? 7 : 30;
-  return Array.from({ length: dayCount }, (_, index) => {
-    const day = new Date(now);
-    day.setDate(day.getDate() - (dayCount - 1 - index));
-    return `${String(day.getMonth() + 1).padStart(2, "0")}/${String(
-      day.getDate()
-    ).padStart(2, "0")}`;
-  });
-}
-
-function getTrendLabel(date: Date, period: PeriodKey) {
-  if (period === "today") {
-    const bucket = Math.floor(date.getHours() / 4) * 4;
-    return String(bucket).padStart(2, "0");
-  }
-
-  return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(
-    date.getDate()
-  ).padStart(2, "0")}`;
-}
-
-function uniqueCount(rows: Array<{ user_id: string | null }>) {
-  return new Set(rows.map((row) => row.user_id).filter(Boolean)).size;
-}
-
-export function buildFunnelAnalytics(
-  period: PeriodKey,
-  source: FunnelAnalyticsSource
-): FunnelAnalytics {
-  const now = source.now ?? new Date();
-  const startedUsers = Math.max(
-    source.signedUpUsers,
-    source.resumeUploadUsers,
-    source.analysisUsers,
-    source.successUsers
-  );
-  const stageUsers = [
-    startedUsers,
-    startedUsers,
-    Math.min(source.resumeUploadUsers, startedUsers),
-    Math.min(source.analysisUsers, startedUsers),
-    Math.min(source.analysisUsers, startedUsers),
-    Math.min(source.successUsers, startedUsers),
-  ];
-
-  const funnel = FUNNEL_STAGES.map((stage, index) => {
-    const previousUsers = index === 0 ? stageUsers[0] : stageUsers[index - 1];
-    const users = stageUsers[index];
-    const conversionRate =
-      startedUsers === 0 ? 0 : roundRate((users / startedUsers) * 100);
-    const dropOffRate =
-      index === 0 || previousUsers === 0
-        ? 0
-        : roundRate(((previousUsers - users) / previousUsers) * 100);
-
-    return {
-      stage,
-      users,
-      conversionRate,
-      dropOffRate,
-    };
-  });
-
-  const topDropOff = funnel
-    .slice(1)
-    .reduce(
-      (top, step, index) =>
-        step.dropOffRate > top.rate
-          ? {
-              rate: step.dropOffRate,
-              label: `${FUNNEL_STAGES[index]} -> ${step.stage}`,
-            }
-          : top,
-      { rate: 0, label: "No drop-off" }
-    );
-
-  const trendStats = new Map<
-    string,
-    { total: number; completed: number }
-  >();
-  getTrendLabels(period, now).forEach((label) => {
-    trendStats.set(label, { total: 0, completed: 0 });
-  });
-
-  source.analyses.forEach((analysis) => {
-    const label = getTrendLabel(new Date(analysis.created_at), period);
-    const bucket = trendStats.get(label);
-    if (!bucket) return;
-
-    bucket.total += 1;
-    if (analysis.status === "SUCCESS") {
-      bucket.completed += 1;
-    }
-  });
-
-  const trend = Array.from(trendStats.entries()).map(([label, stats]) => ({
-    label,
-    conversion:
-      stats.total === 0 ? 0 : roundRate((stats.completed / stats.total) * 100),
-    completed: stats.completed,
-  }));
-
-  const completedUsers = funnel.at(-1)?.users ?? 0;
-
-  return {
-    kpis: {
-      overallConversion: formatPercent(
-        startedUsers === 0 ? 0 : roundRate((completedUsers / startedUsers) * 100)
-      ),
-      avgCompletionTime: formatDuration(source.avgCompletionMs),
-      topDropOff: topDropOff.label,
-    },
-    funnel,
-    trend,
-  };
-}
-
-function useFunnelAnalyticsData(period: PeriodKey) {
-  const [state, setState] = useState<AsyncState<FunnelAnalytics>>({
-    data: getFunnelAnalytics(period),
-    isLoading: true,
-    error: null,
-  });
-  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-  const [tick, setTick] = useState(0);
-  const refresh = useCallback(() => setTick((value) => value + 1), []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchAnalytics = async () => {
-      setState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-      try {
-        const source = await adminApiFetch<{
-          signedUpUsers: number;
-          projects: Array<{ user_id: string | null }>;
-          analyses: Array<{
-            user_id: string | null;
-            status: AnalysisStatus;
-            response_time_ms: number | null;
-            created_at: string;
-          }>;
-        }>(`/api/admin/usage?view=funnel&period=${period}`);
-        const projectRows = source.projects as Array<{
-          user_id: string | null;
-        }>;
-        const analysisRows = source.analyses as Array<{
-          user_id: string | null;
-          status: AnalysisStatus;
-          response_time_ms: number | null;
-          created_at: string;
-        }>;
-        const successRows = analysisRows.filter(
-          (row) => row.status === "SUCCESS"
-        );
-        const successfulDurations = successRows
-          .map((row) => row.response_time_ms)
-          .filter(
-            (value): value is number =>
-              typeof value === "number" && Number.isFinite(value) && value > 0
-          );
-        const avgCompletionMs =
-          successfulDurations.length === 0
-            ? 0
-            : successfulDurations.reduce((sum, value) => sum + value, 0) /
-              successfulDurations.length;
-
-        const analytics = buildFunnelAnalytics(period, {
-          signedUpUsers: source.signedUpUsers,
-          resumeUploadUsers: uniqueCount(projectRows),
-          analysisUsers: uniqueCount(analysisRows),
-          successUsers: uniqueCount(successRows),
-          avgCompletionMs,
-          analyses: analysisRows.map((row) => ({
-            created_at: row.created_at,
-            status: row.status,
-          })),
-        });
-
-        if (cancelled) return;
-        setState({ data: analytics, isLoading: false, error: null });
-        setLastRefreshed(new Date());
-      } catch (err) {
-        if (cancelled) return;
-        setState({
-          data: getFunnelAnalytics(period),
-          isLoading: false,
-          error:
-            err instanceof Error
-              ? err.message
-              : "퍼널 데이터를 불러오지 못했습니다.",
-        });
-      }
-    };
-
-    fetchAnalytics();
-    return () => {
-      cancelled = true;
-    };
-  }, [period, tick]);
-
-  return { ...state, refresh, lastRefreshed };
-}
-
-function KpiCard({
+// components/admin/dashboard/KpiCard 와 이름이 겹쳐 페이지 전용 이름을 쓴다.
+function AnalyticsKpiCard({
   label,
   value,
   detail,
@@ -398,12 +93,6 @@ export default function AnalyticsPage() {
   const largestDropOff = Math.max(
     ...analytics.funnel.map((step) => step.dropOffRate)
   );
-  const refreshLabel = lastRefreshed
-    ? `${lastRefreshed.getHours().toString().padStart(2, "0")}:${lastRefreshed
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")} 갱신`
-    : "";
 
   return (
     <div className="space-y-5">
@@ -412,23 +101,12 @@ export default function AnalyticsPage() {
         description="사용자의 랜딩부터 결제 완료까지 전환율과 이탈 구간을 분석합니다."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {refreshLabel && (
-              <span className="hidden text-xs text-muted-foreground sm:block">
-                {refreshLabel}
-              </span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refresh}
-              disabled={isLoading}
-              className="h-9 gap-1.5"
-            >
-              <RefreshCw
-                className={cn("size-3.5", isLoading && "animate-spin")}
-              />
-              새로고침
-            </Button>
+            <AdminRefreshControl
+              lastRefreshed={lastRefreshed}
+              isLoading={isLoading}
+              onRefresh={refresh}
+              buttonClassName="h-9"
+            />
             <div className="inline-flex rounded-md border bg-background p-1 shadow-sm">
               {ANALYTICS_PERIODS.map((period) => (
                 <Button
@@ -447,12 +125,7 @@ export default function AnalyticsPage() {
         }
       />
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription className="text-sm">{error}</AlertDescription>
-        </Alert>
-      )}
+      <AdminErrorAlert message={error} />
 
       <div className="grid gap-4 md:grid-cols-3">
         {isLoading ? (
@@ -463,19 +136,19 @@ export default function AnalyticsPage() {
           </>
         ) : (
           <>
-            <KpiCard
+            <AnalyticsKpiCard
               label="Overall Conversion"
               value={analytics.kpis.overallConversion}
               detail="Landing 대비 Completed 비율"
               icon={CheckCircle2}
             />
-            <KpiCard
+            <AnalyticsKpiCard
               label="Avg Completion Time"
               value={analytics.kpis.avgCompletionTime}
               detail="성공 분석의 평균 응답 시간"
               icon={Clock3}
             />
-            <KpiCard
+            <AnalyticsKpiCard
               label="Top Drop-off"
               value={analytics.kpis.topDropOff}
               detail="가장 큰 전환 손실 구간"

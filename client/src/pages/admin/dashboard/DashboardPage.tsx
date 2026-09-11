@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminRefreshControl } from "@/components/admin/shared/AdminRefreshControl";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { KpiGrid } from "@/components/admin/dashboard/KpiGrid";
 import { SignupChart } from "@/components/admin/dashboard/SignupChart";
 import { AnalysisChart } from "@/components/admin/dashboard/AnalysisChart";
@@ -44,13 +44,6 @@ export default function DashboardPage() {
   const { data, isLoading, error, refresh, lastRefreshed } =
     useDashboardData(days);
 
-  const refreshLabel = lastRefreshed
-    ? `${lastRefreshed.getHours().toString().padStart(2, "0")}:${lastRefreshed
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")} 갱신`
-    : "";
-
   return (
     <div className="space-y-5">
       {/* ── 페이지 헤더 ───────────────────────────────────── */}
@@ -79,35 +72,17 @@ export default function DashboardPage() {
                 </Button>
               ))}
             </div>
-            {refreshLabel && (
-              <span className="text-xs text-muted-foreground hidden sm:block">
-                {refreshLabel}
-              </span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refresh}
-              disabled={isLoading}
-              className="gap-1.5"
+            <AdminRefreshControl
+              lastRefreshed={lastRefreshed}
+              isLoading={isLoading}
+              onRefresh={refresh}
               id="dashboard-refresh-btn"
-            >
-              <RefreshCw
-                className={`size-3.5 ${isLoading ? "animate-spin" : ""}`}
-              />
-              새로고침
-            </Button>
+            />
           </div>
         }
       />
 
-      {/* ── 에러 알림 ─────────────────────────────────────── */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription className="text-sm">{error}</AlertDescription>
-        </Alert>
-      )}
+      <AdminErrorAlert message={error} />
 
       {/* ── KPI 카드 그리드 ───────────────────────────────── */}
       <KpiGrid
