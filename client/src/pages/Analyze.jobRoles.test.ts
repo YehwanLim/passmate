@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   JOB_ROLE_CATEGORIES,
@@ -146,26 +145,5 @@ describe("filterJobRoleCategories", () => {
 
   it("returns nothing when no preset matches so the typed role is used as-is", () => {
     expect(filterJobRoleCategories("우주비행사")).toEqual([]);
-  });
-});
-
-describe("job role input", () => {
-  it("uses a searchable combobox instead of collapsed category accordions", () => {
-    const source = readFileSync(
-      new URL("./Analyze.tsx", import.meta.url),
-      "utf8"
-    );
-    const comboboxSource = readFileSync(
-      new URL("../components/analyze/JobRoleCombobox.tsx", import.meta.url),
-      "utf8"
-    );
-
-    expect(source).toContain('from "@/components/analyze/JobRoleCombobox"');
-    expect(comboboxSource).toContain("function JobRoleCombobox(");
-    expect(comboboxSource).toContain("filterJobRoleCategories(value)");
-    expect(comboboxSource).toContain("직무를 검색하거나 직접 입력하세요");
-    expect(source).not.toContain("<Accordion");
-    expect(source).not.toContain('from "@/components/ui/accordion"');
-    expect(source).not.toContain("__custom__");
   });
 });

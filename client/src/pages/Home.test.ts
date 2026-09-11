@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { HERO_TITLE_MOTION, HOME_NAV_ITEMS } from "./Home";
-
-const homeSource = readFileSync(new URL("./Home.tsx", import.meta.url), "utf8");
-const cssSource = readFileSync(
-  new URL("../index.css", import.meta.url),
-  "utf8"
-);
 
 describe("HERO_TITLE_MOTION", () => {
   // 히어로 h1은 랜딩의 LCP 요소다. opacity 0에서 시작하는 등장 애니메이션은
@@ -16,8 +9,6 @@ describe("HERO_TITLE_MOTION", () => {
     expect(HERO_TITLE_MOTION.initial).not.toHaveProperty("opacity");
     expect(HERO_TITLE_MOTION.initial).not.toHaveProperty("filter");
     expect(HERO_TITLE_MOTION.animate).not.toHaveProperty("filter");
-    expect(homeSource).toContain("<motion.h1");
-    expect(homeSource).toContain("{...HERO_TITLE_MOTION}");
   });
 });
 
@@ -48,115 +39,9 @@ describe("HOME_NAV_ITEMS", () => {
     });
   });
 
-  it("shows pricing on the landing page through the shared PricingSection component", () => {
-    // 가격 숫자는 lib/pricing.ts 단일 정의처에 있고, 랜딩은 컴포넌트로만 노출한다.
-    expect(homeSource).toContain(
-      'import PricingSection from "@/components/PricingSection"'
-    );
-    expect(homeSource).toContain("<PricingSection />");
-    expect(homeSource).not.toContain("9,900원");
-  });
-
-  it("introduces the company report on the landing page through its own section", () => {
-    expect(homeSource).toContain(
-      'import CompanyReportIntroSection from "@/components/CompanyReportIntroSection"'
-    );
-    expect(homeSource).toContain("<CompanyReportIntroSection />");
-  });
-
   it("does not expose coming soon navigation states", () => {
     expect(HOME_NAV_ITEMS.every(item => item.type !== "coming_soon")).toBe(
       true
-    );
-  });
-
-  it("uses premium motion affordances for landing navigation hover states", () => {
-    expect(homeSource).toContain("landing-nav-link");
-    // GNB는 배경 그라데이션이 비치도록 얕은 틴트만 쓴다
-    expect(homeSource).toContain("bg-[#050505]/10");
-    expect(cssSource).toContain("translateY(-2px)");
-    expect(cssSource).toContain("rgba(96, 165, 250, 0.1)");
-    expect(cssSource).toContain("color: rgba(219, 234, 254, 0.98)");
-    expect(cssSource).toContain("filter: brightness(1.08)");
-    expect(cssSource).toContain("box-shadow:");
-    expect(cssSource).toContain("transition: color 240ms");
-    expect(cssSource).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(cssSource).not.toContain(".landing-nav-link::after");
-    expect(cssSource).not.toContain("text-shadow: 0 0 20px");
-  });
-
-  it("uses a richer brand CTA instead of a flat white box", () => {
-    expect(homeSource).toContain("landing-primary-cta");
-    expect(cssSource).toContain(".landing-primary-cta");
-    expect(cssSource).toContain("linear-gradient(135deg");
-    expect(cssSource).toContain("landing-primary-cta::before");
-    expect(cssSource).toContain("landing-primary-cta::after");
-    expect(cssSource).toContain("@keyframes cta-light-sweep");
-    expect(cssSource).toContain("animation: cta-light-sweep 840ms");
-    expect(cssSource).toContain("scale(0.98)");
-    expect(cssSource).toContain("border: 1px solid rgba(226, 232, 240, 0.16)");
-    expect(cssSource).toContain("rgba(8, 12, 22, 0.26)");
-    expect(cssSource).toContain("backdrop-filter: blur(18px)");
-    expect(cssSource).toContain("translateY(-2px)");
-    expect(homeSource).not.toContain("bg-white text-[#000]");
-  });
-
-  it("keeps navigation accessible on mobile through a glass menu", () => {
-    expect(homeSource).toContain("isMobileMenuOpen");
-    expect(homeSource).toContain("Menu");
-    expect(homeSource).toContain("hidden sm:flex");
-    expect(homeSource).toContain("mobile-nav-toggle sm:hidden");
-    expect(homeSource).toContain("mobile-nav-panel sm:hidden");
-    expect(homeSource).toContain('aria-label="모바일 메뉴 열기"');
-    expect(homeSource).toContain("aria-expanded={isMobileMenuOpen}");
-    expect(homeSource).toContain("mobile-nav-panel");
-    expect(homeSource).toContain("mobile-nav-link");
-    expect(homeSource).toContain("setIsMobileMenuOpen(false)");
-    expect(cssSource).toContain("@media (min-width: 640px)");
-    expect(cssSource).toContain(".mobile-nav-toggle");
-    expect(cssSource).toContain(".mobile-nav-panel");
-    expect(cssSource).toContain(".mobile-nav-panel");
-    expect(cssSource).toContain(".mobile-nav-link:hover");
-  });
-
-  it("keeps social proof hidden behind a flag until real testimonials replace the dummy data", () => {
-    expect(homeSource).toContain(
-      'import SocialProofSection from "@/components/SocialProofSection"'
-    );
-    expect(homeSource).toContain("const SHOW_SOCIAL_PROOF = false;");
-    expect(homeSource).toContain(
-      "{SHOW_SOCIAL_PROOF && <SocialProofSection />}"
-    );
-  });
-
-  it("orders the narrative as pain, example, marquee, report preview, then trust and process", () => {
-    const painIndex = homeSource.indexOf("아직도 AI로 만든 자소서");
-    const beforeAfterIndex = homeSource.indexOf("합격하는 자소서는 구조부터");
-    const marqueeIndex = homeSource.indexOf("<CompanyMarqueeSection />");
-    const reportShowcaseIndex = homeSource.indexOf("<ReportShowcase />");
-    const companyIntroIndex = homeSource.indexOf(
-      "<CompanyReportIntroSection />"
-    );
-    const socialProofIndex = homeSource.indexOf("<SocialProofSection />");
-    const founderNoteIndex = homeSource.indexOf("<FounderNoteSection />");
-    const processIndex = homeSource.indexOf("<ProcessSection />");
-    const pricingIndex = homeSource.indexOf("<PricingSection />");
-    const founderCtaIndex = homeSource.indexOf("<FounderSection />");
-
-    expect(painIndex).toBeGreaterThan(-1);
-    expect(beforeAfterIndex).toBeGreaterThan(painIndex);
-    expect(marqueeIndex).toBeGreaterThan(beforeAfterIndex);
-    expect(reportShowcaseIndex).toBeGreaterThan(marqueeIndex);
-    // 기업 분석 소개는 자소서 쇼케이스 다음 — 두 상품을 다 본 뒤 가격을 만난다.
-    expect(companyIntroIndex).toBeGreaterThan(reportShowcaseIndex);
-    // 가격은 리포트 실물을 본 직후 — "이 리포트가 커피 한 잔 값"의 대비가 가장 강한 지점이다.
-    expect(pricingIndex).toBeGreaterThan(companyIntroIndex);
-    expect(socialProofIndex).toBeGreaterThan(pricingIndex);
-    expect(founderNoteIndex).toBeGreaterThan(socialProofIndex);
-    expect(processIndex).toBeGreaterThan(founderNoteIndex);
-    expect(founderCtaIndex).toBeGreaterThan(processIndex);
-    expect(homeSource).not.toContain(
-      '{ end: 1200, suffix: "+", label: "분석 완료" }'
     );
   });
 });

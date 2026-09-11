@@ -1,25 +1,6 @@
 import { describe, expect, it } from "vitest";
 import analyzeHandler from "../../api/analyze.js";
-
-function createResponse() {
-  return {
-    body: undefined,
-    headers: {},
-    statusCode: 200,
-    end() {},
-    json(payload) {
-      this.body = payload;
-      return this;
-    },
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    status(code) {
-      this.statusCode = code;
-      return this;
-    },
-  };
-}
+import { createResponse } from "../helpers/http.js";
 
 describe("analyze API authentication", () => {
   it("rejects an unauthenticated request before analysis input is processed", async () => {

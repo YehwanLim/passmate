@@ -53,25 +53,7 @@ const COMPANY_CHECKOUT_URL = "https://www.groble.im/payment/COMPANY";
 const PREMIUM_CHECKOUT_URL = "https://www.groble.im/payment/PREMIUM";
 const INTENT_ID = "33333333-3333-4333-8333-333333333333";
 
-function createResponse() {
-  return {
-    body: undefined,
-    statusCode: 200,
-    headers: {},
-    json(payload) {
-      this.body = payload;
-      return this;
-    },
-    status(statusCode) {
-      this.statusCode = statusCode;
-      return this;
-    },
-    setHeader(name, value) {
-      this.headers[name] = value;
-      return this;
-    },
-  };
-}
+import { createResponse } from "../helpers/http.js";
 
 async function invokeEntitlements({
   authorization = "Bearer valid-token",

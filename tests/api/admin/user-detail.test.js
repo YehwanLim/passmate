@@ -18,25 +18,11 @@ vi.mock("../../../lib/prisma.js", () => ({
 }));
 
 const { default: userDetailHandler } = await import("../../../lib/admin-handlers/user-detail.js");
+import { createResponse } from "../../helpers/http.js";
 
 const USER_ID = "22222222-2222-4222-8222-222222222222";
 const PREMIUM_CONTENT_ID = "4SGBV5";
 const SINGLE_CONTENT_ID = "6HteWn";
-
-function createResponse() {
-  return {
-    statusCode: 0,
-    body: null,
-    status(code) {
-      this.statusCode = code;
-      return this;
-    },
-    json(payload) {
-      this.body = payload;
-      return this;
-    },
-  };
-}
 
 function userRecord(overrides = {}) {
   return {

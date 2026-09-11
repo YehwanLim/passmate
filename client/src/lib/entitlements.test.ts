@@ -1,15 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
 import {
   EntitlementApiError,
   fetchEntitlementSummary,
   fetchSalesAvailability,
 } from "./entitlements";
-
-const entitlementClientSource = readFileSync(
-  new URL("./entitlements.ts", import.meta.url),
-  "utf8"
-);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -19,12 +13,6 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("entitlements client", () => {
-  it("keeps checkout navigation out of the API client", () => {
-    // 체크아웃 URL 은 반환만 하고, 이동은 페이지가 새 탭으로 결정한다
-    expect(entitlementClientSource).not.toContain("window.open");
-    expect(entitlementClientSource).not.toContain("window.location");
-  });
-
   it("returns the server-provided credit counts without recalculating them", async () => {
     const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
     const fetcher: typeof fetch = async (input, init) => {

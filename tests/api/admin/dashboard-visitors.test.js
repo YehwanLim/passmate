@@ -21,15 +21,7 @@ vi.mock("../../../lib/prisma.js", () => ({
 }));
 
 const { default: dashboardHandler, readRangeDays } = await import("../../../lib/admin-handlers/dashboard.js");
-
-function createResponse() {
-  return {
-    statusCode: 0,
-    body: null,
-    status(code) { this.statusCode = code; return this; },
-    json(payload) { this.body = payload; return this; },
-  };
-}
+import { createResponse } from "../../helpers/http.js";
 
 const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;

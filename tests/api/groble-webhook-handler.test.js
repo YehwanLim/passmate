@@ -36,23 +36,7 @@ const NOW = 1_785_091_200_000;
 const SECRET = "groble-webhook-secret";
 const USER_ID = "22222222-2222-4222-8222-222222222222";
 
-function createResponse() {
-  return {
-    body: undefined,
-    statusCode: 200,
-    end() {
-      return this;
-    },
-    json(payload) {
-      this.body = payload;
-      return this;
-    },
-    status(statusCode) {
-      this.statusCode = statusCode;
-      return this;
-    },
-  };
-}
+import { createResponse } from "../helpers/http.js";
 
 function paidPayload({ object = {}, ...overrides } = {}) {
   return {

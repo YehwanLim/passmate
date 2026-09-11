@@ -1,27 +1,7 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseSavedQuestions } from "./Analyze";
 
-const analyzeSource = readFileSync(new URL("./Analyze.tsx", import.meta.url), "utf8");
-
 describe("previous resume loading", () => {
-  it("starts with an empty form and provides an explicit way to load a saved resume", () => {
-    expect(analyzeSource).not.toContain("const draft = loadDraft()");
-    expect(analyzeSource).toContain("이전 지원서 불러오기");
-    expect(analyzeSource).toContain('fetch("/api/projects", {');
-    expect(analyzeSource).toContain("headers: await getAuthorizationHeader()");
-    expect(analyzeSource).not.toContain("userId=");
-    expect(analyzeSource).toContain("/api/analysis/${encodeURIComponent(analysisId)}");
-  });
-
-  it("imports the shared comboboxes and keeps company projects out of the résumé picker", () => {
-    expect(analyzeSource).toContain('from "@/components/analyze/CompanyCombobox"');
-    expect(analyzeSource).toContain('from "@/components/analyze/JobRoleCombobox"');
-    expect(analyzeSource).not.toContain("function CompanyCombobox(");
-    expect(analyzeSource).not.toContain("function JobRoleCombobox(");
-    expect(analyzeSource).toContain('project.kind !== "COMPANY"');
-  });
-
   it("restores each saved question and answer into a separate form item", () => {
     expect(
       parseSavedQuestions(

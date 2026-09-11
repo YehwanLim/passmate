@@ -17,21 +17,7 @@ vi.mock("../../../lib/prisma.js", () => ({
 }));
 
 const { default: usersHandler } = await import("../../../lib/admin-handlers/users.js");
-
-function createResponse() {
-  return {
-    statusCode: 0,
-    body: null,
-    status(code) {
-      this.statusCode = code;
-      return this;
-    },
-    json(payload) {
-      this.body = payload;
-      return this;
-    },
-  };
-}
+import { createResponse } from "../../helpers/http.js";
 
 function userRow(overrides = {}) {
   return {

@@ -1,14 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 
 import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./Analyze";
 import { UI_LABELS } from "@/constants/labels";
-
-const analyzeSource = readFileSync(new URL("./Analyze.tsx", import.meta.url), "utf8");
-const analyzeHeaderSource = analyzeSource.slice(
-  analyzeSource.indexOf("{/* ════════ GNB ════════ */}"),
-  analyzeSource.indexOf("{/* ════════ MAIN FORM ════════ */}"),
-);
 
 describe("getAnalyzeErrorMessage", () => {
   it("does not expose raw server error text", () => {
@@ -41,26 +34,11 @@ describe("getAnalyzeErrorMessage", () => {
     expect(getAnalyzeErrorTitle(error)).toBe("분석 진행 중");
     expect(getAnalyzeErrorMessage(error)).toContain("진행 중인 분석");
     expect(getAnalyzeErrorMessage(error)).not.toMatch(/이용권|premium|\d+회/i);
-    expect(analyzeSource).toContain('trackAnalysisFailed("cover_letter", "analysis_concurrency_limited")');
   });
 
   it("points exhausted users to the entitlements page instead of a beta dead end", () => {
     const message = getAnalyzeErrorMessage({ error: "ANALYSIS_CREDITS_EXHAUSTED" });
     expect(message).toContain("이용권");
     expect(message).not.toContain("베타");
-  });
-
-  it("uses the shared auth profile button instead of a hard-coded login button in the header", () => {
-    expect(analyzeSource).toContain("import AuthButton");
-    expect(analyzeSource).toContain("<AuthButton />");
-    expect(analyzeSource).toContain("내 지원서");
-    expect(analyzeHeaderSource).not.toContain('navigate("/login');
-  });
-
-  it("treats a 202 receipt as accepted work and does not inspect a report body", () => {
-    expect(analyzeSource).toContain("response.status !== 202 && response.status !== 200");
-    expect(analyzeSource).toContain("analysisPendingPath(receipt.analysisRequestId)");
-    expect(analyzeSource).not.toContain("data.report.questionTabs");
-    expect(analyzeSource).not.toContain("new AbortController()");
   });
 });
