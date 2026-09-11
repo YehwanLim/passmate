@@ -19,7 +19,7 @@ const reportAuthGateSource = readFileSync(new URL("../components/report/ReportAu
 
 describe("authenticated client flow", () => {
   it("uses the same idempotency key for a retry of unchanged analysis input and sends its receipt to the protected pending page", () => {
-    expect(submitSource).toContain('import { getAuthorizationHeader } from "@/lib/apiAuth"');
+    expect(submitSource).toMatch(/import \{[^}]*\bgetAuthorizationHeader\b[^}]*\} from "@\/lib\/apiAuth"/);
     expect(analyzeSource).toContain("const analysisRequestRef = useRef");
     expect(analyzeSource).toContain("resolveIdempotencyKey(analysisRequestRef.current, JSON.stringify(requestPayload))");
     expect(submitSource).toContain('"Idempotency-Key": idempotencyKey');

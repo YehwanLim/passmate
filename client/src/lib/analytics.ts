@@ -147,3 +147,13 @@ export function trackPageView(path: string): void {
     page_title: document.title,
   });
 }
+
+/**
+ * 로그인 없이 쓰던 화면에서 로그인 모달을 띄울 때 호출 (예: 분석 폼 제출)
+ * GA4 이벤트: login_prompt — 이후 login/sign_up 과 비교해 모달 전환율을 본다
+ *
+ * @param context  어디서 띄웠는지 (예: "analyze_submit")
+ */
+export function trackLoginPrompt(context: string): void {
+  sendEvent("login_prompt", { context });
+}

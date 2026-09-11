@@ -114,6 +114,12 @@ export default function CompanyAnalyze() {
         setErrorModal({ title: "접수 확인 실패", message: "접수 응답을 읽지 못했어요. 잠시 후 다시 시도해 주세요.", trackingType: "parse_error" });
         return;
       }
+      if (result.kind === "auth_required") {
+        // 이 페이지는 로그인 가드가 있어 보통 오지 않는다. 세션이 도중에 끊긴 경우의 안전망.
+        trackAnalysisFailed("company_report", "auth_required");
+        setErrorModal({ title: "로그인 필요", message: "로그인 후 분석을 시작할 수 있어요.", trackingType: "auth_required" });
+        return;
+      }
       if (result.kind === "network_error") {
         trackAnalysisFailed("company_report", "server_error");
         setErrorModal({ title: "연결 불안정", message: "네트워크가 불안정해요. 잠시 후 다시 시도해 주세요.", trackingType: "server_error" });

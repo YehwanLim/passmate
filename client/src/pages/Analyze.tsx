@@ -31,7 +31,8 @@ import QuestionCard from "@/components/analyze/QuestionCard";
 import PreviousResumePicker from "@/components/analyze/PreviousResumePicker";
 import ImportPreviewDialog from "@/components/analyze/ImportPreviewDialog";
 import AnalyzeLoadingOverlay from "@/components/analyze/AnalyzeLoadingOverlay";
-import { useState, useMemo, useCallback, useRef } from "react";
+import AnalyzeLoginModal from "@/components/analyze/AnalyzeLoginModal";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { sanitizeText } from "@/utils/sanitize";
@@ -41,8 +42,9 @@ import {
   trackResumeUpload,
   trackAnalysisStart,
   trackAnalysisFailed,
+  trackLoginPrompt,
 } from "@/lib/analytics";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { getAuthorizationHeader } from "@/lib/apiAuth";
 import { analysisPendingPath } from "@/lib/analysisRequest";
 import {
@@ -83,13 +85,9 @@ import {
  */
 export default function Analyze() {
   const [, navigate] = useLocation();
-  const {
-    user,
-    isAuthenticated,
-    isLoading: authLoading,
-  } = useRequireAuth({
-    redirectPath: "/analyze",
-  });
+  // 폼은 로그인 없이 쓸 수 있다. 로그인은 크레딧을 쓰는 제출 순간에만 받는다(AnalyzeLoginModal).
+  // 서버(/api/analyze)는 여전히 인증을 요구하므로 권한 경계는 그대로다.
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   // /company-report 의 CTA 가 회사·직무를 쿼리로 넘긴다. 없으면 빈 값.
   const [company, setCompany] = useState(() => readQueryParam("company"));
   const [jobRole, setJobRole] = useState(() => readQueryParam("jobKeyword"));
@@ -98,6 +96,11 @@ export default function Analyze() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorModal, setErrorModal] = useState<AnalyzeErrorView | null>(null);
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  // 모달 안에서(또는 다른 탭에서) 로그인되면 닫는다. 제출은 사용자가 다시 누른다 — 클릭 없이 크레딧을 쓰지 않는다.
+  useEffect(() => {
+    if (isAuthenticated) setLoginPromptOpen(false);
+  }, [isAuthenticated]);
   const [confirmModal, setConfirmModal] = useState<{
     message: string;
     onConfirm: () => void;
@@ -370,6 +373,12 @@ export default function Analyze() {
         return;
       }
 
+      if (result.kind === "auth_required") {
+        trackAnalysisFailed("cover_letter", "auth_required");
+        setLoginPromptOpen(true);
+        return;
+      }
+
       if (result.kind === "network_error") {
         trackAnalysisFailed("cover_letter", "server_error");
         setErrorModal({ title: "연결 불안정", message: UI_LABELS.NETWORK_ERROR });
@@ -386,10 +395,8 @@ export default function Analyze() {
   const handleSubmit = () => {
     if (authLoading) return;
     if (!isAuthenticated) {
-      setErrorModal({
-        title: "로그인 필요",
-        message: "로그인 후 분석을 시작할 수 있어요.",
-      });
+      trackLoginPrompt("analyze_submit");
+      setLoginPromptOpen(true);
       return;
     }
     if (!canSubmit) return;
@@ -683,6 +690,11 @@ export default function Analyze() {
       />
 
       <AnalyzeErrorModal error={errorModal} onClose={() => setErrorModal(null)} />
+
+      <AnalyzeLoginModal
+        open={loginPromptOpen && !isAuthenticated}
+        onClose={() => setLoginPromptOpen(false)}
+      />
 
       {/* ════════ CONFIRM MODAL ════════ */}
       <AnimatePresence>
