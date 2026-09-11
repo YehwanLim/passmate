@@ -6,7 +6,7 @@ import {
   getPrimaryPromptRecord,
   insertPromptDraftRecord,
   markActivePromptRecord,
-} from "./PromptDetailPage";
+} from "./promptDetailModel";
 
 function createPromptRecord(
   overrides: Partial<PromptTemplateRecord>

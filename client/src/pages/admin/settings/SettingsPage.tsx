@@ -5,267 +5,44 @@ import {
   updateCompanyAnalysisEnabled,
   updatePremiumSalesEnabled,
 } from "@/lib/admin-entitlements";
-import {
-  fetchProductSettings,
-  updateProductSetting,
-  type AdminProductSetting,
-  type ProductSettingPatch,
-} from "@/lib/admin-product-settings";
-import { productLabel } from "@/lib/pricing";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { ProductSettingsCard } from "@/components/admin/settings/ProductSettingsCard";
+import { ServerToggleCard } from "@/components/admin/settings/ServerToggleCard";
+import { SettingsMockPanel } from "@/components/admin/settings/SettingsMockPanel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import {
-  Save,
-  Plus,
-  Trash2,
-  AlertCircle,
-  Megaphone,
-  Key,
-  Database,
-  Users,
-  Settings,
-  ToggleLeft,
-} from "lucide-react";
-
-// ============================================================
-// 타입 정의
-// ============================================================
-
-interface SystemSettings {
-  serviceOn: boolean;
-  maintenanceMessage: string;
-  popupOn: boolean;
-  popupTitle: string;
-  popupContent: string;
-  betaFeatures: {
-    aiDetailedFeedback: boolean;
-    rewriteEngineV2: boolean;
-  };
-}
-
-interface NoticeItem {
-  id: string;
-  title: string;
-  isPinned: boolean;
-  createdAt: string;
-}
-
-interface AdminUser {
-  email: string;
-  addedAt: string;
-}
-
-const DEFAULT_SETTINGS: SystemSettings = {
-  serviceOn: true,
-  maintenanceMessage: "현재 서비스 점검 중입니다. 잠시 후 다시 이용해 주세요.",
-  popupOn: false,
-  popupTitle: "PassMate 서비스 이용 안내",
-  popupContent: "보다 안정적인 이력서 분석 속도 개선을 위한 서버 보완 패치가 적용되었습니다.",
-  betaFeatures: {
-    aiDetailedFeedback: true,
-    rewriteEngineV2: false,
-  },
-};
-
-const DEFAULT_NOTICES: NoticeItem[] = [
-  { id: "1", title: "[공지] 신규 AI 엔진 적용 완료 및 버그 수정", isPinned: true, createdAt: "2026-07-01" },
-  { id: "2", title: "[안내] 7월 15일 분석 시스템 점검 시간 공지", isPinned: false, createdAt: "2026-07-05" },
-];
-
-const DEFAULT_ADMINS: AdminUser[] = [
-  { email: "admin@passmate.co.kr", addedAt: "2026-06-01" },
-];
+import { useServerToggle } from "@/hooks/admin/useServerToggle";
 
 export default function SettingsPage() {
-  // ── 상태 선언 ──────────────────────────────────────────────
-  const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
-  const [notices, setNotices] = useState<NoticeItem[]>(DEFAULT_NOTICES);
-  const [admins, setAdmins] = useState<AdminUser[]>(DEFAULT_ADMINS);
-
   const [settingsUnavailable, setSettingsUnavailable] = useState(true);
 
-  // 프리미엄 판매 스위치 — 유일하게 서버에 실제 반영되는 설정
-  const [premiumEnabled, setPremiumEnabled] = useState<boolean | null>(null);
-  const [premiumSwitchBusy, setPremiumSwitchBusy] = useState(false);
-  const [premiumSwitchError, setPremiumSwitchError] = useState<string | null>(null);
-
-  const [companyAnalysisEnabled, setCompanyAnalysisEnabled] = useState<boolean | null>(null);
-  const [companySwitchBusy, setCompanySwitchBusy] = useState(false);
-  const [companySwitchError, setCompanySwitchError] = useState<string | null>(null);
+  // 프리미엄 판매·기업 분석 스위치 — 이 화면에서 서버에 실제 반영되는 설정
+  const premium = useServerToggle({
+    update: async (checked) => (await updatePremiumSalesEnabled(checked)).premiumEnabled,
+    failMessage: "결제 판매 상태를 변경하지 못했습니다.",
+  });
+  const company = useServerToggle({
+    update: async (checked) => (await updateCompanyAnalysisEnabled(checked)).companyAnalysisEnabled,
+    failMessage: "기업 분석 스위치를 변경하지 못했습니다.",
+  });
+  const { setEnabled: setPremiumEnabled, setError: setPremiumError } = premium;
+  const { setEnabled: setCompanyEnabled } = company;
 
   useEffect(() => {
     fetchPremiumSalesSettings()
       .then((result) => {
         setPremiumEnabled(result.premiumEnabled);
-        setCompanyAnalysisEnabled(result.companyAnalysisEnabled);
+        setCompanyEnabled(result.companyAnalysisEnabled);
       })
       .catch((error: unknown) =>
-        setPremiumSwitchError(error instanceof Error ? error.message : "결제 판매 상태를 불러오지 못했습니다."),
+        setPremiumError(error instanceof Error ? error.message : "결제 판매 상태를 불러오지 못했습니다."),
       );
-  }, []);
-
-  const handlePremiumToggle = async (checked: boolean) => {
-    setPremiumSwitchBusy(true);
-    setPremiumSwitchError(null);
-    try {
-      const result = await updatePremiumSalesEnabled(checked);
-      setPremiumEnabled(result.premiumEnabled);
-    } catch (error: unknown) {
-      setPremiumSwitchError(error instanceof Error ? error.message : "결제 판매 상태를 변경하지 못했습니다.");
-    } finally {
-      setPremiumSwitchBusy(false);
-    }
-  };
-
-  const handleCompanyToggle = async (checked: boolean) => {
-    setCompanySwitchBusy(true);
-    setCompanySwitchError(null);
-    try {
-      const result = await updateCompanyAnalysisEnabled(checked);
-      setCompanyAnalysisEnabled(result.companyAnalysisEnabled);
-    } catch (error: unknown) {
-      setCompanySwitchError(error instanceof Error ? error.message : "기업 분석 스위치를 변경하지 못했습니다.");
-    } finally {
-      setCompanySwitchBusy(false);
-    }
-  };
-
-  // 결제 상품 설정 — 상품별 Groble contentId·결제 URL·판매 여부. 행 단위로 저장한다.
-  const [productRows, setProductRows] = useState<AdminProductSetting[] | null>(null);
-  const [productDrafts, setProductDrafts] = useState<Record<string, { contentId: string; paymentUrl: string }>>({});
-  const [productBusy, setProductBusy] = useState<string | null>(null);
-  const [productError, setProductError] = useState<string | null>(null);
-
-  const applyProductRows = (rows: AdminProductSetting[]) => {
-    setProductRows(rows);
-    setProductDrafts(Object.fromEntries(rows.map((row) => [row.product, { contentId: row.contentId ?? "", paymentUrl: row.paymentUrl }])));
-  };
-
-  useEffect(() => {
-    fetchProductSettings()
-      .then(applyProductRows)
-      .catch((error: unknown) => setProductError(error instanceof Error ? error.message : "결제 상품 설정을 불러오지 못했습니다."));
-  }, []);
-
-  const handleProductSave = async (row: AdminProductSetting, active = row.active) => {
-    const draft = productDrafts[row.product] ?? { contentId: row.contentId ?? "", paymentUrl: row.paymentUrl };
-    const trimmedContentId = draft.contentId.trim();
-    const trimmedPaymentUrl = draft.paymentUrl.trim();
-    const storedContentId = row.contentId ?? "";
-
-    // 바뀐 필드만 보낸다 — contentId 를 건드리지 않았는데도 fallback 표시용 placeholder 값이
-    // 저장돼 버리면 env fallback 이 사라지고 관리자가 입력한 적 없는 값이 박힌다.
-    const patch: ProductSettingPatch = {};
-    if (trimmedContentId !== storedContentId) {
-      patch.contentId = trimmedContentId === "" ? null : trimmedContentId;
-    }
-    if (trimmedPaymentUrl !== row.paymentUrl) {
-      patch.paymentUrl = trimmedPaymentUrl;
-    }
-    if (active !== row.active) {
-      patch.active = active;
-    }
-
-    if (Object.keys(patch).length === 0) {
-      return;
-    }
-
-    setProductBusy(row.product);
-    setProductError(null);
-    try {
-      const rows = await updateProductSetting(row.product, patch);
-      applyProductRows(rows);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "결제 상품 설정을 저장하지 못했습니다.";
-      setProductError(message === "DUPLICATE_CONTENT_ID" ? "이미 다른 상품이 쓰는 contentId 입니다." : message);
-    } finally {
-      setProductBusy(null);
-    }
-  };
-
-  // 공지 추가 폼
-  const [newNoticeTitle, setNewNoticeTitle] = useState("");
-  const [newNoticePinned, setNewNoticePinned] = useState(false);
-
-  // 관리자 추가 폼
-  const [newAdminEmail, setNewAdminEmail] = useState("");
+  }, [setCompanyEnabled, setPremiumEnabled, setPremiumError]);
 
   useEffect(() => {
     adminApiFetch<{ available: boolean }>("/api/admin/settings")
       .then((result) => setSettingsUnavailable(!result.available))
       .catch(() => setSettingsUnavailable(true));
   }, []);
-
-  const handleSaveGeneral = () => {
-    setSettingsUnavailable(true);
-  };
-
-  const triggerUnavailable = () => setSettingsUnavailable(true);
-
-  // ── 공지 기능 ────────────────────────────────────────────
-  const handleAddNotice = () => {
-    if (!newNoticeTitle.trim()) return;
-    const next: NoticeItem = {
-      id: Date.now().toString(),
-      title: newNoticeTitle,
-      isPinned: newNoticePinned,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setNotices([next, ...notices]);
-    setNewNoticeTitle("");
-    setNewNoticePinned(false);
-    triggerUnavailable();
-  };
-
-  const handleDeleteNotice = (id: string) => {
-    setNotices(notices.filter((n) => n.id !== id));
-    triggerUnavailable();
-  };
-
-  // ── 관리자 계정 기능 ───────────────────────────────────────
-  const handleAddAdmin = () => {
-    if (!newAdminEmail.trim() || !newAdminEmail.includes("@")) return;
-    const next: AdminUser = {
-      email: newAdminEmail.trim(),
-      addedAt: new Date().toISOString().split("T")[0],
-    };
-    setAdmins([...admins, next]);
-    setNewAdminEmail("");
-    triggerUnavailable();
-  };
-
-  const handleDeleteAdmin = (email: string) => {
-    if (admins.length <= 1) {
-      alert("최소 1명 이상의 관리자 계정이 존재해야 합니다.");
-      return;
-    }
-    setAdmins(admins.filter((a) => a.email !== email));
-    triggerUnavailable();
-  };
 
   return (
     <div className="space-y-6">
@@ -283,448 +60,36 @@ export default function SettingsPage() {
         </Alert>
       )}
 
-      {/* 이 화면에서 유일하게 서버에 실제 반영되는 제어 — 읽기 전용 fieldset 밖에 둔다 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">프리미엄 크레딧 판매</CardTitle>
-          <CardDescription className="text-xs">
-            켜면 구매 버튼과 Groble 결제가 열립니다. 끄면 신규 구매가 차단되고 기구매
-            크레딧도 숨겨지므로, 결제 발생 후에는 비상시에만 끄세요. 토글 즉시 서버에 반영됩니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-3.5 border rounded-lg">
-            <div className="space-y-0.5">
-              <span className="text-sm font-semibold">
-                {premiumEnabled === null
-                  ? "판매 상태 불러오는 중..."
-                  : premiumEnabled
-                    ? "판매 중"
-                    : "판매 중지됨"}
-              </span>
-              {premiumSwitchError ? (
-                <p className="text-xs text-destructive">{premiumSwitchError}</p>
-              ) : null}
-            </div>
-            <Switch
-              checked={premiumEnabled === true}
-              disabled={premiumEnabled === null || premiumSwitchBusy}
-              onCheckedChange={handlePremiumToggle}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* 서버에 실제 반영되는 제어 — 읽기 전용 목업 밖에 둔다 */}
+      <ServerToggleCard
+        title="프리미엄 크레딧 판매"
+        description="켜면 구매 버튼과 Groble 결제가 열립니다. 끄면 신규 구매가 차단되고 기구매 크레딧도 숨겨지므로, 결제 발생 후에는 비상시에만 끄세요. 토글 즉시 서버에 반영됩니다."
+        statusLabel={
+          premium.enabled === null
+            ? "판매 상태 불러오는 중..."
+            : premium.enabled
+              ? "판매 중"
+              : "판매 중지됨"
+        }
+        enabled={premium.enabled}
+        busy={premium.busy}
+        error={premium.error}
+        onToggle={(checked) => void premium.toggle(checked)}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">기업 분석 리포트</CardTitle>
-          <CardDescription className="text-xs">
-            켜면 일반 사용자가 기업 분석 리포트를 생성할 수 있습니다. 꺼져 있어도 관리자 계정은 생성할 수 있고,
-            이미 지급된 기업 분석 크레딧 잔액은 그대로 보입니다. 토글 즉시 서버에 반영됩니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-3.5 border rounded-lg">
-            <div className="space-y-0.5">
-              <span className="text-sm font-semibold">
-                {companyAnalysisEnabled === null ? "상태 불러오는 중..." : companyAnalysisEnabled ? "열림" : "관리자만"}
-              </span>
-              {companySwitchError ? <p className="text-xs text-destructive">{companySwitchError}</p> : null}
-            </div>
-            <Switch
-              checked={companyAnalysisEnabled === true}
-              disabled={companyAnalysisEnabled === null || companySwitchBusy}
-              onCheckedChange={handleCompanyToggle}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <ServerToggleCard
+        title="기업 분석 리포트"
+        description="켜면 일반 사용자가 기업 분석 리포트를 생성할 수 있습니다. 꺼져 있어도 관리자 계정은 생성할 수 있고, 이미 지급된 기업 분석 크레딧 잔액은 그대로 보입니다. 토글 즉시 서버에 반영됩니다."
+        statusLabel={company.enabled === null ? "상태 불러오는 중..." : company.enabled ? "열림" : "관리자만"}
+        enabled={company.enabled}
+        busy={company.busy}
+        error={company.error}
+        onToggle={(checked) => void company.toggle(checked)}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">결제 상품 설정</CardTitle>
-          <CardDescription className="text-xs">
-            상품별 Groble contentId(웹훅이 결제 상품을 알아보는 값)와 결제 URL, 판매 여부. contentId 가 비어 있으면
-            1회권·3회권(구)은 환경 변수 값을 씁니다. 저장 즉시 서버에 반영됩니다. 3회권(구)은 판매하지 않습니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {productError ? <p className="text-xs text-destructive">{productError}</p> : null}
-          {productRows === null ? (
-            <p className="text-sm text-muted-foreground">상품 설정 불러오는 중...</p>
-          ) : (
-            productRows.map((row) => {
-              const draft = productDrafts[row.product] ?? { contentId: row.contentId ?? "", paymentUrl: row.paymentUrl };
-              const busy = productBusy === row.product;
-              // 저장된 contentId 가 없고 env fallback 이 있을 때만 안내한다 — 저장 전까지는
-              // readPurchaseProductSettings 가 이 값을 판별에 쓴다.
-              const showFallbackHint = !row.contentId && row.fallbackContentId;
-              return (
-                <div key={row.product} className="grid gap-2 rounded-lg border p-3.5 md:grid-cols-[160px_1fr_1fr_auto_auto] md:items-center">
-                  <div>
-                    <p className="text-sm font-semibold">{productLabel(row.product)}</p>
-                    <p className="text-[11px] text-muted-foreground">자소서 {row.resumeCredits} · 기업 {row.companyCredits} · {row.product}</p>
-                  </div>
-                  <Input
-                    aria-label={`${productLabel(row.product)} Groble contentId`}
-                    placeholder={showFallbackHint ? `환경 변수 값 ${row.fallbackContentId} 사용 중` : "Groble contentId"}
-                    value={draft.contentId}
-                    disabled={busy}
-                    onChange={(event) => setProductDrafts((prev) => ({ ...prev, [row.product]: { ...draft, contentId: event.target.value } }))}
-                  />
-                  <Input
-                    aria-label={`${productLabel(row.product)} 결제 URL`}
-                    placeholder="결제 URL (https://…)"
-                    value={draft.paymentUrl}
-                    disabled={busy}
-                    onChange={(event) => setProductDrafts((prev) => ({ ...prev, [row.product]: { ...draft, paymentUrl: event.target.value } }))}
-                  />
-                  <label className="flex items-center gap-2 text-xs">
-                    <Switch checked={row.active} disabled={busy} onCheckedChange={(checked) => void handleProductSave(row, checked)} />
-                    판매
-                  </label>
-                  <Button size="sm" variant="outline" disabled={busy} onClick={() => void handleProductSave(row)}>
-                    <Save className="mr-1 h-3.5 w-3.5" />저장
-                  </Button>
-                  {showFallbackHint ? (
-                    <p className="text-[11px] text-muted-foreground md:col-span-5">
-                      저장 전까지 환경 변수 값으로 판별합니다
-                    </p>
-                  ) : null}
-                </div>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
+      <ProductSettingsCard />
 
-      <fieldset disabled className="w-full opacity-60" aria-label="Settings are read-only">
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full lg:w-[520px] mb-4">
-          <TabsTrigger value="general" className="text-xs gap-1.5">
-            <Settings className="size-3.5" />
-            일반 설정
-          </TabsTrigger>
-          <TabsTrigger value="notices" className="text-xs gap-1.5">
-            <Megaphone className="size-3.5" />
-            공지사항
-          </TabsTrigger>
-          <TabsTrigger value="features" className="text-xs gap-1.5">
-            <ToggleLeft className="size-3.5" />
-            Feature Flag
-          </TabsTrigger>
-          <TabsTrigger value="admins" className="text-xs gap-1.5">
-            <Users className="size-3.5" />
-            관리자 계정
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ── 1. 일반 설정 (서비스 ON/OFF, 팝업 공지) ── */}
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">시스템 제어 & 공지 팝업</CardTitle>
-              <CardDescription className="text-xs">
-                서비스 가용성을 중단(ON/OFF)하거나, 사이트 진입 시 대고객 공지 팝업을 설정합니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* 서비스 ON/OFF */}
-              <div className="flex items-center justify-between p-3.5 border rounded-lg bg-muted/20">
-                <div className="space-y-0.5">
-                  <Label htmlFor="service-toggle" className="text-sm font-semibold cursor-pointer">
-                    서비스 가동 상태 (Service ON/OFF)
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    서비스를 비활성화하면 전체 사이트 접속 시 점검 모드 안내가 출력됩니다.
-                  </p>
-                </div>
-                <Switch
-                  id="service-toggle"
-                  checked={settings.serviceOn}
-                  onCheckedChange={(checked) => setSettings({ ...settings, serviceOn: checked })}
-                />
-              </div>
-
-              {/* 점검 메시지 */}
-              {!settings.serviceOn && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="maintenance-msg" className="text-xs font-semibold text-muted-foreground uppercase">
-                    점검 중 안내 메시지
-                  </Label>
-                  <Textarea
-                    id="maintenance-msg"
-                    value={settings.maintenanceMessage}
-                    onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-              )}
-
-              <Separator />
-
-              {/* 공지 팝업 토글 */}
-              <div className="flex items-center justify-between p-3.5 border rounded-lg bg-muted/20">
-                <div className="space-y-0.5">
-                  <Label htmlFor="popup-toggle" className="text-sm font-semibold cursor-pointer">
-                    공지사항 팝업 활성화
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    활성화 시 사이트 로드 직후 첫 메인 화면에서 팝업이 노출됩니다.
-                  </p>
-                </div>
-                <Switch
-                  id="popup-toggle"
-                  checked={settings.popupOn}
-                  onCheckedChange={(checked) => setSettings({ ...settings, popupOn: checked })}
-                />
-              </div>
-
-              {/* 팝업 제목 및 본문 */}
-              {settings.popupOn && (
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="popup-title" className="text-xs font-semibold text-muted-foreground uppercase">
-                      팝업 제목
-                    </Label>
-                    <Input
-                      id="popup-title"
-                      value={settings.popupTitle}
-                      onChange={(e) => setSettings({ ...settings, popupTitle: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="popup-content" className="text-xs font-semibold text-muted-foreground uppercase">
-                      팝업 본문
-                    </Label>
-                    <Textarea
-                      id="popup-content"
-                      value={settings.popupContent}
-                      onChange={(e) => setSettings({ ...settings, popupContent: e.target.value })}
-                      rows={4}
-                    />
-                  </div>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <Button onClick={handleSaveGeneral} className="gap-1.5 ml-auto text-xs h-9">
-                <Save className="size-3.5" />
-                설정 저장
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
-        {/* ── 2. 공지사항 (Notices) ── */}
-        <TabsContent value="notices">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">공지사항 관리</CardTitle>
-              <CardDescription className="text-xs">
-                사용자 화면 공지 리스트에 등록될 항목을 관리합니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* 등록 폼 */}
-              <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-                <div className="space-y-1.5">
-                  <Label htmlFor="notice-title" className="text-xs font-semibold text-muted-foreground uppercase">
-                    신규 공지 추가
-                  </Label>
-                  <Input
-                    id="notice-title"
-                    placeholder="공지 제목을 입력하세요."
-                    value={newNoticeTitle}
-                    onChange={(e) => setNewNoticeTitle(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="notice-pinned"
-                      checked={newNoticePinned}
-                      onCheckedChange={setNewNoticePinned}
-                    />
-                    <Label htmlFor="notice-pinned" className="text-xs font-medium cursor-pointer">
-                      최상단 고정 공지 설정
-                    </Label>
-                  </div>
-                  <Button onClick={handleAddNotice} size="sm" className="gap-1 text-xs">
-                    <Plus className="size-3.5" />
-                    공지 등록
-                  </Button>
-                </div>
-              </div>
-
-              {/* 목록 표 */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">고정여부</TableHead>
-                    <TableHead>공지 제목</TableHead>
-                    <TableHead className="w-[120px] text-right">작성일</TableHead>
-                    <TableHead className="w-[50px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {notices.map((n) => (
-                    <TableRow key={n.id}>
-                      <TableCell>
-                        {n.isPinned ? (
-                          <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/15">
-                            상단 고정
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">일반</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">{n.title}</TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">{n.createdAt}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteNotice(n.id)}
-                          className="text-muted-foreground hover:text-destructive size-7"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── 3. Feature Flag ── */}
-        <TabsContent value="features">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">기능 플래그 (Feature Flag)</CardTitle>
-              <CardDescription className="text-xs">
-                베타 기능의 노출 여부 또는 결제 결합 모듈을 배포 전 일부 권한 차단/허용하도록 동적 변경합니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/10 transition-colors">
-                <div className="space-y-0.5">
-                  <span className="text-sm font-semibold">AI 상세 피드백 Beta</span>
-                  <p className="text-xs text-muted-foreground">
-                    이력서 결과 리포트 출력 시 정밀 AI 교정 본문을 활성화 노출합니다.
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.betaFeatures.aiDetailedFeedback}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      betaFeatures: { ...settings.betaFeatures, aiDetailedFeedback: checked },
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-3.5 border rounded-lg hover:bg-muted/10 transition-colors">
-                <div className="space-y-0.5">
-                  <span className="text-sm font-semibold">AI 리라이트(Rewrite) 개선 엔진 v2</span>
-                  <p className="text-xs text-muted-foreground">
-                    기존의 단순 분석을 넘어 AI 대필 수정을 지원하는 신규 파라미터 엔진 v2 연동 활성화
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.betaFeatures.rewriteEngineV2}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      betaFeatures: { ...settings.betaFeatures, rewriteEngineV2: checked },
-                    })
-                  }
-                />
-              </div>
-
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <Button onClick={handleSaveGeneral} className="gap-1.5 ml-auto text-xs h-9">
-                <Save className="size-3.5" />
-                설정 저장
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
-        {/* ── 4. 관리자 계정 (Admins) ── */}
-        <TabsContent value="admins">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">관리자 권한 계정 관리</CardTitle>
-              <CardDescription className="text-xs">
-                관리자 페이지에 접근할 수 있는 승인된 어드민 이메일 목록을 관리합니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <Alert className="bg-blue-500/5 border-blue-500/20 text-primary">
-                <AlertCircle className="size-4 text-blue-500" />
-                <AlertTitle className="text-xs font-semibold text-blue-600">DB 접근 가이드</AlertTitle>
-                <AlertDescription className="text-xs leading-normal">
-                  본 리스트는 로컬 스토리지에 유지되는 간이 리스트입니다. 실 서비스 반영을 하려면 반드시 Supabase의 
-                  <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] mx-1">users</code> 테이블에 컬럼 
-                  <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] mx-1">role = 'admin'</code> 처리를 동기화해 주어야 합니다.
-                </AlertDescription>
-              </Alert>
-
-              {/* 추가 폼 */}
-              <div className="flex gap-2 p-4 border rounded-lg bg-muted/20">
-                <div className="flex-1 space-y-1">
-                  <Input
-                    id="admin-new-email"
-                    placeholder="추가할 관리자 이메일 주소 입력"
-                    value={newAdminEmail}
-                    onChange={(e) => setNewAdminEmail(e.target.value)}
-                    className="h-9 text-xs"
-                  />
-                </div>
-                <Button onClick={handleAddAdmin} className="gap-1 text-xs h-9 shrink-0">
-                  <Plus className="size-3.5" />
-                  계정 등록
-                </Button>
-              </div>
-
-              {/* 테이블 */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>어드민 이메일</TableHead>
-                    <TableHead className="text-right">등록 일자</TableHead>
-                    <TableHead className="w-[50px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {admins.map((a) => (
-                    <TableRow key={a.email}>
-                      <TableCell className="font-semibold text-sm">{a.email}</TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">{a.addedAt}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteAdmin(a.email)}
-                          className="text-muted-foreground hover:text-destructive size-7"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      </fieldset>
+      <SettingsMockPanel onChange={() => setSettingsUnavailable(true)} />
     </div>
   );
 }

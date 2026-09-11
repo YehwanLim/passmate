@@ -1,166 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle2,
-  History,
-  Loader2,
-  RotateCcw,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, History, RotateCcw } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
+import { PromptEditorCard } from "@/components/admin/prompts/PromptEditorCard";
+import { VersionHistoryCard } from "@/components/admin/prompts/VersionHistoryCard";
+import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { usePrompts } from "@/hooks/admin/usePrompts";
-import {
-  PROMPT_TYPES,
-  type PromptTemplateRecord,
-  type PromptType,
-} from "@/lib/admin-prompts";
+import type { PromptTemplateRecord } from "@/lib/admin-prompts";
 import { cn } from "@/lib/utils";
-
-interface PromptEditorForm {
-  name: string;
-  systemPrompt: string;
-  userTemplate: string;
-  temperature: string;
-  maxTokens: string;
-  notes: string;
-}
-
-const PROMPT_TYPE_META: Record<
-  PromptType,
-  {
-    label: string;
-    description: string;
-    emptyName: string;
-  }
-> = {
-  "resume-analysis": {
-    label: "Resume Analysis",
-    description: "이력서 분석용 핵심 프롬프트를 관리합니다.",
-    emptyName: "Resume Analysis Prompt",
-  },
-  "cover-letter": {
-    label: "Cover Letter",
-    description: "자기소개서 초안과 첨삭 흐름에 사용하는 프롬프트입니다.",
-    emptyName: "Cover Letter Prompt",
-  },
-  summary: {
-    label: "Summary",
-    description: "지원자 정보 요약과 핵심 포인트 정리에 사용합니다.",
-    emptyName: "Summary Prompt",
-  },
-  feedback: {
-    label: "Feedback",
-    description: "AI 피드백 문구와 개선 제안을 생성하는 프롬프트입니다.",
-    emptyName: "Feedback Prompt",
-  },
-  "interview-questions": {
-    label: "Interview Questions",
-    description: "맞춤형 면접 질문 생성에 사용하는 프롬프트입니다.",
-    emptyName: "Interview Questions Prompt",
-  },
-};
-
-const INTERPOLATION_HINT =
-  "Available interpolation examples: {{resume}}, {{jobDescription}}, {{companyName}}, {{jobTitle}}";
-
-function isPromptType(value: string): value is PromptType {
-  return PROMPT_TYPES.includes(value as PromptType);
-}
-
-function formatDate(value: string | Date | null | undefined) {
-  if (!value) return "업데이트 없음";
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "업데이트 없음";
-
-  return date.toLocaleString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
-
-function normalizeOptionalText(value: string) {
-  return value.trim() ? value : null;
-}
-
-function parseOptionalNumber(
-  value: string,
-  fieldLabel: string,
-  integerOnly = false
-) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  const parsed = Number(trimmed);
-  if (Number.isNaN(parsed)) {
-    throw new Error(`${fieldLabel} must be a valid number.`);
-  }
-
-  if (integerOnly && !Number.isInteger(parsed)) {
-    throw new Error(`${fieldLabel} must be a whole number.`);
-  }
-
-  return parsed;
-}
-
-export function getPrimaryPromptRecord(records: PromptTemplateRecord[]) {
-  return records.find(record => record.isActive) ?? records[0] ?? null;
-}
-
-export function createEditorFormFromRecord(
-  record: PromptTemplateRecord | null,
-  fallbackName: string
-): PromptEditorForm {
-  return {
-    name: record?.name ?? fallbackName,
-    systemPrompt: record?.systemPrompt ?? "",
-    userTemplate: record?.userTemplate ?? "",
-    temperature: record?.temperature == null ? "" : String(record.temperature),
-    maxTokens: record?.maxTokens == null ? "" : String(record.maxTokens),
-    notes: record?.notes ?? "",
-  };
-}
-
-export function insertPromptDraftRecord(
-  records: PromptTemplateRecord[],
-  draft: PromptTemplateRecord
-) {
-  return [draft, ...records.filter(record => record.id !== draft.id)];
-}
-
-export function markActivePromptRecord(
-  records: PromptTemplateRecord[],
-  activeId: string
-) {
-  return records.map(record => ({
-    ...record,
-    isActive: record.id === activeId,
-  }));
-}
+import {
+  PROMPT_TYPE_META,
+  createEditorFormFromRecord,
+  getErrorMessage,
+  getPrimaryPromptRecord,
+  insertPromptDraftRecord,
+  isPromptType,
+  markActivePromptRecord,
+  normalizeOptionalText,
+  parseOptionalNumber,
+  type PromptEditorForm,
+} from "./promptDetailModel";
 
 function PromptDetailSkeleton() {
   return (
@@ -343,12 +207,7 @@ export default function PromptDetailPage() {
           </Link>
         </Button>
 
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>
-            지원하지 않는 프롬프트 타입입니다.
-          </AlertDescription>
-        </Alert>
+        <AdminErrorAlert message="지원하지 않는 프롬프트 타입입니다." />
       </div>
     );
   }
@@ -391,12 +250,7 @@ export default function PromptDetailPage() {
         }
       />
 
-      {loadError && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{loadError}</AlertDescription>
-        </Alert>
-      )}
+      <AdminErrorAlert message={loadError} />
 
       {!loadError && !hasExistingVersions && (
         <Alert>
@@ -433,261 +287,28 @@ export default function PromptDetailPage() {
         </Alert>
       )}
 
-      {saveError && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{saveError}</AlertDescription>
-        </Alert>
-      )}
-
-      {actionError && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{actionError}</AlertDescription>
-        </Alert>
-      )}
+      <AdminErrorAlert message={saveError} />
+      <AdminErrorAlert message={actionError} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.85fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Prompt Editor</CardTitle>
-            <CardDescription>
-              Draft 저장은 항상 새 비활성 버전을 생성합니다. Playground는 이번
-              범위에서 제외했습니다.
-            </CardDescription>
-          </CardHeader>
+        <PromptEditorCard
+          form={editorForm}
+          meta={meta}
+          activeRecord={activeRecord}
+          canSave={canSaveDraft}
+          isSaving={isSaving}
+          onChange={updateEditorField}
+          onSave={() => void handleSaveDraft()}
+        />
 
-          <CardContent className="space-y-5">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="prompt-name">Name</Label>
-                <Input
-                  id="prompt-name"
-                  value={editorForm.name}
-                  onChange={event =>
-                    updateEditorField("name", event.target.value)
-                  }
-                  placeholder={meta.emptyName}
-                />
-              </div>
-
-              <div className="rounded-lg border bg-muted/30 px-4 py-3">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  Current Live Version
-                </p>
-                <p className="mt-2 text-sm font-semibold text-foreground">
-                  {activeRecord?.version ?? "없음"}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {activeRecord
-                    ? [
-                        activeRecord.updatedBy,
-                        formatDate(activeRecord.updatedAt),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")
-                    : "아직 Active 버전이 없습니다."}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="system-prompt">System Prompt</Label>
-              <p className="text-xs text-muted-foreground">
-                {INTERPOLATION_HINT}
-              </p>
-              <Textarea
-                id="system-prompt"
-                value={editorForm.systemPrompt}
-                onChange={event =>
-                  updateEditorField("systemPrompt", event.target.value)
-                }
-                className="min-h-[240px] font-mono text-sm"
-                placeholder="System-level instructions for the selected prompt type"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="user-template">User Prompt Template</Label>
-              <p className="text-xs text-muted-foreground">
-                {INTERPOLATION_HINT}
-              </p>
-              <Textarea
-                id="user-template"
-                value={editorForm.userTemplate}
-                onChange={event =>
-                  updateEditorField("userTemplate", event.target.value)
-                }
-                className="min-h-[240px] font-mono text-sm"
-                placeholder="Prompt body that will receive user-facing interpolation values"
-              />
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="prompt-temperature">Temperature</Label>
-                <Input
-                  id="prompt-temperature"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.1"
-                  value={editorForm.temperature}
-                  onChange={event =>
-                    updateEditorField("temperature", event.target.value)
-                  }
-                  placeholder="0.4"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="prompt-max-tokens">Max Tokens</Label>
-                <Input
-                  id="prompt-max-tokens"
-                  type="number"
-                  inputMode="numeric"
-                  step="1"
-                  value={editorForm.maxTokens}
-                  onChange={event =>
-                    updateEditorField("maxTokens", event.target.value)
-                  }
-                  placeholder="1200"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="prompt-notes">Notes</Label>
-              <Textarea
-                id="prompt-notes"
-                value={editorForm.notes}
-                onChange={event =>
-                  updateEditorField("notes", event.target.value)
-                }
-                className="min-h-32"
-                placeholder="운영 메모, 변경 이유, 검토 포인트 등을 남길 수 있습니다."
-              />
-            </div>
-          </CardContent>
-
-          <CardFooter className="flex flex-col items-start justify-between gap-3 border-t sm:flex-row sm:items-center">
-            <p className="text-sm text-muted-foreground">
-              Save Draft는 현재 Active를 바꾸지 않고 새 Draft만 추가합니다.
-            </p>
-            <Button onClick={handleSaveDraft} disabled={!canSaveDraft}>
-              {isSaving && <Loader2 className="size-4 animate-spin" />}
-              Save Draft
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Version History</CardTitle>
-            <CardDescription>
-              Activate는 운영 버전을 전환하고, Rollback은 선택한 버전을 에디터로
-              복사합니다.
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            {records.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-                아직 기록된 버전이 없습니다.
-              </div>
-            ) : (
-              records.map(record => {
-                const isRollbackSource = rollbackRecordId === record.id;
-                const isActivating = activatingId === record.id;
-
-                return (
-                  <div key={record.id} className="rounded-xl border p-4">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground">
-                              {record.version}
-                            </p>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                record.isActive
-                                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
-                                  : "border-amber-500/20 bg-amber-500/10 text-amber-700"
-                              )}
-                            >
-                              {record.isActive ? "Active" : "Draft"}
-                            </Badge>
-                            {isRollbackSource && (
-                              <Badge variant="outline">Rollback Source</Badge>
-                            )}
-                          </div>
-                          <p className="mt-1 truncate text-sm font-medium text-foreground">
-                            {record.name}
-                          </p>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {formatDate(record.updatedAt)}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          {!record.isActive && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleActivate(record)}
-                              disabled={Boolean(activatingId) || isSaving}
-                            >
-                              {isActivating && (
-                                <Loader2 className="size-4 animate-spin" />
-                              )}
-                              Activate
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRollback(record)}
-                            disabled={isSaving}
-                          >
-                            Rollback
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-lg bg-muted/30 p-3">
-                          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                            Updated By
-                          </p>
-                          <p className="mt-2 text-sm font-medium text-foreground">
-                            {record.updatedBy ?? "미설정"}
-                          </p>
-                        </div>
-
-                        <div className="rounded-lg bg-muted/30 p-3">
-                          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                            Tokens / Temp
-                          </p>
-                          <p className="mt-2 text-sm font-medium text-foreground">
-                            {record.maxTokens ?? "Default"} /{" "}
-                            {record.temperature ?? "Default"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {(record.description || record.notes) && (
-                        <div className="rounded-lg border bg-background p-3 text-sm text-muted-foreground">
-                          {record.notes ?? record.description}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
+        <VersionHistoryCard
+          records={records}
+          rollbackRecordId={rollbackRecordId}
+          activatingId={activatingId}
+          isSaving={isSaving}
+          onActivate={(record) => void handleActivate(record)}
+          onRollback={handleRollback}
+        />
       </div>
     </div>
   );
