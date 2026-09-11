@@ -17,6 +17,11 @@ import { useState, useCallback, useEffect, type CSSProperties } from "react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import AuthButton from "@/components/AuthButton";
+import {
+  RESUME_REPORT_SAMPLE_COMPANY,
+  RESUME_REPORT_SAMPLE_JOB_ROLE,
+  RESUME_REPORT_SAMPLE_PATH,
+} from "@/constants/resumeReportSampleMeta";
 
 export const HOME_NAV_ITEMS = [
   { label: "서비스 소개", type: "section", target: "service-intro" },
@@ -239,6 +244,13 @@ export default function Home() {
               첫 분석 무료 <span className="text-zinc-700">·</span> 리포트는 1분
               안에
             </p>
+            {/* 로그인 없이 결과물부터 보고 싶은 방문자용. 예시는 가상의 지원자다(ReportResult 의 ?sample=1). */}
+            <Link
+              href={RESUME_REPORT_SAMPLE_PATH}
+              className="mt-2.5 inline-block text-[13px] text-zinc-400 underline decoration-zinc-700 underline-offset-4 transition-colors hover:text-white hover:decoration-zinc-400"
+            >
+              예시 리포트 먼저 보기 · {RESUME_REPORT_SAMPLE_COMPANY} {RESUME_REPORT_SAMPLE_JOB_ROLE}
+            </Link>
           </div>
 
           <HeroReportCard />
