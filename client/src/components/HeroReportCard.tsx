@@ -6,7 +6,7 @@ import {
   hiringMemoryItems,
   mentorCommentPreviews,
   reportKeywords,
-} from "@/components/ReportShowcase";
+} from "@/components/report-showcase/reportShowcaseSampleData";
 
 /* ─────────────────────────────────────────────────────────
    HeroReportCard — 히어로에 리포트 첫인상 화면을 축소해 거는 미리보기.

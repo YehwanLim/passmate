@@ -1,9 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/apiAuth", () => ({
-  getAuthorizationHeader: async () => ({ Authorization: "Bearer test-token" }),
+const mocks = vi.hoisted(() => ({
+  getAuthorizationHeader: vi.fn(async () => ({ Authorization: "Bearer test-token" })),
 }));
 
+vi.mock("@/lib/apiAuth", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/apiAuth")>()),
+  getAuthorizationHeader: mocks.getAuthorizationHeader,
+}));
+
+import { AuthenticationRequiredError } from "@/lib/apiAuth";
 import { resolveIdempotencyKey, submitAnalysisRequest } from "./analysisSubmit";
 
 const RECEIPT = {
@@ -67,6 +73,18 @@ describe("submitAnalysisRequest", () => {
     await expect(submitAnalysisRequest("/api/analyze", {}, "key")).resolves.toEqual({
       kind: "parse_error",
     });
+  });
+
+  it("asks for login instead of blaming the network when there is no session", async () => {
+    // 비로그인도 /analyze 폼을 쓸 수 있어 이 경로가 실제로 열린다. 예전엔 "네트워크가 불안정해요"로 보였다.
+    mocks.getAuthorizationHeader.mockRejectedValueOnce(new AuthenticationRequiredError());
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(submitAnalysisRequest("/api/analyze", {}, "key")).resolves.toEqual({
+      kind: "auth_required",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("reports a network error when the request itself fails", async () => {
