@@ -95,6 +95,21 @@ export function deferEntryScript(html) {
   );
 }
 
+// 랜딩에만 canonical 을 단다. app.html 은 이 변환 전에 복사되므로 다른 경로(샘플 리포트 등)는 자기 주소를 유지한다.
+// 사이트 전체(client/index.html)에 걸면 sitemap 에 올린 다른 공개 페이지까지 `/` 로 합쳐진다.
+export const LANDING_CANONICAL_URL = "https://pre-view.me/";
+
+export function addLandingCanonical(html) {
+  if (/<link\b[^>]*rel="canonical"/.test(html)) {
+    throw new Error("landing html already has a canonical link");
+  }
+  const occurrences = html.split("</head>").length - 1;
+  if (occurrences !== 1) {
+    throw new Error(`expected exactly one </head> (found ${occurrences})`);
+  }
+  return html.replace("</head>", `<link rel="canonical" href="${LANDING_CANONICAL_URL}" /></head>`);
+}
+
 async function main() {
   const rootDir = path.resolve(import.meta.dirname, "..");
   const publicDir = path.join(rootDir, "dist", "public");
@@ -115,7 +130,9 @@ async function main() {
     throw new Error(`${BOOT_SCRIPT} is missing from ${publicDir} (client/public/landing-boot.js)`);
   }
   const landingHtml = deferEntryScript(
-    await inlineCriticalCss(markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)), publicDir)
+    addLandingCanonical(
+      await inlineCriticalCss(markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)), publicDir)
+    )
   );
   writeFileSync(indexPath, landingHtml);
   const inlineCss = landingHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";

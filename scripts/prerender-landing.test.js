@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  addLandingCanonical,
   BOOT_SCRIPT,
   deferEntryScript,
   FULL_CSS_ATTR,
@@ -11,6 +12,7 @@ import {
   LANDING_CANVAS_STYLE,
   ROOT_PLACEHOLDER,
   injectPrerenderedRoot,
+  LANDING_CANONICAL_URL,
   markLandingCanvas,
 } from "./prerender-landing.mjs";
 
@@ -148,6 +150,27 @@ describe("deferEntryScript", () => {
   it("hydrates inside startTransition so WebKit can paint tiles while hydration yields", () => {
     const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
     expect(main).toMatch(/startTransition\(\(\) => \{?\s*hydrateRoot\(/);
+  });
+});
+
+describe("addLandingCanonical", () => {
+  it("adds the canonical link to the landing head only", () => {
+    const result = addLandingCanonical("<html><head><title>x</title></head><body></body></html>");
+    expect(LANDING_CANONICAL_URL).toBe("https://pre-view.me/");
+    expect(result).toContain(`<link rel="canonical" href="${LANDING_CANONICAL_URL}" /></head>`);
+  });
+
+  it("throws when a canonical link already exists or the head is ambiguous", () => {
+    expect(() =>
+      addLandingCanonical('<html><head><link rel="canonical" href="/" /></head></html>')
+    ).toThrow(/already/);
+    expect(() => addLandingCanonical("<html><body></body></html>")).toThrow(/<\/head>/);
+  });
+
+  it("keeps the site-wide shell free of a canonical so other public pages keep their own URL", () => {
+    // app.html 은 client/index.html 에서 나온다. 여기에 canonical 을 걸면 샘플 리포트도 `/` 로 합쳐진다.
+    const shell = readFileSync(path.join(ROOT_DIR, "client/index.html"), "utf8");
+    expect(shell).not.toContain('rel="canonical"');
   });
 });
 

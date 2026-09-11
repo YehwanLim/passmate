@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /my
+Disallow: /analysis-pending
+Disallow: /checkout
+
+Sitemap: https://pre-view.me/sitemap.xml
