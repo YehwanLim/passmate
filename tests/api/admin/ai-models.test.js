@@ -27,7 +27,9 @@ describe("filterRecommendedModels", () => {
   });
 
   it("keeps provider calls out of GET and protects model testing with the admin limiter", () => {
-    expect(source).toContain('import { requireAdministrator }');
+    // 관리자 인증은 createAdminHandler 서문이 강제한다(라우터의 requireAdministrator 와 이중 방어).
+    expect(source).toContain('import { createAdminHandler }');
+    expect(source).toContain("export default createAdminHandler(");
     expect(source).toContain("consumeUserRateLimit");
     expect(source).toContain('if (req.method === "GET")');
     expect(source).not.toContain("liveStatuses: await getLiveModelStatuses");
