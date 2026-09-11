@@ -133,3 +133,17 @@ export function trackAnalysisFailed(
     success: false,
   });
 }
+
+/**
+ * SPA 라우트 전환 시 호출 (첫 로드는 main.tsx 의 gtag config 가 이미 보낸다)
+ * GA4 이벤트: page_view
+ *
+ * @param path  이동한 경로 (쿼리 제외 — VisitTracker 가 pathname 만 넘긴다)
+ */
+export function trackPageView(path: string): void {
+  sendEvent("page_view", {
+    page_path: path,
+    page_location: `${window.location.origin}${path}`,
+    page_title: document.title,
+  });
+}
