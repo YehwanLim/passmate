@@ -1,4 +1,4 @@
-import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./Analyze";
+import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
 
 export interface CompanyAnalyzeErrorView {
   title: string;
@@ -18,7 +18,7 @@ function errorCodeOf(errorData: unknown): string | null {
 
 /**
  * POST /api/analyze/company 실패 응답을 모달 문구로 바꾼다.
- * 기업 분석 전용 코드만 여기서 다루고, 나머지는 자소서 분석과 같은 문구(Analyze.tsx)를 쓴다.
+ * 기업 분석 전용 코드만 여기서 다루고, 나머지는 자소서 분석과 같은 문구(analyzeErrors.ts)를 쓴다.
  * 서버 원문(message)은 절대 그대로 보여주지 않는다.
  */
 export function getCompanyAnalyzeError(errorData: unknown, status: number): CompanyAnalyzeErrorView {

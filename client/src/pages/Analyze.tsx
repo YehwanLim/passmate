@@ -1,35 +1,37 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
 import {
-  ArrowLeft,
   ArrowRight,
   Plus,
-  Trash2,
   Loader2,
   BarChart3,
-  CreditCard,
   Info,
   Building2,
-  FileSearch,
-  FileText,
-  X,
   AlertTriangle,
   History,
-  CalendarDays,
-  BriefcaseBusiness,
   FileUp,
 } from "lucide-react";
-import Logo from "@/components/Logo";
-import AuthButton from "@/components/AuthButton";
 import CompanyCombobox from "@/components/analyze/CompanyCombobox";
 import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import {
+  ANALYZE_CONTAINER_VARIANTS,
+  ANALYZE_ITEM_VARIANTS,
+  ANALYZE_SUBMIT_BUTTON_CLASS,
+  AnalyzeBottomBar,
+  AnalyzeErrorModal,
+  AnalyzeNav,
+  type AnalyzeErrorView,
+} from "@/components/analyze/AnalyzeShell";
+import FormSection from "@/components/analyze/FormSection";
+import QuestionCard from "@/components/analyze/QuestionCard";
+import PreviousResumePicker from "@/components/analyze/PreviousResumePicker";
+import ImportPreviewDialog from "@/components/analyze/ImportPreviewDialog";
+import AnalyzeLoadingOverlay from "@/components/analyze/AnalyzeLoadingOverlay";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { sanitizeText } from "@/utils/sanitize";
@@ -42,10 +44,13 @@ import {
 } from "@/lib/analytics";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getAuthorizationHeader } from "@/lib/apiAuth";
+import { analysisPendingPath } from "@/lib/analysisRequest";
 import {
-  analysisPendingPath,
-  parseAnalysisReceipt,
-} from "@/lib/analysisRequest";
+  resolveIdempotencyKey,
+  submitAnalysisRequest,
+  type IdempotentRequest,
+} from "@/lib/analysisSubmit";
+import { readQueryParam } from "@/lib/readQueryParam";
 import {
   extractTextFromFile,
   requestAiSplit,
@@ -54,6 +59,19 @@ import {
   type ResumeImportPair,
 } from "@/lib/resumeFileImport";
 import type { ProjectSummary } from "@/types/my";
+import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
+import {
+  MAX_QUESTIONS,
+  MAX_TOTAL_CHARS,
+  MIN_TOTAL_CHARS,
+  WARN_TOTAL_CHARS,
+} from "./analyzeConstants";
+import {
+  createEmptyQuestion,
+  parseSavedQuestions,
+  type QuestionItem,
+  type SavedAnalysisDetail,
+} from "./analyzeQuestions";
 
 /**
  * PassMate - 자소서 분석 페이지 (/analyze)
@@ -63,249 +81,6 @@ import type { ProjectSummary } from "@/types/my";
  * - 개별 글자 수 + 전체 글자 수 카운터
  * - Sticky 하단 바: 총 글자 수 + 결제 버튼
  */
-
-const MAX_QUESTIONS = 5;
-const MAX_TOTAL_CHARS = 6000;
-const MIN_TOTAL_CHARS = 200;
-const WARN_TOTAL_CHARS = 1000;
-
-export function getAnalyzeErrorMessage(errorData: unknown): string {
-  if (!errorData || typeof errorData !== "object") {
-    return UI_LABELS.ANALYSIS_FAILED;
-  }
-
-  const { error } = errorData as { error?: unknown };
-  if (error === "RATE_LIMITED") return UI_LABELS.RATE_LIMIT_ERROR;
-  if (error === "CONTEXT_IRRELEVANT") return UI_LABELS.CONTEXT_IRRELEVANT;
-  if (error === "ANALYSIS_DISABLED")
-    return "분석 기능이 일시적으로 중단되었습니다. 잠시 후 다시 시도해 주세요.";
-  if (error === "ANALYSIS_CREDITS_EXHAUSTED") {
-    return "보유한 분석 이용권을 모두 사용했어요. 이용권 페이지에서 남은 횟수와 추가 이용권을 확인할 수 있어요.";
-  }
-  if (error === "ANALYSIS_CONCURRENCY_LIMITED") {
-    return "진행 중인 분석이 끝난 뒤 다시 시도해 주세요.";
-  }
-  if (
-    error === "ANALYSIS_PERSISTENCE_PENDING" ||
-    error === "ANALYSIS_IN_PROGRESS"
-  ) {
-    return "분석 결과를 안전하게 저장하고 있어요. 잠시 후 같은 내용으로 다시 시도해 주세요.";
-  }
-  if (
-    error === "ANALYSIS_RETRY_WITH_NEW_KEY" ||
-    error === "INVALID_IDEMPOTENCY_KEY"
-  ) {
-    return "이전 요청 정보가 만료되었어요. 분석 시작을 한 번 더 눌러 주세요.";
-  }
-  if (error === "IDEMPOTENCY_KEY_REUSED") {
-    return "같은 요청이 이미 접수되어 있어요. 내용을 수정했다면 잠시 후 다시 시도해 주세요.";
-  }
-  if (error === "AUTHENTICATION_REQUIRED")
-    return "로그인 후 분석을 시작할 수 있어요.";
-  return UI_LABELS.ANALYSIS_FAILED;
-}
-
-export function getAnalyzeErrorTitle(
-  errorData: unknown,
-  status?: number
-): string {
-  const { error } =
-    errorData && typeof errorData === "object"
-      ? (errorData as { error?: unknown })
-      : {};
-
-  if (status === 429 || error === "RATE_LIMITED") return "요청 제한";
-  if (error === "ANALYSIS_CONCURRENCY_LIMITED") return "분석 진행 중";
-  return "분석 실패";
-}
-
-const LOADING_STEPS = {
-  1: {
-    icon: FileSearch,
-    title: "자소서를 한 줄씩 읽고 있어요",
-    label: UI_LABELS.LOADING_STEP_1,
-    accent: "text-sky-400",
-  },
-  2: {
-    icon: BarChart3,
-    title: "합격 신호를 찾는 중이에요",
-    label: UI_LABELS.LOADING_STEP_2,
-    accent: "text-cyan-400",
-  },
-  3: {
-    icon: FileText,
-    title: "인사이트 리포트를 정리하고 있어요",
-    label: UI_LABELS.LOADING_STEP_3,
-    accent: "text-emerald-400",
-  },
-} as const;
-
-interface QuestionItem {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-interface SavedAnalysisDetail {
-  question_text: string;
-  input_text: string;
-  company_name: string | null;
-  job_role: string | null;
-}
-
-function createEmptyQuestion(): QuestionItem {
-  return {
-    id: crypto.randomUUID(),
-    question: "",
-    answer: "",
-  };
-}
-
-function splitSavedQuestionSections(text: string): Map<number, string> {
-  const marker = /(?:^|\n{2,})\[문항\s*(\d+)\]\s*/g;
-  const matches = Array.from(text.matchAll(marker));
-
-  return new Map(
-    matches.map((match, index) => [
-      Number(match[1]),
-      text
-        .slice(
-          (match.index ?? 0) + match[0].length,
-          matches[index + 1]?.index ?? text.length
-        )
-        .trim(),
-    ])
-  );
-}
-
-export function parseSavedQuestions(questionText: string, inputText: string) {
-  const savedQuestions = splitSavedQuestionSections(questionText);
-  const savedAnswers = splitSavedQuestionSections(inputText);
-  const indexes = Array.from(
-    new Set([
-      ...Array.from(savedQuestions.keys()),
-      ...Array.from(savedAnswers.keys()),
-    ])
-  ).sort((a, b) => a - b);
-
-  if (indexes.length === 0) {
-    const question = questionText.trim();
-    const answer = inputText.trim();
-    return question || answer
-      ? [{ question: question || "문항 1", answer }]
-      : [];
-  }
-
-  return indexes.map(index => ({
-    question: savedQuestions.get(index) || `문항 ${index}`,
-    answer: savedAnswers.get(index) || "",
-  }));
-}
-
-function formatSavedDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "작성일 미상";
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
-}
-
-function readQueryParam(name: string): string {
-  if (typeof window === "undefined") return "";
-  const value = new URLSearchParams(window.location.search).get(name);
-  return typeof value === "string" ? value.slice(0, 100) : "";
-}
-
-/* ──────────────────────────────────────────
-   개별 문항 카드 컴포넌트
-────────────────────────────────────────── */
-function QuestionCard({
-  item,
-  index,
-  canDelete,
-  onUpdate,
-  onDelete,
-}: {
-  item: QuestionItem;
-  index: number;
-  canDelete: boolean;
-  onUpdate: (id: string, field: "question" | "answer", value: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  const charCount = item.answer.length;
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.96 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm p-6 transition-colors hover:border-white/[0.14] hover:bg-white/[0.05]"
-    >
-      {/* Header: 문항 번호 + 삭제 */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2.5">
-          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-400/20 text-xs font-bold text-cyan-400 tabular-nums">
-            {index + 1}
-          </span>
-          <span className="text-sm font-medium text-zinc-400">
-            문항 {index + 1}
-          </span>
-        </div>
-
-        {canDelete && (
-          <button
-            onClick={() => onDelete(item.id)}
-            className="p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
-            aria-label={`문항 ${index + 1} 삭제`}
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      {/* 질문 입력 */}
-      <div className="mb-4">
-        <label className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">
-          질문
-        </label>
-        <Input
-          value={item.question}
-          onChange={e => onUpdate(item.id, "question", e.target.value)}
-          maxLength={300}
-          placeholder="예) 지원 동기를 작성해 주세요."
-          className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 px-4 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
-        />
-      </div>
-
-      {/* 답변 입력 */}
-      <div className="relative">
-        <label className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">
-          답변
-        </label>
-        <Textarea
-          value={item.answer}
-          onChange={e => onUpdate(item.id, "answer", e.target.value)}
-          placeholder="여기에 답변을 작성해 주세요."
-          rows={8}
-          className="w-full border-white/[0.08] bg-white/[0.04] text-white rounded-xl p-4 text-[15px] leading-relaxed resize-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-zinc-600"
-        />
-        {/* 개별 글자 수 */}
-        <div className="absolute bottom-3 right-4 text-xs text-zinc-600 tabular-nums pointer-events-none">
-          {charCount.toLocaleString()}자
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-/* ──────────────────────────────────────────
-   메인 Analyze 페이지
-────────────────────────────────────────── */
 export default function Analyze() {
   const [, navigate] = useLocation();
   const {
@@ -322,13 +97,7 @@ export default function Analyze() {
     createEmptyQuestion(),
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
-  const [errorModal, setErrorModal] = useState<{
-    title: string;
-    message: string;
-    actionLabel?: string;
-    actionHref?: string;
-  } | null>(null);
+  const [errorModal, setErrorModal] = useState<AnalyzeErrorView | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     message: string;
     onConfirm: () => void;
@@ -351,34 +120,13 @@ export default function Analyze() {
   const [importPreview, setImportPreview] = useState<ResumeImportPair[] | null>(
     null
   );
-  const analysisRequestRef = useRef<{
-    fingerprint: string;
-    idempotencyKey: string;
-  } | null>(null);
-
-  // ── Status Step 로딩 타이머 ──
-  useEffect(() => {
-    if (!isLoading) {
-      setLoadingStep(0);
-      return;
-    }
-    setLoadingStep(1);
-    const t1 = setTimeout(() => setLoadingStep(2), 7000);
-    const t2 = setTimeout(() => setLoadingStep(3), 30000);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [isLoading]);
+  const analysisRequestRef = useRef<IdempotentRequest | null>(null);
 
   // ── 글자 수 계산 ──
   const totalChars = useMemo(
     () => questions.reduce((sum, q) => sum + q.answer.length, 0),
     [questions]
   );
-  const currentLoadingStep =
-    LOADING_STEPS[(loadingStep || 1) as keyof typeof LOADING_STEPS];
-  const LoadingIcon = currentLoadingStep.icon;
   const isOverLimit = totalChars > MAX_TOTAL_CHARS;
   const isBelowMinimum = totalChars < MIN_TOTAL_CHARS;
   const isAtMaxQuestions = questions.length >= MAX_QUESTIONS;
@@ -557,42 +305,21 @@ export default function Analyze() {
       company: sanitizeText(company.trim()) || undefined,
       jobKeyword: sanitizeText(jobLabel) || undefined,
     };
-    const requestFingerprint = JSON.stringify(requestPayload);
-    const previousRequest = analysisRequestRef.current;
-    const idempotencyKey =
-      previousRequest?.fingerprint === requestFingerprint
-        ? previousRequest.idempotencyKey
-        : crypto.randomUUID();
-    analysisRequestRef.current = {
-      fingerprint: requestFingerprint,
-      idempotencyKey,
-    };
+    // 같은 입력 재시도는 같은 키, 입력이 바뀌면 새 키.
+    const request = resolveIdempotencyKey(analysisRequestRef.current, JSON.stringify(requestPayload));
+    analysisRequestRef.current = request;
 
     // GA4: 자소서 입력 완료 + 분석 시작 이벤트
     trackResumeUpload("text", totalChars);
     trackAnalysisStart("cover_letter", totalChars);
 
     try {
-      const authorization = await getAuthorizationHeader();
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...authorization,
-          "Idempotency-Key": idempotencyKey,
-        },
-        body: JSON.stringify(requestPayload),
-      });
+      const result = await submitAnalysisRequest("/api/analyze", requestPayload, request.idempotencyKey);
 
       // 분석 접수 실패
-      if (response.status !== 202 && response.status !== 200) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          /* ignore */
-        }
-        if (getAnalyzeErrorTitle(errorData, response.status) === "요청 제한") {
+      if (result.kind === "rejected") {
+        const { errorData, status } = result as { errorData?: { error?: unknown }; status: number };
+        if (getAnalyzeErrorTitle(errorData, status) === "요청 제한") {
           trackAnalysisFailed("cover_letter", "rate_limit");
           setErrorModal({
             title: "요청 제한",
@@ -621,23 +348,20 @@ export default function Analyze() {
         if (errorData?.error === "ANALYSIS_CONCURRENCY_LIMITED") {
           trackAnalysisFailed("cover_letter", "analysis_concurrency_limited");
           setErrorModal({
-            title: getAnalyzeErrorTitle(errorData, response.status),
+            title: getAnalyzeErrorTitle(errorData, status),
             message: getAnalyzeErrorMessage(errorData),
           });
           return;
         }
         trackAnalysisFailed("cover_letter", "server_error");
         setErrorModal({
-          title: getAnalyzeErrorTitle(errorData, response.status),
+          title: getAnalyzeErrorTitle(errorData, status),
           message: getAnalyzeErrorMessage(errorData),
         });
         return;
       }
 
-      let receipt;
-      try {
-        receipt = parseAnalysisReceipt(await response.json());
-      } catch {
+      if (result.kind === "parse_error") {
         trackAnalysisFailed("cover_letter", "parse_error");
         setErrorModal({
           title: "파싱 오류",
@@ -646,11 +370,14 @@ export default function Analyze() {
         return;
       }
 
+      if (result.kind === "network_error") {
+        trackAnalysisFailed("cover_letter", "server_error");
+        setErrorModal({ title: "연결 불안정", message: UI_LABELS.NETWORK_ERROR });
+        return;
+      }
+
       analysisRequestRef.current = null;
-      navigate(analysisPendingPath(receipt.analysisRequestId));
-    } catch {
-      trackAnalysisFailed("cover_letter", "server_error");
-      setErrorModal({ title: "연결 불안정", message: UI_LABELS.NETWORK_ERROR });
+      navigate(analysisPendingPath(result.receipt.analysisRequestId));
     } finally {
       setIsLoading(false);
     }
@@ -694,72 +421,20 @@ export default function Analyze() {
     executeSubmit();
   };
 
-  // ── Framer Motion Variants ──
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 16 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5 },
-    },
-  };
-
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28">
-      {/* ════════ GNB ════════ */}
-      <motion.nav
-        className="sticky top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-lg border-b border-white/5"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-400" />
-            </button>
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={() => navigate("/")}
-            >
-              <Logo className="h-6 w-auto" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-              onClick={() => navigate("/my")}
-            >
-              내 지원서
-            </button>
-            <AuthButton />
-          </div>
-        </div>
-      </motion.nav>
+      <AnalyzeNav />
 
       {/* ════════ MAIN FORM ════════ */}
       <motion.section
         className="py-12 md:py-20"
-        variants={containerVariants}
+        variants={ANALYZE_CONTAINER_VARIANTS}
         initial="hidden"
         animate="visible"
       >
         <div className="container max-w-3xl mx-auto px-4">
           {/* ── Title ── */}
-          <motion.div className="text-center mb-12" variants={itemVariants}>
+          <motion.div className="text-center mb-12" variants={ANALYZE_ITEM_VARIANTS}>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
               자소서 분석
             </h1>
@@ -817,22 +492,7 @@ export default function Analyze() {
           </motion.div>
 
           {/* ── 목표 회사 및 직무 정보 ── */}
-          <motion.div
-            variants={itemVariants}
-            className="mb-10 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-7"
-          >
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-400/20 flex items-center justify-center">
-                <Building2 className="w-3.5 h-3.5 text-cyan-400" />
-              </div>
-              <h2 className="text-base font-semibold text-white">
-                목표 회사 및 직무 정보
-              </h2>
-              <span className="text-[11px] text-zinc-600 bg-white/[0.06] px-2 py-0.5 rounded-full">
-                선택
-              </span>
-            </div>
-
+          <FormSection icon={Building2} accent title="목표 회사 및 직무 정보">
             {/* 지원 회사 */}
             <div>
               <label className="block text-xs font-medium text-zinc-500 mb-2.5 uppercase tracking-wider">
@@ -870,10 +530,10 @@ export default function Analyze() {
               </label>
               <JobRoleCombobox value={jobRole} onChange={setJobRole} />
             </div>
-          </motion.div>
+          </FormSection>
 
           {/* ── 문항 리스트 ── */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={ANALYZE_ITEM_VARIANTS}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-white">
                 자소서 문항
@@ -900,7 +560,7 @@ export default function Analyze() {
           </motion.div>
 
           {/* ── 문항 추가 버튼 ── */}
-          <motion.div variants={itemVariants} className="mt-5">
+          <motion.div variants={ANALYZE_ITEM_VARIANTS} className="mt-5">
             {isAtMaxQuestions ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -940,427 +600,89 @@ export default function Analyze() {
       </motion.section>
 
       {/* ════════ STICKY BOTTOM BAR ════════ */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/[0.08] bg-[#0A0A0A]/90 backdrop-blur-xl">
-        <div className="container max-w-3xl mx-auto px-4 flex flex-col">
-          {/* 글자 수 경고 메시지 */}
-          {isOverLimit && (
-            <div className="flex items-center gap-2 pt-2.5 pb-1">
-              <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-              <span className="text-xs text-red-400">
-                {UI_LABELS.CHAR_OVER_LIMIT}
-              </span>
-            </div>
-          )}
-          {isBelowMinimum && hasContent && !isOverLimit && (
-            <div className="flex items-center gap-2 pt-2.5 pb-1">
-              <Info className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
-              <span className="text-xs text-zinc-500">
-                최소 {MIN_TOTAL_CHARS}자 이상 입력해 주세요
-              </span>
-            </div>
-          )}
-
-          <div className="h-[72px] flex items-center justify-between gap-4">
-            {/* 총 글자 수 */}
-            <div className="flex items-center gap-2.5 min-w-0">
-              <BarChart3
-                className={`w-4 h-4 flex-shrink-0 ${
-                  isOverLimit ? "text-red-400" : "text-zinc-500"
-                }`}
-              />
-              <span
-                className={`text-sm font-medium tabular-nums whitespace-nowrap ${
-                  isOverLimit ? "text-red-400" : "text-zinc-400"
-                }`}
-              >
-                총 글자 수:{" "}
-                <span
-                  className={`font-semibold ${
-                    isOverLimit ? "text-red-400" : "text-white"
-                  }`}
-                >
-                  {totalChars.toLocaleString()}
-                </span>{" "}
-                / {MAX_TOTAL_CHARS.toLocaleString()}자
-              </span>
-            </div>
-
-            {/* 결제 + 분석 버튼 */}
-            <Button
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              size="lg"
-              className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-400 hover:to-cyan-300 text-white px-6 py-3 text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-cyan-500/25 transition-all disabled:opacity-40 disabled:shadow-none whitespace-nowrap flex-shrink-0"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  분석 중...
-                </>
-              ) : (
-                <>분석 시작</>
-              )}
-            </Button>
+      <AnalyzeBottomBar>
+        {/* 글자 수 경고 메시지 */}
+        {isOverLimit && (
+          <div className="flex items-center gap-2 pt-2.5 pb-1">
+            <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+            <span className="text-xs text-red-400">
+              {UI_LABELS.CHAR_OVER_LIMIT}
+            </span>
           </div>
+        )}
+        {isBelowMinimum && hasContent && !isOverLimit && (
+          <div className="flex items-center gap-2 pt-2.5 pb-1">
+            <Info className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+            <span className="text-xs text-zinc-500">
+              최소 {MIN_TOTAL_CHARS}자 이상 입력해 주세요
+            </span>
+          </div>
+        )}
+
+        <div className="h-[72px] flex items-center justify-between gap-4">
+          {/* 총 글자 수 */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <BarChart3
+              className={`w-4 h-4 flex-shrink-0 ${
+                isOverLimit ? "text-red-400" : "text-zinc-500"
+              }`}
+            />
+            <span
+              className={`text-sm font-medium tabular-nums whitespace-nowrap ${
+                isOverLimit ? "text-red-400" : "text-zinc-400"
+              }`}
+            >
+              총 글자 수:{" "}
+              <span
+                className={`font-semibold ${
+                  isOverLimit ? "text-red-400" : "text-white"
+                }`}
+              >
+                {totalChars.toLocaleString()}
+              </span>{" "}
+              / {MAX_TOTAL_CHARS.toLocaleString()}자
+            </span>
+          </div>
+
+          {/* 결제 + 분석 버튼 */}
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            size="lg"
+            className={ANALYZE_SUBMIT_BUTTON_CLASS}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                분석 중...
+              </>
+            ) : (
+              <>분석 시작</>
+            )}
+          </Button>
         </div>
-      </div>
+      </AnalyzeBottomBar>
 
-      {/* ════════ LOADING OVERLAY — Status Step UX ════════ */}
-      <AnimatePresence>
-        {isLoading && (
-          <motion.div
-            className="fixed inset-0 z-[100] bg-[#0A0A0A] flex flex-col items-center justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            {/* Pulsing gradient ring */}
-            <div className="relative mb-10">
-              <svg
-                className="w-24 h-24 animate-spin"
-                style={{ animationDuration: "3s" }}
-                viewBox="0 0 100 100"
-              >
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.05)"
-                  strokeWidth="4"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  fill="none"
-                  stroke="url(#loadGrad)"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray="80 200"
-                />
-                <defs>
-                  <linearGradient
-                    id="loadGrad"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="100%"
-                  >
-                    <stop offset="0%" stopColor="#3B82F6" />
-                    <stop offset="100%" stopColor="#22D3EE" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={loadingStep}
-                    initial={{ opacity: 0, scale: 0.75, rotate: -8 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    exit={{ opacity: 0, scale: 0.75, rotate: 8 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <LoadingIcon
-                      className={`w-8 h-8 ${currentLoadingStep.accent} animate-pulse`}
-                    />
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
+      <AnalyzeLoadingOverlay isLoading={isLoading} />
 
-            <motion.p
-              key={`loading-title-${loadingStep}`}
-              className="text-xl font-semibold text-white mb-6 tracking-tight"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              {currentLoadingStep.title}
-            </motion.p>
+      <PreviousResumePicker
+        open={isResumePickerOpen}
+        resumes={previousResumes}
+        isLoading={isPreviousResumesLoading}
+        error={previousResumeError}
+        applyingId={isApplyingPreviousResume}
+        onPick={applyPreviousResume}
+        onClose={() => setIsResumePickerOpen(false)}
+      />
 
-            {/* 3단계 도트 인디케이터 */}
-            <div className="flex items-center gap-3 mb-4">
-              {[1, 2, 3].map(step => (
-                <div
-                  key={step}
-                  className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
-                    loadingStep >= step
-                      ? "bg-cyan-400 scale-110 shadow-sm shadow-cyan-400/40"
-                      : "bg-zinc-700"
-                  }`}
-                />
-              ))}
-            </div>
+      <ImportPreviewDialog
+        pairs={importPreview}
+        willOverwrite={hasContent}
+        onApply={applyImportedPairs}
+        onCancel={() => setImportPreview(null)}
+      />
 
-            {/* 상태 텍스트 (fade 전환) */}
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={loadingStep}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.4 }}
-                className="text-sm text-zinc-500 mb-10"
-              >
-                {currentLoadingStep.label}
-              </motion.p>
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ════════ PREVIOUS RESUME PICKER ════════ */}
-      <AnimatePresence>
-        {isResumePickerOpen && (
-          <motion.div
-            className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsResumePickerOpen(false)}
-          >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="previous-resume-title"
-              className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/[0.1] bg-[#141414] shadow-2xl"
-              initial={{ opacity: 0, scale: 0.97, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 8 }}
-              transition={{ duration: 0.18 }}
-              onClick={event => event.stopPropagation()}
-            >
-              <div className="flex items-start justify-between border-b border-white/[0.08] px-6 py-5">
-                <div>
-                  <p className="mb-1 text-xs font-medium tracking-wide text-cyan-300">
-                    저장된 지원서
-                  </p>
-                  <h2
-                    id="previous-resume-title"
-                    className="text-lg font-semibold text-white"
-                  >
-                    이전 지원서 불러오기
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsResumePickerOpen(false)}
-                  className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-white/[0.07] hover:text-white"
-                  aria-label="이전 지원서 목록 닫기"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="max-h-[min(60vh,520px)] overflow-y-auto p-4">
-                {isPreviousResumesLoading ? (
-                  <div className="flex min-h-40 items-center justify-center gap-3 text-sm text-zinc-500">
-                    <Loader2 className="h-4 w-4 animate-spin text-cyan-400" />
-                    저장된 지원서를 불러오는 중이에요
-                  </div>
-                ) : previousResumeError ? (
-                  <div className="px-3 py-8 text-center text-sm leading-relaxed text-zinc-400">
-                    {previousResumeError}
-                  </div>
-                ) : previousResumes.length === 0 ? (
-                  <div className="px-3 py-8 text-center text-sm leading-relaxed text-zinc-500">
-                    아직 불러올 이전 지원서가 없어요.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {previousResumes.map(project => {
-                      const analysisId = project.latest_analysis_id!;
-                      const isApplying =
-                        isApplyingPreviousResume === analysisId;
-
-                      return (
-                        <button
-                          key={project.id}
-                          type="button"
-                          disabled={Boolean(isApplyingPreviousResume)}
-                          onClick={() => applyPreviousResume(analysisId)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5 text-left transition-colors hover:border-cyan-400/25 hover:bg-cyan-400/[0.05] disabled:cursor-wait disabled:opacity-60"
-                        >
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium text-zinc-100">
-                                {project.title}
-                              </p>
-                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-zinc-500">
-                                <span className="inline-flex items-center gap-1.5">
-                                  <BriefcaseBusiness className="h-3.5 w-3.5" />
-                                  {project.job_role || "직무 미지정"}
-                                </span>
-                                <span className="inline-flex items-center gap-1.5">
-                                  <CalendarDays className="h-3.5 w-3.5" />
-                                  {formatSavedDate(project.created_at)}
-                                </span>
-                              </div>
-                            </div>
-                            {isApplying ? (
-                              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-cyan-400" />
-                            ) : (
-                              <span className="shrink-0 text-xs font-medium text-cyan-300">
-                                불러오기
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ════════ FILE IMPORT PREVIEW ════════ */}
-      <AnimatePresence>
-        {importPreview && (
-          <motion.div
-            className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setImportPreview(null)}
-          >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="file-import-title"
-              className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/[0.1] bg-[#141414] shadow-2xl"
-              initial={{ opacity: 0, scale: 0.97, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 8 }}
-              transition={{ duration: 0.18 }}
-              onClick={event => event.stopPropagation()}
-            >
-              <div className="flex items-start justify-between border-b border-white/[0.08] px-6 py-5">
-                <div>
-                  <p className="mb-1 text-xs font-medium tracking-wide text-cyan-300">
-                    파일 불러오기
-                  </p>
-                  <h2
-                    id="file-import-title"
-                    className="text-lg font-semibold text-white"
-                  >
-                    문항 나누기 미리보기
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setImportPreview(null)}
-                  className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-white/[0.07] hover:text-white"
-                  aria-label="미리보기 닫기"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="max-h-[min(55vh,480px)] space-y-3 overflow-y-auto p-4">
-                {importPreview.map((pair, index) => (
-                  <div
-                    key={index}
-                    className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5"
-                  >
-                    <p className="mb-1.5 text-xs font-medium tracking-wide text-cyan-300">
-                      문항 {index + 1}
-                    </p>
-                    <p className="text-sm font-medium text-zinc-100">
-                      {pair.question || "질문 없음 — 채운 뒤 직접 입력해 주세요"}
-                    </p>
-                    <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-zinc-400 line-clamp-4">
-                      {pair.answer}
-                    </p>
-                    <p className="mt-2 text-right text-[11px] tabular-nums text-zinc-600">
-                      {pair.answer.length.toLocaleString()}자
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-white/[0.08] px-6 py-4">
-                <p className="mb-3 text-xs leading-relaxed text-zinc-500">
-                  나눈 결과가 어색하면 채운 뒤 자유롭게 고칠 수 있어요.
-                  {hasContent && " 적용하면 지금 입력된 문항을 덮어써요."}
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setImportPreview(null)}
-                    className="h-10 border-white/[0.1] bg-white/[0.02] px-4 text-sm font-medium text-zinc-300 hover:bg-white/[0.06]"
-                  >
-                    취소
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={applyImportedPairs}
-                    className="h-10 bg-cyan-500 px-4 text-sm font-semibold text-black hover:bg-cyan-400"
-                  >
-                    이대로 채우기
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ════════ ERROR MODAL ════════ */}
-      <AnimatePresence>
-        {errorModal && (
-          <motion.div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setErrorModal(null)}
-          >
-            <motion.div
-              className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-red-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white">
-                  {errorModal.title}
-                </h3>
-              </div>
-              <p className="text-sm text-zinc-400 leading-relaxed mb-6">
-                {errorModal.message}
-              </p>
-              {errorModal.actionHref && errorModal.actionLabel && (
-                <Button
-                  onClick={() => {
-                    const href = errorModal.actionHref;
-                    setErrorModal(null);
-                    if (href) navigate(href);
-                  }}
-                  className="w-full mb-2 bg-white hover:bg-zinc-200 text-black rounded-xl h-11 text-sm font-semibold transition-colors"
-                >
-                  {errorModal.actionLabel}
-                </Button>
-              )}
-              <Button
-                onClick={() => setErrorModal(null)}
-                className="w-full bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl h-11 text-sm font-medium transition-colors"
-              >
-                확인
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AnalyzeErrorModal error={errorModal} onClose={() => setErrorModal(null)} />
 
       {/* ════════ CONFIRM MODAL ════════ */}
       <AnimatePresence>

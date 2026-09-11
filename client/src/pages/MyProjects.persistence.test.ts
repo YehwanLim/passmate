@@ -5,12 +5,13 @@ const analyzeSource = readFileSync(new URL("./Analyze.tsx", import.meta.url), "u
 const myProjectsSource = readFileSync(new URL("./MyProjects.tsx", import.meta.url), "utf8");
 const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.url), "utf8");
 const reportSource = readFileSync(new URL("./ReportResult.tsx", import.meta.url), "utf8");
+const submitSource = readFileSync(new URL("../lib/analysisSubmit.ts", import.meta.url), "utf8");
 
 describe("analysis persistence into My Projects", () => {
   it("uses the server analysis transaction as the only persistence path", () => {
-    expect(analyzeSource).toContain('fetch("/api/analyze"');
-    expect(analyzeSource).toContain("parseAnalysisReceipt(await response.json())");
-    expect(analyzeSource).toContain("analysisPendingPath(receipt.analysisRequestId)");
+    expect(analyzeSource).toContain('submitAnalysisRequest("/api/analyze"');
+    expect(submitSource).toContain("parseAnalysisReceipt(await response.json())");
+    expect(analyzeSource).toContain("analysisPendingPath(result.receipt.analysisRequestId)");
     expect(analyzeSource).not.toContain("data.project_id");
     expect(analyzeSource).not.toContain("data.analysis_id");
     expect(analyzeSource).not.toContain("data.report");

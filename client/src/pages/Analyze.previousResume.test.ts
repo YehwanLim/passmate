@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSavedQuestions } from "./Analyze";
+import { parseSavedQuestions } from "./analyzeQuestions";
 
 describe("previous resume loading", () => {
   it("restores each saved question and answer into a separate form item", () => {

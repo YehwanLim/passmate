@@ -9,7 +9,7 @@ describe("analysis authentication access", () => {
     expect(analyzeSource).toContain("useRequireAuth({");
     expect(analyzeSource).toContain('redirectPath: "/analyze"');
     expect(analyzeSource).toContain("getAuthorizationHeader()");
-    expect(analyzeSource).toContain('fetch("/api/analyze"');
+    expect(analyzeSource).toContain('submitAnalysisRequest("/api/analyze"');
   });
 
   it("tells users that logging in enables free analysis", () => {
