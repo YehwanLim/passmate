@@ -50,8 +50,8 @@ describe("markLandingCanvas", () => {
     expect(() => markLandingCanvas('<html style="x"><body></body></html>')).toThrow(/class or style/);
   });
 
-  it("uses the same class name as index.css and Home.tsx", () => {
-    const css = readFileSync(path.join(ROOT_DIR, "client/src/index.css"), "utf8");
+  it("uses the same class name as styles/landing.css and Home.tsx", () => {
+    const css = readFileSync(path.join(ROOT_DIR, "client/src/styles/landing.css"), "utf8");
     const home = readFileSync(path.join(ROOT_DIR, "client/src/pages/Home.tsx"), "utf8");
     expect(css).toContain(`html.${LANDING_CANVAS_CLASS}`);
     expect(home).toContain(`classList.add("${LANDING_CANVAS_CLASS}")`);

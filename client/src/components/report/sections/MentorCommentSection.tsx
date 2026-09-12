@@ -6,7 +6,7 @@ import { renderEmphasizedText } from "../richText";
 /** ACT 6 — 실무자 코멘트를 타임스탬프 달린 스레드처럼 보여 준다. */
 export function MentorCommentSection({ blocks }: { blocks: MentorCommentBlock[] }) {
   return (
-    <section id="section-pm-comment" className="pt-24 pb-20 section-divider">
+    <section id="section-pm-comment" className="pt-24 pb-20 section-divider report-section-anchor">
       <h3 className="text-xl sm:text-2xl font-medium text-white mb-10 tracking-tight"><SectionNumber value="07" />{UI_LABELS.PM_VERDICT_TITLE}</h3>
       <div className="mentor-comment-thread relative">
         {blocks.map((block, index) => (

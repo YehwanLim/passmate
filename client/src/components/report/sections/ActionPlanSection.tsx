@@ -17,7 +17,7 @@ export function ActionPlanSection({ tasks }: { tasks: ActionItem[] }) {
   const taskProgress = Math.round((completedTasks.length / tasks.length) * 100);
 
   return (
-    <section id="section-action-plan" className="py-24 section-divider">
+    <section id="section-action-plan" className="py-24 section-divider report-section-anchor">
       <h3 className="text-xl sm:text-2xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value="06" />{UI_LABELS.ACTION_PLAN_TITLE}</h3>
 
       <div className="flex items-center gap-5 mb-14 mt-10">

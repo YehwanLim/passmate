@@ -14,7 +14,7 @@ export function CompanyInsightSection({
   companyInsight: CompanyInsight;
 }) {
   return (
-    <section id="section-company-insight" className="py-24 section-divider">
+    <section id="section-company-insight" className="py-24 section-divider report-section-anchor">
       <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value="02" />{UI_LABELS.HIRING_CRITERIA(targetCompany)}</h3>
       <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.75]">{renderRichText(companyInsight.summary)}</p>
 

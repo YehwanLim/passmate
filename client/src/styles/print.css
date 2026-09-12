@@ -1,0 +1,59 @@
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html,
+  body,
+  main {
+    background: #fff !important;
+  }
+
+  main * {
+    color: #18181b !important;
+    border-color: rgba(24, 24, 27, 0.16) !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  /* 다크 배경용 카드·칩 배경을 옅은 회색으로 치환 */
+  main [class*="bg-white/"],
+  main [class*="bg-zinc-"],
+  main [class*="bg-[#0B0B0E]"] {
+    background-color: #f6f6f7 !important;
+  }
+
+  /* 히어로 카드의 장식용 라디얼 글로우는 흰 바탕에서 얼룩처럼 보여 제거 */
+  main [class*="bg-[radial-gradient"] {
+    background-image: none !important;
+  }
+
+  .section-divider {
+    border-bottom-color: rgba(24, 24, 27, 0.16);
+  }
+
+  /* 접힌 코멘트 아코디언을 모두 펼쳐서 인쇄 */
+  .commentary-body {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .commentary-chevron {
+    display: none;
+  }
+
+  /* 페이지 나눔 힌트: 제목 직후·카드 중간에서 끊기지 않게 */
+  h1,
+  h3,
+  h4 {
+    break-after: avoid;
+  }
+  .commentary-item,
+  blockquote {
+    break-inside: avoid;
+  }
+}

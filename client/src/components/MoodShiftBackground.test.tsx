@@ -20,7 +20,7 @@ describe("MoodShiftBackground", () => {
     const html = renderToString(<MoodShiftBackground />);
     expect(html).not.toContain("filter:url(");
     expect(html).toContain("mood-shift-wobble\"");
-    const css = readFileSync(path.resolve(import.meta.dirname, "../index.css"), "utf8");
+    const css = readFileSync(path.resolve(import.meta.dirname, "../styles/landing.css"), "utf8");
     const gated = css.match(/@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*?\n\}/)?.[0] ?? "";
     expect(gated).toContain(".mood-shift-wobble");
     expect(gated).toContain("filter: url(#mood-shift-wobble)");

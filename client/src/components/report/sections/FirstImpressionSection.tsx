@@ -29,7 +29,7 @@ export function FirstImpressionSection({
   mentorCommentBlocks: MentorCommentBlock[];
 }) {
   return (
-    <header id="section-first-impression" className="pt-8 pb-[6.5rem] section-divider">
+    <header id="section-first-impression" className="pt-8 pb-[6.5rem] section-divider report-section-anchor">
       <ReportHeroFrame eyebrow={<>First Read · {targetCompany}</>}>
         <div className="relative min-w-0 py-12 text-center sm:py-14 md:py-[4.25rem]">
           <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{displayName}님은</p>

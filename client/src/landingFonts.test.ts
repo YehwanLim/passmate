@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 //   실제로 한 번도 내려받지 않던 죽은 렌더 차단 요청이었다.
 const CLIENT_DIR = path.resolve(__dirname, "..");
 const indexHtml = readFileSync(path.join(CLIENT_DIR, "index.html"), "utf8");
-const indexCss = readFileSync(path.join(CLIENT_DIR, "src", "index.css"), "utf8");
+const indexCss = readFileSync(path.join(CLIENT_DIR, "src", "styles", "base.css"), "utf8");
 const mainTsx = readFileSync(path.join(CLIENT_DIR, "src", "main.tsx"), "utf8");
 const fontCss = readFileSync(
   path.join(CLIENT_DIR, "src", "fonts", "pretendard-variable-dynamic-subset.css"),

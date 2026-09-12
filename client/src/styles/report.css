@@ -1,0 +1,700 @@
+/* ── Editorial Report: Smooth Scroll ── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Editorial Report: Mini Navigator ── */
+.report-nav {
+  position: fixed;
+  top: 46vh;
+  left: clamp(24px, calc((100vw - 1180px) / 2 - 92px), 132px);
+  transform: translateY(-50%);
+  width: 132px;
+  z-index: 40;
+  pointer-events: auto;
+}
+
+@media (max-width: 1279px) {
+  .report-nav {
+    display: none !important;
+  }
+}
+
+.report-nav-list {
+  display: grid;
+  gap: 2px;
+}
+
+.report-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(161, 161, 170, 0.42);
+  transition: color 0.25s ease, transform 0.25s ease;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+}
+
+.report-nav-item:hover {
+  color: rgba(212, 212, 216, 0.72);
+}
+
+.report-nav-index {
+  width: 20px;
+  color: currentColor;
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-nav-item.active {
+  color: rgba(187, 247, 208, 0.78);
+  font-weight: 600;
+  transform: translateX(2px);
+}
+
+@media (min-width: 1280px) {
+  #section-line-analysis {
+    padding-left: 190px;
+  }
+}
+/* ── Report: 공용 섹션 앵커 여백 — 기업 분석 리포트처럼 id 가 다른 리포트도 같은 값을 쓴다 ── */
+.report-section-anchor {
+  scroll-margin-top: 112px;
+}
+@media (min-width: 1280px) {
+  .report-section-anchor {
+    scroll-margin-top: 80px;
+  }
+}
+
+/* ── Report: 컴팩트 레이아웃 하단 코멘트 시트 ── */
+.report-sheet > div:first-child {
+  background: rgba(255, 255, 255, 0.14);
+}
+.report-sheet-nav {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 9, 9, 0.9);
+  color: #a1a1aa;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+.report-sheet-nav:disabled {
+  opacity: 0.3;
+}
+.report-sheet-nav:not(:disabled):active {
+  background: #fff;
+  color: #111;
+}
+/* 이전/다음: 본문은 진행 방향으로 밀리며 페이드아웃 → 반대편에서 페이드인 */
+.report-sheet-body {
+  transition: opacity 0.16s ease, transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.report-sheet-leave-left {
+  opacity: 0;
+  transform: translateX(-16px);
+}
+.report-sheet-leave-right {
+  opacity: 0;
+  transform: translateX(16px);
+}
+.report-sheet-enter-right {
+  transition: none;
+  opacity: 0;
+  transform: translateX(16px);
+}
+.report-sheet-enter-left {
+  transition: none;
+  opacity: 0;
+  transform: translateX(-16px);
+}
+.report-sheet-meta {
+  transition: opacity 0.16s ease;
+}
+.report-sheet-stepping .report-sheet-meta {
+  opacity: 0.35;
+}
+
+/* ── Report: 첫 진입 안내 말풍선 (첫 하이라이트 위, 계정당 한 번) ── */
+.report-coach {
+  position: absolute;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 8px 10px;
+  border: none;
+  border-radius: 999px;
+  background: #fafafa;
+  color: #111;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  animation: reportCoachBob 1.8s ease-in-out 0.3s infinite;
+}
+.report-coach::after {
+  content: '';
+  position: absolute;
+  left: var(--coach-tail-x, 18px);
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #fafafa;
+  transform: rotate(45deg);
+}
+.report-coach-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: reportCoachPulse 1.8s ease-out infinite;
+}
+.annotation-hl.coach-target .annotation-badge {
+  animation: reportCoachRing 1.8s ease-out infinite;
+}
+@keyframes reportCoachBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes reportCoachPulse {
+  0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55); }
+  100% { box-shadow: 0 0 0 9px rgba(74, 222, 128, 0); }
+}
+@keyframes reportCoachRing {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
+  100% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .report-coach,
+  .report-coach-dot,
+  .annotation-hl.coach-target .annotation-badge {
+    animation: none;
+  }
+  .report-sheet-body {
+    transition: none;
+  }
+}
+
+/* ── Annotation Highlight: Soft Ink Tint ── */
+.annotation-hl {
+  position: relative;
+  display: inline;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  border-radius: 4px;
+  padding: 2px 4px;
+  color: #e4e4e7;
+}
+
+/* Default: soft translucent tint (praise = emerald, improvement = amber) */
+.annotation-hl.praise-hl {
+  background: rgba(52, 211, 153, 0.11);
+}
+.annotation-hl.improvement-hl {
+  background: rgba(252, 211, 77, 0.10);
+}
+
+.annotation-hl:hover {
+  color: #fff;
+}
+.annotation-hl.praise-hl:hover {
+  background: rgba(52, 211, 153, 0.15);
+}
+.annotation-hl.improvement-hl:hover {
+  background: rgba(252, 211, 77, 0.13);
+}
+
+/* Active: slightly deeper tint */
+.annotation-hl.active.praise-hl {
+  background: rgba(52, 211, 153, 0.18);
+  color: #fff;
+}
+.annotation-hl.active.improvement-hl {
+  background: rgba(252, 211, 77, 0.16);
+  color: #fff;
+}
+
+/* Dimming effect — highlights remain faintly visible */
+.original-text-dimmed .annotation-hl:not(.active) {
+  color: rgba(180, 180, 180, 0.7);
+  transition: all 0.3s ease-in-out;
+}
+.original-text-dimmed .annotation-hl.praise-hl:not(.active) {
+  background: rgba(52, 211, 153, 0.07);
+}
+.original-text-dimmed .annotation-hl.improvement-hl:not(.active) {
+  background: rgba(252, 211, 77, 0.06);
+}
+/* Hover in dimmed state: brighten the tint */
+.original-text-dimmed .annotation-hl.praise-hl:not(.active):hover {
+  background: rgba(52, 211, 153, 0.11);
+  color: #ddd;
+}
+.original-text-dimmed .annotation-hl.improvement-hl:not(.active):hover {
+  background: rgba(252, 211, 77, 0.10);
+  color: #ddd;
+}
+.original-text-dimmed p {
+  color: rgba(180, 180, 180, 0.45);
+  transition: color 0.3s ease-in-out;
+}
+.original-text-dimmed .annotation-hl.active.praise-hl {
+  color: #fff;
+  background: rgba(52, 211, 153, 0.18);
+  transition: all 0.3s ease-in-out;
+}
+.original-text-dimmed .annotation-hl.active.improvement-hl {
+  color: #fff;
+  background: rgba(252, 211, 77, 0.16);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Number badge: always visible, inline before the sentence */
+.annotation-badge {
+  display: inline-flex;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  font-size: 10.5px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  margin-right: 5px;
+  position: relative;
+  top: -1.5px;
+  transition: background 0.2s ease, color 0.2s ease;
+  pointer-events: none;
+}
+.annotation-hl.praise-hl .annotation-badge {
+  background: rgba(52, 211, 153, 0.3);
+  color: #bbf7d0;
+}
+.annotation-hl.improvement-hl .annotation-badge {
+  background: rgba(252, 211, 77, 0.26);
+  color: #fef08a;
+}
+.annotation-hl.active.praise-hl .annotation-badge {
+  background: #4ADE80;
+  color: #111;
+}
+.annotation-hl.active.improvement-hl .annotation-badge {
+  background: #FBBF24;
+  color: #111;
+}
+
+/* ── Fade-in ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeInUp 0.3s ease-out forwards; }
+/* ── Hide scrollbar ── */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Document Header ── */
+.doc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(180, 180, 180, 0.6);
+  letter-spacing: 0.02em;
+}
+.doc-header .separator {
+  color: rgba(180, 180, 180, 0.25);
+}
+
+/* ── Section Navigator Tabs ── */
+.section-tab {
+  position: relative;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 10px 0;
+  margin-right: 28px;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(160, 160, 160, 0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.25s ease;
+  letter-spacing: 0.01em;
+}
+.section-tab:last-child { margin-right: 0; }
+.section-tab:hover { color: rgba(200, 200, 200, 0.8); }
+.section-tab .tab-num {
+  margin-right: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: #52525b;
+  transition: color 0.25s ease;
+}
+.section-tab.active {
+  color: #E5E5E5;
+  font-weight: 500;
+}
+.section-tab.active .tab-num {
+  color: #a1a1aa;
+}
+.section-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 1px;
+}
+
+/* ── Source Text: Reading Typography ── */
+.source-text-body {
+  font-size: 16px;
+  line-height: 2.15;
+  color: rgba(200, 200, 200, 0.85);
+  white-space: pre-wrap;
+  word-break: keep-all;
+  transition: all 0.3s ease-in-out;
+}
+.source-text-body p {
+  margin-bottom: 24px;
+}
+.source-text-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Subtitle Highlight: shows which subtitle the 소제목 진단 refers to ── */
+.subtitle-hl {
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.subtitle-hl.watching {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* ── Character Count Metadata ── */
+.char-count {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(180, 180, 180, 0.6);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Commentary Accordion Item: hairline list, soft panel when open ── */
+.commentary-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.28s ease, border-radius 0.28s ease,
+              padding 0.28s ease, margin 0.28s ease;
+}
+.commentary-item:last-child {
+  border-bottom: none;
+}
+/* 펼친 패널은 좌우로만 넓어진다(패딩을 음수 마진으로 상쇄) —
+   행의 위치가 토글 전후에 전혀 움직이지 않게. */
+.commentary-item.expanded {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  border-bottom-color: transparent;
+  padding: 0 12px;
+  margin: 0 -12px;
+}
+.commentary-item.focused {
+  background: rgba(255, 255, 255, 0.045);
+}
+.commentary-item.focused .commentary-preview {
+  color: #fff;
+  font-weight: 500;
+}
+
+.commentary-trigger {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.commentary-trigger:hover {
+  opacity: 0.85;
+}
+
+/* Commentary number: translucent, colored by feedback type */
+.commentary-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(230, 230, 230, 0.9);
+}
+.commentary-item.praise .commentary-num,
+.report-sheet-head.praise .commentary-num {
+  background: rgba(52, 211, 153, 0.14);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+.commentary-item.improvement .commentary-num,
+.report-sheet-head.improvement .commentary-num {
+  background: rgba(252, 211, 77, 0.12);
+  color: #fcd34d;
+  border: 1px solid rgba(252, 211, 77, 0.28);
+}
+
+.commentary-preview {
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(210, 210, 210, 0.85);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.25s ease;
+}
+.commentary-item.expanded .commentary-preview {
+  color: #ddd;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* grid-template-rows 0fr→1fr는 실제 콘텐츠 높이만큼만 움직여서
+   max-height 트릭처럼 닫힐 때 멈칫하는 구간이 없다. */
+.commentary-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  padding-left: 36px;
+  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.24s ease;
+}
+.commentary-item.expanded .commentary-body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.commentary-body-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ═══ Commentary Typography Hierarchy ═══ */
+
+/*
+ * TIER 2 — Block Labels (예상 면접 질문, 개선한 문장)
+ * A hairline above each label marks the start of a new block,
+ * so visibility comes from position rather than size.
+ */
+.commentary-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #d4d4d8;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 16px;
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+.commentary-label:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 4px;
+}
+
+/*
+ * TIER 3 — Headlines / Key Insights (개선안 문장, praisePoint, interview question)
+ * Bright, prominent, tight line-height. These "pop" off the page.
+ */
+.commentary-headline {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: rgba(245, 245, 245, 0.95);
+  margin-bottom: 20px;
+}
+
+/*
+ * TIER 4a — Body Text (detailedAnalysis, explanatory prose)
+ * Stepped back from headlines. Comfortable reading rhythm.
+ */
+.commentary-body-text {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.9;
+  color: rgba(190, 190, 190, 0.78);
+  margin-bottom: 4px;
+}
+
+/*
+ * TIER 4b — Metadata (출제 의도, intent 등)
+ * Most subdued. Informational footnote feel.
+ */
+.commentary-meta {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(140, 140, 140, 0.55);
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/*
+ * Original sentence quote — italic, quiet, distinct from analysis
+ */
+.commentary-quote {
+  font-size: 13px;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.75;
+  color: rgba(180, 180, 180, 0.65);
+  margin-bottom: 20px;
+}
+
+/* ── Commentary Chevron ── */
+.commentary-chevron {
+  width: 16px;
+  height: 16px;
+  color: rgba(140, 140, 140, 0.35);
+  flex-shrink: 0;
+  margin-top: 3px;
+  margin-left: auto;
+  transition: transform 0.3s ease, color 0.25s ease;
+}
+.commentary-item.expanded .commentary-chevron {
+  transform: rotate(180deg);
+  color: rgba(200, 200, 200, 0.5);
+}
+
+/* ── Focus Mode: Full card display ── */
+.focus-card {
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.focus-card:last-child {
+  border-bottom: none;
+}
+
+/* ── View mode toggle ── */
+.view-mode-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+/* 컴팩트 레이아웃(lg 미만)에서는 코멘트가 하단 시트로 열리므로 보기 모드 토글이 의미가 없다.
+   위 display:flex가 레이어 밖 일반 CSS라 Tailwind hidden 유틸리티로는 숨겨지지 않는다. */
+@media (max-width: 1023px) {
+  .view-mode-toggle {
+    display: none;
+  }
+}
+.view-mode-btn {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(160, 160, 160, 0.6);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.view-mode-btn:hover {
+  color: rgba(200, 200, 200, 0.8);
+}
+.view-mode-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #E5E5E5;
+}
+
+/* ── Section divider ── */
+.section-divider { border-bottom: 1px solid #2A2A2A; }
+
+/* ── Visible thin scrollbar for right panel ── */
+.commentary-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.commentary-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.commentary-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+.commentary-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.commentary-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* ── Report access lock card ── */
+.report-lock-card {
+  position: relative;
+  isolation: isolate;
+  background: rgba(26, 26, 28, 0.88);
+  box-shadow:
+    0 28px 100px -52px rgba(255, 255, 255, 0.42),
+    0 20px 64px -42px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+.report-lock-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.report-lock-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.report-lock-card::after {
+  position: absolute;
+  content: "";
+  inset: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: calc(1.35rem - 1px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ═══ Print — '리포트 저장하기'(브라우저 인쇄 → PDF) ═══
+   화면은 다크 테마지만 종이는 흰 바탕이 기본이므로 인쇄 시 문서 전체를 라이트로 뒤집는다.

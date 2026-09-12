@@ -12,7 +12,7 @@ export function InterviewDrillSection({ items, isPrinting }: { items: InterviewQ
   const [openQuestionIndex, setOpenQuestionIndex] = useState<number | null>(0);
 
   return (
-    <section id="section-interview-drill" className="pt-24 pb-24 section-divider">
+    <section id="section-interview-drill" className="pt-24 pb-24 section-divider report-section-anchor">
       <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value="05" />{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
       <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.7]">{UI_LABELS.INTERVIEW_DRILL_DESC}</p>
 

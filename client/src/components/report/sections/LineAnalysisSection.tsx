@@ -333,7 +333,7 @@ export function LineAnalysisSection({
   const sheetRank = sheetCardIndex !== null ? sortedOrder.indexOf(sheetCardIndex) : -1;
 
   return (
-    <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10"
+    <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10 report-section-anchor"
       onClick={(e) => {
         // Click-outside: reset highlight if clicking empty area
         if ((e.target as HTMLElement).closest(".annotation-hl") || (e.target as HTMLElement).closest(".subtitle-hl") || (e.target as HTMLElement).closest(".commentary-trigger") || (e.target as HTMLElement).closest(".commentary-body") || (e.target as HTMLElement).closest(".view-mode-toggle") || (e.target as HTMLElement).closest(".report-coach")) return;

@@ -1,0 +1,592 @@
+/* ── Landing Page Animations ── */
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(3deg);
+  }
+}
+
+@keyframes gradient-move {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes cta-light-sweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(-135%, 0, 0) skewX(-18deg);
+  }
+  18% {
+    opacity: 0.54;
+  }
+  72% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(145%, 0, 0) skewX(-18deg);
+  }
+}
+
+/* 이용권 카드 호버: 테두리가 밝아지고 빛이 한 번 스친다(landing-primary-cta 와 같은 sweep). */
+.plan-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: border-color 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.plan-card::after {
+  content: "";
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: -45%;
+  z-index: 0;
+  width: 34%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(-135%, 0, 0) skewX(-18deg);
+}
+
+.plan-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * 추천 배지 — 카드 우측 상단 모서리에 얹는 반짝이는 하늘색 캡슐.
+ * 위 `.plan-card > *` 가 모든 직계 자식을 relative 로 고정하므로, 같은 특이도인 이 규칙을
+ * 반드시 그 뒤에 둬서 absolute 가 이기게 한다.
+ */
+.plan-badge {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  z-index: 2;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: #082f49;
+  /* 광택은 위쪽 하이라이트 한 줄로만. 그라데이션·글로우를 세게 주면 배지가 카드를 잡아먹는다. */
+  background: #38bdf8;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .plan-card:hover {
+    border-color: rgba(226, 232, 240, 0.32);
+    transform: translate3d(0, -2px, 0);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  .plan-card--recommended:hover {
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow:
+      0 14px 32px rgba(0, 0, 0, 0.28),
+      0 0 34px rgba(255, 255, 255, 0.12);
+  }
+
+  .plan-card:hover::after {
+    animation: cta-light-sweep 900ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+  }
+}
+
+@keyframes social-proof-marquee {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 8s ease-in-out infinite;
+}
+
+.gradient-border-hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.15));
+  background-size: 200% 200%;
+  animation: gradient-move 4s ease infinite;
+}
+
+.social-proof-marquee {
+  overflow: hidden;
+  contain: layout paint;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+}
+
+.social-proof-marquee-track {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  animation: social-proof-marquee 42s linear infinite;
+  will-change: transform;
+}
+
+.social-proof-marquee-group {
+  display: flex;
+  align-items: center;
+  gap: clamp(2.75rem, 7vw, 5rem);
+  padding-right: clamp(2.75rem, 7vw, 5rem);
+}
+
+.social-proof-marquee:hover .social-proof-marquee-track {
+  animation-play-state: paused;
+}
+
+.social-proof-logo-shell {
+  position: relative;
+  display: block;
+  width: clamp(7.5rem, 12vw, 10.5rem);
+  height: 3.25rem;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.social-proof-logo {
+  display: block;
+  width: 100%;
+  height: 2rem;
+  margin: 0.625rem auto;
+  object-fit: contain;
+  transform: scale(var(--logo-scale, 1));
+  transform-origin: center;
+}
+
+.social-proof-metrics {
+  display: grid;
+  max-width: 40rem;
+  margin-inline: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.social-proof-metric {
+  padding: 0.25rem 1.75rem;
+}
+
+.social-proof-metric + .social-proof-metric {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.social-proof-metric-value {
+  font-size: clamp(3.25rem, 8vw, 5.5rem);
+  font-weight: 600;
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.social-proof-metric-number {
+  white-space: nowrap;
+}
+
+.social-proof-metric-label {
+  margin-top: 0.85rem;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  color: rgb(107 114 128);
+}
+
+@media (max-width: 639px) {
+  .social-proof-metrics {
+    max-width: 19rem;
+    grid-template-columns: 1fr;
+  }
+
+  .social-proof-metric {
+    padding: 1.5rem 0;
+  }
+
+  .social-proof-metric + .social-proof-metric {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 0;
+  }
+}
+
+.landing-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.landing-nav-link,
+.header-action-link {
+  color: rgba(212, 212, 216, 0.82);
+  opacity: 0.88;
+  transition: color 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-nav-link:hover,
+.landing-nav-link:focus-visible,
+.header-action-link:hover,
+.header-action-link:focus-visible,
+.header-action-link[aria-expanded="true"] {
+  background-color: rgba(96, 165, 250, 0.1);
+  color: rgba(219, 234, 254, 0.98);
+  opacity: 1;
+  filter: brightness(1.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(147, 197, 253, 0.12),
+    0 8px 22px rgba(15, 23, 42, 0.22);
+  transform: translateY(-2px);
+}
+
+.landing-nav-link:focus-visible,
+.header-action-link:focus-visible {
+  outline: 1px solid rgba(96, 165, 250, 0.38);
+  outline-offset: 2px;
+}
+
+.landing-primary-cta {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  min-height: 3.25rem;
+  padding: 0 1.65rem 0 1.8rem;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.16);
+  border-radius: 1rem;
+  color: rgba(248, 250, 252, 0.98);
+  font-size: 14.5px;
+  font-weight: 660;
+  line-height: 1;
+  letter-spacing: 0;
+  background:
+    linear-gradient(135deg, rgba(96, 165, 250, 0.16) 0%, rgba(59, 130, 246, 0.09) 46%, rgba(59, 130, 246, 0.2) 100%),
+    rgba(8, 12, 22, 0.26);
+  background-size: 140% 140%;
+  background-position: 0% 50%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.1),
+    0 10px 24px rgba(0, 0, 0, 0.18),
+    0 0 26px rgba(59, 130, 246, 0.2);
+  backdrop-filter: blur(18px);
+  transform: translate3d(0, 0, 0);
+  will-change: transform, filter;
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-position 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-primary-cta::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: calc(1rem - 1px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 46%),
+    radial-gradient(ellipse 82% 90% at 48% 0%, rgba(147, 197, 253, 0.09), transparent 70%);
+  opacity: 0.48;
+  transition: opacity 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-primary-cta::after {
+  content: "";
+  position: absolute;
+  top: -28%;
+  bottom: -28%;
+  left: -42%;
+  z-index: 0;
+  width: 38%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  filter: blur(1px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(-135%, 0, 0) skewX(-18deg);
+  will-change: transform, opacity;
+}
+
+.landing-primary-cta > span,
+.landing-primary-cta > svg {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-primary-cta:hover,
+.landing-primary-cta:focus-visible {
+  border-color: rgba(226, 232, 240, 0.26);
+  background-position: 72% 50%;
+  filter: brightness(1.035) saturate(0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.12),
+    0 14px 32px rgba(0, 0, 0, 0.22),
+    0 0 38px rgba(59, 130, 246, 0.3);
+  transform: translate3d(0, -2px, 0);
+}
+
+.landing-primary-cta:hover::before,
+.landing-primary-cta:focus-visible::before {
+  opacity: 0.62;
+}
+
+.landing-primary-cta:hover::after,
+.landing-primary-cta:focus-visible::after {
+  animation: cta-light-sweep 840ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+.landing-primary-cta:focus-visible {
+  outline: 1px solid rgba(226, 232, 240, 0.44);
+  outline-offset: 3px;
+}
+
+.landing-primary-cta:active {
+  filter: brightness(0.99) saturate(1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.1),
+    0 7px 16px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(59, 130, 246, 0.05);
+  transform: translate3d(0, 0, 0) scale(0.98);
+}
+
+.mobile-nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  color: rgba(219, 234, 254, 0.9);
+  background: rgba(37, 99, 235, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.12);
+  transition: color 220ms ease-out, background-color 220ms ease-out,
+    box-shadow 220ms ease-out, transform 220ms ease-out;
+}
+
+.mobile-nav-toggle:hover,
+.mobile-nav-toggle:focus-visible,
+.mobile-nav-toggle[aria-expanded="true"] {
+  color: rgba(191, 246, 255, 0.98);
+  background: rgba(37, 99, 235, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 211, 252, 0.22),
+    0 10px 28px rgba(37, 99, 235, 0.18);
+}
+
+.mobile-nav-toggle:focus-visible {
+  outline: 1px solid rgba(96, 165, 250, 0.42);
+  outline-offset: 2px;
+}
+
+.mobile-nav-panel {
+  margin: 0 1rem 0.75rem;
+  padding: 0.45rem;
+  border-radius: 0.875rem;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 0%, rgba(37, 99, 235, 0.18), transparent 64%),
+    rgba(5, 5, 5, 0.88);
+  border: 1px solid rgba(125, 211, 252, 0.13);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 46px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(24px);
+}
+
+.mobile-nav-link {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 0.625rem;
+  padding: 0.8rem 0.9rem;
+  color: rgba(226, 232, 240, 0.86);
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 220ms ease-out, background-color 220ms ease-out,
+    transform 220ms ease-out;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link:focus-visible {
+  color: rgba(191, 246, 255, 0.98);
+  background: rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
+}
+
+.mobile-nav-link:focus-visible {
+  outline: 1px solid rgba(96, 165, 250, 0.38);
+  outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+  .mobile-nav-toggle,
+  .mobile-nav-panel {
+    display: none;
+  }
+}
+
+/* 시즌 할인 라벨 — 좁은 자간의 그라데이션 텍스트 위로 광택이 은은하게 지나간다 */
+.seasonal-discount-label {
+  letter-spacing: 0.02em;
+  background: linear-gradient(
+    100deg,
+    #7dd3fc 0%,
+    #60a5fa 30%,
+    #e0f2fe 50%,
+    #60a5fa 70%,
+    #a5b4fc 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 14px rgba(125, 145, 255, 0.32));
+  animation: seasonal-label-shimmer 3.6s ease-in-out infinite;
+}
+
+@keyframes seasonal-label-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-nav-link,
+  .header-action-link,
+  .landing-primary-cta,
+  .landing-primary-cta::before,
+  .landing-primary-cta::after,
+  .mobile-nav-toggle,
+  .mobile-nav-link,
+  .social-proof-marquee-track,
+  .social-proof-logo,
+  .seasonal-discount-label,
+  .plan-card,
+  .plan-card::after {
+    animation: none;
+    transition-duration: 1ms;
+  }
+
+  .social-proof-marquee-track {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .social-proof-marquee-group + .social-proof-marquee-group {
+    display: none;
+  }
+
+  .landing-nav-link:hover,
+  .landing-nav-link:focus-visible,
+  .header-action-link:hover,
+  .header-action-link:focus-visible,
+  .landing-primary-cta:hover,
+  .landing-primary-cta:focus-visible,
+  .mobile-nav-link:hover,
+  .mobile-nav-link:focus-visible {
+    transform: none;
+  }
+}
+
+/* ── 랜딩 첫 화면 등장 ──
+   framer-motion 의 initial 은 프리렌더 HTML 에 인라인 opacity:0 으로 구워져, JS 가 내려와 하이드레이션할 때까지
+   본문이 투명하다(폰에서 h1 만 5초). 첫 화면(부제·CTA·리포트 카드)은 CSS 키프레임으로 등장시킨다.
+   iPhone WebKit 은 JS 번들 평가에 메인 스레드가 막히면 CSS 애니메이션도 시작하지 못하는데, 프로덕션에서는
+   public/landing-boot.js 가 번들 평가를 첫 프레임 뒤 1.2초로 미루므로 이 애니메이션은 그 전에 끝난다.
+   h1 은 LCP 라 페이드 없이 그대로 둔다(Home.tsx HERO_TITLE_MOTION). */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-y, 24px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.landing-rise {
+  animation: landing-rise var(--rise-duration, 0.9s) cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+  animation-delay: var(--rise-delay, 0s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-rise {
+    animation: none;
+  }
+}
+
+/* ── 무드 배경 꿀렁임 필터 ──
+   MoodShiftBackground 의 SVG 변위 필터. WebKit 은 이 필터를 CPU 로 그려서 iPhone(3배 해상도)에선
+   첫 화면이 5~6초 비고 스크롤한 타일이 안 그려졌다(09-09, 배경을 끈 사본은 폰에서 즉시 떴다).
+   마우스가 있는 기기에서만 건다. 폰에선 그라데이션·글로우만 남고 마우스 반응 효과는 원래 없다. */
+@media (hover: hover) and (pointer: fine) {
+  .mood-shift-wobble {
+    filter: url(#mood-shift-wobble);
+    will-change: filter;
+  }
+}
+
+/* ── 랜딩 문서 배경 ──
+   body 는 라이트 테마(흰색)라 iOS 오버스크롤(당겼다 놓을 때)과 아직 안 그려진 타일에 흰색이 비친다.
+   랜딩은 Home.tsx 가 <html> 에 이 클래스를 붙이고(프리렌더 HTML 은 scripts/prerender-landing.mjs 가
+   미리 붙여 하이드레이션 전에도 검다), 떠날 때 뗀다. */
+html.landing-canvas,
+html.landing-canvas body {
+  background-color: #050505;
+}
