@@ -21,6 +21,7 @@ import {
   type PromptType,
 } from "@/lib/admin-prompts";
 import { cn } from "@/lib/utils";
+import { formatDate } from "./promptDetailModel";
 
 const PROMPT_TYPE_META: Record<
   PromptType,
@@ -56,20 +57,6 @@ const PROMPT_TYPE_META: Record<
     emptyName: "Interview Questions Prompt",
   },
 };
-
-function formatDate(value: string | Date | null | undefined) {
-  if (!value) return "업데이트 없음";
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "업데이트 없음";
-
-  return date.toLocaleString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) return error.message;

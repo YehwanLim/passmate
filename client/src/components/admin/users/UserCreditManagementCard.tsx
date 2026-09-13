@@ -19,13 +19,7 @@ import {
   type AdminCreditKind,
   type UserCreditSummary,
 } from "@/lib/admin-credits";
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("ko-KR", {
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
+import { formatDate } from "@/lib/formatDate";
 
 export function UserCreditManagementCard({ userId }: { userId: string }) {
   const [summary, setSummary] = useState<UserCreditSummary | null>(null);
@@ -194,7 +188,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
                     {grant.note ? ` · ${grant.note}` : ""}
                   </span>
                   <span className="shrink-0 text-muted-foreground">
-                    {formatDateTime(grant.created_at)} · {grant.granted_by_email}
+                    {formatDate(grant.created_at)} · {grant.granted_by_email}
                   </span>
                 </li>
               ))}

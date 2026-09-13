@@ -1,17 +1,13 @@
 import { Calendar, FileText, ClipboardCheck, Building2 } from "lucide-react";
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
+import { formatDate } from "@/lib/formatDate";
 
 interface ProjectCardProps {
   project: ProjectSummary;
   onViewQuestions: () => void;
   onViewReport: () => void;
   onDelete?: () => void;
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function formatChars(chars: number | null): string {
@@ -77,7 +73,7 @@ export default function ProjectCard({
           <div className="flex flex-col gap-2.5 text-[12px] text-zinc-500 font-light">
             <div className="flex items-center gap-2">
               <Calendar className="w-3.5 h-3.5" />
-              <span>{formatDate(project.created_at)} 작성됨</span>
+              <span>{formatDate(project.created_at, "ymd-dot")} 작성됨</span>
             </div>
             <div className="flex items-center gap-2">
               {isCompany ? <Building2 className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}

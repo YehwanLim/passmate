@@ -16,7 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDate, formatMs, type CallLog } from "@/pages/admin/ai-models/aiModelsModel";
+import { formatDate } from "@/lib/formatDate";
+import { formatMs, type CallLog } from "@/pages/admin/ai-models/aiModelsModel";
 
 /** token_usages 최신 50건. */
 export function CallLogsTable({ logs, isLoading }: { logs: CallLog[]; isLoading: boolean }) {
@@ -50,7 +51,7 @@ export function CallLogsTable({ logs, isLoading }: { logs: CallLog[]; isLoading:
             <TableBody>
               {logs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell className="text-muted-foreground">{formatDate(log.time)}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(log.time, "md-hm")}</TableCell>
                   <TableCell>{log.modelName}</TableCell>
                   <TableCell>{formatMs(log.responseTimeMs)}</TableCell>
                   <TableCell>{log.tokens.toLocaleString("ko-KR")}</TableCell>

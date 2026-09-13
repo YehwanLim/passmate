@@ -17,18 +17,11 @@ import {
 import { AnalysisStatusBadge } from "./AnalysisStatusBadge";
 import { ChevronRight, Bot, Zap, DollarSign } from "lucide-react";
 import type { AnalysisRow } from "@/hooks/admin/useAnalysesData";
+import { formatDate } from "@/lib/formatDate";
 
 // ============================================================
 // 유틸
 // ============================================================
-
-function fmtDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString("ko-KR", {
-    month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
 
 function fmtMs(ms: number | null): string {
   if (ms == null) return "–";
@@ -239,7 +232,7 @@ export function AnalysesTable({ rows, isLoading }: AnalysesTableProps) {
 
                   {/* 일시 */}
                   <TableCell className="hidden md:table-cell text-right text-xs text-muted-foreground whitespace-nowrap">
-                    {fmtDate(r.created_at)}
+                    {formatDate(r.created_at, "md-hm")}
                   </TableCell>
 
                   {/* 상세 */}

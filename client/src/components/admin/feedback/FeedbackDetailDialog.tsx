@@ -12,6 +12,7 @@ import { FeedbackScoreBadge } from "./FeedbackScoreBadge";
 import { UI_LABELS } from "@/constants/labels";
 import { Building2, Clock, Cpu, FileText, User } from "lucide-react";
 import type { FeedbackItem } from "@/hooks/admin/useFeedbackData";
+import { formatDate } from "@/lib/formatDate";
 
 interface FeedbackDetailDialogProps {
   feedback: FeedbackItem | null;
@@ -20,17 +21,6 @@ interface FeedbackDetailDialogProps {
 }
 
 const SCORE_MAX = UI_LABELS.FEEDBACK_SCORE_MAX;
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "–";
-  return new Date(iso).toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export function FeedbackDetailDialog({
   feedback,

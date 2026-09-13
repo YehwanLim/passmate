@@ -12,19 +12,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserRoleBadge } from "./UserRoleBadge";
 import { FileText, FolderOpen, ChevronRight, CreditCard } from "lucide-react";
 import type { AdminUserRow } from "@/hooks/admin/useUsersData";
+import { formatDate } from "@/lib/formatDate";
 
 // ============================================================
 // 유틸
 // ============================================================
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -162,12 +154,12 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
 
                 {/* 가입일 */}
                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                  {formatDate(user.created_at)}
+                  {formatDate(user.created_at, "ymd")}
                 </TableCell>
 
                 {/* 최근 활성 (updated_at proxy) */}
                 <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                  <span title={formatDate(user.updated_at)}>
+                  <span title={formatDate(user.updated_at, "ymd")}>
                     {relativeTime(user.updated_at)}
                   </span>
                 </TableCell>

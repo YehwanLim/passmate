@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   prisma: {
@@ -25,9 +25,13 @@ import { createResponse } from "../../helpers/http.js";
 
 const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
+// "오늘" 은 KST 자정 기준이라 실제 시계로 자정 직전에 돌리면 45분 전 방문이 어제로 넘어간다. KST 15시로 고정한다.
+const FIXED_NOW = new Date("2026-09-10T06:00:00.000Z");
 
 describe("admin dashboard — 방문자 집계", () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(FIXED_NOW);
     vi.clearAllMocks();
     mocks.requireAdministrator.mockResolvedValue({});
     mocks.prisma.user.count.mockResolvedValue(0);
@@ -38,6 +42,10 @@ describe("admin dashboard — 방문자 집계", () => {
     mocks.prisma.siteVisit.findMany.mockResolvedValue([]);
     mocks.prisma.paymentEntitlement.findMany.mockResolvedValue([]);
     mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("분석을 돌리지 않은 방문도 site_visits 로 세고 analyses 로는 세지 않는다", async () => {

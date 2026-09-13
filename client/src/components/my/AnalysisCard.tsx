@@ -2,15 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { AnalysisSummary, AnalysisDetail } from "@/types/my";
 import { parseAnalysisSections, type AnalysisSection } from "@/lib/analysisSections";
 import { getAuthorizationHeader } from "@/lib/apiAuth";
+import { formatDate } from "@/lib/formatDate";
 import StatusBadge from "./StatusBadge";
 
 interface AnalysisCardProps {
   analysis: AnalysisSummary;
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function AnalysisCard({ analysis }: AnalysisCardProps) {
@@ -57,7 +53,7 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
       {/* ── 분석 회차 헤더 ── */}
       <div className="flex items-center justify-between mb-3 px-1">
         <span className="text-[12px] text-zinc-500 font-light">
-          {formatDate(analysis.created_at)} 작성 · 문항 {Math.max(visibleSections.length, 1)}개
+          {formatDate(analysis.created_at, "ymd-dot")} 작성 · 문항 {Math.max(visibleSections.length, 1)}개
         </span>
         <StatusBadge status={analysis.status} />
       </div>

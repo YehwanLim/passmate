@@ -16,13 +16,7 @@ import type {
   UserDetailPayment,
   UserDetailPendingPurchase,
 } from "@/hooks/admin/useUserDetail";
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("ko-KR", {
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
+import { formatDate } from "@/lib/formatDate";
 
 interface UserPaymentsCardProps {
   payments: UserDetailPayment[];
@@ -82,7 +76,7 @@ export function UserPaymentsCard({ payments, pending_purchases }: UserPaymentsCa
                   <span className="shrink-0 text-muted-foreground">
                     {amount === null ? "금액 불명" : `추정 ${formatKrw(amount)}`}
                     {" · "}
-                    {formatDateTime(payment.created_at)}
+                    {formatDate(payment.created_at)}
                   </span>
                 </li>
               );
@@ -116,7 +110,7 @@ export function UserPaymentsCard({ payments, pending_purchases }: UserPaymentsCa
                     {" · "}
                     {intent.status === "CANCELLED" ? "취소됨" : "결제창 진입 후 이탈"}
                   </span>
-                  <span className="shrink-0">{formatDateTime(intent.created_at)}</span>
+                  <span className="shrink-0">{formatDate(intent.created_at)}</span>
                 </li>
               ))}
             </ul>

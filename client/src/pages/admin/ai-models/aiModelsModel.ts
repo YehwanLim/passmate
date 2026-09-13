@@ -191,18 +191,6 @@ export function formatKrwApprox(value: number | null | undefined) {
   return `약 ${krw.toLocaleString("ko-KR")}원`;
 }
 
-export function formatDate(value: string | null) {
-  if (!value) return "–";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "–";
-  return date.toLocaleString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export function getStatusClass(status: ModelStatus) {
   if (status === "connected") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700";
   if (status === "error") return "border-red-500/30 bg-red-500/10 text-red-700";

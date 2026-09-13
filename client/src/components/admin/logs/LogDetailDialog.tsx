@@ -11,22 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, Clock, Cpu, User, FileText, Code } from "lucide-react";
 import type { ErrorLogItem } from "@/hooks/admin/useErrorLogs";
+import { formatDate } from "@/lib/formatDate";
 
 interface LogDetailDialogProps {
   log: ErrorLogItem | null;
   isOpen: boolean;
   onClose: () => void;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
 }
 
 export function LogDetailDialog({ log, isOpen, onClose }: LogDetailDialogProps) {
@@ -68,7 +58,7 @@ export function LogDetailDialog({ log, isOpen, onClose }: LogDetailDialogProps) 
           </div>
           <div className="flex items-center gap-2">
             <Clock className="size-3.5 text-muted-foreground flex-shrink-0" />
-            <span>{formatDate(log.createdAt)}</span>
+            <span>{formatDate(log.createdAt, "ymd-hms")}</span>
           </div>
         </div>
 

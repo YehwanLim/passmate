@@ -12,19 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { LogDetailDialog } from "./LogDetailDialog";
 import { AlertCircle, Eye, ShieldAlert } from "lucide-react";
 import type { ErrorLogItem } from "@/hooks/admin/useErrorLogs";
+import { formatDate } from "@/lib/formatDate";
 
 // ============================================================
 // 유틸
 // ============================================================
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString("ko-KR", {
-    month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-    second: "2-digit",
-  });
-}
 
 function getErrorBadgeVariant(code: string | null) {
   if (code === "TIMEOUT") return "outline";
@@ -134,7 +126,7 @@ export function LogsTable({ logs, isLoading }: LogsTableProps) {
 
                   {/* 발생 시각 */}
                   <TableCell className="hidden md:table-cell text-right text-xs text-muted-foreground whitespace-nowrap">
-                    {formatDate(log.createdAt)}
+                    {formatDate(log.createdAt, "md-hms")}
                   </TableCell>
 
                   {/* 상세보기 버튼 */}

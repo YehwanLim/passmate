@@ -3,6 +3,7 @@ import {
   type PromptTemplateRecord,
   type PromptType,
 } from "@/lib/admin-prompts";
+import { formatDate as formatKoDate } from "@/lib/formatDate";
 
 // 프롬프트 상세 화면의 순수 모델. 화면 상태와 무관한 변환·검증만 둔다.
 
@@ -56,18 +57,9 @@ export function isPromptType(value: string): value is PromptType {
   return PROMPT_TYPES.includes(value as PromptType);
 }
 
+/** 프롬프트 목록·상세·버전 카드가 같은 "업데이트 없음" 폴백을 쓴다. */
 export function formatDate(value: string | Date | null | undefined) {
-  if (!value) return "업데이트 없음";
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "업데이트 없음";
-
-  return date.toLocaleString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatKoDate(value, "md-hm", "업데이트 없음");
 }
 
 export function getErrorMessage(error: unknown, fallback: string) {

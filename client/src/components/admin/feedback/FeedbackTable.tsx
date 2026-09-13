@@ -12,15 +12,7 @@ import { FeedbackDetailDialog } from "./FeedbackDetailDialog";
 import { FeedbackScoreBadge } from "./FeedbackScoreBadge";
 import { Eye, MessageSquareOff } from "lucide-react";
 import type { FeedbackItem } from "@/hooks/admin/useFeedbackData";
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatDate } from "@/lib/formatDate";
 
 function RowSkeleton() {
   return (
@@ -114,7 +106,7 @@ export function FeedbackTable({ items, isLoading }: FeedbackTableProps) {
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell text-right text-xs text-muted-foreground whitespace-nowrap">
-                      {formatDate(item.createdAt)}
+                      {formatDate(item.createdAt, "md-hm")}
                     </TableCell>
 
                     <TableCell>

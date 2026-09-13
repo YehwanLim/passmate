@@ -24,9 +24,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/formatDate";
 import { cn } from "@/lib/utils";
 import {
-  formatDate,
   formatKrwApprox,
   formatMs,
   formatUsd,
@@ -158,7 +158,7 @@ export function ModelsTable({
                       {statusCopy[model.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{formatDate(model.lastChecked)}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(model.lastChecked, "md-hm")}</TableCell>
                   <TableCell>{formatMs(model.avgResponseTimeMs)}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">

@@ -36,23 +36,11 @@ import {
   Calendar,
   Activity,
 } from "lucide-react";
+import { formatDate } from "@/lib/formatDate";
 
 // ============================================================
 // 유틸
 // ============================================================
-
-function formatDate(iso: string, includeTime = false): string {
-  const d = new Date(iso);
-  if (includeTime) {
-    return d.toLocaleString("ko-KR", {
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit",
-    });
-  }
-  return d.toLocaleDateString("ko-KR", {
-    year: "numeric", month: "2-digit", day: "2-digit",
-  });
-}
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -229,11 +217,11 @@ export default function UserDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">가입일</p>
-                <p className="font-medium">{formatDate(user.created_at, true)}</p>
+                <p className="font-medium">{formatDate(user.created_at)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">최근 활성</p>
-                <p className="font-medium" title={formatDate(user.updated_at, true)}>
+                <p className="font-medium" title={formatDate(user.updated_at)}>
                   {relativeTime(user.updated_at)}
                 </p>
               </div>
