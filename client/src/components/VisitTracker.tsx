@@ -19,6 +19,15 @@ let lastSent: { path: string; at: number } | null = null;
 // GA page_view 를 마지막으로 보낸 경로. null 이면 첫 화면이라 gtag config(main.tsx)가 이미 보냈다.
 let lastPageViewPath: string | null = null;
 
+/**
+ * GA 로 보낼 페이지 주소. 쿼리는 기본적으로 떼되, 공개 예시 리포트 표시(`sample=1`)만 붙인다.
+ * 그래야 GA 의 "페이지 경로 + 쿼리 문자열"에서 예시 리포트와 실제 리포트(/report-new)가 갈린다.
+ * 실제 리포트 ID(analysisId) 같은 다른 쿼리는 보내지 않는다.
+ */
+export function pageViewPath(pathname: string, search: string): string {
+  return new URLSearchParams(search).get("sample") === "1" ? `${pathname}?sample=1` : pathname;
+}
+
 /** 테스트에서 모듈 상태를 초기화하기 위한 훅. 프로덕션 코드는 호출하지 않는다. */
 export function resetVisitTrackerForTests(): void {
   lastSent = null;
@@ -36,11 +45,12 @@ export function VisitTracker({ enabled = TRACKING_ENABLED }: { enabled?: boolean
     if (!enabled || !shouldTrackPath(location)) return;
 
     // SPA 전환은 gtag 가 스스로 page_view 를 보내지 않는다. 이게 없으면 /login 도달률을 볼 수 없다.
+    const viewPath = pageViewPath(location, window.location.search);
     if (lastPageViewPath === null) {
-      lastPageViewPath = location;
-    } else if (lastPageViewPath !== location) {
-      lastPageViewPath = location;
-      trackPageView(location);
+      lastPageViewPath = viewPath;
+    } else if (lastPageViewPath !== viewPath) {
+      lastPageViewPath = viewPath;
+      trackPageView(viewPath);
     }
 
     const send = () => {

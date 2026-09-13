@@ -15,7 +15,7 @@ vi.mock("@/lib/siteVisits", async (importOriginal) => ({
 }));
 vi.mock("@/lib/analytics", () => ({ trackPageView: mocks.trackPageView }));
 
-import { resetVisitTrackerForTests, VisitTracker } from "./VisitTracker";
+import { pageViewPath, resetVisitTrackerForTests, VisitTracker } from "./VisitTracker";
 
 describe("VisitTracker", () => {
   beforeEach(() => {
@@ -23,6 +23,7 @@ describe("VisitTracker", () => {
     mocks.location = "/";
     mocks.sendVisit.mockReset().mockResolvedValue(true);
     mocks.trackPageView.mockReset();
+    window.history.replaceState({}, "", "/");
   });
   afterEach(() => cleanup());
 
@@ -55,6 +56,36 @@ describe("VisitTracker", () => {
 
     expect(mocks.trackPageView).toHaveBeenCalledTimes(1);
     expect(mocks.trackPageView).toHaveBeenCalledWith("/login");
+  });
+
+  it("keeps only the public sample flag from the query, never a real report id", () => {
+    expect(pageViewPath("/report-new", "?sample=1")).toBe("/report-new?sample=1");
+    expect(pageViewPath("/company-report", "?sample=1&utm_source=threads")).toBe("/company-report?sample=1");
+    expect(pageViewPath("/report-new", "?analysisId=analysis-1")).toBe("/report-new");
+    expect(pageViewPath("/analyze", "")).toBe("/analyze");
+  });
+
+  it("reports the landing-to-sample move as the sample page, apart from a real report", () => {
+    const view = render(<VisitTracker enabled />);
+
+    // wouter 의 location 은 pathname 뿐이라 쿼리는 주소창에서 읽는다.
+    window.history.replaceState({}, "", "/report-new?sample=1");
+    mocks.location = "/report-new";
+    view.rerender(<VisitTracker enabled />);
+
+    // 예시 리포트의 CTA 로 분석 폼에 갔다가, 분석을 마치고 실제 리포트로 들어온 흐름.
+    window.history.replaceState({}, "", "/analyze");
+    mocks.location = "/analyze";
+    view.rerender(<VisitTracker enabled />);
+    window.history.replaceState({}, "", "/report-new?analysisId=analysis-1");
+    mocks.location = "/report-new";
+    view.rerender(<VisitTracker enabled />);
+
+    expect(mocks.trackPageView.mock.calls.map(([path]) => path)).toEqual([
+      "/report-new?sample=1",
+      "/analyze",
+      "/report-new",
+    ]);
   });
 
   it("does nothing when disabled or on admin paths", () => {
