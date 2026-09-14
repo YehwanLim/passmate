@@ -120,7 +120,7 @@ Prisma 7 + Supabase Postgres · Supabase Auth(Google) · Gemini · Vitest · **p
    이 매핑도 같이 고쳐야 로컬에서 재현된다.
 2. **Vercel Hobby 12함수 제한** (`scripts/vercel-function-limit.test.js`). 새 엔드포인트는 기존 라우터에 얹기.
 3. **`.vercel/output/`·`dist/`는 옛 빌드 산출물** — 소스로 착각하지 말 것.
-4. **타임아웃 3형제는 한 세트**: 모델 100s < TTL 125s, `maxDuration` 120s.
+4. **타임아웃 3형제는 한 세트**: 모델 150s < TTL 175s < `maxDuration` 180s (2.5-flash 가 공고 포함 리포트를 100s 안에 못 끝내 09-15 상향).
 5. 응답 필드명(`analysis_id`, `analysis_request_id` 등)과 에러 코드 문자열은 클라이언트 파서가 강제한다.
 6. CSP는 `vercel.json`에 하드코딩 — 외부 도메인 추가 시 함께 수정.
 7. 프롬프트 수정 시 `client/src/pages/reportPrompt.singleSource.test.ts`를 반드시 함께 확인.

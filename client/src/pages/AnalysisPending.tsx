@@ -13,7 +13,7 @@ type PendingView = "checking" | "failed" | "unavailable" | "timeout";
 
 // 서버 TTL(125초)보다 넉넉한 상한. 서버리스 함수가 상태를 못 쓰고 죽는 등
 // FAILED 전이가 영영 오지 않는 경우 무한 스피너 대신 탈출구를 보여준다.
-const MAX_PENDING_WAIT_MS = 180_000;
+const MAX_PENDING_WAIT_MS = 190_000; // 서버 TTL 175s 보다 조금 길게. 라이프사이클 3형제와 함께 움직인다.
 
 function readRequestId(): string | null {
   const requestId = new URLSearchParams(window.location.search).get("requestId");

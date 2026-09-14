@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createAnalysisHandler } from "../../api/analysis/[id].js";
 import { ApiError } from "../../lib/api-handler.js";
 import {
+  PROMPT_POSTING_TEXT_CHARS,
   buildUserPrompt,
   normalizeRequest,
   requestHash,
@@ -80,6 +81,17 @@ describe("자소서 분석 요청 ↔ 채용공고 연결", () => {
     expect(prompt).toContain("- 자격요건: 고객 데이터 분석 경험 / 유관 부서 조율");
     expect(prompt).toContain(`[채용공고 원문]\n${POSTING.rawText}`);
     expect(prompt).toContain("postingFit 을 채우고");
+  });
+
+  it("공고 원문은 프롬프트에 앞부분 1,500자만 발췌해 넣고 저장본은 건드리지 않는다", () => {
+    const request = normalizeRequest({ questions: QUESTIONS, jobPostingId: POSTING_ID });
+    const longText = "가".repeat(PROMPT_POSTING_TEXT_CHARS + 400);
+    request.jobPosting = { ...POSTING, rawText: longText };
+    const prompt = buildUserPrompt(request);
+    expect(prompt).toContain("[채용공고 원문 발췌]");
+    expect(prompt).toContain(`${"가".repeat(PROMPT_POSTING_TEXT_CHARS)} (이하 생략)`);
+    expect(prompt).not.toContain("가".repeat(PROMPT_POSTING_TEXT_CHARS + 1));
+    expect(request.jobPosting.rawText).toHaveLength(PROMPT_POSTING_TEXT_CHARS + 400);
   });
 });
 

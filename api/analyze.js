@@ -210,7 +210,7 @@ export function createAnalyzeHandler({
   };
 }
 
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 /** 기업 분석 리포트 핸들러. 자소서 핸들러와 같은 파이프라인에 kind 조각만 주입한다. */
 export function createCompanyAnalyzeHandler(overrides = {}) {

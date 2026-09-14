@@ -2,7 +2,7 @@
   "outputDirectory": "dist/public",
   "functions": {
     "api/analyze.js": {
-      "maxDuration": 120
+      "maxDuration": 180
     }
   },
   "headers": [
