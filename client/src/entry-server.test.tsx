@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render } from "./entry-server";
+import { render, renderSampleReport } from "./entry-server";
 
 // 빌드 시점 프리렌더(scripts/prerender-landing.mjs)가 쓰는 렌더 함수.
 // 랜딩 컴포넌트가 렌더 중에 window/document를 읽기 시작하면 여기서 먼저 깨진다.
@@ -42,5 +42,22 @@ describe("entry-server render", () => {
     const html = render("/");
     expect(html).not.toContain("404");
     expect(html).toContain("<h1");
+  });
+});
+
+describe("entry-server renderSampleReport", () => {
+  it("renders the whole public sample report through the lazy route without console errors", async () => {
+    // 예시 리포트는 로그인·fetch 없이 상수만 그리므로 빌드 때 굳혀 배포한다(scripts/prerender-landing.mjs).
+    // ReportResult 는 App 에서 lazy 라 첫 renderToString 은 폴백만 나온다. 모듈이 준비될 때까지 기다린 결과여야 한다.
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const html = await renderSampleReport();
+
+    expect(html.length).toBeGreaterThan(20_000);
+    expect(html).toContain("예시 리포트");
+    expect(html).toContain("김민지");
+    expect(html).not.toContain("<!--$!-->");
+    expect(html).not.toContain("로그인 후 분석 리포트를 확인할 수 있어요");
+    expect(consoleError).not.toHaveBeenCalled();
   });
 });

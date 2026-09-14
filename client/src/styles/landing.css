@@ -403,6 +403,43 @@
   transform: translate3d(0, 0, 0) scale(0.98);
 }
 
+/* 보조 CTA(예시 리포트 전체 보기): 주 CTA 와 같은 크기·모서리, 색은 밝은 표면 하나로만 구분한다. */
+.landing-secondary-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  min-height: 3.25rem;
+  padding: 0 1.65rem 0 1.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 1rem;
+  color: rgba(244, 244, 245, 0.92);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.04);
+  transition: background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-secondary-cta:hover,
+.landing-secondary-cta:focus-visible {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  transform: translate3d(0, -2px, 0);
+}
+
+.landing-secondary-cta:focus-visible {
+  outline: 1px solid rgba(226, 232, 240, 0.44);
+  outline-offset: 3px;
+}
+
+.landing-secondary-cta:active {
+  transform: translate3d(0, 0, 0) scale(0.98);
+}
+
 .mobile-nav-toggle {
   display: inline-flex;
   align-items: center;

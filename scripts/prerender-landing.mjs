@@ -1,10 +1,12 @@
 /**
- * 랜딩 프리렌더 — `pnpm build` 의 한 단계.
+ * 빌드 시점 프리렌더 — `pnpm build` 의 한 단계.
  *
  * 1. `vite build` 가 만든 dist/public/index.html(빈 SPA 껍데기)을 app.html 로 복사한다.
  *    vercel.json 의 catch-all 리라이트가 비-API 경로를 app.html 로 보낸다.
  * 2. `vite build --ssr` 가 만든 dist/ssr/entry-server.js 로 `/` 를 렌더해
  *    index.html 의 <div id="root"></div> 에 주입한다. `/` 는 Vercel 파일시스템 우선 규칙으로 이 파일을 받는다.
+ * 3. 같은 방법으로 공개 예시 리포트(`/report-new?sample=1`)를 sample-report.html 로 굳힌다.
+ *    vercel.json 이 그 쿼리를 가진 요청만 이 파일로 리라이트한다.
  *
  * 설계: docs/superpowers/specs/2026-09-08-랜딩-프리렌더-design.md
  */
@@ -21,7 +23,8 @@ export const LANDING_CANVAS_CLASS = "landing-canvas";
 // 2~3초 뒤에 오는데, 그동안 브라우저가 그리는 빈 화면이 흰색이 아니라 랜딩 배경색이게 한다(CSP 는 style 인라인 허용).
 export const LANDING_CANVAS_STYLE = "background-color:#050505";
 
-export function markLandingCanvas(html) {
+/** <html> 에 class·style 을 미리 박는다. 페이지마다 첫 화면 배경색이 달라 값을 받는다. */
+export function markDocumentCanvas(html, { className = null, style }) {
   const matches = html.match(/<html\b[^>]*>/g) ?? [];
   if (matches.length !== 1) {
     throw new Error(`expected exactly one <html> tag (found ${matches.length})`);
@@ -30,10 +33,12 @@ export function markLandingCanvas(html) {
   if (/\b(class|style)=/.test(tag)) {
     throw new Error(`<html> already has a class or style attribute: ${tag}`);
   }
-  return html.replace(
-    tag,
-    tag.replace(/>$/, ` class="${LANDING_CANVAS_CLASS}" style="${LANDING_CANVAS_STYLE}">`)
-  );
+  const classAttr = className ? ` class="${className}"` : "";
+  return html.replace(tag, tag.replace(/>$/, `${classAttr} style="${style}">`));
+}
+
+export function markLandingCanvas(html) {
+  return markDocumentCanvas(html, { className: LANDING_CANVAS_CLASS, style: LANDING_CANVAS_STYLE });
 }
 
 export function injectPrerenderedRoot(shellHtml, renderedMarkup) {
@@ -95,19 +100,44 @@ export function deferEntryScript(html) {
   );
 }
 
-// 랜딩에만 canonical 을 단다. app.html 은 이 변환 전에 복사되므로 다른 경로(샘플 리포트 등)는 자기 주소를 유지한다.
+// 프리렌더한 페이지에만 canonical 을 단다. app.html 은 이 변환 전에 복사되므로 다른 경로는 자기 주소를 유지한다.
 // 사이트 전체(client/index.html)에 걸면 sitemap 에 올린 다른 공개 페이지까지 `/` 로 합쳐진다.
 export const LANDING_CANONICAL_URL = "https://pre-view.me/";
 
-export function addLandingCanonical(html) {
+export function addCanonical(html, url) {
   if (/<link\b[^>]*rel="canonical"/.test(html)) {
-    throw new Error("landing html already has a canonical link");
+    throw new Error("html already has a canonical link");
   }
   const occurrences = html.split("</head>").length - 1;
   if (occurrences !== 1) {
     throw new Error(`expected exactly one </head> (found ${occurrences})`);
   }
-  return html.replace("</head>", `<link rel="canonical" href="${LANDING_CANONICAL_URL}" /></head>`);
+  return html.replace("</head>", `<link rel="canonical" href="${url}" /></head>`);
+}
+
+export function addLandingCanonical(html) {
+  return addCanonical(html, LANDING_CANONICAL_URL);
+}
+
+export function setDocumentTitle(html, title) {
+  const matches = html.match(/<title>[^<]*<\/title>/g) ?? [];
+  if (matches.length !== 1) {
+    throw new Error(`expected exactly one <title> (found ${matches.length})`);
+  }
+  return html.replace(matches[0], `<title>${title}</title>`);
+}
+
+// 공개 예시 리포트(ReportResult 의 ?sample=1). vercel.json 이 `/report-new` + `sample=1` 쿼리를 이 파일로 보낸다.
+export const SAMPLE_REPORT_FILE = "sample-report.html";
+export const SAMPLE_REPORT_CANONICAL_URL = "https://pre-view.me/report-new?sample=1";
+export const SAMPLE_REPORT_TITLE = "예시 리포트 · 현대자동차 서비스 기획 | Pre:View";
+// ReportResult 의 <main> 배경. 랜딩 클래스는 붙이지 않는다(landing-canvas 는 랜딩 전용 규칙을 켠다).
+export const SAMPLE_REPORT_CANVAS_STYLE = "background-color:#09090B";
+
+function assertMarkup(name, markup) {
+  if (!markup || markup.length < 1000) {
+    throw new Error(`prerendered ${name} markup is suspiciously short (${markup?.length ?? 0} chars)`);
+  }
 }
 
 async function main() {
@@ -115,20 +145,19 @@ async function main() {
   const publicDir = path.join(rootDir, "dist", "public");
   const indexPath = path.join(publicDir, "index.html");
   const shellPath = path.join(publicDir, "app.html");
+  const samplePath = path.join(publicDir, SAMPLE_REPORT_FILE);
   const ssrEntry = path.join(rootDir, "dist", "ssr", "entry-server.js");
 
   const shellHtml = readFileSync(indexPath, "utf8");
   copyFileSync(indexPath, shellPath);
 
-  const { render } = await import(pathToFileURL(ssrEntry).href);
-  const markup = render("/");
-  if (!markup || markup.length < 1000) {
-    throw new Error(`prerendered landing markup is suspiciously short (${markup?.length ?? 0} chars)`);
-  }
-
   if (!existsSync(path.join(publicDir, BOOT_SCRIPT))) {
     throw new Error(`${BOOT_SCRIPT} is missing from ${publicDir} (client/public/landing-boot.js)`);
   }
+
+  const { render, renderSampleReport } = await import(pathToFileURL(ssrEntry).href);
+  const markup = render("/");
+  assertMarkup("landing", markup);
   const landingHtml = deferEntryScript(
     addLandingCanonical(
       await inlineCriticalCss(markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)), publicDir)
@@ -138,6 +167,26 @@ async function main() {
   const inlineCss = landingHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
   console.log(
     `[prerender] landing → ${path.relative(rootDir, indexPath)} (${Math.round(markup.length / 1024)}KB markup, ${Math.round(inlineCss.length / 1024)}KB critical CSS inlined), shell → ${path.relative(rootDir, shellPath)}`
+  );
+
+  const sampleMarkup = await renderSampleReport();
+  assertMarkup("sample report", sampleMarkup);
+  const sampleHtml = deferEntryScript(
+    addCanonical(
+      await inlineCriticalCss(
+        markDocumentCanvas(
+          injectPrerenderedRoot(setDocumentTitle(shellHtml, SAMPLE_REPORT_TITLE), sampleMarkup),
+          { style: SAMPLE_REPORT_CANVAS_STYLE }
+        ),
+        publicDir
+      ),
+      SAMPLE_REPORT_CANONICAL_URL
+    )
+  );
+  writeFileSync(samplePath, sampleHtml);
+  const sampleCss = sampleHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
+  console.log(
+    `[prerender] sample report → ${path.relative(rootDir, samplePath)} (${Math.round(sampleMarkup.length / 1024)}KB markup, ${Math.round(sampleCss.length / 1024)}KB critical CSS inlined)`
   );
 }
 

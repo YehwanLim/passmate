@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 
 import FeedbackRewardBanner from "@/components/FeedbackRewardBanner";
 import FeedbackSection from "@/components/FeedbackSection";
@@ -302,7 +302,8 @@ function ReportContent({
 
 export default function PassMateReport() {
   // 공개 예시는 로그인·조회 없이 굳힌 상수를 그대로 렌더한다(CompanyReport 의 ?sample=1 과 같은 방식).
-  const isSample = new URLSearchParams(window.location.search).get("sample") === "1";
+  // window 대신 wouter 의 search 를 읽어야 빌드 시점 프리렌더(entry-server.tsx)에서도 같은 분기를 탄다.
+  const isSample = new URLSearchParams(useSearch()).get("sample") === "1";
   if (isSample) {
     return (
       <ReportContent

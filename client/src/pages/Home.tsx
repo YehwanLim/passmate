@@ -244,16 +244,24 @@ export default function Home() {
               첫 분석 무료 <span className="text-zinc-700">·</span> 리포트는 1분
               안에
             </p>
-            {/* 로그인 없이 결과물부터 보고 싶은 방문자용. 예시는 가상의 지원자다(ReportResult 의 ?sample=1). */}
-            <Link
-              href={RESUME_REPORT_SAMPLE_PATH}
-              className="mt-2.5 inline-block text-[13px] text-zinc-400 underline decoration-zinc-700 underline-offset-4 transition-colors hover:text-white hover:decoration-zinc-400"
-            >
-              예시 리포트 먼저 보기 · {RESUME_REPORT_SAMPLE_COMPANY} {RESUME_REPORT_SAMPLE_JOB_ROLE}
-            </Link>
           </div>
 
-          <HeroReportCard />
+          {/* 로그인 없이 결과물부터 보고 싶은 방문자용. 카드 전체와 아래 버튼이 같은 예시 리포트로 간다
+              (ReportResult 의 ?sample=1, 가상의 지원자). 일반 링크라 번들 평가 전에 탭해도 이동한다. */}
+          <HeroReportCard href={RESUME_REPORT_SAMPLE_PATH} />
+          <div
+            className="landing-rise mt-7 flex flex-col items-center gap-2.5"
+            style={{ "--rise-delay": "1.2s", "--rise-y": "16px" } as CSSProperties}
+          >
+            <Link href={RESUME_REPORT_SAMPLE_PATH} className="landing-secondary-cta group">
+              <span>예시 리포트 전체 보기</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
+            </Link>
+            <p className="text-[12.5px] text-zinc-500">
+              {RESUME_REPORT_SAMPLE_COMPANY} {RESUME_REPORT_SAMPLE_JOB_ROLE} <span className="text-zinc-700">·</span>{" "}
+              가상의 지원자로 만든 리포트예요
+            </p>
+          </div>
         </div>
       </section>
 

@@ -66,6 +66,11 @@
       "destination": "/api/analyze?kind=company"
     },
     {
+      "source": "/report-new",
+      "has": [{ "type": "query", "key": "sample", "value": "1" }],
+      "destination": "/sample-report.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/app.html"
     }

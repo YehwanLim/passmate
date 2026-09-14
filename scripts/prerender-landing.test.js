@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  addCanonical,
   addLandingCanonical,
   BOOT_SCRIPT,
   deferEntryScript,
@@ -13,7 +14,13 @@ import {
   ROOT_PLACEHOLDER,
   injectPrerenderedRoot,
   LANDING_CANONICAL_URL,
+  markDocumentCanvas,
   markLandingCanvas,
+  SAMPLE_REPORT_CANONICAL_URL,
+  SAMPLE_REPORT_CANVAS_STYLE,
+  SAMPLE_REPORT_FILE,
+  SAMPLE_REPORT_TITLE,
+  setDocumentTitle,
 } from "./prerender-landing.mjs";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
@@ -48,6 +55,16 @@ describe("markLandingCanvas", () => {
     expect(() => markLandingCanvas("<body></body>")).toThrow(/<html>/);
     expect(() => markLandingCanvas('<html class="x"><body></body></html>')).toThrow(/class or style/);
     expect(() => markLandingCanvas('<html style="x"><body></body></html>')).toThrow(/class or style/);
+  });
+
+  it("paints the sample report canvas without the landing class", () => {
+    // landing-canvas 는 랜딩 전용 규칙을 켠다. 리포트 페이지는 자기 배경색만 미리 박는다.
+    const result = markDocumentCanvas('<html lang="ko"><head></head><body></body></html>', {
+      style: SAMPLE_REPORT_CANVAS_STYLE,
+    });
+    expect(result).toContain(`<html lang="ko" style="${SAMPLE_REPORT_CANVAS_STYLE}">`);
+    expect(result).not.toContain("class=");
+    expect(SAMPLE_REPORT_CANVAS_STYLE).toContain("#09090B");
   });
 
   it("uses the same class name as styles/landing.css and Home.tsx", () => {
@@ -171,6 +188,57 @@ describe("addLandingCanonical", () => {
     // app.html 은 client/index.html 에서 나온다. 여기에 canonical 을 걸면 샘플 리포트도 `/` 로 합쳐진다.
     const shell = readFileSync(path.join(ROOT_DIR, "client/index.html"), "utf8");
     expect(shell).not.toContain('rel="canonical"');
+  });
+
+  it("gives the prerendered sample report its own canonical, matching the sitemap", () => {
+    const sitemap = readFileSync(path.join(ROOT_DIR, "client/public/sitemap.xml"), "utf8");
+    expect(sitemap).toContain(`<loc>${SAMPLE_REPORT_CANONICAL_URL}</loc>`);
+    const result = addCanonical("<html><head></head><body></body></html>", SAMPLE_REPORT_CANONICAL_URL);
+    expect(result).toContain(`<link rel="canonical" href="${SAMPLE_REPORT_CANONICAL_URL}" /></head>`);
+  });
+});
+
+describe("setDocumentTitle", () => {
+  it("replaces the single title tag", () => {
+    const result = setDocumentTitle("<head><title>랜딩</title></head>", SAMPLE_REPORT_TITLE);
+    expect(result).toBe(`<head><title>${SAMPLE_REPORT_TITLE}</title></head>`);
+    expect(SAMPLE_REPORT_TITLE).toContain("예시 리포트");
+  });
+
+  it("throws unless exactly one title is present", () => {
+    expect(() => setDocumentTitle("<head></head>", "x")).toThrow(/<title>/);
+    expect(() => setDocumentTitle("<title>a</title><title>b</title>", "x")).toThrow(/<title>/);
+  });
+});
+
+describe("prerendered sample report", () => {
+  it("rewrites only the sample query of /report-new to the prerendered file, before the SPA fallback", () => {
+    // 실제 리포트(/report-new?analysisId=…)는 app.html 로 가야 하므로 쿼리 조건이 있어야 한다.
+    const vercel = JSON.parse(readFileSync(path.join(ROOT_DIR, "vercel.json"), "utf8"));
+    const sampleIndex = vercel.rewrites.findIndex(rule => rule.destination === `/${SAMPLE_REPORT_FILE}`);
+    const fallbackIndex = vercel.rewrites.findIndex(rule => rule.destination === "/app.html");
+    expect(sampleIndex).toBeGreaterThan(-1);
+    expect(sampleIndex).toBeLessThan(fallbackIndex);
+    expect(vercel.rewrites[sampleIndex]).toEqual({
+      source: "/report-new",
+      has: [{ type: "query", key: "sample", value: "1" }],
+      destination: `/${SAMPLE_REPORT_FILE}`,
+    });
+  });
+
+  it("hydrates the sample report instead of re-rendering it from scratch", () => {
+    // main.tsx 가 프리렌더 경로로 알아야 hydrateRoot 를 쓴다. 아니면 서버 HTML 을 비우고 새로 그려 첫 화면이 깜빡인다.
+    const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
+    expect(main).toContain('pathname === "/report-new"');
+    expect(main).toContain('get("sample") === "1"');
+    // wouter 의 useSearch 는 하이드레이션 첫 패스에 ssrSearch(기본 "")를 돌려준다. 실제 검색어를 넘기지 않으면
+    // ?sample=1 이 빈 검색어로 그려져 로그인 게이트가 나오고 서버 HTML 과 어긋난다(React 418).
+    expect(main).toMatch(/<Router ssrPath=\{window\.location\.pathname\} ssrSearch=\{window\.location\.search\}>/);
+  });
+
+  it("links the landing to the same sample path the rewrite serves", () => {
+    const meta = readFileSync(path.join(ROOT_DIR, "client/src/constants/resumeReportSampleMeta.ts"), "utf8");
+    expect(meta).toContain('RESUME_REPORT_SAMPLE_PATH = "/report-new?sample=1"');
   });
 });
 

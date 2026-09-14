@@ -1,5 +1,6 @@
 import { startTransition } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
+import { Router } from "wouter";
 import App from "./App";
 import { applyFullStylesheet } from "./applyFullStylesheet";
 import "./fonts/pretendard-variable-dynamic-subset.css";
@@ -50,25 +51,36 @@ if (import.meta.env.PROD && GA_ID && GA_ID !== "G-XXXXXXXXXX") {
   }
 }
 
-// 랜딩(`/`)은 빌드 때 프리렌더된 HTML(scripts/prerender-landing.mjs)로 오므로 하이드레이션하고,
-// 다른 경로는 빈 껍데기(app.html)라 지금처럼 새로 그린다.
+// 랜딩(`/`)과 공개 예시 리포트(`/report-new?sample=1`)는 빌드 때 프리렌더된 HTML(scripts/prerender-landing.mjs)로
+// 오므로 하이드레이션하고, 다른 경로는 빈 껍데기(app.html)라 지금처럼 새로 그린다.
 // `pnpm preview`처럼 모든 경로에 index.html을 주는 서버에서는 /analyze 에 랜딩 마크업이 실려 오는데,
 // 그걸 하이드레이션하면 트리가 달라 React 가 경고하므로 비우고 새로 그린다.
+function isPrerenderedRoute({ pathname, search }: { pathname: string; search: string }) {
+  if (pathname === "/") return true;
+  return pathname === "/report-new" && new URLSearchParams(search).get("sample") === "1";
+}
 const rootElement = document.getElementById("root")!;
-const isPrerenderedLanding =
-  rootElement.hasChildNodes() && window.location.pathname === "/";
-if (isPrerenderedLanding) {
+const isPrerendered = rootElement.hasChildNodes() && isPrerenderedRoute(window.location);
+if (isPrerendered) {
   // 프로덕션에서는 public/landing-boot.js 가 이 모듈의 평가 자체를 첫 프레임 뒤로 미룬다. 여기서는 한 프레임을
   // 더 양보한 뒤(rAF → 다음 태스크) 하이드레이션해, 모듈이 첫 페인트 전에 실행되는 환경(pnpm preview 등)에서도
   // 프리렌더한 HTML 이 먼저 보이게 한다. 전체 CSS 는 preload 만 걸려 있어(첫 화면 CSS 는 HTML 에 인라인)
   // JS 뒤에 생기는 UI 를 위해 여기서 적용한다.
   // startTransition: 하이드레이션을 잘게 나눠 브라우저에 양보한다. WebKit 은 타일을 메인 스레드에서 그리므로
   // 통째로 하이드레이션하면 그동안 스크롤한 영역이 빈 채로 남는다(폰에서 "아래가 텅 빈" 증상).
+  // Router 의 ssrPath·ssrSearch: wouter 의 useSearch/useLocation 은 하이드레이션 첫 패스에서 "서버 스냅샷"을
+  // 돌려주는데, 이 props 가 없으면 검색어가 빈 문자열이라 예시 리포트(?sample=1)가 로그인 게이트로 그려져
+  // 서버 HTML 과 어긋난다(React 418). 하이드레이션이 끝나면 실제 주소를 읽으므로 이후 라우팅에는 영향이 없다.
   window.requestAnimationFrame(() => {
     window.setTimeout(() => {
       applyFullStylesheet();
       startTransition(() => {
-        hydrateRoot(rootElement, <App />);
+        hydrateRoot(
+          rootElement,
+          <Router ssrPath={window.location.pathname} ssrSearch={window.location.search}>
+            <App />
+          </Router>
+        );
       });
     }, 0);
   });

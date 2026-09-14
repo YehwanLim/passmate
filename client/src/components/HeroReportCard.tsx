@@ -1,5 +1,6 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ElementType } from "react";
 import { AlertTriangle, Check } from "lucide-react";
+import { Link } from "wouter";
 import { BrandName } from "@/components/BrandName";
 import {
   REPORT_PREVIEW_SCENES,
@@ -11,9 +12,21 @@ import {
 /* ─────────────────────────────────────────────────────────
    HeroReportCard — 히어로에 리포트 첫인상 화면을 축소해 거는 미리보기.
    콘텐츠·색 체계는 ReportShowcase의 데이터를 그대로 재사용한다.
+   href 를 주면 카드 전체가 그 주소로 가는 링크가 된다(예시 리포트).
    ───────────────────────────────────────────────────────── */
 
-export default function HeroReportCard() {
+const CARD_CLASS =
+  "relative block overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0A0A0A]/95 shadow-[0_24px_80px_rgba(0,0,0,0.6)]";
+
+export default function HeroReportCard({ href }: { href?: string }) {
+  const Card: ElementType = href ? Link : "div";
+  const cardProps = href
+    ? {
+        href,
+        "aria-label": "예시 리포트 전체 보기",
+        className: `${CARD_CLASS} transition-colors duration-200 hover:border-white/[0.18] focus-visible:border-white/[0.3] focus-visible:outline-none`,
+      }
+    : { className: CARD_CLASS };
   return (
     <div
       className="landing-rise relative mx-auto mt-16 w-full max-w-[880px] text-left md:mt-20"
@@ -27,7 +40,7 @@ export default function HeroReportCard() {
         }}
       />
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0A0A0A]/95 shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
+      <Card {...cardProps}>
         <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4 md:px-7">
           <div className="absolute inset-x-[8%] top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
           <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-zinc-500">
@@ -133,7 +146,7 @@ export default function HeroReportCard() {
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
