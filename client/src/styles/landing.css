@@ -365,8 +365,11 @@
   z-index: 1;
 }
 
+/* 히어로 카드 하단 버튼은 span 이라 카드(a)의 호버·포커스를 받아 같은 효과를 낸다. */
 .landing-primary-cta:hover,
-.landing-primary-cta:focus-visible {
+.landing-primary-cta:focus-visible,
+.hero-report-card:hover .landing-primary-cta,
+.hero-report-card:focus-visible .landing-primary-cta {
   border-color: rgba(226, 232, 240, 0.26);
   background-position: 72% 50%;
   filter: brightness(1.035) saturate(0.98);
@@ -379,12 +382,16 @@
 }
 
 .landing-primary-cta:hover::before,
-.landing-primary-cta:focus-visible::before {
+.landing-primary-cta:focus-visible::before,
+.hero-report-card:hover .landing-primary-cta::before,
+.hero-report-card:focus-visible .landing-primary-cta::before {
   opacity: 0.62;
 }
 
 .landing-primary-cta:hover::after,
-.landing-primary-cta:focus-visible::after {
+.landing-primary-cta:focus-visible::after,
+.hero-report-card:hover .landing-primary-cta::after,
+.hero-report-card:focus-visible .landing-primary-cta::after {
   animation: cta-light-sweep 840ms cubic-bezier(0.16, 1, 0.3, 1) 1;
 }
 

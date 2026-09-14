@@ -29,12 +29,12 @@ export default function HeroReportCard({ href }: { href?: string }) {
     ? {
         href,
         "aria-label": "예시 리포트 전체 보기",
-        className: `${CARD_CLASS} group transition-colors duration-200 hover:border-white/[0.18] focus-visible:border-white/[0.3] focus-visible:outline-none`,
+        className: `${CARD_CLASS} hero-report-card group transition-colors duration-200 hover:border-white/[0.18] focus-visible:border-white/[0.3] focus-visible:outline-none`,
       }
     : { className: CARD_CLASS };
   return (
     <div
-      className="landing-rise relative mx-auto mt-16 w-full max-w-[880px] text-left md:mt-20"
+      className="landing-rise relative mx-auto mt-24 w-full max-w-[880px] text-left md:mt-32"
       style={{ "--rise-delay": "0.95s", "--rise-y": "40px", "--rise-duration": "1s" } as CSSProperties}
     >
       <div
@@ -154,16 +154,13 @@ export default function HeroReportCard({ href }: { href?: string }) {
 
         {href ? (
           <div className="flex flex-col gap-3 border-t border-white/[0.08] bg-white/[0.03] px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-7">
-            <p className="text-[13px] leading-[1.6] text-zinc-400">
-              <span className="font-semibold text-zinc-200">
-                {RESUME_REPORT_SAMPLE_COMPANY} {RESUME_REPORT_SAMPLE_JOB_ROLE}
-              </span>
-              <span className="mx-2 text-zinc-700">·</span>
-              가상의 지원자로 만든 예시예요. 로그인 없이 전체를 볼 수 있어요.
+            <p className="text-[13.5px] font-semibold text-zinc-200">
+              {RESUME_REPORT_SAMPLE_COMPANY} {RESUME_REPORT_SAMPLE_JOB_ROLE}
             </p>
-            <span className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-[14px] font-semibold text-zinc-900 transition-colors group-hover:bg-zinc-200">
-              예시 리포트 전체 보기
-              <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            {/* 주 CTA 와 같은 모양·효과. 호버는 카드(a)에 걸리므로 landing.css 가 .hero-report-card:hover 로 이어 준다. */}
+            <span className="landing-primary-cta shrink-0">
+              <span className="relative z-10">예시 리포트 전체 보기</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </span>
           </div>
         ) : null}
