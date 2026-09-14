@@ -8,12 +8,12 @@ import { SectionNumber } from "../SectionNumber";
 import { renderEmphasizedText, renderRichText } from "../richText";
 
 /** ACT 4 — 예상 질문: 질문·꼬리 질문·모범 답변 아코디언. 인쇄 중에는 전부 펼친다. */
-export function InterviewDrillSection({ items, isPrinting }: { items: InterviewQA[]; isPrinting: boolean }) {
+export function InterviewDrillSection({ items, isPrinting, indexLabel = "05" }: { items: InterviewQA[]; isPrinting: boolean; indexLabel?: string }) {
   const [openQuestionIndex, setOpenQuestionIndex] = useState<number | null>(0);
 
   return (
     <section id="section-interview-drill" className="pt-24 pb-24 section-divider report-section-anchor">
-      <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value="05" />{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
+      <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value={indexLabel} />{UI_LABELS.INTERVIEW_DRILL_TITLE}</h3>
       <p className="text-base text-zinc-400 mb-14 max-w-2xl leading-[1.7]">{UI_LABELS.INTERVIEW_DRILL_DESC}</p>
 
       <div className="space-y-0">

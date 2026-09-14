@@ -15,6 +15,7 @@ import { FirstImpressionSection } from "@/components/report/sections/FirstImpres
 import { InterviewDrillSection } from "@/components/report/sections/InterviewDrillSection";
 import { LineAnalysisSection } from "@/components/report/sections/LineAnalysisSection";
 import { MentorCommentSection } from "@/components/report/sections/MentorCommentSection";
+import { PostingFitSection } from "@/components/report/sections/PostingFitSection";
 import { ReportClosing } from "@/components/report/sections/ReportClosing";
 import { UI_LABELS } from "@/constants/labels";
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
@@ -22,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAnalysisReport } from "@/hooks/useAnalysisReport";
 import { useFeedbackRewardAvailable } from "@/hooks/useFeedbackRewardAvailable";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
+import type { JobPostingRecord } from "@/types/jobPosting";
 import type { ReportData } from "@/types/report";
 import { isReportSectionLocked } from "@/utils/reportAccess";
 import {
@@ -34,7 +36,8 @@ import {
   splitMentorComment,
   splitPersonaForHeroLines,
 } from "./reportFirstImpression";
-import { REPORT_NAV_SECTIONS } from "./reportNavigation";
+import { buildReportNavSections } from "./reportNavigation";
+import { isPostingFitRenderable } from "./reportPostingFit";
 
 function getFallbackDisplayName(user: { name?: string | null; email?: string | null } | null) {
   const authName = user?.name?.trim();
@@ -70,6 +73,8 @@ interface LoadedReport {
   activeAnalysisId: string;
   targetCompany: string;
   targetJobRole: string;
+  /** 채용공고를 붙여 분석한 리포트에만 있다. 공고 적합도 섹션의 부제(회사 · 직무 · 출처)에 쓴다. */
+  jobPosting?: JobPostingRecord | null;
   /** 로그인 없이 보는 공개 예시(/report-new?sample=1). 잠금·피드백·업셀 대신 분석 시작 CTA를 둔다. */
   sample?: boolean;
 }
@@ -92,6 +97,9 @@ function AuthenticatedReport() {
         activeAnalysisId: payload.id ?? requestedAnalysisId ?? "",
         targetCompany: payload.company_name ?? "",
         targetJobRole: payload.job_role ?? "",
+        jobPosting: payload.job_posting
+          ? { id: payload.job_posting.id, sourceUrl: payload.job_posting.source_url, summary: payload.job_posting.summary }
+          : null,
       };
     },
   });
@@ -120,13 +128,18 @@ function ReportContent({
   activeAnalysisId,
   targetCompany,
   targetJobRole,
+  jobPosting = null,
   displayName,
   sample = false,
 }: LoadedReport & { displayName: string }) {
   const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
   const feedbackRewardAvailable = useFeedbackRewardAvailable();
-  const activeSection = useScrollSpy(REPORT_NAV_SECTIONS);
+  // 공고 적합도가 있으면 목차에 한 칸 끼어들고 뒤 섹션 번호가 밀린다. 섹션 번호는 목차에서만 읽는다.
+  const hasPostingFit = isPostingFitRenderable(reportData.postingFit);
+  const navSections = useMemo(() => buildReportNavSections({ hasPostingFit }), [hasPostingFit]);
+  const indexLabelOf = (id: string) => navSections.find((section) => section.id === id)?.indexLabel ?? "";
+  const activeSection = useScrollSpy(navSections);
   const [isPrinting, setIsPrinting] = useState(false);
 
   // 접힌 항목을 모두 펼쳐 렌더한 다음 프레임에 브라우저 인쇄(→ PDF 저장)를 연다.
@@ -189,11 +202,11 @@ function ReportContent({
 
   return (
     <main className="min-h-screen bg-[#09090B] text-zinc-100 font-sans selection:bg-indigo-500/20">
-      <MiniNavigator sections={REPORT_NAV_SECTIONS} activeSection={activeSection} />
+      <MiniNavigator sections={navSections} activeSection={activeSection} />
 
       <ReportTopNav
         className="print:hidden"
-        sections={REPORT_NAV_SECTIONS}
+        sections={navSections}
         activeSection={activeSection}
         backLabel={UI_LABELS.BACK}
         actions={
@@ -237,6 +250,13 @@ function ReportContent({
         <CompanyInsightSection targetCompany={targetCompany} companyInsight={reportData.companyInsight} />
 
         <ReportAccessGate isLocked={isLockedFromSection(2)} onLogin={handleLoginToUnlock}>
+          {hasPostingFit ? (
+            <PostingFitSection
+              postingFit={reportData.postingFit as NonNullable<ReportData["postingFit"]>}
+              jobPosting={jobPosting}
+              indexLabel={indexLabelOf("section-posting-fit")}
+            />
+          ) : null}
           <CoreDiagnosisSection
             targetCompany={targetCompany}
             strengthEntries={strengthEntries}
@@ -244,6 +264,7 @@ function ReportContent({
             strengthHighlights={strengthHighlights}
             gapHighlights={gapHighlights}
             positioning={reportData.positioning}
+            indexLabel={indexLabelOf("section-core-diagnosis")}
           />
         </ReportAccessGate>
       </article>
@@ -254,14 +275,15 @@ function ReportContent({
           targetCompany={targetCompany}
           displayName={displayName}
           isPrinting={isPrinting}
+          indexLabel={indexLabelOf("section-line-analysis")}
         />
       </ReportAccessGate>
 
       <ReportAccessGate isLocked={isLockedFromSection(4)} onLogin={handleLoginToUnlock} showOverlay={false}>
         <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10">
-          <InterviewDrillSection items={reportData.interviewQA} isPrinting={isPrinting} />
-          <ActionPlanSection tasks={reportData.actionPlan} />
-          <MentorCommentSection blocks={mentorCommentBlocks} />
+          <InterviewDrillSection items={reportData.interviewQA} isPrinting={isPrinting} indexLabel={indexLabelOf("section-interview-drill")} />
+          <ActionPlanSection tasks={reportData.actionPlan} indexLabel={indexLabelOf("section-action-plan")} />
+          <MentorCommentSection blocks={mentorCommentBlocks} indexLabel={indexLabelOf("section-pm-comment")} />
 
           {sample ? (
             <section className="print:hidden mt-16 mb-10 rounded-xl border border-white/[0.06] bg-white/[0.02] px-6 py-10 text-center md:px-10">
@@ -311,6 +333,7 @@ export default function PassMateReport() {
         activeAnalysisId="sample"
         targetCompany={RESUME_REPORT_SAMPLE.company}
         targetJobRole={RESUME_REPORT_SAMPLE.jobRole}
+        jobPosting={RESUME_REPORT_SAMPLE.jobPosting}
         displayName={RESUME_REPORT_SAMPLE.displayName}
         sample
       />

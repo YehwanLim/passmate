@@ -22,6 +22,15 @@ export const UI_LABELS = {
   REJECTION_TRIGGERS: "탈락 요인",
   CULTURE_SIGNALS: "조직 문화 특징",
 
+  // Act 2.5: 공고 적합도 (채용공고를 붙여 분석한 리포트에만 나온다)
+  POSTING_FIT_TITLE: "이 공고에 이 자소서를 놓으면",
+  POSTING_FIT_MATCHES: "공고 요구사항과 자소서 대조",
+  POSTING_FIT_MISSING: "공고에는 있고 자소서에는 없는 말",
+  POSTING_FIT_QUESTION_ADVICE: "문항별로 공고를 드러낼 자리",
+  POSTING_FIT_EVIDENCE: "근거",
+  POSTING_FIT_ADVICE: "보강",
+  POSTING_FIT_BASIS: (label: string) => `${label} 채용공고 기준`,
+
   // Act 2: Core Diagnosis
   STRENGTHS_AND_GAPS: (company: string) => `이 자소서는 이렇게 읽히고 있어요`,
   STRENGTHS: "강점",

@@ -39,6 +39,7 @@ model User {
   paymentEntitlements PaymentEntitlement[]
   feedbackCreditGrant FeedbackCreditGrant?
   siteVisits SiteVisit[]
+  jobPostings JobPosting[]
   receivedAdminCreditGrants AdminCreditGrant[] @relation("AdminCreditGrantRecipient")
   issuedAdminCreditGrants   AdminCreditGrant[] @relation("AdminCreditGrantAdministrator")
 
@@ -432,12 +433,16 @@ model Analysis {
   totalChars   Int?     @map("total_chars")                // 원문 글자 수
   responseTime Int?     @map("response_time_ms")           // AI 응답 시간 (ms)
 
+  /// 채용공고 맞춤 분석에 쓴 공고. 공고 없이 돌린 분석은 null. 공고가 지워져도 분석은 남는다(SetNull).
+  jobPostingId String? @map("job_posting_id") @db.Uuid
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   // Relations
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   promptTemplate PromptTemplate? @relation(fields: [promptTemplateId], references: [id])
+  jobPosting     JobPosting?     @relation(fields: [jobPostingId], references: [id], onDelete: SetNull)
   tokenUsages    TokenUsage[]
   feedbacks      Feedback[]
   analysisRequest AnalysisRequest?
@@ -448,8 +453,31 @@ model Analysis {
   @@index([status])
   @@index([errorCode])
   @@index([promptTemplateId])
+  @@index([jobPostingId])
   @@index([createdAt])
   @@map("analyses")
+}
+
+// =============================================================================
+// JobPosting — 자소서 분석에 붙이는 채용공고. POST /api/analyze/posting 이 URL·텍스트를
+// 정제해 저장하고, 분석 요청은 id 로 참조한다. 나중에 관리자 큐레이션 목록으로 확장할 기반.
+// =============================================================================
+model JobPosting {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  sourceUrl   String? @map("source_url") @db.VarChar(2048) // URL 로 불러온 경우만
+  rawText     String  @map("raw_text") @db.Text            // 정제된 공고 본문 (최대 6,000자)
+  summaryJson Json    @map("summary_json")                 // flash-lite 가 뽑은 자격요건·우대사항·키워드 요약
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyses Analysis[]
+
+  @@index([userId])
+  @@map("job_postings")
 }
 
 // =============================================================================

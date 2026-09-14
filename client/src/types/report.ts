@@ -101,6 +101,26 @@ export interface DiagnosisEntry {
   text: string
 }
 
+/** 공고 요구사항 하나가 자소서에 드러나는 정도 */
+export type RequirementMatchStatus = "드러남" | "약함" | "언급 없음";
+
+export interface RequirementMatch {
+  requirement: string
+  /** 모델이 세 값 밖의 문자열을 내면 화면은 중립 톤으로 그린다 */
+  status: RequirementMatchStatus | string
+  evidence?: string
+  advice?: string
+}
+
+/** 공고 적합도 — 채용공고를 붙여 분석했을 때만 생성된다 */
+export interface PostingFit {
+  headline: string
+  verdict: string
+  requirementMatches: RequirementMatch[]
+  missingKeywords?: string[]
+  questionAdvice?: Array<{ questionIndex: number; advice: string }>
+}
+
 /** 최종 리포트 데이터 */
 export interface ReportData {
   companyInsight: CompanyInsight
@@ -117,4 +137,6 @@ export interface ReportData {
   actionPlan: ActionItem[]
   /** 실무 PM의 냉정한 한줄 */
   pmComment: string
+  /** 공고 적합도. 구버전 리포트·공고 없는 리포트에는 없음 */
+  postingFit?: PostingFit | null
 }

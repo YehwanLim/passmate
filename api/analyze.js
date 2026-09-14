@@ -23,6 +23,7 @@ import {
 import { ApiError, sendError, sendJson, sendRateLimited, withApiHandler } from "../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../lib/auth.js";
 import { COMPANY_HANDLER_DEFAULTS } from "../lib/company-analysis.js";
+import { createJobPostingHandler } from "../lib/job-posting.js";
 import { consumeUserRateLimit, getAnalysisThroughputPolicy } from "../lib/rate-limit.js";
 import {
   analyzeCoverLetter,
@@ -31,6 +32,7 @@ import {
   normalizeRequest,
   requestHash,
   resumeAnalysisInput,
+  verifyResumeRequest,
 } from "../lib/resume-analysis.js";
 import { createResumeSplitHandler } from "../lib/resume-split.js";
 import prisma from "../lib/prisma.js";
@@ -93,7 +95,7 @@ export function createAnalyzeHandler({
   normalizeRequest: normalize = normalizeRequest,
   requireUser = requireActiveApplicationUser,
   reserveAnalysis: reserve = reserveAnalysis,
-  verifyRequest = async () => {},
+  verifyRequest = verifyResumeRequest,
 } = {}) {
   return async function handler(req, res) {
     return withApiHandler(req, res, async (requestId) => {
@@ -218,19 +220,22 @@ export function createCompanyAnalyzeHandler(overrides = {}) {
 const analyzeHandler = createAnalyzeHandler();
 const companyAnalyzeHandler = createCompanyAnalyzeHandler();
 const resumeSplitHandler = createResumeSplitHandler();
+const jobPostingHandler = createJobPostingHandler();
 
-/** 쿼리로 세 핸들러 중 하나를 고른다. split 이 kind 보다 우선한다(기존 동작 유지). */
-export function selectAnalyzeHandler(query, { company, resume, split }) {
+/** 쿼리로 네 핸들러 중 하나를 고른다. split → posting → kind 순으로 우선한다(기존 동작 유지). */
+export function selectAnalyzeHandler(query, { company, posting, resume, split }) {
   if (query?.split === "1") return split;
+  if (query?.posting === "1") return posting;
   if (query?.kind === "company") return company;
   return resume;
 }
 
-// /api/analyze/split → ?split=1, /api/analyze/company → ?kind=company 로 rewrite 되어
-// 이 함수 하나로 들어온다 (Hobby 12함수 제한).
+// /api/analyze/split → ?split=1, /api/analyze/posting → ?posting=1, /api/analyze/company → ?kind=company
+// 로 rewrite 되어 이 함수 하나로 들어온다 (Hobby 12함수 제한).
 export default function handler(req, res) {
   return selectAnalyzeHandler(req.query, {
     company: companyAnalyzeHandler,
+    posting: jobPostingHandler,
     resume: analyzeHandler,
     split: resumeSplitHandler,
   })(req, res);

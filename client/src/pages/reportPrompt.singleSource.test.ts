@@ -73,6 +73,17 @@ describe("report prompt single source", () => {
     expect(sharedPrompt).toContain("각 문단은 1~2문장");
   });
 
+  it("keeps the job-posting fit rules in the canonical prompt", () => {
+    expect(sharedPrompt).toContain('"postingFit"');
+    expect(sharedPrompt).toContain('"requirementMatches"');
+    expect(sharedPrompt).toContain('"missingKeywords"');
+    expect(sharedPrompt).toContain('"questionAdvice"');
+    expect(sharedPrompt).toContain("드러남 | 약함 | 언급 없음");
+    expect(sharedPrompt).toContain("채용공고가 입력에 없으면 postingFit은 null로 둔다");
+    expect(sharedPrompt).toContain("[채용공고 요약]·[채용공고 원문]이 있으면");
+    expect(sharedPrompt).toContain("점수·퍼센트·등급으로 적합도를 표현하지 않는다");
+  });
+
   it("keeps the pmComment paragraph separator as a JSON escape at runtime", () => {
     expect(MASTER_SYSTEM_PROMPT).toContain("빈 줄(\\n\\n)");
   });

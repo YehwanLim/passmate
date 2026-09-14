@@ -1,8 +1,10 @@
+import type { JobPostingRecord } from "@/types/jobPosting";
 import type { ReportData } from "@/types/report";
 
 import {
   RESUME_REPORT_SAMPLE_COMPANY,
   RESUME_REPORT_SAMPLE_DISPLAY_NAME,
+  RESUME_REPORT_SAMPLE_JOB_POSTING,
   RESUME_REPORT_SAMPLE_JOB_ROLE,
 } from "./resumeReportSampleMeta";
 
@@ -10,7 +12,8 @@ import {
  * 공개 자소서 샘플 리포트 — 로그인 없이 /report-new?sample=1 에서 렌더한다.
  *
  * 가상의 지원자(김민지)와 가상의 자소서로 손으로 쓴 예시다. 실제 사용자 데이터가 아니다.
- * 화면 상단 배너가 "가상의 지원자"임을 밝힌다. 실제 리포트와 같은 7개 섹션·같은 스키마(ReportData)를 따르고,
+ * 화면 상단 배너가 "가상의 지원자"임을 밝힌다. 실제 리포트와 같은 섹션·같은 스키마(ReportData)를 따르고,
+ * 채용공고를 붙인 리포트처럼 postingFit(공고 적합도)까지 갖춰 8개 섹션을 모두 보여 준다.
  * 마스터 프롬프트(shared/prompts/reportPrompt.js)의 형식 규칙을 지킨다:
  * - feedbackCards.original 은 fullAnswer 의 정확한 부분 문자열(하이라이트가 이것으로 붙는다)
  * - hiringMemory 는 ✓ 3개 + △ 1개, pmComment 는 빈 줄로 나눈 세 문단
@@ -351,6 +354,48 @@ const report: ReportData = {
     "**두 문항을 잇는 다리는 아버지 차의 원격 공조 장면입니다.** 경험 문항의 마지막 문장을 그 장면으로 돌려보내면 동아리 경험이 현대자동차의 문제로 자연스럽게 옮겨 옵니다.",
     "면접에서는 개인화가 부족하다고 판단한 근거와 실험 기간을 먼저 물을 가능성이 큽니다. 어떤 사용자군의 어떤 신호를 봤는지 30초 안에 설명할 수 있게 준비해 두세요.",
   ].join("\n\n"),
+  postingFit: {
+    headline: "방법론은 공고가 찾는 사람 그대로인데, 커넥티드카라는 무대는 아직 지원동기의 한 장면에만 있습니다",
+    verdict:
+      "공고가 첫 줄에 적은 '데이터를 활용해 서비스 문제를 정의하고 개선한 경험'은 경험 문항이 그대로 증명합니다. 반면 직무 이름 앞에 붙은 커넥티드카는 원격 공조 이야기 밖에서는 한 번도 등장하지 않고, 우대 사항의 SQL과 A/B 테스트는 실제로 한 일인데 그 단어로 쓰이지 않았습니다.",
+    requirementMatches: [
+      {
+        requirement: "데이터를 활용해 서비스 문제를 정의하고 개선한 경험",
+        status: "드러남",
+        evidence: "로그 3,000건을 직접 모아 이탈 구간을 찾고 2주 단위 실험으로 고친 경험 문항 전체가 이 항목의 답입니다.",
+      },
+      {
+        requirement: "여러 이해관계자와 협업해 요구사항을 합의한 경험",
+        status: "약함",
+        evidence: "'개발자와 실험 기간 및 성공 기준을 합의했습니다' 한 문장이 유일한 근거입니다.",
+        advice: "무엇을 두고 의견이 갈렸고 어떤 기준으로 정리했는지 한 문장을 덧붙이면 공고의 '요구사항 조율' 항목에 바로 대응됩니다.",
+      },
+      {
+        requirement: "모바일 앱 서비스 기획 또는 운영 경험",
+        status: "드러남",
+        evidence: "콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영한 동아리 경험이 그대로 해당합니다.",
+      },
+      {
+        requirement: "커넥티드카·모빌리티 서비스에 대한 이해",
+        status: "언급 없음",
+        evidence: "블루링크 원격 공조 장면이 유일한 접점이고, 공고가 쓰는 커넥티드카·모빌리티라는 말은 자소서에 없습니다.",
+        advice: "입사 후 목표 문단에서 커넥티드카 앱의 첫 사용 경험을 개선하겠다고 공고의 표현으로 다시 쓰세요.",
+      },
+    ],
+    missingKeywords: ["커넥티드카", "SQL", "A/B 테스트"],
+    questionAdvice: [
+      {
+        questionIndex: 1,
+        advice:
+          "입사 후 목표 문단의 '커넥티드 서비스'를 공고 표현인 '커넥티드카 앱'으로 맞추고, 기능별 진입률을 보겠다는 문장을 고객 여정 설계와 이어 주세요.",
+      },
+      {
+        questionIndex: 2,
+        advice:
+          "'2주 단위로 실험을 반복했고'에 A/B 테스트라는 이름을 붙이고, 로그를 어떤 도구로 정리했는지 한 구절을 넣으면 우대 사항 두 개가 한 문단에서 드러납니다.",
+      },
+    ],
+  },
 };
 
 export const RESUME_REPORT_SAMPLE: {
@@ -358,9 +403,11 @@ export const RESUME_REPORT_SAMPLE: {
   jobRole: string;
   displayName: string;
   report: ReportData;
+  jobPosting: JobPostingRecord;
 } = {
   company: RESUME_REPORT_SAMPLE_COMPANY,
   jobRole: RESUME_REPORT_SAMPLE_JOB_ROLE,
   displayName: RESUME_REPORT_SAMPLE_DISPLAY_NAME,
   report,
+  jobPosting: RESUME_REPORT_SAMPLE_JOB_POSTING,
 };

@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { isRenderableReport } from "@/pages/ReportResult";
 import { tokenizeAnswerParagraph } from "@/pages/reportLineAnalysis";
+import { isPostingFitRenderable } from "@/pages/reportPostingFit";
 import type { DiagnosisEntry } from "@/types/report";
 
 import { RESUME_REPORT_SAMPLE } from "./resumeReportSample";
-import { RESUME_REPORT_SAMPLE_COMPANY, RESUME_REPORT_SAMPLE_JOB_ROLE } from "./resumeReportSampleMeta";
+import {
+  RESUME_REPORT_SAMPLE_COMPANY,
+  RESUME_REPORT_SAMPLE_JOB_POSTING,
+  RESUME_REPORT_SAMPLE_JOB_ROLE,
+} from "./resumeReportSampleMeta";
 
 const { report } = RESUME_REPORT_SAMPLE;
 const boldCount = (text: string) => (text.match(/\*\*[^*]+\*\*/g) ?? []).length;
@@ -26,6 +31,15 @@ function evaluativeTexts(): string[] {
     ...report.interviewQA.map((qa) => JSON.stringify(qa)),
     ...report.actionPlan.map((item) => JSON.stringify(item)),
     report.pmComment,
+    ...(report.postingFit
+      ? [
+          report.postingFit.headline,
+          report.postingFit.verdict,
+          ...report.postingFit.requirementMatches.map((match) => JSON.stringify(match)),
+          ...(report.postingFit.missingKeywords ?? []),
+          ...(report.postingFit.questionAdvice ?? []).map((item) => item.advice),
+        ]
+      : []),
   ];
 }
 
@@ -79,6 +93,25 @@ describe("public résumé sample report", () => {
     }
     expect(report.pmComment.split(/\n\s*\n/)).toHaveLength(3);
     expect(boldCount(report.pmComment)).toBe(1);
+  });
+
+  it("carries a posting fit that matches the sample job posting and covers every question", () => {
+    const { postingFit } = report;
+    expect(isPostingFitRenderable(postingFit)).toBe(true);
+    expect(RESUME_REPORT_SAMPLE.jobPosting).toBe(RESUME_REPORT_SAMPLE_JOB_POSTING);
+    expect(RESUME_REPORT_SAMPLE_JOB_POSTING.summary.company).toBe(RESUME_REPORT_SAMPLE_COMPANY);
+    expect(RESUME_REPORT_SAMPLE_JOB_POSTING.summary.role).toBe(RESUME_REPORT_SAMPLE_JOB_ROLE);
+
+    // 대조 항목은 공고 요구사항에서 그대로 가져오고, 세 상태를 모두 한 번씩은 보여 준다.
+    for (const match of postingFit!.requirementMatches) {
+      expect(RESUME_REPORT_SAMPLE_JOB_POSTING.summary.requirements).toContain(match.requirement);
+    }
+    expect(new Set(postingFit!.requirementMatches.map((match) => match.status))).toEqual(new Set(["드러남", "약함", "언급 없음"]));
+    // 빠진 키워드는 공고 키워드에 있고, 문항별 조언은 fixture 의 문항 탭마다 하나씩이다.
+    for (const keyword of postingFit!.missingKeywords ?? []) {
+      expect(RESUME_REPORT_SAMPLE_JOB_POSTING.summary.keywords).toContain(keyword);
+    }
+    expect((postingFit!.questionAdvice ?? []).map((item) => item.questionIndex)).toEqual(report.questionTabs.map((tab) => tab.id));
   });
 
   it("never grades the applicant with scores or percentages, and never calls itself 첨삭", () => {

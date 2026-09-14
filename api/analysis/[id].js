@@ -32,6 +32,7 @@ export function createAnalysisHandler({
           projectId: true,
           kind: true,
           project: { select: { company: true, jobKeyword: true, title: true } },
+          jobPosting: { select: { id: true, sourceUrl: true, summaryJson: true } },
         },
       });
       if (!analysis) {
@@ -51,6 +52,14 @@ export function createAnalysisHandler({
         company_name: analysis.project?.company ?? null,
         job_role: analysis.project?.jobKeyword ?? null,
         project_title: analysis.project?.title ?? null,
+        // 채용공고 맞춤 분석에 쓴 공고 요약. 공고 없이 돌린 분석(과거 리포트 포함)은 null.
+        job_posting: analysis.jobPosting
+          ? {
+            id: analysis.jobPosting.id,
+            source_url: analysis.jobPosting.sourceUrl ?? null,
+            summary: analysis.jobPosting.summaryJson,
+          }
+          : null,
       }, requestId);
     });
   };

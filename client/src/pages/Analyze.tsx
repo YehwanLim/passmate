@@ -32,6 +32,8 @@ import PreviousResumePicker from "@/components/analyze/PreviousResumePicker";
 import ImportPreviewDialog from "@/components/analyze/ImportPreviewDialog";
 import AnalyzeLoadingOverlay from "@/components/analyze/AnalyzeLoadingOverlay";
 import AnalyzeLoginModal from "@/components/analyze/AnalyzeLoginModal";
+import JobPostingSection from "@/components/analyze/JobPostingSection";
+import JobPostingStickyBar from "@/components/analyze/JobPostingStickyBar";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
@@ -61,6 +63,7 @@ import {
   type ResumeImportPair,
 } from "@/lib/resumeFileImport";
 import type { ProjectSummary } from "@/types/my";
+import type { JobPostingRecord } from "@/types/jobPosting";
 import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
 import {
   MAX_QUESTIONS,
@@ -97,6 +100,8 @@ export default function Analyze() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorModal, setErrorModal] = useState<AnalyzeErrorView | null>(null);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  // 선택 입력. 서버가 정리한 공고 요약 레코드만 들고 있다가 제출 시 id 만 보낸다.
+  const [jobPosting, setJobPosting] = useState<JobPostingRecord | null>(null);
   // 모달 안에서(또는 다른 탭에서) 로그인되면 닫는다. 제출은 사용자가 다시 누른다 — 클릭 없이 크레딧을 쓰지 않는다.
   useEffect(() => {
     if (isAuthenticated) setLoginPromptOpen(false);
@@ -307,6 +312,8 @@ export default function Analyze() {
       questions: structuredQuestions,
       company: sanitizeText(company.trim()) || undefined,
       jobKeyword: sanitizeText(jobLabel) || undefined,
+      // 공고를 붙였을 때만 키를 넣는다. 없는데 undefined 로 보내면 서버 검증이 키 존재를 볼 수 있다.
+      ...(jobPosting ? { jobPostingId: jobPosting.id } : {}),
     };
     // 같은 입력 재시도는 같은 키, 입력이 바뀌면 새 키.
     const request = resolveIdempotencyKey(analysisRequestRef.current, JSON.stringify(requestPayload));
@@ -539,8 +546,20 @@ export default function Analyze() {
             </div>
           </FormSection>
 
+          {/* ── 채용공고 (선택) ── */}
+          <JobPostingSection
+            value={jobPosting}
+            onChange={setJobPosting}
+            isAuthenticated={isAuthenticated}
+            onRequireLogin={() => {
+              trackLoginPrompt("job_posting");
+              setLoginPromptOpen(true);
+            }}
+          />
+
           {/* ── 문항 리스트 ── */}
           <motion.div variants={ANALYZE_ITEM_VARIANTS}>
+            {jobPosting && <JobPostingStickyBar record={jobPosting} />}
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-white">
                 자소서 문항

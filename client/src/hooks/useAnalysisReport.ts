@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
+import type { JobPostingSummary } from "@/types/jobPosting";
 
 /** GET /api/analysis/:id 응답 중 화면이 읽는 최상위 필드. 본문 형식 검증은 호출자의 parse 가 한다. */
 export interface AnalysisPayload {
@@ -9,6 +10,8 @@ export interface AnalysisPayload {
   company_name?: string | null;
   job_role?: string | null;
   ai_response_json?: unknown;
+  /** 채용공고를 붙여 분석한 자소서 리포트에만 있다 */
+  job_posting?: { id: string; source_url: string | null; summary: JobPostingSummary } | null;
 }
 
 const SESSION_EXPIRED_MESSAGE = "로그인이 만료되었어요. 다시 로그인한 뒤 리포트를 열어 주세요.";

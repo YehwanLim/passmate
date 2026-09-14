@@ -7,7 +7,7 @@ import { SectionNumber } from "../SectionNumber";
 import { renderRichText } from "../richText";
 
 /** ACT 5 — 다음 단계: 체크 가능한 액션 플랜과 진행률. 체크 상태는 화면에만 남는다. */
-export function ActionPlanSection({ tasks }: { tasks: ActionItem[] }) {
+export function ActionPlanSection({ tasks, indexLabel = "06" }: { tasks: ActionItem[]; indexLabel?: string }) {
   const [completedTasks, setCompletedTasks] = useState<number[]>([]);
 
   const toggleTask = (index: number) => {
@@ -18,7 +18,7 @@ export function ActionPlanSection({ tasks }: { tasks: ActionItem[] }) {
 
   return (
     <section id="section-action-plan" className="py-24 section-divider report-section-anchor">
-      <h3 className="text-xl sm:text-2xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value="06" />{UI_LABELS.ACTION_PLAN_TITLE}</h3>
+      <h3 className="text-xl sm:text-2xl font-semibold text-white mb-6 tracking-tight"><SectionNumber value={indexLabel} />{UI_LABELS.ACTION_PLAN_TITLE}</h3>
 
       <div className="flex items-center gap-5 mb-14 mt-10">
         <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">

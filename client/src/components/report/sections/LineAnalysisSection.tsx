@@ -52,11 +52,13 @@ export function LineAnalysisSection({
   targetCompany,
   displayName,
   isPrinting,
+  indexLabel = "04",
 }: {
   questionTabs: QuestionTab[];
   targetCompany: string;
   displayName: string;
   isPrinting: boolean;
+  indexLabel?: string;
 }) {
   const [activeTab, setActiveTab] = useState(0);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
@@ -340,7 +342,7 @@ export function LineAnalysisSection({
         setFocusedCardIndex(null);
         setExpandedCards(new Set());
       }}>
-      <h3 className="text-xl sm:text-2xl font-semibold text-white mb-10 tracking-tight"><SectionNumber value="04" />{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
+      <h3 className="text-xl sm:text-2xl font-semibold text-white mb-10 tracking-tight"><SectionNumber value={indexLabel} />{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
 
       {/* Split View: Source (Left) + Commentary (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-0 lg:items-start">
