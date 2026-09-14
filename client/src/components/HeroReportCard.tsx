@@ -1,5 +1,5 @@
 import type { CSSProperties, ElementType } from "react";
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check } from "lucide-react";
 import { Link } from "wouter";
 import { BrandName } from "@/components/BrandName";
 import {
@@ -8,11 +8,16 @@ import {
   mentorCommentPreviews,
   reportKeywords,
 } from "@/components/report-showcase/reportShowcaseSampleData";
+import {
+  RESUME_REPORT_SAMPLE_COMPANY,
+  RESUME_REPORT_SAMPLE_JOB_ROLE,
+} from "@/constants/resumeReportSampleMeta";
 
 /* ─────────────────────────────────────────────────────────
    HeroReportCard — 히어로에 리포트 첫인상 화면을 축소해 거는 미리보기.
    콘텐츠·색 체계는 ReportShowcase의 데이터를 그대로 재사용한다.
-   href 를 주면 카드 전체가 그 주소로 가는 링크가 된다(예시 리포트).
+   href 를 주면 카드 전체가 그 주소로 가는 링크가 되고, 카드 하단에 흰 버튼 모양의 CTA 가 붙는다(예시 리포트).
+   링크 안에 링크를 둘 수 없어 버튼은 span 이다. 실제 이동은 카드(a)가 맡는다.
    ───────────────────────────────────────────────────────── */
 
 const CARD_CLASS =
@@ -24,7 +29,7 @@ export default function HeroReportCard({ href }: { href?: string }) {
     ? {
         href,
         "aria-label": "예시 리포트 전체 보기",
-        className: `${CARD_CLASS} transition-colors duration-200 hover:border-white/[0.18] focus-visible:border-white/[0.3] focus-visible:outline-none`,
+        className: `${CARD_CLASS} group transition-colors duration-200 hover:border-white/[0.18] focus-visible:border-white/[0.3] focus-visible:outline-none`,
       }
     : { className: CARD_CLASS };
   return (
@@ -146,6 +151,22 @@ export default function HeroReportCard({ href }: { href?: string }) {
             </div>
           </div>
         </div>
+
+        {href ? (
+          <div className="flex flex-col gap-3 border-t border-white/[0.08] bg-white/[0.03] px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-7">
+            <p className="text-[13px] leading-[1.6] text-zinc-400">
+              <span className="font-semibold text-zinc-200">
+                {RESUME_REPORT_SAMPLE_COMPANY} {RESUME_REPORT_SAMPLE_JOB_ROLE}
+              </span>
+              <span className="mx-2 text-zinc-700">·</span>
+              가상의 지원자로 만든 예시예요. 로그인 없이 전체를 볼 수 있어요.
+            </p>
+            <span className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-[14px] font-semibold text-zinc-900 transition-colors group-hover:bg-zinc-200">
+              예시 리포트 전체 보기
+              <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </span>
+          </div>
+        ) : null}
       </Card>
     </div>
   );

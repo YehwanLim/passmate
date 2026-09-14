@@ -17,11 +17,7 @@ import { useState, useCallback, useEffect, type CSSProperties } from "react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import AuthButton from "@/components/AuthButton";
-import {
-  RESUME_REPORT_SAMPLE_COMPANY,
-  RESUME_REPORT_SAMPLE_JOB_ROLE,
-  RESUME_REPORT_SAMPLE_PATH,
-} from "@/constants/resumeReportSampleMeta";
+import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
 
 export const HOME_NAV_ITEMS = [
   { label: "서비스 소개", type: "section", target: "service-intro" },
@@ -237,31 +233,14 @@ export default function Home() {
             {/* 일반 링크: 번들 평가가 첫 프레임 뒤로 미뤄져 있어(public/landing-boot.js) 그 사이 탭해도 이동해야 한다.
                 하이드레이션 뒤에는 wouter 가 클라이언트 라우팅으로 가로챈다. */}
             <Link href="/analyze" className="landing-primary-cta group">
-              <span className="relative z-10">내 자소서 분석하기</span>
+              <span className="relative z-10">내 자소서 무료로 분석하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
-            <p className="mt-3.5 text-[12.5px] text-zinc-500">
-              첫 분석 무료 <span className="text-zinc-700">·</span> 리포트는 1분
-              안에
-            </p>
           </div>
 
-          {/* 로그인 없이 결과물부터 보고 싶은 방문자용. 카드 전체와 아래 버튼이 같은 예시 리포트로 간다
+          {/* 로그인 없이 결과물부터 보고 싶은 방문자용. 카드 전체와 카드 하단 버튼이 같은 예시 리포트로 간다
               (ReportResult 의 ?sample=1, 가상의 지원자). 일반 링크라 번들 평가 전에 탭해도 이동한다. */}
           <HeroReportCard href={RESUME_REPORT_SAMPLE_PATH} />
-          <div
-            className="landing-rise mt-7 flex flex-col items-center gap-2.5"
-            style={{ "--rise-delay": "1.2s", "--rise-y": "16px" } as CSSProperties}
-          >
-            <Link href={RESUME_REPORT_SAMPLE_PATH} className="landing-secondary-cta group">
-              <span>예시 리포트 전체 보기</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-            </Link>
-            <p className="text-[12.5px] text-zinc-500">
-              {RESUME_REPORT_SAMPLE_COMPANY} {RESUME_REPORT_SAMPLE_JOB_ROLE} <span className="text-zinc-700">·</span>{" "}
-              가상의 지원자로 만든 리포트예요
-            </p>
-          </div>
         </div>
       </section>
 
