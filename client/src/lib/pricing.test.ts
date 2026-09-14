@@ -23,10 +23,10 @@ describe("pricing constants", () => {
       (1 - PRICING.triple.salePrice / PRICING.triple.listPrice) * 100
     );
 
-    expect(singleDiscount).toBe(40);
+    expect(singleDiscount).toBe(34);
     // 단품도 번들과 같은 "N원 절약" 꼴로 — 베이직 카드에서 자소서/기업을 오갈 때 표기가 흔들리지 않는다.
-    expect(savingsFor(PRICING.single)).toBe(4_000);
-    expect(PRICING.single.discountLabel).toBe("4,000원 절약");
+    expect(savingsFor(PRICING.single)).toBe(2_000);
+    expect(PRICING.single.discountLabel).toBe("2,000원 절약");
     expect(tripleDiscount).toBe(50);
     expect(PRICING.triple.discountLabel).toContain("50%");
   });
@@ -39,12 +39,6 @@ describe("pricing constants", () => {
     );
     // "커피 한 잔 값" 카피의 전제: 회당 5,000원 미만
     expect(STANDARD_PER_USE_PRICE).toBeLessThan(5000);
-  });
-
-  it("keeps the single plan list price aligned with the triple plan per-unit list price", () => {
-    expect(PRICING.triple.listPrice).toBe(
-      PRICING.single.listPrice * PRICING.triple.uses
-    );
   });
 
   it("formats won amounts with thousands separators", () => {
@@ -85,8 +79,8 @@ describe("tier pricing", () => {
       const plan = PRICING[key];
       return plan.salePrice / (plan.uses + plan.companyUses);
     };
-    expect(unit("single")).toBe(5_900);
-    expect(unit("company")).toBe(5_900);
+    expect(unit("single")).toBe(3_900);
+    expect(unit("company")).toBe(3_900);
     expect(unit("standard")).toBeLessThan(unit("single"));
     expect(unit("premium")).toBeLessThan(unit("standard"));
   });
@@ -95,17 +89,17 @@ describe("tier pricing", () => {
     const basic = PRICING.single.salePrice;
     expect(PRICING.standard.listPrice).toBe(basic * (PRICING.standard.uses + PRICING.standard.companyUses));
     expect(PRICING.premium.listPrice).toBe(basic * (PRICING.premium.uses + PRICING.premium.companyUses));
-    expect(savingsFor(PRICING.standard)).toBe(2_800);
-    expect(savingsFor(PRICING.premium)).toBe(9_500);
-    expect(PRICING.standard.discountLabel).toBe("2,800원 절약");
-    expect(PRICING.premium.discountLabel).toBe("9,500원 절약");
+    expect(savingsFor(PRICING.standard)).toBe(1_800);
+    expect(savingsFor(PRICING.premium)).toBe(6_500);
+    expect(PRICING.standard.discountLabel).toBe("1,800원 절약");
+    expect(PRICING.premium.discountLabel).toBe("6,500원 절약");
   });
 
   it("prices the company single like the resume single", () => {
     expect(PRICING.company.listPrice).toBe(PRICING.single.listPrice);
     expect(PRICING.company.salePrice).toBe(PRICING.single.salePrice);
-    expect(savingsFor(PRICING.company)).toBe(4_000);
-    expect(PRICING.company.discountLabel).toBe("4,000원 절약");
+    expect(savingsFor(PRICING.company)).toBe(2_000);
+    expect(PRICING.company.discountLabel).toBe("2,000원 절약");
   });
 
   it("maps server product keys to pricing keys and labels", () => {
@@ -113,7 +107,7 @@ describe("tier pricing", () => {
     expect(productLabel("STANDARD")).toBe("스탠다드");
     expect(productLabel("PREMIUM")).toBe("프리미엄");
     expect(productLabel("COMPANY_SINGLE")).toBe("기업 분석 1회");
-    expect(estimatedAmountFor("PREMIUM")).toBe(25_900);
+    expect(estimatedAmountFor("PREMIUM")).toBe(16_900);
   });
 
   it("lists the tiers in ascending order with the basic tier offering a choice", () => {

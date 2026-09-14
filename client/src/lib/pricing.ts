@@ -1,6 +1,6 @@
 // 이용권 가격 표시의 단일 정의처. 랜딩(PricingSection)과 이용권 페이지(Entitlements)가 공유한다.
 // 실제 결제 금액은 Groble 상품 설정이 진실이므로, 여기 값을 바꿀 땐 Groble 상품 가격도 함께 맞춘다.
-// 티어(스펙 §7-3): 베이직 5,900(자소서 1 또는 기업 1) → 스탠다드 14,900(자소서 2 + 기업 1) → 프리미엄 25,900(자소서 3 + 기업 3).
+// 티어(스펙 §7-3): 베이직 3,900(자소서 1 또는 기업 1) → 스탠다드 9,900(자소서 2 + 기업 1) → 프리미엄 16,900(자소서 3 + 기업 3).
 
 /** 서버 쿼리 키(lib/entitlement-products.js PRODUCT_QUERY_KEYS)와 같다. checkoutUrls 의 키이기도 하다. */
 export const PURCHASE_PRODUCT_KEYS = ["single", "company", "standard", "premium", "triple"] as const;
@@ -24,33 +24,33 @@ export type PricingPlan = {
 export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
   single: {
     label: "자소서 진단 1회",
-    listPrice: 9_900,
-    salePrice: 5_900,
-    discountLabel: "4,000원 절약",
+    listPrice: 5_900,
+    salePrice: 3_900,
+    discountLabel: "2,000원 절약",
     uses: 1,
     companyUses: 0,
   },
   company: {
     label: "기업 분석 1회",
-    listPrice: 9_900,
-    salePrice: 5_900,
-    discountLabel: "4,000원 절약",
+    listPrice: 5_900,
+    salePrice: 3_900,
+    discountLabel: "2,000원 절약",
     uses: 0,
     companyUses: 1,
   },
   standard: {
     label: "스탠다드",
-    listPrice: 17_700,
-    salePrice: 14_900,
-    discountLabel: "2,800원 절약",
+    listPrice: 11_700,
+    salePrice: 9_900,
+    discountLabel: "1,800원 절약",
     uses: 2,
     companyUses: 1,
   },
   premium: {
     label: "프리미엄",
-    listPrice: 35_400,
-    salePrice: 25_900,
-    discountLabel: "9,500원 절약",
+    listPrice: 23_400,
+    salePrice: 16_900,
+    discountLabel: "6,500원 절약",
     uses: 3,
     companyUses: 3,
   },
@@ -72,8 +72,8 @@ export const TIERS = [
   { key: "premium", label: "프리미엄", products: ["premium"] },
 ] as const;
 
-/** 스탠다드 기준 회당 가격(원, 14,900 / 3회). 반올림 값이며 pricing.test.ts가 산술 일치를 검증한다. */
-export const STANDARD_PER_USE_PRICE = 4_967;
+/** 스탠다드 기준 회당 가격(원, 9,900 / 3회). 반올림 값이며 pricing.test.ts가 산술 일치를 검증한다. */
+export const STANDARD_PER_USE_PRICE = 3_300;
 
 export const SEASONAL_DISCOUNT_LABEL = "하반기 채용 시즌 기념 할인";
 
