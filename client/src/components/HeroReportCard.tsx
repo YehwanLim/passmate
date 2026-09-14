@@ -153,7 +153,7 @@ export default function HeroReportCard({ href }: { href?: string }) {
         </div>
 
         {href ? (
-          <div className="flex flex-col gap-3 border-t border-white/[0.08] bg-white/[0.03] px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-7">
+          <div className="flex flex-col items-center gap-3.5 border-t border-white/[0.08] bg-white/[0.03] px-5 py-5 text-center md:px-7">
             <p className="text-[13.5px] font-semibold text-zinc-200">
               {RESUME_REPORT_SAMPLE_COMPANY} {RESUME_REPORT_SAMPLE_JOB_ROLE}
             </p>
