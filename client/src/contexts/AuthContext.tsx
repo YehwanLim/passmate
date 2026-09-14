@@ -123,6 +123,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // 카카오 OAuth 로그인. Supabase 가 카카오 콘솔의 Redirect URI(…/auth/v1/callback)로 받아 redirectTo 로 돌려보낸다.
+  const signInWithKakao = useCallback(async (options?: { redirectTo?: string }) => {
+    const supabase = await loadSupabase();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "kakao",
+      options: { redirectTo: options?.redirectTo ?? `${window.location.origin}/` },
+    });
+    if (error) {
+      throw error;
+    }
+  }, []);
+
   // 로그아웃
   const signOut = useCallback(async () => {
     try {
@@ -141,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isAuthenticated: user !== null,
     signInWithGoogle,
+    signInWithKakao,
     signOut,
   };
 

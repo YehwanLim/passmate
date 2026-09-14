@@ -8,6 +8,8 @@ import { AlertCircle } from "lucide-react";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as
   | string
   | undefined;
+// 소셜 로그인 버튼 공통 너비. KakaoSignInButton 의 max-w-[336px] 와 같은 값.
+const SOCIAL_BUTTON_MAX_WIDTH = 336;
 
 // ============================================================
 // Google 아이콘 SVG
@@ -40,6 +42,8 @@ interface GoogleSignInButtonProps {
   redirectPath: string;
   /** 폴백 버튼일 때만 아래에 그린다. 폴백은 페이지를 떠나므로, 화면의 입력이 사라진다는 안내용 */
   fallbackNotice?: ReactNode;
+  /** 폴백(리다이렉트)으로 페이지를 떠나기 직전에 호출. GIS 경로에서는 부르지 않는다 */
+  onBeforeRedirect?: () => void;
 }
 
 /**
@@ -52,6 +56,7 @@ interface GoogleSignInButtonProps {
 export default function GoogleSignInButton({
   redirectPath,
   fallbackNotice,
+  onBeforeRedirect,
 }: GoogleSignInButtonProps) {
   const { isAuthenticated, isLoading: authLoading, signInWithGoogle } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -101,9 +106,10 @@ export default function GoogleSignInButton({
           theme: "outline",
           size: "large",
           text: "continue_with",
-          shape: "pill",
+          // GIS 는 pill(20px) 아니면 rectangular(4px)뿐이라, rectangular 로 그리고 바깥 상자(rounded-[10px] overflow-hidden)로 모서리를 맞춘다.
+          shape: "rectangular",
           logo_alignment: "center",
-          width: Math.min(400, container.offsetWidth || 336),
+          width: Math.min(SOCIAL_BUTTON_MAX_WIDTH, container.offsetWidth || SOCIAL_BUTTON_MAX_WIDTH),
           locale: "ko",
         });
         setGisStatus("ready");
@@ -122,6 +128,7 @@ export default function GoogleSignInButton({
     setError(null);
     setIsSigningIn(true);
     try {
+      onBeforeRedirect?.();
       await signInWithGoogle({
         redirectTo: `${window.location.origin}/login?redirect=${encodeURIComponent(
           redirectPath,
@@ -158,18 +165,18 @@ export default function GoogleSignInButton({
 
       {/* Google 로그인 버튼: GIS 공식 버튼 (실패 시 아래 폴백 버튼) */}
       {gisStatus !== "fallback" && (
-        <div className="relative min-h-12">
+        <div className="relative min-h-10">
           <div
             ref={googleButtonRef}
             className={[
-              "flex justify-center transition-opacity duration-200",
+              "mx-auto w-full max-w-[336px] h-10 overflow-hidden rounded-[10px] transition-opacity duration-200",
               gisStatus === "ready" && !isSigningIn
                 ? "opacity-100"
                 : "opacity-0 pointer-events-none",
             ].join(" ")}
           />
           {(gisStatus === "loading" || isSigningIn) && (
-            <div className="absolute inset-0 flex items-center justify-center gap-3 rounded-xl bg-white/[0.04] border border-white/10">
+            <div className="absolute inset-0 mx-auto max-w-[336px] flex items-center justify-center gap-3 rounded-[10px] bg-white/[0.04] border border-white/10">
               <div className="w-5 h-5 border-2 border-gray-500/40 border-t-gray-300 rounded-full animate-spin" />
               <span className="text-[14px] text-gray-400">
                 {isSigningIn ? "연결 중..." : "로그인 준비 중..."}
@@ -184,15 +191,15 @@ export default function GoogleSignInButton({
             id="google-login-btn"
             onClick={handleGoogleLogin}
             disabled={isSigningIn}
+            // 폴백도 GIS 버튼·카카오 버튼과 같은 크기(40px, 10px 모서리)로 맞춘다.
             className={[
-              "relative w-full flex items-center justify-center gap-3",
-              "h-12 px-6 rounded-xl font-medium text-[15px]",
+              "relative mx-auto w-full max-w-[336px] flex items-center justify-center gap-2.5",
+              "h-10 px-5 rounded-[10px] font-medium text-[14px]",
               "bg-white text-gray-900",
               "border border-white/20",
-              "transition-all duration-200",
-              "hover:bg-gray-50 hover:scale-[1.01] active:scale-[0.99]",
-              "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100",
-              "shadow-[0_2px_8px_rgba(0,0,0,0.3)]",
+              "transition-colors duration-200",
+              "hover:bg-gray-50",
+              "disabled:opacity-60 disabled:cursor-not-allowed",
             ].join(" ")}
             aria-label="Google로 계속하기"
           >

@@ -55,6 +55,7 @@ import {
   type IdempotentRequest,
 } from "@/lib/analysisSubmit";
 import { readQueryParam } from "@/lib/readQueryParam";
+import { saveAnalyzeDraft, takeAnalyzeDraft } from "@/lib/analyzeDraft";
 import {
   extractTextFromFile,
   requestAiSplit,
@@ -91,17 +92,25 @@ export default function Analyze() {
   // 폼은 로그인 없이 쓸 수 있다. 로그인은 크레딧을 쓰는 제출 순간에만 받는다(AnalyzeLoginModal).
   // 서버(/api/analyze)는 여전히 인증을 요구하므로 권한 경계는 그대로다.
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  // 카카오 로그인(전체 페이지 리다이렉트)에서 돌아온 경우 떠나기 전 저장한 초안이 있다. 마운트 때 한 번만 꺼낸다.
+  const [draft] = useState(() => takeAnalyzeDraft());
   // /company-report 의 CTA 가 회사·직무를 쿼리로 넘긴다. 없으면 빈 값.
-  const [company, setCompany] = useState(() => readQueryParam("company"));
-  const [jobRole, setJobRole] = useState(() => readQueryParam("jobKeyword"));
-  const [questions, setQuestions] = useState<QuestionItem[]>([
-    createEmptyQuestion(),
-  ]);
+  const [company, setCompany] = useState(
+    () => draft?.company ?? readQueryParam("company")
+  );
+  const [jobRole, setJobRole] = useState(
+    () => draft?.jobRole ?? readQueryParam("jobKeyword")
+  );
+  const [questions, setQuestions] = useState<QuestionItem[]>(() =>
+    draft && draft.questions.length > 0 ? draft.questions : [createEmptyQuestion()]
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [errorModal, setErrorModal] = useState<AnalyzeErrorView | null>(null);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   // 선택 입력. 서버가 정리한 공고 요약 레코드만 들고 있다가 제출 시 id 만 보낸다.
-  const [jobPosting, setJobPosting] = useState<JobPostingRecord | null>(null);
+  const [jobPosting, setJobPosting] = useState<JobPostingRecord | null>(
+    () => draft?.jobPosting ?? null
+  );
   // 모달 안에서(또는 다른 탭에서) 로그인되면 닫는다. 제출은 사용자가 다시 누른다 — 클릭 없이 크레딧을 쓰지 않는다.
   useEffect(() => {
     if (isAuthenticated) setLoginPromptOpen(false);
@@ -713,6 +722,9 @@ export default function Analyze() {
       <AnalyzeLoginModal
         open={loginPromptOpen && !isAuthenticated}
         onClose={() => setLoginPromptOpen(false)}
+        onBeforeRedirect={() =>
+          saveAnalyzeDraft({ company, jobRole, questions, jobPosting })
+        }
       />
 
       {/* ════════ CONFIRM MODAL ════════ */}

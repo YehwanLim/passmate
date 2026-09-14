@@ -23,6 +23,8 @@ export interface AuthState {
   isAuthenticated: boolean;
   /** Google OAuth 로그인 실행 */
   signInWithGoogle: (options?: { redirectTo?: string }) => Promise<void>;
+  /** 카카오 OAuth 로그인 실행. 항상 전체 페이지 리다이렉트다 */
+  signInWithKakao: (options?: { redirectTo?: string }) => Promise<void>;
   /** 로그아웃 */
   signOut: () => Promise<void>;
 }

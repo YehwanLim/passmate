@@ -3,19 +3,24 @@ import { LogIn } from "lucide-react";
 import { Link } from "wouter";
 
 import GoogleSignInButton from "@/components/GoogleSignInButton";
+import KakaoSignInButton from "@/components/KakaoSignInButton";
 import { Button } from "@/components/ui/button";
 
 /**
  * 분석 폼 제출 시점의 로그인 모달. 폼은 로그인 없이 쓰게 두고, 크레딧을 쓰는 순간에만 로그인을 받는다.
- * GIS 버튼은 페이지를 떠나지 않으므로 뒤의 입력이 메모리에 그대로 남는다(브라우저 저장소에 쓰지 않는다).
+ * GIS 버튼은 페이지를 떠나지 않으므로 뒤의 입력이 메모리에 그대로 남는다.
+ * 카카오는 전체 페이지 리다이렉트라 떠나기 직전 onBeforeRedirect 로 호출하는 쪽이 초안을 저장한다.
  * 로그인에 성공하면 호출하는 쪽이 isAuthenticated 를 보고 닫는다. 제출은 사용자가 한 번 더 누른다.
  */
 export default function AnalyzeLoginModal({
   open,
   onClose,
+  onBeforeRedirect,
 }: {
   open: boolean;
   onClose: () => void;
+  /** 페이지를 떠나는 로그인(카카오·구글 폴백) 직전에 호출된다 */
+  onBeforeRedirect?: () => void;
 }) {
   return (
     <AnimatePresence>
@@ -46,19 +51,23 @@ export default function AnalyzeLoginModal({
               </h3>
             </div>
             <p className="text-sm text-zinc-400 leading-relaxed mb-6">
-              작성한 내용은 그대로 남아 있어요. Google 계정으로 로그인한 뒤
+              작성한 내용은 그대로 남아 있어요. 로그인한 뒤
               분석 시작을 한 번 더 눌러 주세요. 첫 분석은 무료예요.
             </p>
 
-            <GoogleSignInButton
-              redirectPath="/analyze"
-              fallbackNotice={
-                <p className="mt-3 text-[12px] leading-relaxed text-zinc-500">
-                  브라우저 설정에 따라 로그인 페이지를 거치며, 그 경우 내용을 다시
-                  입력해야 할 수 있어요.
-                </p>
-              }
-            />
+            <div className="space-y-3">
+              <GoogleSignInButton
+                redirectPath="/analyze"
+                onBeforeRedirect={onBeforeRedirect}
+                fallbackNotice={
+                  <p className="text-[12px] leading-relaxed text-zinc-500">
+                    브라우저 설정에 따라 로그인 페이지를 거치며, 그 경우 내용을 다시
+                    입력해야 할 수 있어요.
+                  </p>
+                }
+              />
+              <KakaoSignInButton redirectPath="/analyze" onBeforeRedirect={onBeforeRedirect} />
+            </div>
 
             <p className="mt-4 text-center text-[12px] leading-relaxed text-zinc-500">
               로그인 시{" "}

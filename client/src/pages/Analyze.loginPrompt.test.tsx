@@ -25,6 +25,7 @@ vi.mock("@/components/GoogleSignInButton", () => ({
 }));
 
 import Analyze from "./Analyze";
+import { ANALYZE_DRAFT_KEY } from "@/lib/analyzeDraft";
 
 const LOGGED_OUT = { user: null, isLoading: false, isAuthenticated: false };
 const LOGGED_IN = {
@@ -86,5 +87,50 @@ describe("Analyze login prompt", () => {
     expect(
       (screen.getByPlaceholderText("여기에 답변을 작성해 주세요.") as HTMLTextAreaElement).value
     ).toBe(LONG_ANSWER);
+  });
+
+  // 카카오는 전체 페이지 리다이렉트라 메모리의 폼이 사라진다. 떠나기 전에 초안을 sessionStorage 에 남긴다.
+  it("stashes the draft before the Kakao redirect leaves the page", async () => {
+    const signInWithKakao = vi.fn().mockResolvedValue(undefined);
+    mocks.useAuth.mockReturnValue({ ...LOGGED_OUT, signInWithKakao });
+    window.sessionStorage.clear();
+    render(<Analyze />);
+
+    fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), {
+      target: { value: LONG_ANSWER },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
+    fireEvent.click(screen.getByRole("button", { name: "카카오로 계속하기" }));
+
+    const stored = JSON.parse(window.sessionStorage.getItem(ANALYZE_DRAFT_KEY) ?? "null");
+    expect(stored?.questions?.[0]?.answer).toBe(LONG_ANSWER);
+    await waitFor(() => expect(signInWithKakao).toHaveBeenCalledTimes(1));
+    expect(signInWithKakao).toHaveBeenCalledWith({
+      redirectTo: `${window.location.origin}/login?redirect=%2Fanalyze`,
+    });
+    window.sessionStorage.clear();
+  });
+
+  it("restores the stashed draft when the visitor comes back from the Kakao round-trip", () => {
+    window.sessionStorage.setItem(
+      ANALYZE_DRAFT_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        company: "토스",
+        jobRole: "PM",
+        questions: [{ id: "q1", question: "지원 동기", answer: LONG_ANSWER }],
+        jobPosting: null,
+      })
+    );
+    mocks.useAuth.mockReturnValue(LOGGED_IN);
+    render(<Analyze />);
+
+    expect(
+      (screen.getByPlaceholderText("여기에 답변을 작성해 주세요.") as HTMLTextAreaElement).value
+    ).toBe(LONG_ANSWER);
+    expect(screen.getByDisplayValue("토스")).toBeTruthy();
+    expect(screen.getByDisplayValue("PM")).toBeTruthy();
+    // 한 번 복원한 초안은 지워서, 새로 들어온 방문을 옛 초안이 덮지 않게 한다.
+    expect(window.sessionStorage.getItem(ANALYZE_DRAFT_KEY)).toBeNull();
   });
 });

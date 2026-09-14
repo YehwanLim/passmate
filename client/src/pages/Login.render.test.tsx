@@ -28,8 +28,9 @@ describe("Login", () => {
     render(<Login />);
 
     expect(screen.getByRole("heading", { name: "시작하기" })).toBeTruthy();
-    expect(screen.getByText("첫 분석 1회 무료, 카드 등록 없이")).toBeTruthy();
-    expect(screen.getByText("자소서 본문은 분석에만 사용하고, 서버 로그에 남기지 않습니다.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Google로 계속하기" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "카카오로 계속하기" })).toBeTruthy();
+    expect(screen.getByText("자소서는 분석에만 쓰이고, AI 학습에 사용되지 않습니다.")).toBeTruthy();
     expect(mocks.navigate).not.toHaveBeenCalled();
   });
 
