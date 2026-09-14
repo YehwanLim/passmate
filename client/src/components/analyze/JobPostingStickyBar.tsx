@@ -66,7 +66,7 @@ export default function JobPostingStickyBar({ record }: { record: JobPostingReco
           {requirements.length > 0 && <BulletList title="자격요건" items={requirements} />}
           {preferred.length > 0 && <BulletList title="우대사항" items={preferred} />}
           {!hasLists && responsibilities.length > 0 && (
-            <BulletList title="책임 업무" items={responsibilities} />
+            <BulletList title="담당 업무" items={responsibilities} />
           )}
         </div>
       )}

@@ -66,10 +66,10 @@ describe("ReportResult public sample", () => {
 
     render(<PassMateReport />);
 
-    expect(await screen.findByRole("heading", { name: /이 공고에 이 자소서를 놓으면/ })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: /공고에서 찾는 것, 자소서에 있는 것/ })).toBeTruthy();
     expect(screen.getByText("현대자동차 · 서비스 기획 채용공고 기준")).toBeTruthy();
     expect(screen.getByText("커넥티드카·모빌리티 서비스에 대한 이해")).toBeTruthy();
-    expect(screen.getByText("언급 없음")).toBeTruthy();
+    expect(screen.getByText("없음")).toBeTruthy();
     expect(chipTexts()).toEqual([
       "01첫인상",
       "02합격 기준",
@@ -102,7 +102,7 @@ describe("ReportResult public sample", () => {
     render(<PassMateReport />);
 
     expect(await screen.findByRole("heading", { name: /이 자소서는 이렇게 읽히고 있어요/ })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: /이 공고에 이 자소서를 놓으면/ })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /공고에서 찾는 것, 자소서에 있는 것/ })).toBeNull();
     expect(chipTexts()).toEqual([
       "01첫인상",
       "02합격 기준",

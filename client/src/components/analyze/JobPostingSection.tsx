@@ -121,13 +121,13 @@ export default function JobPostingSection({
     <FormSection icon={FileText} title="채용공고" className="space-y-5">
       <div>
         <p className="text-sm text-zinc-500 leading-relaxed break-keep">
-          지원하는 공고를 붙이면 자격요건·우대사항에 맞춰 자소서를 읽어 드려요.
+          지원하려는 공고를 넣으면, 해당 공고를 기준으로 자소서를 분석해드려요.
         </p>
         <div className="mt-4 flex items-center gap-4 border-b border-white/[0.08]" role="tablist">
           {(
             [
-              ["url", "URL 입력"],
-              ["text", "텍스트 붙여넣기"],
+              ["url", "링크"],
+              ["text", "본문 붙여넣기"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -152,7 +152,7 @@ export default function JobPostingSection({
       {mode === "url" ? (
         <div>
           <label htmlFor="job-posting-url" className="sr-only">
-            채용공고 URL
+            채용 공고 링크
           </label>
           <div className="flex flex-col gap-2.5 sm:flex-row">
             <Input
@@ -178,13 +178,13 @@ export default function JobPostingSection({
             <FetchButton isLoading={isLoading} disabled={!canFetch} onClick={handleFetch} />
           </div>
           <p className="mt-2 text-xs text-zinc-600 break-keep">
-            URL을 못 읽는 사이트(원티드 등)는 공고 본문을 복사해 텍스트로 붙여 주세요.
+            링크로 열리지 않는 사이트(원티드 등)는 조금 번거롭더라도 본문을 복사해서 붙여주세요.
           </p>
         </div>
       ) : (
         <div>
           <label htmlFor="job-posting-text" className="sr-only">
-            채용공고 본문
+            공고 본문
           </label>
           <Textarea
             id="job-posting-text"
@@ -194,7 +194,7 @@ export default function JobPostingSection({
               setText(event.target.value.slice(0, MAX_POSTING_CHARS));
               setError(null);
             }}
-            placeholder="수행 업무·자격요건·우대사항이 담긴 공고 본문을 붙여 넣어 주세요."
+            placeholder="담당 업무, 자격요건, 우대사항이 있는 부분을 그대로 붙여 주세요."
             className="min-h-[160px] border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20"
           />
           <div className="mt-2 flex items-center justify-between gap-3">
@@ -218,7 +218,7 @@ export default function JobPostingSection({
           error ? "text-red-400" : isLoading ? "text-zinc-500" : "sr-only"
         )}
       >
-        {error ?? (isLoading ? "공고를 읽고 있어요. 잠시만 기다려 주세요." : "")}
+        {error ?? (isLoading ? "공고를 읽는 중입니다." : "")}
       </p>
     </FormSection>
   );
@@ -267,7 +267,7 @@ function JobPostingCard({
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-wider text-zinc-500">불러온 공고</p>
+          <p className="text-[11px] uppercase tracking-wider text-zinc-500">지원 공고</p>
           <p className="mt-1 text-[15px] font-semibold text-white break-keep">
             {getJobPostingTitle(record)}
           </p>
@@ -280,7 +280,7 @@ function JobPostingCard({
           onClick={onReplace}
           className="shrink-0 text-[12.5px] text-zinc-400 underline-offset-4 transition-colors hover:text-white hover:underline"
         >
-          다른 공고로 바꾸기
+          다른 공고 넣기
         </button>
       </div>
 
@@ -288,7 +288,7 @@ function JobPostingCard({
         {hasRequirements && <BulletList title="자격요건" items={summary.requirements} />}
         {hasPreferred && <BulletList title="우대사항" items={summary.preferred} />}
         {showResponsibilities && summary.responsibilities.length > 0 && (
-          <BulletList title="책임 업무" items={summary.responsibilities} />
+          <BulletList title="담당 업무" items={summary.responsibilities} />
         )}
       </div>
 

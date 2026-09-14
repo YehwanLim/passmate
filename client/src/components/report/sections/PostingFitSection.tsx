@@ -4,11 +4,12 @@ import type { PostingFit } from "@/types/report";
 import { SectionNumber } from "../SectionNumber";
 import { renderRichText } from "../richText";
 
-// 상태 라벨의 톤. 강조는 색 톤으로만 하고 카드·배지 장식은 두지 않는다.
-const STATUS_TONES: Record<string, string> = {
-  드러남: "text-emerald-300 bg-emerald-400/10 border-emerald-400/15",
-  약함: "text-amber-200 bg-amber-400/10 border-amber-400/15",
-  "언급 없음": "text-rose-200 bg-rose-400/10 border-rose-400/15",
+// 모델 출력값(드러남/약함/언급 없음)은 프롬프트 계약이라 그대로 두고, 화면에는 짧은 말로 바꿔 보여 준다.
+// 강조는 색 톤으로만 하고 카드·배지 장식은 두지 않는다.
+const STATUS_DISPLAY: Record<string, { label: string; tone: string }> = {
+  드러남: { label: "적합", tone: "text-emerald-300 bg-emerald-400/10 border-emerald-400/15" },
+  약함: { label: "미흡", tone: "text-amber-200 bg-amber-400/10 border-amber-400/15" },
+  "언급 없음": { label: "없음", tone: "text-rose-200 bg-rose-400/10 border-rose-400/15" },
 };
 const NEUTRAL_STATUS_TONE = "text-zinc-300 bg-white/[0.04] border-white/[0.06]";
 
@@ -29,7 +30,7 @@ function getHostname(url: string | null | undefined): string | null {
   }
 }
 
-/** ACT 2.5 — 공고 적합도: 채용공고 요구사항과 자소서 대조, 빠진 키워드, 문항별 보강 자리. 공고를 붙인 리포트에만 그린다. */
+/** ACT 2.5 — 공고 적합도: 공고 요건별 적합/미흡/없음, 공고에만 있는 내용, 문항별로 넣을 것. 공고를 붙인 리포트에만 그린다. */
 export function PostingFitSection({
   postingFit,
   jobPosting,
@@ -63,13 +64,15 @@ export function PostingFitSection({
         <p className="text-sm text-zinc-400 uppercase tracking-[0.12em] mb-5 font-semibold">{UI_LABELS.POSTING_FIT_MATCHES}</p>
         <ul className="divide-y divide-white/[0.05] border-y border-white/[0.05]">
           {postingFit.requirementMatches.map((match, i) => {
-            const tone = STATUS_TONES[match.status] ?? NEUTRAL_STATUS_TONE;
+            const display = STATUS_DISPLAY[match.status];
+            const tone = display?.tone ?? NEUTRAL_STATUS_TONE;
+            const statusLabel = display?.label ?? match.status;
             const evidence = match.evidence?.trim();
             const advice = match.advice?.trim();
             return (
               <li key={i} className="py-5 sm:grid sm:grid-cols-[92px_1fr] sm:gap-5">
                 <div className="mb-2.5 sm:mb-0 sm:pt-0.5">
-                  <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap ${tone}`}>{match.status}</span>
+                  <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap ${tone}`}>{statusLabel}</span>
                 </div>
                 <div>
                   <p className="text-[16px] font-medium leading-[1.6] text-zinc-100">{renderRichText(match.requirement)}</p>

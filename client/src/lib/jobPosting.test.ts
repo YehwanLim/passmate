@@ -136,14 +136,14 @@ describe("isValidPostingUrl", () => {
 
 describe("getJobPostingErrorMessage", () => {
   it("returns Korean copy per code and a fallback", () => {
-    expect(getJobPostingErrorMessage("POSTING_URL_UNREADABLE")).toContain("텍스트로 붙여");
-    expect(getJobPostingErrorMessage("POSTING_NOT_RECOGNIZED")).toContain("채용공고로 보이지");
-    expect(getJobPostingErrorMessage("POSTING_EXTRACT_FAILED")).toContain("정리하지 못했어요");
-    expect(getJobPostingErrorMessage("RATE_LIMITED")).toContain("15분");
+    expect(getJobPostingErrorMessage("POSTING_URL_UNREADABLE")).toContain("복사해서 붙여");
+    expect(getJobPostingErrorMessage("POSTING_NOT_RECOGNIZED")).toContain("채용공고 같지 않아요");
+    expect(getJobPostingErrorMessage("POSTING_EXTRACT_FAILED")).toContain("문제가 생겼어요");
+    expect(getJobPostingErrorMessage("RATE_LIMITED")).toContain("너무 많습니다");
     expect(getJobPostingErrorMessage("INVALID_REQUEST")).toContain("확인해 주세요");
-    expect(getJobPostingErrorMessage("", 429)).toContain("15분");
+    expect(getJobPostingErrorMessage("", 429)).toContain("너무 많습니다");
     expect(getJobPostingErrorMessage("SOMETHING_ELSE")).toBe(
-      "공고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+      "공고를 불러오지 못했어요. 잠시 뒤 다시 해 주세요."
     );
   });
 });

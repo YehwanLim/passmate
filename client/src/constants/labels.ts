@@ -23,12 +23,12 @@ export const UI_LABELS = {
   CULTURE_SIGNALS: "조직 문화 특징",
 
   // Act 2.5: 공고 적합도 (채용공고를 붙여 분석한 리포트에만 나온다)
-  POSTING_FIT_TITLE: "이 공고에 이 자소서를 놓으면",
-  POSTING_FIT_MATCHES: "공고 요구사항과 자소서 대조",
-  POSTING_FIT_MISSING: "공고에는 있고 자소서에는 없는 말",
-  POSTING_FIT_QUESTION_ADVICE: "문항별로 공고를 드러낼 자리",
-  POSTING_FIT_EVIDENCE: "근거",
-  POSTING_FIT_ADVICE: "보강",
+  POSTING_FIT_TITLE: "공고에서 찾는 것, 자소서에 있는 것",
+  POSTING_FIT_MATCHES: "요건별로 보면",
+  POSTING_FIT_MISSING: "공고에는 있지만 자소서에는 없는 내용",
+  POSTING_FIT_QUESTION_ADVICE: "문항마다 이렇게 붙이면",
+  POSTING_FIT_EVIDENCE: "자소서에서",
+  POSTING_FIT_ADVICE: "이렇게 고치면",
   POSTING_FIT_BASIS: (label: string) => `${label} 채용공고 기준`,
 
   // Act 2: Core Diagnosis

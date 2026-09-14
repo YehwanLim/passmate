@@ -63,7 +63,7 @@ describe("JobPostingSection", () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText("채용공고 URL"), {
+    fireEvent.change(screen.getByLabelText("채용 공고 링크"), {
       target: { value: "https://careers.example.com/jobs/1" },
     });
     fireEvent.click(screen.getByRole("button", { name: "공고 불러오기" }));
@@ -84,9 +84,9 @@ describe("JobPostingSection", () => {
     );
     const button = screen.getByRole("button", { name: "공고 불러오기" }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText("채용공고 URL"), { target: { value: "원티드 공고" } });
+    fireEvent.change(screen.getByLabelText("채용 공고 링크"), { target: { value: "원티드 공고" } });
     expect(button.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText("채용공고 URL"), {
+    fireEvent.change(screen.getByLabelText("채용 공고 링크"), {
       target: { value: "https://www.wanted.co.kr/wd/1" },
     });
     expect(button.disabled).toBe(false);
@@ -103,20 +103,20 @@ describe("JobPostingSection", () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText("채용공고 URL"), {
+    fireEvent.change(screen.getByLabelText("채용 공고 링크"), {
       target: { value: "https://www.wanted.co.kr/wd/1" },
     });
     fireEvent.click(screen.getByRole("button", { name: "공고 불러오기" }));
 
     await waitFor(() =>
       expect(
-        screen.getByText("URL에서 공고 본문을 읽지 못했어요. 공고 내용을 복사해 텍스트로 붙여 주세요.")
+        screen.getByText("이 링크는 열리지 않아요. 공고 본문을 복사해서 붙여 주세요.")
       ).toBeTruthy()
     );
-    expect(screen.getByRole("tab", { name: "텍스트 붙여넣기" }).getAttribute("aria-selected")).toBe(
+    expect(screen.getByRole("tab", { name: "본문 붙여넣기" }).getAttribute("aria-selected")).toBe(
       "true"
     );
-    expect(screen.getByLabelText("채용공고 본문")).toBeTruthy();
+    expect(screen.getByLabelText("공고 본문")).toBeTruthy();
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -138,8 +138,8 @@ describe("JobPostingSection", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("tab", { name: "텍스트 붙여넣기" }));
-    fireEvent.change(screen.getByLabelText("채용공고 본문"), {
+    fireEvent.click(screen.getByRole("tab", { name: "본문 붙여넣기" }));
+    fireEvent.change(screen.getByLabelText("공고 본문"), {
       target: { value: "수행 업무와 자격요건이 담긴 공고 본문. ".repeat(20) },
     });
     fireEvent.click(screen.getByRole("button", { name: "공고 불러오기" }));
@@ -156,16 +156,16 @@ describe("JobPostingSection", () => {
       />
     );
 
-    expect(screen.getByText("불러온 공고")).toBeTruthy();
+    expect(screen.getByText("지원 공고")).toBeTruthy();
     expect(screen.getByText("백엔드 엔지니어")).toBeTruthy();
     expect(screen.getByText("careers.example.com · 본문 1,830자")).toBeTruthy();
     expect(screen.getByText("Node.js 3년 이상")).toBeTruthy();
     expect(screen.getByText("Vercel 배포 경험")).toBeTruthy();
     expect(screen.getByText("PostgreSQL")).toBeTruthy();
-    expect(screen.queryByText("책임 업무")).toBeNull();
+    expect(screen.queryByText("담당 업무")).toBeNull();
   });
 
-  it("clears the record with 다른 공고로 바꾸기", () => {
+  it("clears the record with 다른 공고 넣기", () => {
     render(
       <JobPostingSection
         value={RECORD}
@@ -174,7 +174,7 @@ describe("JobPostingSection", () => {
         onRequireLogin={onRequireLogin}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: "다른 공고로 바꾸기" }));
+    fireEvent.click(screen.getByRole("button", { name: "다른 공고 넣기" }));
     expect(onChange).toHaveBeenCalledWith(null);
   });
 });

@@ -87,17 +87,17 @@ export async function requestJobPosting(
 export function getJobPostingErrorMessage(code: string, status?: number): string {
   switch (code) {
     case "POSTING_URL_UNREADABLE":
-      return "URL에서 공고 본문을 읽지 못했어요. 공고 내용을 복사해 텍스트로 붙여 주세요.";
+      return "이 링크는 열리지 않아요. 공고 본문을 복사해서 붙여 주세요.";
     case "POSTING_NOT_RECOGNIZED":
-      return "채용공고로 보이지 않아요. 수행 업무와 자격요건이 담긴 본문을 붙여 주세요.";
+      return "채용공고 같지 않아요. 담당 업무와 자격요건이 있는 부분을 붙여 주세요.";
     case "POSTING_EXTRACT_FAILED":
-      return "공고를 정리하지 못했어요. 잠시 후 다시 시도해 주세요.";
+      return "공고를 읽다가 문제가 생겼어요. 잠시 뒤 다시 해 주세요.";
     case "RATE_LIMITED":
-      return "공고 불러오기 요청이 많아요. 15분 뒤 다시 시도해 주세요.";
+      return "공고 불러오기 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
     case "INVALID_REQUEST":
-      return "공고 URL 또는 본문을 확인해 주세요.";
+      return "링크나 본문을 다시 확인해 주세요.";
     default:
-      if (status === 429) return "공고 불러오기 요청이 많아요. 15분 뒤 다시 시도해 주세요.";
-      return "공고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
+      if (status === 429) return "공고 불러오기 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
+      return "공고를 불러오지 못했어요. 잠시 뒤 다시 해 주세요.";
   }
 }
