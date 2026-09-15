@@ -53,6 +53,17 @@ describe.each([
     expect(screen.queryAllByRole("list")).toHaveLength(0);
   });
 
+  it("closes when focus leaves from a list item to an outside field", () => {
+    const { input, next } = renderCombobox(Component, placeholder);
+    fireEvent.focus(input);
+    const firstItem = screen.getAllByRole("button")[0];
+    fireEvent.blur(input, { relatedTarget: firstItem });
+    expect(screen.getAllByRole("list").length).toBeGreaterThan(0);
+
+    fireEvent.blur(firstItem, { relatedTarget: next });
+    expect(screen.queryAllByRole("list")).toHaveLength(0);
+  });
+
   it("stays open when blur targets an item inside the dropdown", () => {
     const { input } = renderCombobox(Component, placeholder);
     fireEvent.focus(input);
