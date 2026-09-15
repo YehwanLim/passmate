@@ -12,6 +12,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("wouter", () => ({
   useLocation: () => ["/my/entitlements", mocks.navigate],
+  // 전역 헤더(SiteHeader)의 메뉴 링크
+  Link: ({ href, children, className }: { href: string; children: unknown; className?: string }) => (
+    <a href={href} className={className}>
+      {children as never}
+    </a>
+  ),
 }));
 
 vi.mock("@/contexts/AuthContext", () => ({

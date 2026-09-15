@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { HERO_TITLE_MOTION, HOME_NAV_ITEMS } from "./Home";
+import { HERO_TITLE_MOTION } from "./Home";
+import { SITE_NAV_ITEMS as HOME_NAV_ITEMS } from "@/lib/siteNav";
 
 describe("HERO_TITLE_MOTION", () => {
   // 히어로 h1은 랜딩의 LCP 요소다. opacity 0에서 시작하는 등장 애니메이션은
@@ -18,6 +19,7 @@ describe("HOME_NAV_ITEMS", () => {
       "서비스 소개",
       "자소서 분석",
       "기업 분석",
+      "취업 가이드",
       "이용권 구매",
       "내 지원서",
     ]);

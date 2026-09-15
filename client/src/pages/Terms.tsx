@@ -1,7 +1,5 @@
-import Logo from "@/components/Logo";
+import SiteHeader from "@/components/SiteHeader";
 import MoodShiftBackground from "@/components/MoodShiftBackground";
-import { ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
 
 const terms = [
   {
@@ -153,20 +151,7 @@ export default function Terms() {
   return (
     <div className="min-h-screen bg-[#050505] text-white">
       <MoodShiftBackground />
-      <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#050505]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-4xl items-center justify-between px-5">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo className="h-5 w-auto" />
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-[13px] font-medium text-gray-400 transition-colors hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            홈으로
-          </Link>
-        </div>
-      </header>
+      <SiteHeader variant="transparent" />
 
       <main className="relative z-10 mx-auto w-full max-w-4xl px-5 py-12 sm:py-16">
         <div className="mb-10">

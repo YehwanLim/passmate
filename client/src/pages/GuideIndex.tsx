@@ -8,7 +8,7 @@ import { GUIDE_INDEX_DESCRIPTION } from "@/lib/seo";
 /** /guide — 취업 가이드 목록. 메타는 lib/seo.ts 의 "/guide" 항목을 RouteMeta 가 적용한다. */
 export default function GuideIndex() {
   return (
-    <GuideLayout backHref="/" backLabel="홈으로">
+    <GuideLayout>
       <div className="mb-10">
         <p className="mb-3 text-[13px] font-medium text-blue-300">취업 가이드</p>
         <h1 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">

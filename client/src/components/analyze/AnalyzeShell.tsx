@@ -1,13 +1,11 @@
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useLocation } from "wouter";
 
-import AuthButton from "@/components/AuthButton";
-import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 
-/** 자소서 분석·기업 분석 폼이 함께 쓰는 껍데기: 등장 모션, GNB, 하단 바, 에러 모달. */
+/** 자소서 분석·기업 분석 폼이 함께 쓰는 껍데기: 등장 모션, 하단 바, 에러 모달. 상단 메뉴는 components/SiteHeader.tsx. */
 
 export const ANALYZE_CONTAINER_VARIANTS = {
   hidden: { opacity: 0 },
@@ -28,47 +26,6 @@ export const ANALYZE_ITEM_VARIANTS = {
 
 export const ANALYZE_SUBMIT_BUTTON_CLASS =
   "bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-400 hover:to-cyan-300 text-white px-6 py-3 text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-cyan-500/25 transition-all disabled:opacity-40 disabled:shadow-none whitespace-nowrap flex-shrink-0";
-
-export function AnalyzeNav() {
-  const [, navigate] = useLocation();
-
-  return (
-    <motion.nav
-      className="sticky top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-lg border-b border-white/5"
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="container flex items-center justify-between h-16">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-400" />
-          </button>
-          <div
-            className="flex items-center cursor-pointer"
-            onClick={() => navigate("/")}
-          >
-            <Logo className="h-6 w-auto" />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-            onClick={() => navigate("/my")}
-          >
-            내 지원서
-          </button>
-          <AuthButton />
-        </div>
-      </div>
-    </motion.nav>
-  );
-}
 
 export function AnalyzeBottomBar({ children }: { children: ReactNode }) {
   return (

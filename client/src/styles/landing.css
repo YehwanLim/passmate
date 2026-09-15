@@ -292,6 +292,14 @@
   outline-offset: 2px;
 }
 
+/* 전역 헤더(components/SiteHeader.tsx)에서 현재 페이지 항목. 강조는 색이 아니라 밝기로. */
+.landing-nav-link[aria-current="page"],
+.mobile-nav-link[aria-current="page"] {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+  opacity: 1;
+}
+
 .landing-primary-cta {
   position: relative;
   isolation: isolate;

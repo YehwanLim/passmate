@@ -11,9 +11,9 @@ import {
   ANALYZE_SUBMIT_BUTTON_CLASS,
   AnalyzeBottomBar,
   AnalyzeErrorModal,
-  AnalyzeNav,
 } from "@/components/analyze/AnalyzeShell";
 import FormSection from "@/components/analyze/FormSection";
+import SiteHeader from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -138,7 +138,7 @@ export default function CompanyAnalyze() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28">
-      <AnalyzeNav />
+      <SiteHeader />
 
       {/* ════════ MAIN FORM ════════ */}
       <motion.section className="py-12 md:py-20" variants={ANALYZE_CONTAINER_VARIANTS} initial="hidden" animate="visible">

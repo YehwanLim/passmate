@@ -11,21 +11,12 @@ import FounderSection, {
 } from "@/components/FounderSection";
 import MoodShiftBackground from "@/components/MoodShiftBackground";
 import HeroReportCard from "@/components/HeroReportCard";
-import Logo from "@/components/Logo";
-import { ArrowRight, CheckCircle2, Menu, X } from "lucide-react";
-import { useState, useCallback, useEffect, type CSSProperties } from "react";
-import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
-import { Link, useLocation } from "wouter";
-import AuthButton from "@/components/AuthButton";
+import SiteHeader from "@/components/SiteHeader";
+import { ArrowRight, CheckCircle2, X } from "lucide-react";
+import { useEffect, type CSSProperties } from "react";
+import { motion, useScroll, useSpring } from "framer-motion";
+import { Link } from "wouter";
 import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
-
-export const HOME_NAV_ITEMS = [
-  { label: "서비스 소개", type: "section", target: "service-intro" },
-  { label: "자소서 분석", type: "route", target: "/analyze" },
-  { label: "기업 분석", type: "route", target: "/company-analysis" },
-  { label: "이용권 구매", type: "route", target: "/entitlements" },
-  { label: "내 지원서", type: "route", target: "/my" },
-] as const;
 
 // 히어로 h1은 랜딩의 LCP 요소다. opacity 0 → 1 등장은 브라우저가 애니메이션이 끝날 때까지
 // LCP를 미루고(모바일 Lighthouse 7.7s), blur 필터는 큰 글자를 매 프레임 다시 그린다.
@@ -76,23 +67,6 @@ function ScrollReveal({
    ───────────────────────────────────────────────────────── */
 
 export default function Home() {
-  const [, navigate] = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const handleNavClick = useCallback(
-    (target: string, type: string) => {
-      setIsMobileMenuOpen(false);
-
-      if (type === "section") {
-        document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
-        return;
-      }
-
-      navigate(target);
-    },
-    [navigate]
-  );
-
   // Scroll progress
   const { scrollYProgress } = useScroll();
   const smoothProgress = useSpring(scrollYProgress, {
@@ -129,70 +103,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           GNB
           ══════════════════════════════════════════════════ */}
-      <nav className="sticky top-0 z-50 bg-[#050505]/10 backdrop-blur-2xl border-b border-white/[0.045]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between h-14 px-6 lg:px-10">
-          <div
-            className="flex items-center cursor-pointer"
-            onClick={() => navigate("/")}
-          >
-            <Logo className="h-5 w-auto" />
-          </div>
-
-          <div className="hidden sm:flex items-center gap-4 md:gap-7">
-            {HOME_NAV_ITEMS.map(({ label, type, target }) => (
-              <button
-                key={label}
-                className="landing-nav-link"
-                onClick={() => handleNavClick(target, type)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <AuthButton />
-            <button
-              type="button"
-              className="mobile-nav-toggle sm:hidden"
-              aria-label="모바일 메뉴 열기"
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-landing-nav"
-              onClick={() => setIsMobileMenuOpen(open => !open)}
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Menu className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              id="mobile-landing-nav"
-              className="mobile-nav-panel sm:hidden"
-              initial={{ opacity: 0, y: -8, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
-              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {HOME_NAV_ITEMS.map(({ label, type, target }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="mobile-nav-link"
-                  onClick={() => handleNavClick(target, type)}
-                >
-                  {label}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
+      <SiteHeader variant="transparent" />
 
       {/* ══════════════════════════════════════════════════
           HERO  (Step 1 – Premium Centered Hero)

@@ -14,6 +14,8 @@ vi.mock("wouter", () => ({
   ),
 }));
 vi.mock("@/components/MoodShiftBackground", () => ({ default: () => null }));
+// 전역 헤더(SiteHeader)의 로그인 버튼은 AuthProvider 가 필요하다. 이 테스트는 본문만 본다.
+vi.mock("@/components/AuthButton", () => ({ default: () => null }));
 
 import { GUIDES } from "@/lib/guides";
 import { NOINDEX } from "@/lib/seo";

@@ -4,7 +4,7 @@ import { Link, useParams } from "wouter";
 import { GuideLayout } from "@/components/guide/GuideLayout";
 import { formatDate } from "@/lib/formatDate";
 import { findGuide, guideMeta, renderGuideHtml } from "@/lib/guides";
-import { applyDocumentMeta, GUIDE_INDEX_PATH, SEO_ROUTES } from "@/lib/seo";
+import { applyDocumentMeta, SEO_ROUTES } from "@/lib/seo";
 import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
 import NotFound from "./NotFound";
 
@@ -26,7 +26,7 @@ export default function GuideArticle() {
   if (!guide) return <NotFound />;
 
   return (
-    <GuideLayout backHref={GUIDE_INDEX_PATH} backLabel="가이드 목록">
+    <GuideLayout>
       <article>
         <header className="mb-10">
           <p className="mb-3 text-[13px] font-medium text-blue-300">

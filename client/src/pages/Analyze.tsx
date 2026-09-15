@@ -23,10 +23,10 @@ import {
   ANALYZE_SUBMIT_BUTTON_CLASS,
   AnalyzeBottomBar,
   AnalyzeErrorModal,
-  AnalyzeNav,
   type AnalyzeErrorView,
 } from "@/components/analyze/AnalyzeShell";
 import FormSection from "@/components/analyze/FormSection";
+import SiteHeader from "@/components/SiteHeader";
 import QuestionCard from "@/components/analyze/QuestionCard";
 import PreviousResumePicker from "@/components/analyze/PreviousResumePicker";
 import ImportPreviewDialog from "@/components/analyze/ImportPreviewDialog";
@@ -446,7 +446,7 @@ export default function Analyze() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28">
-      <AnalyzeNav />
+      <SiteHeader />
 
       {/* ════════ MAIN FORM ════════ */}
       <motion.section

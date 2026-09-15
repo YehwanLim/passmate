@@ -18,7 +18,7 @@ function pickChips(record: JobPostingRecord): string[] {
 
 /**
  * 문항을 쓰는 동안 공고 요구사항이 눈에서 사라지지 않도록 문항 목록 위에 붙는 바.
- * top 은 AnalyzeNav(h-16, 64px) 아래 8px 여백. 상태는 펼침/접힘만 지역으로 가진다.
+ * top 은 전역 헤더(SiteHeader, h-14 = 56px) 아래 8px 여백. 상태는 펼침/접힘만 지역으로 가진다.
  */
 export default function JobPostingStickyBar({ record }: { record: JobPostingRecord }) {
   const [expanded, setExpanded] = useState(false);
@@ -30,7 +30,7 @@ export default function JobPostingStickyBar({ record }: { record: JobPostingReco
     <div
       role="region"
       aria-label="채용공고 요약"
-      className="sticky top-[72px] z-20 mb-5 rounded-xl border border-white/[0.1] bg-[#141416]/95 backdrop-blur"
+      className="sticky top-[64px] z-20 mb-5 rounded-xl border border-white/[0.1] bg-[#141416]/95 backdrop-blur"
     >
       <div className="flex items-center gap-3 px-4 py-2.5">
         <Pin className="h-3.5 w-3.5 shrink-0 text-zinc-500" aria-hidden="true" />

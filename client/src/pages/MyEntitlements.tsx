@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, Building2, FileText, RefreshCw } from "lucide-react";
-import AuthButton from "@/components/AuthButton";
-import Logo from "@/components/Logo";
+import { Building2, FileText, RefreshCw } from "lucide-react";
+import SiteHeader from "@/components/SiteHeader";
 import { getLoginRedirectPath, useRequireAuth } from "@/hooks/useRequireAuth";
 import {
   fetchEntitlementSummary,
@@ -149,40 +148,7 @@ export default function MyEntitlements() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28 text-white">
-      <motion.nav
-        className="sticky top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-lg border-b border-white/5"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/")}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-400" />
-            </button>
-            <div
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => navigate("/")}
-            >
-              <Logo className="h-6 w-auto" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-              onClick={() => navigate("/my")}
-            >
-              My
-            </button>
-            <AuthButton />
-          </div>
-        </div>
-      </motion.nav>
+      <SiteHeader />
 
       <main className="container max-w-2xl pt-10 pb-8">
         <motion.div

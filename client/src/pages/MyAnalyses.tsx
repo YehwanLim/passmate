@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowLeft, Building2, Briefcase } from "lucide-react";
+import { Sparkles, Building2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ProjectSummary, AnalysisSummary } from "@/types/my";
 import AnalysisCard from "@/components/my/AnalysisCard";
 import EmptyState from "@/components/my/EmptyState";
 import SkeletonCard from "@/components/my/SkeletonCard";
 import SubtleBackground from "@/components/SubtleBackground";
-import Logo from "@/components/Logo";
+import SiteHeader from "@/components/SiteHeader";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getAuthorizationHeader } from "@/lib/apiAuth";
 
@@ -62,41 +62,7 @@ export default function MyAnalyses() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28">
       {/* ════════ GNB ════════ */}
-      <motion.nav
-        className="sticky top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-lg border-b border-white/5"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setLocation("/my")}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-400" />
-            </button>
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation("/")}>
-              <Logo className="h-6 w-auto" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-              onClick={() => setLocation("/my")}
-            >
-              My
-            </button>
-            <button
-              className="text-[13px] text-gray-300 hover:text-white hover:bg-white/10 font-medium h-8 px-3 rounded-md transition-colors duration-200"
-            >
-              로그인
-            </button>
-          </div>
-        </div>
-      </motion.nav>
+      <SiteHeader />
 
       {/* ════════ Project Summary Header ════════ */}
       <div className="container pt-10 pb-8">

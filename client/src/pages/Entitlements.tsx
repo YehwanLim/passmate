@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, Menu, RefreshCw, X } from "lucide-react";
-import AuthButton from "@/components/AuthButton";
-import Logo from "@/components/Logo";
+import { motion } from "framer-motion";
+import { ArrowRight, Check, RefreshCw } from "lucide-react";
+import SiteHeader from "@/components/SiteHeader";
 import { PlanPurchaseButton } from "@/components/entitlements/PlanPurchaseButton";
 import { TierCard } from "@/components/entitlements/TierCard";
-import { HOME_NAV_ITEMS } from "@/pages/Home";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLoginRedirectPath } from "@/hooks/useRequireAuth";
 import {
@@ -36,43 +34,8 @@ export default function Entitlements() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [purchaseStarted, setPurchaseStarted] = useState(false);
-  // 팝업 차단 시 사용자가 직접 클릭해 열 수 있도록 체크아웃 URL을 보관한다.
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [basicChoice, setBasicChoice] = useState<BasicChoice>("single");
   const [availability, setAvailability] = useState<SalesAvailability | null>(null);
-
-  // 랜딩과 같은 GNB 메뉴를 유지한다. 섹션 타입은 랜딩으로 이동한 뒤 해당 섹션으로 스크롤.
-  const handleNavClick = useCallback(
-    (target: string, type: string) => {
-      setIsMobileMenuOpen(false);
-
-      if (type === "section") {
-        navigate("/");
-        // 랜딩이 마운트되기를 기다렸다가 해당 섹션으로 스크롤한다.
-        let attempts = 0;
-        const scrollToTarget = () => {
-          const element = document.getElementById(target);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
-            return;
-          }
-          if (attempts++ < 10) {
-            window.setTimeout(scrollToTarget, 100);
-          }
-        };
-        window.setTimeout(scrollToTarget, 100);
-        return;
-      }
-
-      if (target === "/entitlements") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        return;
-      }
-
-      navigate(target);
-    },
-    [navigate]
-  );
 
   const getAccessToken = useCallback(async () => {
     const {
@@ -165,77 +128,7 @@ export default function Entitlements() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28 text-white">
       {/* 등장 모션은 transform 만: initial 의 opacity:0 은 빌드 프리렌더 HTML 에 구워져 하이드레이션 전까지 투명해진다(랜딩에서 겪은 문제). */}
-      <motion.nav
-        className="sticky top-0 z-50 border-b border-white/5 bg-[#0A0A0A]/80 backdrop-blur-lg"
-        initial={{ y: -64 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-      >
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6 lg:px-10">
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="flex items-center"
-            aria-label="Pre:View 홈"
-          >
-            <Logo className="h-5 w-auto" />
-          </button>
-
-          <div className="hidden items-center gap-4 sm:flex md:gap-7">
-            {HOME_NAV_ITEMS.map(({ label, type, target }) => (
-              <button
-                key={label}
-                className="landing-nav-link"
-                onClick={() => handleNavClick(target, type)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <AuthButton />
-            <button
-              type="button"
-              className="mobile-nav-toggle sm:hidden"
-              aria-label="모바일 메뉴 열기"
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-entitlements-nav"
-              onClick={() => setIsMobileMenuOpen(open => !open)}
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Menu className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              id="mobile-entitlements-nav"
-              className="mobile-nav-panel sm:hidden"
-              initial={{ opacity: 0, y: -8, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
-              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {HOME_NAV_ITEMS.map(({ label, type, target }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="mobile-nav-link"
-                  onClick={() => handleNavClick(target, type)}
-                >
-                  {label}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
+      <SiteHeader />
 
       <main className="container max-w-5xl pt-10 pb-8">
         <motion.div
