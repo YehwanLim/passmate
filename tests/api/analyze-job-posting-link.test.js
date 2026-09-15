@@ -132,3 +132,23 @@ describe("GET /api/analysis/:id 의 job_posting", () => {
     });
   });
 });
+
+describe("tidyPostingFit", () => {
+  it("대조 항목과 빠진 키워드를 6개로 자르고 키워드 중복·빈 값을 없앤다", async () => {
+    const { tidyPostingFit } = await import("../../lib/resume-analysis.js");
+    const report = {
+      pmComment: "x",
+      postingFit: {
+        headline: "h",
+        requirementMatches: Array.from({ length: 8 }, (_, i) => ({ requirement: `r${i}`, status: "약함" })),
+        missingKeywords: ["SQL", "SQL", " ", "A", "B", "C", "D", "E", "F", "G"],
+      },
+    };
+    const tidy = tidyPostingFit(report);
+    expect(tidy.postingFit.requirementMatches).toHaveLength(6);
+    expect(tidy.postingFit.missingKeywords).toEqual(["SQL", "A", "B", "C", "D", "E"]);
+    expect(tidy.pmComment).toBe("x");
+    expect(tidyPostingFit({ pmComment: "x", postingFit: null })).toEqual({ pmComment: "x", postingFit: null });
+    expect(tidyPostingFit("bad")).toBe("bad");
+  });
+});
