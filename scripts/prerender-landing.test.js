@@ -2,10 +2,15 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { NOINDEX, PRERENDER_ROUTES, SEO_ROUTES } from "../client/src/lib/seo";
 import {
-  addCanonical,
-  addLandingCanonical,
+  applyHeadMeta,
   BOOT_SCRIPT,
+  buildRss,
+  buildSitemap,
+  CANVAS_BY_ROUTE,
+  sitemapEntries,
+  PRERENDERED_ATTR,
   deferEntryScript,
   FULL_CSS_ATTR,
   inlineCriticalCss,
@@ -13,17 +18,15 @@ import {
   LANDING_CANVAS_STYLE,
   ROOT_PLACEHOLDER,
   injectPrerenderedRoot,
-  LANDING_CANONICAL_URL,
   markDocumentCanvas,
   markLandingCanvas,
-  SAMPLE_REPORT_CANONICAL_URL,
   SAMPLE_REPORT_CANVAS_STYLE,
   SAMPLE_REPORT_FILE,
-  SAMPLE_REPORT_TITLE,
-  setDocumentTitle,
+  SAMPLE_REPORT_ROUTE_KEY,
 } from "./prerender-landing.mjs";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
+const SAMPLE_REPORT_META = SEO_ROUTES[SAMPLE_REPORT_ROUTE_KEY];
 
 describe("injectPrerenderedRoot", () => {
   it("fills the empty root div with the rendered markup exactly once", () => {
@@ -36,6 +39,14 @@ describe("injectPrerenderedRoot", () => {
 
   it("throws when the shell has no empty root placeholder", () => {
     expect(() => injectPrerenderedRoot("<div id=\"root\">already</div>", "x")).toThrow(/placeholder/);
+  });
+
+  it("marks the root with the route key so main.tsx hydrates only the matching address", () => {
+    const result = injectPrerenderedRoot('<div id="root"></div>', "<p>x</p>", "/report-new?sample=1");
+    expect(result).toBe(`<div id="root" ${PRERENDERED_ATTR}="/report-new?sample=1"><p>x</p></div>`);
+    const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
+    expect(PRERENDERED_ATTR).toBe("data-prerendered");
+    expect(main).toContain("rootElement.dataset.prerendered === routeKey(window.location.pathname, window.location.search)");
   });
 });
 
@@ -170,44 +181,128 @@ describe("deferEntryScript", () => {
   });
 });
 
-describe("addLandingCanonical", () => {
-  it("adds the canonical link to the landing head only", () => {
-    const result = addLandingCanonical("<html><head><title>x</title></head><body></body></html>");
-    expect(LANDING_CANONICAL_URL).toBe("https://pre-view.me/");
-    expect(result).toContain(`<link rel="canonical" href="${LANDING_CANONICAL_URL}" /></head>`);
+describe("applyHeadMeta", () => {
+  // 실제 셸과 같은 모양: prettier 가 긴 <meta> 를 여러 줄로 나눈다.
+  const shell = [
+    "<html><head>",
+    "<title>랜딩</title>",
+    '<meta\n  name="description"\n  content="랜딩 설명" />',
+    '<meta property="og:type" content="website" />',
+    '<meta property="og:url" content="https://pre-view.me/" />',
+    '<meta property="og:title" content="랜딩" />',
+    '<meta\n  property="og:description"\n  content="랜딩 설명" />',
+    '<meta name="twitter:title" content="랜딩" />',
+    '<meta name="twitter:description" content="랜딩 설명" />',
+    "</head><body></body></html>",
+  ].join("\n");
+
+  it("rewrites title, description, open graph and twitter tags and adds the canonical", () => {
+    const result = applyHeadMeta(shell, SAMPLE_REPORT_META);
+    expect(result).toContain(`<title>${SAMPLE_REPORT_META.title}</title>`);
+    expect(result).toContain(`<meta name="description" content="${SAMPLE_REPORT_META.description}" />`);
+    expect(result).toContain(`<meta property="og:title" content="${SAMPLE_REPORT_META.title}" />`);
+    expect(result).toContain(`<meta property="og:description" content="${SAMPLE_REPORT_META.description}" />`);
+    expect(result).toContain(`<meta property="og:url" content="${SAMPLE_REPORT_META.canonical}" />`);
+    expect(result).toContain(`<meta name="twitter:title" content="${SAMPLE_REPORT_META.title}" />`);
+    expect(result).toContain(`<link rel="canonical" href="${SAMPLE_REPORT_META.canonical}" /></head>`);
+    expect(result).not.toContain("랜딩");
+    expect(result).not.toContain('name="robots"');
   });
 
-  it("throws when a canonical link already exists or the head is ambiguous", () => {
+  it("adds robots noindex and no canonical for a private page", () => {
+    const result = applyHeadMeta(shell, { title: "로그인 | Pre:View", description: "설명 텍스트 열 글자 이상", robots: NOINDEX });
+    expect(result).toContain(`<meta name="robots" content="${NOINDEX}" /></head>`);
+    expect(result).not.toContain('rel="canonical"');
+    // canonical 이 없는 페이지는 색인 대상이 아니므로 셸의 og:url 은 건드리지 않는다.
+    expect(result).toContain('<meta property="og:url" content="https://pre-view.me/" />');
+  });
+
+  it("escapes attribute characters", () => {
+    const result = applyHeadMeta(shell, {
+      title: 'A & B "quoted" <tag>',
+      description: "설명",
+      canonical: "https://pre-view.me/report-new?sample=1&x=1",
+    });
+    expect(result).toContain("<title>A &amp; B &quot;quoted&quot; &lt;tag&gt;</title>");
+    expect(result).toContain('href="https://pre-view.me/report-new?sample=1&amp;x=1"');
+  });
+
+  it("throws when a canonical or robots meta already exists, or a tag is missing", () => {
     expect(() =>
-      addLandingCanonical('<html><head><link rel="canonical" href="/" /></head></html>')
+      applyHeadMeta(shell.replace("</head>", '<link rel="canonical" href="/" /></head>'), SAMPLE_REPORT_META)
     ).toThrow(/already/);
-    expect(() => addLandingCanonical("<html><body></body></html>")).toThrow(/<\/head>/);
+    expect(() =>
+      applyHeadMeta(shell.replace("</head>", '<meta name="robots" content="noindex" /></head>'), SAMPLE_REPORT_META)
+    ).toThrow(/already/);
+    expect(() => applyHeadMeta(shell.replace("<title>랜딩</title>", ""), SAMPLE_REPORT_META)).toThrow(/<title>/);
+    expect(() => applyHeadMeta("<html><body></body></html>", SAMPLE_REPORT_META)).toThrow(/<title>/);
   });
 
-  it("keeps the site-wide shell free of a canonical so other public pages keep their own URL", () => {
+  it("works on the real shell and keeps the shell itself free of a canonical", () => {
     // app.html 은 client/index.html 에서 나온다. 여기에 canonical 을 걸면 샘플 리포트도 `/` 로 합쳐진다.
-    const shell = readFileSync(path.join(ROOT_DIR, "client/index.html"), "utf8");
-    expect(shell).not.toContain('rel="canonical"');
+    const realShell = readFileSync(path.join(ROOT_DIR, "client/index.html"), "utf8");
+    expect(realShell).not.toContain('rel="canonical"');
+    const result = applyHeadMeta(realShell, SEO_ROUTES["/"]);
+    expect(result).toContain(`<link rel="canonical" href="${SEO_ROUTES["/"].canonical}" />`);
+    expect(result).toContain('<script type="application/ld+json">');
+    expect(result.match(/<title>/g)).toHaveLength(1);
+    expect(result.match(/name="description"/g)).toHaveLength(1);
   });
 
-  it("gives the prerendered sample report its own canonical, matching the sitemap", () => {
-    const sitemap = readFileSync(path.join(ROOT_DIR, "client/public/sitemap.xml"), "utf8");
-    expect(sitemap).toContain(`<loc>${SAMPLE_REPORT_CANONICAL_URL}</loc>`);
-    const result = addCanonical("<html><head></head><body></body></html>", SAMPLE_REPORT_CANONICAL_URL);
-    expect(result).toContain(`<link rel="canonical" href="${SAMPLE_REPORT_CANONICAL_URL}" /></head>`);
+  it("embeds the route's schema.org blocks as ld+json data scripts", () => {
+    const result = applyHeadMeta(shell, SEO_ROUTES["/"]);
+    const scripts = result.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g) ?? [];
+    expect(scripts).toHaveLength(3);
+    const types = scripts.map(script => JSON.parse(script.replace(/<\/?script[^>]*>/g, ""))["@type"]);
+    expect(types).toEqual(["Organization", "WebSite", "SoftwareApplication"]);
+  });
+
+  it("escapes < inside the ld+json so a value cannot close the script block", () => {
+    const result = applyHeadMeta(shell, {
+      title: "t",
+      description: "설명",
+      jsonLd: [{ "@context": "https://schema.org", "@type": "Thing", name: "</script><b>" }],
+    });
+    expect(result.match(/<\/script>/g)).toHaveLength(1);
+    expect(result).toContain("\\u003c/script>");
   });
 });
 
-describe("setDocumentTitle", () => {
-  it("replaces the single title tag", () => {
-    const result = setDocumentTitle("<head><title>랜딩</title></head>", SAMPLE_REPORT_TITLE);
-    expect(result).toBe(`<head><title>${SAMPLE_REPORT_TITLE}</title></head>`);
-    expect(SAMPLE_REPORT_TITLE).toContain("예시 리포트");
+describe("sitemap and rss generation", () => {
+  const pages = [
+    { route: { key: "/" }, meta: SEO_ROUTES["/"] },
+    { route: { key: SAMPLE_REPORT_ROUTE_KEY }, meta: SAMPLE_REPORT_META },
+    { route: { key: "/login" }, meta: SEO_ROUTES["/login"] },
+    { route: { key: "/404" }, meta: SEO_ROUTES["/404"] },
+  ];
+
+  it("lists only indexable pages with their lastmod", () => {
+    const entries = sitemapEntries(pages);
+    expect(entries.map(entry => entry.loc)).toEqual([SEO_ROUTES["/"].canonical, SAMPLE_REPORT_META.canonical]);
+    expect(entries[0].lastmod).toBe(SEO_ROUTES["/"].updated);
+    const xml = buildSitemap(entries);
+    expect(xml).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+    expect(xml).toContain(`<loc>${SAMPLE_REPORT_META.canonical}</loc>`);
+    expect(xml).toContain(`<lastmod>${SEO_ROUTES["/"].updated}</lastmod>`);
+    expect(xml).not.toContain("/login");
+    expect(xml).not.toContain("changefreq");
   });
 
-  it("throws unless exactly one title is present", () => {
-    expect(() => setDocumentTitle("<head></head>", "x")).toThrow(/<title>/);
-    expect(() => setDocumentTitle("<title>a</title><title>b</title>", "x")).toThrow(/<title>/);
+  it("escapes ampersands in query urls", () => {
+    const xml = buildSitemap([{ loc: "https://pre-view.me/x?a=1&b=2", lastmod: null }]);
+    expect(xml).toContain("<loc>https://pre-view.me/x?a=1&amp;b=2</loc>");
+    expect(xml).not.toContain("<lastmod>");
+  });
+
+  it("builds a valid RSS channel even with no guides, and dates items in UTC", () => {
+    expect(buildRss([])).toContain("<rss version=\"2.0\">");
+    const xml = buildRss([
+      { title: "A & B", description: "설명", url: "https://pre-view.me/guide/a", date: "2026-09-15" },
+    ]);
+    expect(xml).toContain("<title>A &amp; B</title>");
+    expect(xml).toContain('<guid isPermaLink="true">https://pre-view.me/guide/a</guid>');
+    // KST 자정 = 전날 15:00 UTC
+    expect(xml).toContain("<pubDate>Mon, 14 Sep 2026 15:00:00 GMT</pubDate>");
   });
 });
 
@@ -226,14 +321,14 @@ describe("prerendered sample report", () => {
     });
   });
 
-  it("hydrates the sample report instead of re-rendering it from scratch", () => {
-    // main.tsx 가 프리렌더 경로로 알아야 hydrateRoot 를 쓴다. 아니면 서버 HTML 을 비우고 새로 그려 첫 화면이 깜빡인다.
-    const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
-    expect(main).toContain('pathname === "/report-new"');
-    expect(main).toContain('get("sample") === "1"');
+  it("hydrates the sample report with the real search string", () => {
     // wouter 의 useSearch 는 하이드레이션 첫 패스에 ssrSearch(기본 "")를 돌려준다. 실제 검색어를 넘기지 않으면
     // ?sample=1 이 빈 검색어로 그려져 로그인 게이트가 나오고 서버 HTML 과 어긋난다(React 418).
+    const main = readFileSync(path.join(ROOT_DIR, "client/src/main.tsx"), "utf8");
     expect(main).toMatch(/<Router ssrPath=\{window\.location\.pathname\} ssrSearch=\{window\.location\.search\}>/);
+    // 기업 예시 리포트도 같은 이유로 window.location 대신 useSearch 를 읽어야 빌드 때 그려진다.
+    const companyReport = readFileSync(path.join(ROOT_DIR, "client/src/pages/CompanyReport.tsx"), "utf8");
+    expect(companyReport).toContain('new URLSearchParams(useSearch()).get("sample") === "1"');
   });
 
   it("links the landing to the same sample path the rewrite serves", () => {
@@ -242,14 +337,77 @@ describe("prerendered sample report", () => {
   });
 });
 
-describe("vercel routing for the prerendered landing", () => {
-  it("rewrites non-API routes to the SPA shell, not the prerendered index", () => {
-    // `/`는 파일시스템 우선으로 프리렌더된 index.html을 받고, 나머지 경로는 빈 껍데기(app.html)를 받아야
-    // /analyze 같은 화면에 랜딩 본문이 잠깐 비치지 않는다.
-    const vercel = JSON.parse(readFileSync(path.join(ROOT_DIR, "vercel.json"), "utf8"));
-    const catchAll = vercel.rewrites.find(rule => rule.source === "/((?!api/).*)");
-    expect(catchAll).toBeDefined();
-    expect(catchAll.destination).toBe("/app.html");
+describe("vercel routing for the prerendered pages", () => {
+  const vercel = JSON.parse(readFileSync(path.join(ROOT_DIR, "vercel.json"), "utf8"));
+  const fallbackIndex = vercel.rewrites.findIndex(rule => rule.destination === "/app.html");
+  const fallback = vercel.rewrites[fallbackIndex];
+  // path-to-regexp 의 `/(regex)` 소스를 JS 정규식으로 바꿔 어떤 경로가 SPA 셸을 받는지 흉내낸다.
+  const fallbackPattern = new RegExp(`^${fallback.source.slice(1)}$`);
+  const matchesFallback = pathname => fallbackPattern.test(pathname.slice(1));
+
+  it("sends only client-rendered routes to the SPA shell so unknown paths get a real 404", () => {
+    // 예전 catch-all(`/((?!api/).*)`)은 없는 주소에도 app.html 을 200 으로 줬다(soft 404).
+    expect(fallbackIndex).toBe(vercel.rewrites.length - 1);
+    for (const pathname of ["/login", "/analyze", "/report-new", "/company-report", "/my", "/my/p1", "/admin", "/admin/users", "/checkout", "/account/deletion", "/feedback", "/analysis-pending", "/company-analysis"]) {
+      expect(matchesFallback(pathname), pathname).toBe(true);
+    }
+    for (const pathname of ["/no-such-page", "/terms", "/privacy", "/entitlements", "/404", "/api/analyze", "/myth", "/loginx"]) {
+      expect(matchesFallback(pathname), pathname).toBe(false);
+    }
+  });
+
+  it("covers every top-level client route declared in App.tsx", () => {
+    // 최상위 라우트를 추가하면 여기 허용목록도 같이 고쳐야 한다(CLAUDE.md 함정 1과 같은 수동 매핑).
+    const app = readFileSync(path.join(ROOT_DIR, "client/src/App.tsx"), "utf8");
+    const paths = [...app.matchAll(/<Route path=\{"([^"]+)"\}/g)].map(([, routePath]) => routePath);
+    expect(paths.length).toBeGreaterThan(10);
+    for (const routePath of paths) {
+      const segment = `/${routePath.split("/")[1]}`;
+      if (segment === "/") continue;
+      const prerendered = PRERENDER_ROUTES.some(route => route.path === segment && route.search === "");
+      expect(prerendered || matchesFallback(segment), routePath).toBe(true);
+    }
+  });
+
+  it("rewrites each prerendered page to its file before the SPA fallback", () => {
+    for (const route of PRERENDER_ROUTES) {
+      if (route.file === "index.html") continue; // `/` 는 파일시스템 우선으로 받는다
+      const index = vercel.rewrites.findIndex(rule => rule.destination === `/${route.file}`);
+      expect(index, route.key).toBeGreaterThan(-1);
+      expect(index, route.key).toBeLessThan(fallbackIndex);
+      const rule = vercel.rewrites[index];
+      expect(rule.source, route.key).toBe(route.path);
+      if (route.search) {
+        const [key, value] = route.search.split("=");
+        expect(rule.has, route.key).toEqual([{ type: "query", key, value }]);
+      } else {
+        expect(rule.has, route.key).toBeUndefined();
+      }
+    }
+  });
+
+  it("drops trailing slashes so each page has one URL", () => {
+    expect(vercel.trailingSlash).toBe(false);
+  });
+
+  it("rewrites guide articles to their prerendered files by slug", () => {
+    // 가이드는 content/guides 에서 나와 목록이 동적이라 파라미터 리라이트 하나로 받는다. 없는 slug 는 파일이 없어 404.
+    const index = vercel.rewrites.findIndex(rule => rule.source === "/guide/:slug");
+    expect(index).toBeGreaterThan(-1);
+    expect(index).toBeLessThan(fallbackIndex);
+    expect(vercel.rewrites[index].destination).toBe("/guide/:slug.html");
+  });
+
+  it("gives every prerendered route a meta entry and a canvas for the dark pages", () => {
+    for (const route of PRERENDER_ROUTES) {
+      expect(SEO_ROUTES[route.key], route.key).toBeDefined();
+      expect(route.file, route.key).toMatch(/\.html$/);
+    }
+    expect(CANVAS_BY_ROUTE["/"]).toEqual({ className: LANDING_CANVAS_CLASS, style: LANDING_CANVAS_STYLE });
+    for (const key of Object.keys(CANVAS_BY_ROUTE)) {
+      expect(PRERENDER_ROUTES.some(route => route.key === key), key).toBe(true);
+    }
+    expect(CANVAS_BY_ROUTE["/404"]).toBeUndefined(); // NotFound 는 라이트 테마
   });
 
   it("runs the prerender step in the production build", () => {

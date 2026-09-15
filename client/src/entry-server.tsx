@@ -2,6 +2,38 @@ import { renderToString } from "react-dom/server";
 import { Router } from "wouter";
 import App from "./App";
 
+import { GUIDES, guideMeta, guidePath, guidePrerenderRoute } from "./lib/guides";
+import { absoluteUrl, PRERENDER_ROUTES, SEO_ROUTES, type PrerenderRoute, type RouteMeta } from "./lib/seo";
+
+// 프리렌더 스크립트(.mjs)는 TS 를 직접 읽지 못하므로 프리렌더 목록·검색 메타·가이드 피드를 SSR 번들을 통해 넘긴다.
+export { PRERENDER_ROUTES, SEO_ROUTES };
+
+export type PrerenderPage = { route: PrerenderRoute; meta: RouteMeta };
+
+/** 빌드 때 HTML 로 굳힐 페이지 전부: 고정 목록(lib/seo.ts) + 가이드 글(client/content/guides). sitemap 도 이 목록에서 나온다. */
+export function getPrerenderPages(): PrerenderPage[] {
+  return [
+    ...PRERENDER_ROUTES.map(route => {
+      const meta = SEO_ROUTES[route.key];
+      if (!meta) throw new Error(`no SEO meta for prerender route ${route.key} (client/src/lib/seo.ts)`);
+      return { route, meta };
+    }),
+    ...GUIDES.map(guide => ({ route: guidePrerenderRoute(guide), meta: guideMeta(guide) })),
+  ];
+}
+
+export type GuideFeedItem = { title: string; description: string; url: string; date: string };
+
+/** RSS(네이버 서치어드바이저 제출용)에 올릴 가이드 글. 최신순. */
+export function getGuideFeedItems(): GuideFeedItem[] {
+  return GUIDES.map(guide => ({
+    title: guide.title,
+    description: guide.description,
+    url: absoluteUrl(guidePath(guide)),
+    date: guide.updated,
+  }));
+}
+
 /**
  * 빌드 시점 프리렌더 진입점 (scripts/prerender-landing.mjs 가 사용).
  *

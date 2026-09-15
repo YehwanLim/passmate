@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense } from "react";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { RouteMeta } from "./components/RouteMeta";
 import { VisitTracker } from "./components/VisitTracker";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -26,6 +27,8 @@ const Login = lazy(() => import("./pages/Login"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const AccountDeletion = lazy(() => import("./pages/AccountDeletion"));
+const GuideIndex = lazy(() => import("./pages/GuideIndex"));
+const GuideArticle = lazy(() => import("./pages/GuideArticle"));
 const AdminRoot = lazy(() => import("./pages/admin/AdminRoot"));
 
 function Router() {
@@ -53,6 +56,9 @@ function Router() {
         {/* /my/:projectId 보다 먼저 선언해야 "entitlements"가 projectId로 잡히지 않는다 */}
         <Route path={"/my/entitlements"} component={MyEntitlements} />
         <Route path={"/my/:projectId"} component={MyAnalyses} />
+        {/* 취업 가이드(client/content/guides). 빌드 때 프리렌더되고 sitemap·RSS 에 오른다 */}
+        <Route path={"/guide"} component={GuideIndex} />
+        <Route path={"/guide/:slug"} component={GuideArticle} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />
@@ -76,6 +82,8 @@ function App() {
         <AuthProvider>
           <TooltipProvider>
             <Toaster />
+            {/* VisitTracker 보다 앞: layout effect 로 title 을 먼저 바꿔야 GA page_view 가 새 페이지 제목을 읽는다 */}
+            <RouteMeta />
             {/* 분석을 돌리지 않아도 사이트에 들어오면 관리자 대시보드 방문자에 잡히게 한다 */}
             <VisitTracker />
             <Router />

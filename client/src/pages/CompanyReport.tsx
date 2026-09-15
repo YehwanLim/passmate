@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { ArrowRight, Check, ExternalLink, X } from "lucide-react";
 
 import { COMPANY_REPORT_SAMPLE } from "@/constants/companyReportSample";
@@ -504,7 +504,8 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
 
 export default function CompanyReport() {
   // 공개 샘플은 로그인·조회 없이 굳힌 상수를 그대로 렌더한다.
-  const isSample = new URLSearchParams(window.location.search).get("sample") === "1";
+  // useSearch: 빌드 프리렌더(entry-server.tsx)에는 window 가 없고, 하이드레이션 첫 패스는 Router 의 ssrSearch 를 읽는다.
+  const isSample = new URLSearchParams(useSearch()).get("sample") === "1";
   if (isSample) {
     return (
       <CompanyReportContent

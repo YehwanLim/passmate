@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 
 import { trackPageView } from "@/lib/analytics";
+import { routeKey } from "@/lib/seo";
 import { sendVisit, shouldTrackPath } from "@/lib/siteVisits";
 
 // 같은 경로를 짧은 간격으로 두 번 보내지 않는 최소 간격(개발 StrictMode 이중 실행 등).
@@ -23,9 +24,10 @@ let lastPageViewPath: string | null = null;
  * GA 로 보낼 페이지 주소. 쿼리는 기본적으로 떼되, 공개 예시 리포트 표시(`sample=1`)만 붙인다.
  * 그래야 GA 의 "페이지 경로 + 쿼리 문자열"에서 예시 리포트와 실제 리포트(/report-new)가 갈린다.
  * 실제 리포트 ID(analysisId) 같은 다른 쿼리는 보내지 않는다.
+ * 검색 메타 표(lib/seo.ts)의 키와 같은 규칙이라 GA 와 SEO 가 같은 페이지를 같은 이름으로 부른다.
  */
 export function pageViewPath(pathname: string, search: string): string {
-  return new URLSearchParams(search).get("sample") === "1" ? `${pathname}?sample=1` : pathname;
+  return routeKey(pathname, search);
 }
 
 /** 테스트에서 모듈 상태를 초기화하기 위한 훅. 프로덕션 코드는 호출하지 않는다. */

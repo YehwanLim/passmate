@@ -164,10 +164,11 @@ export default function Entitlements() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28 text-white">
+      {/* 등장 모션은 transform 만: initial 의 opacity:0 은 빌드 프리렌더 HTML 에 구워져 하이드레이션 전까지 투명해진다(랜딩에서 겪은 문제). */}
       <motion.nav
         className="sticky top-0 z-50 border-b border-white/5 bg-[#0A0A0A]/80 backdrop-blur-lg"
-        initial={{ y: -64, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        initial={{ y: -64 }}
+        animate={{ y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6 lg:px-10">
@@ -238,8 +239,8 @@ export default function Entitlements() {
 
       <main className="container max-w-5xl pt-10 pb-8">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ y: 16 }}
+          animate={{ y: 0 }}
           transition={{ duration: 0.4, delay: 0.08 }}
         >
           <h1 className="text-2xl font-bold text-white tracking-tight mb-1">

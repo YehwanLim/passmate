@@ -1,5 +1,6 @@
 {
   "outputDirectory": "dist/public",
+  "trailingSlash": false,
   "functions": {
     "api/analyze.js": {
       "maxDuration": 180
@@ -75,7 +76,18 @@
       "destination": "/sample-report.html"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/company-report",
+      "has": [{ "type": "query", "key": "sample", "value": "1" }],
+      "destination": "/company-sample-report.html"
+    },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/entitlements", "destination": "/entitlements.html" },
+    { "source": "/guide", "destination": "/guide.html" },
+    { "source": "/guide/:slug", "destination": "/guide/:slug.html" },
+    { "source": "/404", "destination": "/404.html" },
+    {
+      "source": "/((?:login|analyze|analysis-pending|report-new|company-analysis|company-report|feedback|checkout|my|account|admin)(?:/.*)?)",
       "destination": "/app.html"
     }
   ],

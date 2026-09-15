@@ -28,8 +28,10 @@ export function FounderNoteSection() {
         <div>
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
             <div>
+              {/* 워드마크는 이미지라 헤딩 텍스트가 "왜 를 만들었나요?"로 추출된다. 이름을 sr-only 텍스트로 넣고 이미지는 장식으로 둔다. */}
               <h2 className="text-2xl md:text-4xl font-bold leading-tight tracking-tight mb-6">
-                왜 <BrandName />를 만들었나요?
+                왜 <span className="sr-only">Pre:View</span>
+                <BrandName decorative />를 만들었나요?
               </h2>
               <p className="text-gray-400 font-light text-[16px] leading-[1.9] mb-5">
                 커피챗에서 만난 취준생들은 대부분 좋은 경험을 가지고 있었습니다.

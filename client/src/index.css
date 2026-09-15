@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* 가이드 본문(pages/GuideArticle.tsx)의 마크다운 HTML 에만 prose 유틸리티를 쓴다. */
+@plugin "@tailwindcss/typography";
 
 /* 원본 순서 그대로 나눈 파일들. 캐스케이드가 바뀌지 않게 import 순서를 지킨다. */
 @import "./styles/tokens.css";

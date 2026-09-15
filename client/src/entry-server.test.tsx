@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, renderSampleReport } from "./entry-server";
+import { COMPANY_REPORT_SAMPLE_COMPANY } from "@/constants/companyReportSampleMeta";
+import { GUIDES } from "@/lib/guides";
+import { getGuideFeedItems, getPrerenderPages, render, renderRoute, renderSampleReport } from "./entry-server";
 
 // 빌드 시점 프리렌더(scripts/prerender-landing.mjs)가 쓰는 렌더 함수.
 // 랜딩 컴포넌트가 렌더 중에 window/document를 읽기 시작하면 여기서 먼저 깨진다.
@@ -59,5 +61,52 @@ describe("entry-server renderSampleReport", () => {
     expect(html).not.toContain("<!--$!-->");
     expect(html).not.toContain("로그인 후 분석 리포트를 확인할 수 있어요");
     expect(consoleError).not.toHaveBeenCalled();
+  });
+});
+
+describe("entry-server renderRoute for every prerendered page", () => {
+  // scripts/prerender-landing.mjs 가 getPrerenderPages() 를 돌며 굳힌다. 하나라도 window 를 렌더 중에 읽거나
+  // 등장 애니메이션의 opacity:0 을 구우면 여기서 먼저 깨진다.
+  const pages = getPrerenderPages();
+
+  it.each(pages.map(page => [page.route.key, page]))("renders %s without console errors", async (_key, page) => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const html = await renderRoute(page.route.path, page.route.search);
+    expect(html.length).toBeGreaterThan(1000);
+    expect(html).toContain("<h1");
+    expect(html).not.toContain("<!--$!-->");
+    expect(html).not.toMatch(/opacity:\s*0[;"]/);
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("includes the guide index and every published guide with its own meta", () => {
+    const keys = pages.map(page => page.route.key);
+    expect(keys).toContain("/guide");
+    for (const guide of GUIDES) {
+      const page = pages.find(candidate => candidate.route.key === `/guide/${guide.slug}`);
+      expect(page?.meta.title).toBe(`${guide.title} | Pre:View`);
+      expect(page?.route.file).toBe(`guide/${guide.slug}.html`);
+    }
+    expect(getGuideFeedItems().map(item => item.url)).toEqual(GUIDES.map(guide => `https://pre-view.me/guide/${guide.slug}`));
+  });
+
+  it("renders a guide article body, not the 404 fallback", async () => {
+    const guide = GUIDES[0];
+    const html = await renderRoute(`/guide/${guide.slug}`, "");
+    expect(html).toContain(guide.title);
+    expect(html).toContain('class="guide-prose');
+    expect(html).not.toContain("Page Not Found");
+  });
+
+  it("renders the public company sample without the login gate", async () => {
+    const html = await renderRoute("/company-report", "sample=1");
+    expect(html).toContain(COMPANY_REPORT_SAMPLE_COMPANY);
+    expect(html).not.toContain("로그인 후 기업 분석 리포트를 확인할 수 있어요");
+  });
+
+  it("renders the pricing tiers on the entitlements page for a guest", async () => {
+    const html = await renderRoute("/entitlements", "");
+    expect(html).toContain("이용권");
+    expect(html).toContain("3,900");
   });
 });

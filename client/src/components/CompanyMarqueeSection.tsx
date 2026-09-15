@@ -26,15 +26,19 @@ export default function CompanyMarqueeSection() {
         className="social-proof-marquee border-y border-white/[0.06] py-6"
         aria-label="분석 지원 기업 목록"
       >
-        <div className="social-proof-marquee-track" aria-hidden="true">
+        {/* 첫 그룹의 로고만 alt(회사명)를 가진다. 두 번째 그룹은 끊김 없는 마퀴를 위한 복제라 장식으로 둔다. */}
+        <div className="social-proof-marquee-track">
           {marqueeCompanyGroups.map((companies, groupIndex) => (
-            <div className="social-proof-marquee-group" key={groupIndex}>
+            <div
+              className="social-proof-marquee-group"
+              key={groupIndex}
+              aria-hidden={groupIndex > 0 || undefined}
+            >
               {companies.map(company => (
                 <div key={company.id} className="social-proof-logo-shell">
                   <img
                     src={company.logoSrc}
-                    alt=""
-                    aria-hidden="true"
+                    alt={groupIndex === 0 ? company.logoAlt : ""}
                     // 첫 화면 아래라 지연 로드. 프리렌더 시 React 가 <link rel=preload> 를 17개 넣어
                     // 히어로 CSS·JS 와 대역폭을 다투는 것도 막는다.
                     loading="lazy"
@@ -50,11 +54,6 @@ export default function CompanyMarqueeSection() {
             </div>
           ))}
         </div>
-        <ul className="sr-only">
-          {SUCCESSFUL_COMPANIES.map(company => (
-            <li key={company.id}>{company.name}</li>
-          ))}
-        </ul>
       </div>
 
       <p className="mt-4 px-6 text-center text-[11px] text-zinc-500">

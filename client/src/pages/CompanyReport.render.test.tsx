@@ -10,7 +10,11 @@ const mocks = vi.hoisted(() => ({
   getAuthorizationHeader: vi.fn(),
 }));
 
-vi.mock("wouter", () => ({ useLocation: () => ["/company-report", mocks.navigate], Link: ({ children }: { children: unknown }) => children }));
+vi.mock("wouter", () => ({
+  useLocation: () => ["/company-report", mocks.navigate],
+  useSearch: () => window.location.search,
+  Link: ({ children }: { children: unknown }) => children,
+}));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: mocks.useAuth }));
 vi.mock("@/lib/apiAuth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/apiAuth")>()),

@@ -2,15 +2,15 @@
  * 빌드 시점 프리렌더 — `pnpm build` 의 한 단계.
  *
  * 1. `vite build` 가 만든 dist/public/index.html(빈 SPA 껍데기)을 app.html 로 복사한다.
- *    vercel.json 의 catch-all 리라이트가 비-API 경로를 app.html 로 보낸다.
- * 2. `vite build --ssr` 가 만든 dist/ssr/entry-server.js 로 `/` 를 렌더해
- *    index.html 의 <div id="root"></div> 에 주입한다. `/` 는 Vercel 파일시스템 우선 규칙으로 이 파일을 받는다.
- * 3. 같은 방법으로 공개 예시 리포트(`/report-new?sample=1`)를 sample-report.html 로 굳힌다.
- *    vercel.json 이 그 쿼리를 가진 요청만 이 파일로 리라이트한다.
+ *    vercel.json 의 catch-all 리라이트가 클라이언트 전용 라우트를 app.html 로 보낸다.
+ * 2. `vite build --ssr` 가 만든 dist/ssr/entry-server.js 로 lib/seo.ts 의 PRERENDER_ROUTES 를 하나씩 렌더해
+ *    셸의 <div id="root"></div> 에 주입하고 라우트별 검색 메타(SEO_ROUTES)를 <head> 에 굽는다.
+ *    `/` 는 index.html 로 덮어써 Vercel 파일시스템 우선 규칙으로 받고, 나머지는 `<name>.html` 로 두어
+ *    vercel.json 이 해당 경로(필요하면 쿼리 조건 포함)를 그 파일로 리라이트한다. 404.html 은 Vercel 이 미매칭 요청에 준다.
  *
- * 설계: docs/superpowers/specs/2026-09-08-랜딩-프리렌더-design.md
+ * 설계: docs/superpowers/specs/2026-09-08-랜딩-프리렌더-design.md, docs/superpowers/specs/2026-09-14-seo-design.md
  */
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import Beasties from "beasties";
@@ -41,14 +41,18 @@ export function markLandingCanvas(html) {
   return markDocumentCanvas(html, { className: LANDING_CANVAS_CLASS, style: LANDING_CANVAS_STYLE });
 }
 
-export function injectPrerenderedRoot(shellHtml, renderedMarkup) {
+// main.tsx 는 이 속성이 현재 주소의 라우트 키(lib/seo.ts routeKey)와 같을 때만 hydrateRoot 를 쓴다.
+export const PRERENDERED_ATTR = "data-prerendered";
+
+export function injectPrerenderedRoot(shellHtml, renderedMarkup, routeKey = null) {
   const occurrences = shellHtml.split(ROOT_PLACEHOLDER).length - 1;
   if (occurrences !== 1) {
     throw new Error(
       `index.html must contain the empty root placeholder ${ROOT_PLACEHOLDER} exactly once (found ${occurrences})`
     );
   }
-  return shellHtml.replace(ROOT_PLACEHOLDER, `<div id="root">${renderedMarkup}</div>`);
+  const marker = routeKey ? ` ${PRERENDERED_ATTR}="${escapeAttribute(routeKey)}"` : "";
+  return shellHtml.replace(ROOT_PLACEHOLDER, `<div id="root"${marker}>${renderedMarkup}</div>`);
 }
 
 // 전체 CSS(약 50KB gz)는 렌더 차단이라 느린 망에서 첫 픽셀이 2~3초 늦었다. 랜딩 HTML 이 실제로 쓰는 규칙만
@@ -100,39 +104,134 @@ export function deferEntryScript(html) {
   );
 }
 
-// 프리렌더한 페이지에만 canonical 을 단다. app.html 은 이 변환 전에 복사되므로 다른 경로는 자기 주소를 유지한다.
-// 사이트 전체(client/index.html)에 걸면 sitemap 에 올린 다른 공개 페이지까지 `/` 로 합쳐진다.
-export const LANDING_CANONICAL_URL = "https://pre-view.me/";
+function escapeAttribute(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
-export function addCanonical(html, url) {
+function replaceOnce(html, pattern, replacement, label) {
+  const matches = html.match(pattern) ?? [];
+  if (matches.length !== 1) {
+    throw new Error(`expected exactly one ${label} (found ${matches.length})`);
+  }
+  return html.replace(matches[0], replacement);
+}
+
+function metaPattern(attr, key) {
+  // client/index.html 은 prettier 가 긴 <meta> 를 여러 줄로 나누므로 공백·줄바꿈을 허용한다.
+  return new RegExp(`<meta\\s+${attr}="${key}"\\s+content="[^"]*"\\s*/?>`, "g");
+}
+
+/**
+ * 셸(client/index.html)의 랜딩 기본 메타를 라우트별 값(client/src/lib/seo.ts 의 RouteMeta)으로 바꾸고
+ * canonical·robots 를 </head> 앞에 단다. 프리렌더한 페이지에만 적용한다. app.html 은 이 변환 전에 복사되므로
+ * 다른 경로는 자기 주소를 유지한다(사이트 전체에 canonical 을 걸면 다른 공개 페이지까지 `/` 로 합쳐진다).
+ */
+export function applyHeadMeta(html, meta) {
   if (/<link\b[^>]*rel="canonical"/.test(html)) {
     throw new Error("html already has a canonical link");
   }
-  const occurrences = html.split("</head>").length - 1;
-  if (occurrences !== 1) {
-    throw new Error(`expected exactly one </head> (found ${occurrences})`);
+  if (/<meta\b[^>]*name="robots"/.test(html)) {
+    throw new Error("html already has a robots meta");
   }
-  return html.replace("</head>", `<link rel="canonical" href="${url}" /></head>`);
+  const title = escapeAttribute(meta.title);
+  const description = escapeAttribute(meta.description);
+  let result = replaceOnce(html, /<title>[^<]*<\/title>/g, `<title>${title}</title>`, "<title>");
+  const replacements = [
+    ["name", "description", description],
+    ["property", "og:title", title],
+    ["property", "og:description", description],
+    ["name", "twitter:title", title],
+    ["name", "twitter:description", description],
+    ["property", "og:type", meta.ogType ?? "website"],
+  ];
+  if (meta.canonical) replacements.push(["property", "og:url", escapeAttribute(meta.canonical)]);
+  for (const [attr, key, content] of replacements) {
+    result = replaceOnce(
+      result,
+      metaPattern(attr, key),
+      `<meta ${attr}="${key}" content="${content}" />`,
+      `<meta ${attr}="${key}">`
+    );
+  }
+  const extra = [];
+  if (meta.canonical) extra.push(`<link rel="canonical" href="${escapeAttribute(meta.canonical)}" />`);
+  if (meta.robots) extra.push(`<meta name="robots" content="${escapeAttribute(meta.robots)}" />`);
+  // schema.org 데이터 블록. 실행되지 않으므로 CSP script-src 대상이 아니다. `<` 는 </script> 로 블록이 끊기지 않게 이스케이프.
+  for (const block of meta.jsonLd ?? []) {
+    extra.push(`<script type="application/ld+json">${JSON.stringify(block).replace(/</g, "\\u003c")}</script>`);
+  }
+  return replaceOnce(result, /<\/head>/g, `${extra.join("")}</head>`, "</head>");
 }
 
-export function addLandingCanonical(html) {
-  return addCanonical(html, LANDING_CANONICAL_URL);
+function escapeXml(value) {
+  return escapeAttribute(value);
 }
 
-export function setDocumentTitle(html, title) {
-  const matches = html.match(/<title>[^<]*<\/title>/g) ?? [];
-  if (matches.length !== 1) {
-    throw new Error(`expected exactly one <title> (found ${matches.length})`);
-  }
-  return html.replace(matches[0], `<title>${title}</title>`);
+/** 색인 대상 페이지(robots 없음 + canonical 있음)만 sitemap 에 올린다. lastmod 는 메타의 updated. */
+export function sitemapEntries(pages) {
+  return pages
+    .filter(({ meta }) => !meta.robots && meta.canonical)
+    .map(({ meta }) => ({ loc: meta.canonical, lastmod: meta.updated ?? null }));
+}
+
+export function buildSitemap(entries) {
+  const urls = entries.map(({ loc, lastmod }) => {
+    const lines = [`    <loc>${escapeXml(loc)}</loc>`];
+    if (lastmod) lines.push(`    <lastmod>${lastmod}</lastmod>`);
+    return `  <url>\n${lines.join("\n")}\n  </url>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
+}
+
+export const RSS_FILE = "rss.xml";
+
+/** 가이드 글 RSS 2.0. 네이버 서치어드바이저는 sitemap 과 RSS 를 모두 받는다. 글이 없어도 유효한 빈 채널이어야 한다. */
+export function buildRss(items, { origin = "https://pre-view.me" } = {}) {
+  const channelItems = items.map(item =>
+    [
+      "    <item>",
+      `      <title>${escapeXml(item.title)}</title>`,
+      `      <link>${escapeXml(item.url)}</link>`,
+      `      <guid isPermaLink="true">${escapeXml(item.url)}</guid>`,
+      `      <description>${escapeXml(item.description)}</description>`,
+      `      <pubDate>${new Date(`${item.date}T00:00:00+09:00`).toUTCString()}</pubDate>`,
+      "    </item>",
+    ].join("\n")
+  );
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<rss version="2.0">',
+    "  <channel>",
+    "    <title>Pre:View 취업 가이드</title>",
+    `    <link>${origin}/guide</link>`,
+    "    <description>자소서를 내기 전에 읽는 글. 채용 담당자 시선으로 자소서를 읽는 법을 정리합니다.</description>",
+    "    <language>ko</language>",
+    ...channelItems,
+    "  </channel>",
+    "</rss>",
+    "",
+  ].join("\n");
 }
 
 // 공개 예시 리포트(ReportResult 의 ?sample=1). vercel.json 이 `/report-new` + `sample=1` 쿼리를 이 파일로 보낸다.
 export const SAMPLE_REPORT_FILE = "sample-report.html";
-export const SAMPLE_REPORT_CANONICAL_URL = "https://pre-view.me/report-new?sample=1";
-export const SAMPLE_REPORT_TITLE = "예시 리포트 · 현대자동차 서비스 기획 | Pre:View";
-// ReportResult 의 <main> 배경. 랜딩 클래스는 붙이지 않는다(landing-canvas 는 랜딩 전용 규칙을 켠다).
+export const SAMPLE_REPORT_ROUTE_KEY = "/report-new?sample=1";
+// 리포트 페이지 <main> 배경. 랜딩 클래스는 붙이지 않는다(landing-canvas 는 랜딩 전용 규칙을 켠다).
 export const SAMPLE_REPORT_CANVAS_STYLE = "background-color:#09090B";
+
+// 프리렌더 경로(lib/seo.ts PRERENDER_ROUTES)별 첫 화면 배경. 목록에 없는 페이지(404, 라이트 테마)는 그대로 둔다.
+export const CANVAS_BY_ROUTE = {
+  "/": { className: LANDING_CANVAS_CLASS, style: LANDING_CANVAS_STYLE },
+  [SAMPLE_REPORT_ROUTE_KEY]: { style: SAMPLE_REPORT_CANVAS_STYLE },
+  "/company-report?sample=1": { style: SAMPLE_REPORT_CANVAS_STYLE },
+  "/terms": { style: LANDING_CANVAS_STYLE },
+  "/privacy": { style: LANDING_CANVAS_STYLE },
+  "/entitlements": { style: "background-color:#0A0A0A" },
+};
 
 function assertMarkup(name, markup) {
   if (!markup || markup.length < 1000) {
@@ -140,54 +239,56 @@ function assertMarkup(name, markup) {
   }
 }
 
+/** 렌더한 마크업을 셸에 넣고 배경·critical CSS·head 메타·지연 부트까지 입힌 완성 HTML. */
+export async function buildPage(shellHtml, { markup, meta, routeKey, canvas, publicDir }) {
+  let html = injectPrerenderedRoot(shellHtml, markup, routeKey);
+  if (canvas) html = markDocumentCanvas(html, canvas);
+  html = await inlineCriticalCss(html, publicDir);
+  return deferEntryScript(applyHeadMeta(html, meta));
+}
+
 async function main() {
   const rootDir = path.resolve(import.meta.dirname, "..");
   const publicDir = path.join(rootDir, "dist", "public");
   const indexPath = path.join(publicDir, "index.html");
   const shellPath = path.join(publicDir, "app.html");
-  const samplePath = path.join(publicDir, SAMPLE_REPORT_FILE);
   const ssrEntry = path.join(rootDir, "dist", "ssr", "entry-server.js");
 
   const shellHtml = readFileSync(indexPath, "utf8");
   copyFileSync(indexPath, shellPath);
+  console.log(`[prerender] shell → ${path.relative(rootDir, shellPath)}`);
 
   if (!existsSync(path.join(publicDir, BOOT_SCRIPT))) {
     throw new Error(`${BOOT_SCRIPT} is missing from ${publicDir} (client/public/landing-boot.js)`);
   }
 
-  const { render, renderSampleReport } = await import(pathToFileURL(ssrEntry).href);
-  const markup = render("/");
-  assertMarkup("landing", markup);
-  const landingHtml = deferEntryScript(
-    addLandingCanonical(
-      await inlineCriticalCss(markLandingCanvas(injectPrerenderedRoot(shellHtml, markup)), publicDir)
-    )
-  );
-  writeFileSync(indexPath, landingHtml);
-  const inlineCss = landingHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
-  console.log(
-    `[prerender] landing → ${path.relative(rootDir, indexPath)} (${Math.round(markup.length / 1024)}KB markup, ${Math.round(inlineCss.length / 1024)}KB critical CSS inlined), shell → ${path.relative(rootDir, shellPath)}`
-  );
+  const { renderRoute, getPrerenderPages, getGuideFeedItems } = await import(pathToFileURL(ssrEntry).href);
+  const pages = getPrerenderPages();
+  for (const { route, meta } of pages) {
+    const markup = await renderRoute(route.path, route.search);
+    assertMarkup(route.key, markup);
+    const html = await buildPage(shellHtml, {
+      markup,
+      meta,
+      routeKey: route.key,
+      canvas: CANVAS_BY_ROUTE[route.key] ?? null,
+      publicDir,
+    });
+    const outPath = path.join(publicDir, route.file);
+    mkdirSync(path.dirname(outPath), { recursive: true });
+    writeFileSync(outPath, html);
+    const inlineCss = html.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
+    console.log(
+      `[prerender] ${route.key} → ${path.relative(rootDir, outPath)} (${Math.round(markup.length / 1024)}KB markup, ${Math.round(inlineCss.length / 1024)}KB critical CSS inlined)`
+    );
+  }
 
-  const sampleMarkup = await renderSampleReport();
-  assertMarkup("sample report", sampleMarkup);
-  const sampleHtml = deferEntryScript(
-    addCanonical(
-      await inlineCriticalCss(
-        markDocumentCanvas(
-          injectPrerenderedRoot(setDocumentTitle(shellHtml, SAMPLE_REPORT_TITLE), sampleMarkup),
-          { style: SAMPLE_REPORT_CANVAS_STYLE }
-        ),
-        publicDir
-      ),
-      SAMPLE_REPORT_CANONICAL_URL
-    )
-  );
-  writeFileSync(samplePath, sampleHtml);
-  const sampleCss = sampleHtml.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
-  console.log(
-    `[prerender] sample report → ${path.relative(rootDir, samplePath)} (${Math.round(sampleMarkup.length / 1024)}KB markup, ${Math.round(sampleCss.length / 1024)}KB critical CSS inlined)`
-  );
+  // sitemap·RSS 는 프리렌더 목록에서 생성한다. client/public 의 정적 사본이 있어도 여기서 덮어쓴다.
+  const entries = sitemapEntries(pages);
+  writeFileSync(path.join(publicDir, "sitemap.xml"), buildSitemap(entries));
+  const feedItems = getGuideFeedItems();
+  writeFileSync(path.join(publicDir, RSS_FILE), buildRss(feedItems));
+  console.log(`[prerender] sitemap.xml (${entries.length} urls), ${RSS_FILE} (${feedItems.length} guides)`);
 }
 
 const isDirectRun =

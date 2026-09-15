@@ -3,6 +3,7 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import { Router } from "wouter";
 import App from "./App";
 import { applyFullStylesheet } from "./applyFullStylesheet";
+import { routeKey } from "./lib/seo";
 import "./fonts/pretendard-variable-dynamic-subset.css";
 import "./index.css";
 
@@ -51,16 +52,14 @@ if (import.meta.env.PROD && GA_ID && GA_ID !== "G-XXXXXXXXXX") {
   }
 }
 
-// 랜딩(`/`)과 공개 예시 리포트(`/report-new?sample=1`)는 빌드 때 프리렌더된 HTML(scripts/prerender-landing.mjs)로
-// 오므로 하이드레이션하고, 다른 경로는 빈 껍데기(app.html)라 지금처럼 새로 그린다.
+// 빌드 때 프리렌더된 페이지(scripts/prerender-landing.mjs, lib/seo.ts 의 PRERENDER_ROUTES)는 <div id="root"> 에
+// 자기 라우트 키를 data-prerendered 로 달고 온다. 그 키가 지금 주소와 같을 때만 하이드레이션하고, 아니면 새로 그린다.
 // `pnpm preview`처럼 모든 경로에 index.html을 주는 서버에서는 /analyze 에 랜딩 마크업이 실려 오는데,
-// 그걸 하이드레이션하면 트리가 달라 React 가 경고하므로 비우고 새로 그린다.
-function isPrerenderedRoute({ pathname, search }: { pathname: string; search: string }) {
-  if (pathname === "/") return true;
-  return pathname === "/report-new" && new URLSearchParams(search).get("sample") === "1";
-}
+// 그걸 하이드레이션하면 트리가 달라 React 가 경고하므로 비우고 새로 그린다. 없는 주소에 온 404.html 도 마찬가지다.
 const rootElement = document.getElementById("root")!;
-const isPrerendered = rootElement.hasChildNodes() && isPrerenderedRoute(window.location);
+const isPrerendered =
+  rootElement.hasChildNodes() &&
+  rootElement.dataset.prerendered === routeKey(window.location.pathname, window.location.search);
 if (isPrerendered) {
   // 프로덕션에서는 public/landing-boot.js 가 이 모듈의 평가 자체를 첫 프레임 뒤로 미룬다. 여기서는 한 프레임을
   // 더 양보한 뒤(rAF → 다음 태스크) 하이드레이션해, 모듈이 첫 페인트 전에 실행되는 환경(pnpm preview 등)에서도
