@@ -1,6 +1,7 @@
 ---
 title: 자소서 첨삭 AI에 넣기 전에 확인할 7가지
 description: ChatGPT든 전용 도구든, AI 첨삭은 넣는 자소서의 상태에 따라 결과가 갈립니다. 문장을 다듬기 전에 먼저 갖춰야 할 것과 AI 결과를 읽는 법을 정리합니다.
+category: AI 활용
 date: 2026-09-15
 updated: 2026-09-15
 keywords: 자소서 첨삭 AI, AI 자소서 첨삭, 자소서 AI, 자소서 피드백, ChatGPT 자소서

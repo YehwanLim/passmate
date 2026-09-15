@@ -6,6 +6,8 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+import { readFile } from "node:fs/promises";
+import { parseGuideFile, toGuideSummary } from "./shared/guideFrontmatter.js";
 // analyzeCoverLetter는 요청 시점에 dynamic import (HMR 무한 재평가 방지)
 
 const PROJECT_ROOT = import.meta.dirname;
@@ -136,9 +138,27 @@ function vitePluginApi(): Plugin {
 // purpose, and `apply: "serve"` keeps both out of `vite build`.
 const devOnly = (plugin: Plugin): Plugin => ({ ...plugin, apply: "serve" });
 
+// `*.md?summary` — 취업 가이드 마크다운에서 frontmatter 와 글자 수만 뽑은 JSON 모듈.
+// 랜딩·목록(client/src/lib/guideSummaries.ts)이 본문 원문을 번들에 싣지 않게 한다. 본문은 `?raw`(lib/guides.ts).
+const GUIDE_SUMMARY_QUERY = "?summary";
+function guideSummaryPlugin(): Plugin {
+  return {
+    name: "guide-summary",
+    enforce: "pre",
+    async load(id) {
+      if (!id.endsWith(`.md${GUIDE_SUMMARY_QUERY}`)) return null;
+      const file = id.slice(0, -GUIDE_SUMMARY_QUERY.length);
+      this.addWatchFile(file);
+      const summary = toGuideSummary(parseGuideFile(file, await readFile(file, "utf8")));
+      return `export default ${JSON.stringify(summary)};`;
+    },
+  };
+}
+
 const plugins = [
   react(),
   tailwindcss(),
+  guideSummaryPlugin(),
   devOnly(jsxLocPlugin() as Plugin),
   devOnly(vitePluginManusRuntime() as Plugin),
   vitePluginApi(),

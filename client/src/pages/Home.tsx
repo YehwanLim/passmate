@@ -3,6 +3,7 @@ import ReportShowcase from "@/components/ReportShowcase";
 import SocialProofSection from "@/components/SocialProofSection";
 import { BrandName } from "@/components/BrandName";
 import ProcessSection from "@/components/ProcessSection";
+import GuideTeaserSection from "@/components/GuideTeaserSection";
 import PricingSection from "@/components/PricingSection";
 import CompanyReportIntroSection from "@/components/CompanyReportIntroSection";
 import CompanyMarqueeSection from "@/components/CompanyMarqueeSection";
@@ -270,6 +271,9 @@ export default function Home() {
 
       {/* ── Process Section ── */}
       <ProcessSection />
+
+      {/* 취업 가이드 최신 3편 — 검색으로 들어온 글 독자와 랜딩 방문자를 잇는 진입점 */}
+      <GuideTeaserSection />
 
       {/* ── Founder + CTA + Footer ── */}
       <FounderSection />

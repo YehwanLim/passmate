@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildGuide, findGuide, GUIDES, guideMeta, guidePrerenderRoute, parseFrontmatter, renderGuideHtml } from "./guides";
+import { findGuide, GUIDES, guideMeta, guidePrerenderRoute, parseFrontmatter, parseGuideFile, renderGuideHtml } from "./guides";
+import { GUIDE_SUMMARIES, guideCategories, guideCoverStyle, readingMinutes } from "./guideSummaries";
 
 // 타깃은 신입 공채 지원자뿐이다(.agents/product-marketing.md). 가이드 본문에서도 경력직 키워드를 쓰지 않는다.
 const FORBIDDEN_KEYWORDS = /이직|경력직|경력기술서|커리어 전환/;
@@ -18,21 +19,46 @@ describe("parseFrontmatter", () => {
   });
 });
 
-describe("buildGuide", () => {
-  const raw = "---\ntitle: t\ndescription: d\ndate: 2026-09-14\nkeywords: 자소서 첨삭, 자소서 피드백\n---\n본문";
+describe("parseGuideFile", () => {
+  const raw = "---\ntitle: t\ndescription: d\ncategory: 첫인상\ndate: 2026-09-14\nkeywords: 자소서 첨삭, 자소서 피드백\n---\n본문";
 
   it("derives the slug from the file name and defaults updated to date", () => {
-    const guide = buildGuide("/content/guides/my-guide.md", raw);
+    const guide = parseGuideFile("/content/guides/my-guide.md", raw);
     expect(guide.slug).toBe("my-guide");
     expect(guide.updated).toBe("2026-09-14");
+    expect(guide.category).toBe("첫인상");
     expect(guide.keywords).toEqual(["자소서 첨삭", "자소서 피드백"]);
     expect(guide.draft).toBe(false);
+    expect(guide.bodyChars).toBe(2);
   });
 
-  it("requires title, description and an ISO date", () => {
-    expect(() => buildGuide("/x/a.md", "---\ntitle: t\ndate: 2026-09-14\n---\n")).toThrow(/description/);
-    expect(() => buildGuide("/x/a.md", "---\ntitle: t\ndescription: d\ndate: 14.09.2026\n---\n")).toThrow(/YYYY-MM-DD/);
-    expect(() => buildGuide("/x/My Guide.md", raw)).toThrow(/slug/);
+  it("requires title, description, category and an ISO date", () => {
+    expect(() => parseGuideFile("/x/a.md", "---\ntitle: t\ncategory: c\ndate: 2026-09-14\n---\n")).toThrow(/description/);
+    expect(() => parseGuideFile("/x/a.md", "---\ntitle: t\ndescription: d\ndate: 2026-09-14\n---\n")).toThrow(/category/);
+    expect(() => parseGuideFile("/x/a.md", "---\ntitle: t\ndescription: d\ncategory: c\ndate: 14.09.2026\n---\n")).toThrow(/YYYY-MM-DD/);
+    expect(() => parseGuideFile("/x/My Guide.md", raw)).toThrow(/slug/);
+  });
+});
+
+describe("guide summaries (vite `?summary` loader)", () => {
+  it("lists the same guides as the full module, without bodies, in the same order", () => {
+    expect(GUIDE_SUMMARIES.map(guide => guide.slug)).toEqual(GUIDES.map(guide => guide.slug));
+    for (const [index, summary] of GUIDE_SUMMARIES.entries()) {
+      expect("body" in summary, summary.slug).toBe(false);
+      expect(summary.bodyChars).toBe(GUIDES[index].body.length);
+      expect(summary.category).toBe(GUIDES[index].category);
+    }
+  });
+
+  it("gives neighbouring guides different cover hues and two-digit numbers", () => {
+    const styles = GUIDE_SUMMARIES.map((_, index) => guideCoverStyle(index));
+    expect(styles.map(style => style.number)).toEqual(["01", "02", "03", "04"].slice(0, styles.length));
+    for (let index = 1; index < styles.length; index += 1) {
+      expect(styles[index].hue).not.toBe(styles[index - 1].hue);
+    }
+    expect(readingMinutes(200)).toBe(1);
+    expect(readingMinutes(2600)).toBe(5);
+    expect(guideCategories(GUIDE_SUMMARIES).length).toBeGreaterThanOrEqual(3);
   });
 });
 
