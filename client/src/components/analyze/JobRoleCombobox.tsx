@@ -46,6 +46,16 @@ export default function JobRoleCombobox({
           onFocus={() => setIsFocused(true)}
           // 목록에서 고른 뒤에도 포커스가 인풋에 남아 있어 onFocus가 다시 오지 않는다
           onClick={() => setIsFocused(true)}
+          // Tab·프로그램 포커스 이동으로 인풋을 떠나면 닫는다. 목록 항목은 onMouseDown에서
+          // preventDefault 하므로 항목 클릭 중에는 blur가 오지 않는다
+          onBlur={e => {
+            if (!wrapperRef.current?.contains(e.relatedTarget as Node | null)) {
+              setIsFocused(false);
+            }
+          }}
+          onKeyDown={e => {
+            if (e.key === "Escape") setIsFocused(false);
+          }}
           maxLength={100}
           placeholder="직무를 검색하거나 직접 입력하세요"
           className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
