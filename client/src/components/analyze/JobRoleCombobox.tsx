@@ -4,6 +4,7 @@ import { BriefcaseBusiness, Plus, Search, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { filterJobRoleCategories } from "@/constants/jobRoles";
+import { useComboboxNavigation } from "@/hooks/useComboboxNavigation";
 
 /** 직무명 자동완성 입력. 자소서 분석(Analyze)과 기업 분석(CompanyAnalyze)이 함께 쓴다. */
 export default function JobRoleCombobox({
@@ -15,12 +16,30 @@ export default function JobRoleCombobox({
 }) {
   const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // 입력값으로 필터링된 카테고리별 직무 목록
   const filtered = useMemo(() => filterJobRoleCategories(value), [value]);
+  // 카테고리를 펼친 순서가 방향키 인덱스다
+  const flatRoles = useMemo(
+    () => filtered.flatMap(category => category.roles),
+    [filtered]
+  );
 
   const showDropdown =
     isFocused && (filtered.length > 0 || value.trim() !== "");
+
+  // 목록이 비면 "직접 입력하기" 한 줄만 있다
+  const { highlight, onKeyDown } = useComboboxNavigation({
+    count: flatRoles.length > 0 ? flatRoles.length : 1,
+    isOpen: showDropdown,
+    resetKey: value,
+    onSelect: index => {
+      if (flatRoles.length > 0) onChange(flatRoles[index]);
+      setIsFocused(false);
+    },
+    onClose: () => setIsFocused(false),
+  });
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -36,6 +55,16 @@ export default function JobRoleCombobox({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // 방향키로 옮긴 강조 항목이 보이게 스크롤
+  useEffect(() => {
+    if (highlight < 0) return;
+    listRef.current
+      ?.querySelector<HTMLElement>('[data-highlighted="true"]')
+      ?.scrollIntoView?.({ block: "nearest" });
+  }, [highlight]);
+
+  let cursor = 0;
+
   return (
     <div
       ref={wrapperRef}
@@ -47,9 +76,7 @@ export default function JobRoleCombobox({
           setIsFocused(false);
         }
       }}
-      onKeyDown={e => {
-        if (e.key === "Escape") setIsFocused(false);
-      }}
+      onKeyDown={onKeyDown}
     >
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
@@ -65,6 +92,9 @@ export default function JobRoleCombobox({
         />
         {value && (
           <button
+            type="button"
+            // Tab 한 번에 다음 칸으로 넘어가도록 탭 순서에서 뺀다. 키보드는 방향키·Enter 로 고른다
+            tabIndex={-1}
             onClick={() => onChange("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/10 transition-colors"
             aria-label="입력 초기화"
@@ -78,6 +108,7 @@ export default function JobRoleCombobox({
       <AnimatePresence>
         {showDropdown && (
           <motion.div
+            ref={listRef}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
@@ -91,35 +122,46 @@ export default function JobRoleCombobox({
                     {category.name}
                   </p>
                   <ul>
-                    {category.roles.map(role => (
-                      <li key={role}>
-                        <button
-                          type="button"
-                          onMouseDown={e => e.preventDefault()}
-                          onClick={() => {
-                            onChange(role);
-                            setIsFocused(false);
-                          }}
-                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
-                            value === role
-                              ? "text-cyan-400 bg-cyan-400/[0.08]"
-                              : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
-                          }`}
-                        >
-                          <BriefcaseBusiness className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-                          {role}
-                        </button>
-                      </li>
-                    ))}
+                    {category.roles.map(role => {
+                      const index = cursor++;
+                      return (
+                        <li key={role}>
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            data-highlighted={highlight === index}
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={() => {
+                              onChange(role);
+                              setIsFocused(false);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
+                              value === role
+                                ? "text-cyan-400 bg-cyan-400/[0.08]"
+                                : highlight === index
+                                  ? "text-white bg-white/[0.06]"
+                                  : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                            }`}
+                          >
+                            <BriefcaseBusiness className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                            {role}
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))
             ) : (
               <button
                 type="button"
+                tabIndex={-1}
+                data-highlighted={highlight === 0}
                 onMouseDown={e => e.preventDefault()}
                 onClick={() => setIsFocused(false)}
-                className="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06]"
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06] ${
+                  highlight === 0 ? "bg-white/[0.06]" : ""
+                }`}
               >
                 <Plus className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                 <span className="font-medium">"{value}"</span> 직접 입력하기

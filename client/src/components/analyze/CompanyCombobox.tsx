@@ -4,6 +4,7 @@ import { Building2, Plus, Search, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { COMPANY_PRESETS, normalizeCompanyName } from "@/constants/companies";
+import { useComboboxNavigation } from "@/hooks/useComboboxNavigation";
 
 /** 회사명 자동완성 입력. 자소서 분석(Analyze)과 기업 분석(CompanyAnalyze)이 함께 쓴다. */
 export default function CompanyCombobox({
@@ -15,6 +16,7 @@ export default function CompanyCombobox({
 }) {
   const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   // 입력값으로 필터링된 목록
   const filtered = useMemo(() => {
@@ -27,6 +29,18 @@ export default function CompanyCombobox({
 
   const showDropdown =
     isFocused && (filtered.length > 0 || value.trim() !== "");
+
+  // 목록이 비면 "직접 입력하기" 한 줄만 있다
+  const { highlight, onKeyDown } = useComboboxNavigation({
+    count: filtered.length > 0 ? filtered.length : 1,
+    isOpen: showDropdown,
+    resetKey: value,
+    onSelect: index => {
+      if (filtered.length > 0) onChange(filtered[index]);
+      setIsFocused(false);
+    },
+    onClose: () => setIsFocused(false),
+  });
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -42,6 +56,14 @@ export default function CompanyCombobox({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // 방향키로 옮긴 강조 항목이 보이게 스크롤
+  useEffect(() => {
+    if (highlight < 0) return;
+    listRef.current
+      ?.querySelector<HTMLElement>('[data-highlighted="true"]')
+      ?.scrollIntoView?.({ block: "nearest" });
+  }, [highlight]);
+
   return (
     <div
       ref={wrapperRef}
@@ -53,9 +75,7 @@ export default function CompanyCombobox({
           setIsFocused(false);
         }
       }}
-      onKeyDown={e => {
-        if (e.key === "Escape") setIsFocused(false);
-      }}
+      onKeyDown={onKeyDown}
     >
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
@@ -71,6 +91,9 @@ export default function CompanyCombobox({
         />
         {value && (
           <button
+            type="button"
+            // Tab 한 번에 다음 칸으로 넘어가도록 탭 순서에서 뺀다. 키보드는 방향키·Enter 로 고른다
+            tabIndex={-1}
             onClick={() => onChange("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/10 transition-colors"
             aria-label="입력 초기화"
@@ -84,6 +107,7 @@ export default function CompanyCombobox({
       <AnimatePresence>
         {showDropdown && (
           <motion.ul
+            ref={listRef}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
@@ -91,10 +115,12 @@ export default function CompanyCombobox({
             className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-white/[0.1] bg-[#141414] backdrop-blur-xl shadow-2xl shadow-black/40 py-1.5"
           >
             {filtered.length > 0 ? (
-              filtered.map(company => (
+              filtered.map((company, index) => (
                 <li key={company}>
                   <button
                     type="button"
+                    tabIndex={-1}
+                    data-highlighted={highlight === index}
                     onMouseDown={e => e.preventDefault()}
                     onClick={() => {
                       onChange(company);
@@ -103,7 +129,9 @@ export default function CompanyCombobox({
                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
                       value === company
                         ? "text-cyan-400 bg-cyan-400/[0.08]"
-                        : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                        : highlight === index
+                          ? "text-white bg-white/[0.06]"
+                          : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
                     }`}
                   >
                     <Building2 className="w-4 h-4 text-zinc-600 flex-shrink-0" />
@@ -115,9 +143,13 @@ export default function CompanyCombobox({
               <li>
                 <button
                   type="button"
+                  tabIndex={-1}
+                  data-highlighted={highlight === 0}
                   onMouseDown={e => e.preventDefault()}
                   onClick={() => setIsFocused(false)}
-                  className="w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06]"
+                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06] ${
+                    highlight === 0 ? "bg-white/[0.06]" : ""
+                  }`}
                 >
                   <Plus className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                   <span className="font-medium">"{value}"</span> 직접 입력하기

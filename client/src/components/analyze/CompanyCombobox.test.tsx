@@ -19,17 +19,20 @@ import JobRoleCombobox from "./JobRoleCombobox";
 
 afterEach(cleanup);
 
-function renderCombobox(Component: typeof CompanyCombobox, placeholder: string) {
+function renderCombobox(Component: typeof CompanyCombobox, placeholder: string, value = "") {
   const onChange = vi.fn();
   render(
     <>
-      <Component value="" onChange={onChange} />
+      <Component value={value} onChange={onChange} />
       <input aria-label="next field" />
     </>,
   );
   const input = screen.getByPlaceholderText(placeholder);
-  return { input, next: screen.getByLabelText("next field") };
+  return { input, next: screen.getByLabelText("next field"), onChange };
 }
+
+const listItems = () =>
+  screen.getAllByRole("button").filter(button => button.getAttribute("aria-label") !== "입력 초기화");
 
 describe.each([
   ["CompanyCombobox", CompanyCombobox, "회사명을 검색하거나 직접 입력하세요"],
@@ -56,7 +59,7 @@ describe.each([
   it("closes when focus leaves from a list item to an outside field", () => {
     const { input, next } = renderCombobox(Component, placeholder);
     fireEvent.focus(input);
-    const firstItem = screen.getAllByRole("button")[0];
+    const firstItem = listItems()[0];
     fireEvent.blur(input, { relatedTarget: firstItem });
     expect(screen.getAllByRole("list").length).toBeGreaterThan(0);
 
@@ -67,9 +70,58 @@ describe.each([
   it("stays open when blur targets an item inside the dropdown", () => {
     const { input } = renderCombobox(Component, placeholder);
     fireEvent.focus(input);
-    const firstItem = screen.getAllByRole("button")[0];
+    const firstItem = listItems()[0];
 
     fireEvent.blur(input, { relatedTarget: firstItem });
     expect(screen.getAllByRole("list").length).toBeGreaterThan(0);
+  });
+
+  it("keeps list items and the clear button out of the tab order", () => {
+    const { input } = renderCombobox(Component, placeholder, "기");
+    fireEvent.focus(input);
+
+    for (const button of screen.getAllByRole("button")) {
+      expect(button.tabIndex).toBe(-1);
+    }
+  });
+
+  it("ArrowDown highlights the first item and Enter selects it", () => {
+    const { input, onChange } = renderCombobox(Component, placeholder);
+    fireEvent.focus(input);
+    const first = listItems()[0];
+    const expected = first.textContent?.trim();
+
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    expect(first.getAttribute("data-highlighted")).toBe("true");
+
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onChange).toHaveBeenCalledWith(expected);
+    expect(screen.queryAllByRole("list")).toHaveLength(0);
+  });
+
+  it("ArrowUp from no highlight wraps to the last item", () => {
+    const { input } = renderCombobox(Component, placeholder);
+    fireEvent.focus(input);
+    const items = listItems();
+
+    fireEvent.keyDown(input, { key: "ArrowUp" });
+    expect(items[items.length - 1].getAttribute("data-highlighted")).toBe("true");
+  });
+
+  it("Enter without a highlighted item changes nothing", () => {
+    const { input, onChange } = renderCombobox(Component, placeholder);
+    fireEvent.focus(input);
+
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getAllByRole("list").length).toBeGreaterThan(0);
+  });
+
+  it("ignores arrow keys while an IME composition is in progress", () => {
+    const { input } = renderCombobox(Component, placeholder);
+    fireEvent.focus(input);
+
+    fireEvent.keyDown(input, { key: "ArrowDown", isComposing: true });
+    expect(screen.queryByText((_, el) => el?.getAttribute("data-highlighted") === "true")).toBeNull();
   });
 });
