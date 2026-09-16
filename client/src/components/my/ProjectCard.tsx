@@ -89,19 +89,16 @@ export default function ProjectCard({
           <span className="text-[12px] font-semibold text-zinc-500 mb-2.5 tracking-wide">
             한줄 요약
           </span>
-          <p className="text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-6 line-clamp-2">
+          <p className="text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-4 line-clamp-2">
             "{project.summary || summaryFallback}"
           </p>
 
           <div className="mt-auto">
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
               {keywords.length > 0 ? (
                 keywords.map((kw, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-400/30 text-[14px] font-bold text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
-                  >
-                    {kw}
+                  <span key={idx} className="text-[13px] font-medium text-zinc-500">
+                    #{kw}
                   </span>
                 ))
               ) : keywordFallback ? (

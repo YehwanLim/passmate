@@ -65,32 +65,49 @@ describe("protected user APIs", () => {
     expect(JSON.stringify(res.body)).not.toContain("sensitive authorization detail");
   });
 
+  // 목록 핸들러는 raw SQL 한 번으로 프로젝트 + 최신 analysis 의 필요한 필드만 읽는다. 행 모양은 SQL 별칭 그대로.
+  function projectRow(overrides = {}) {
+    return {
+      id: "p1",
+      title: "카카오 기획 지원서",
+      company: "카카오",
+      job_keyword: "기획",
+      created_at: new Date("2026-08-20T00:00:00Z"),
+      analysis_count: 1,
+      latest_id: "a1",
+      latest_status: "SUCCESS",
+      latest_kind: "RESUME",
+      total_chars: 100,
+      question_text: "[문항 1] q1",
+      summary: null,
+      keywords: null,
+      ...overrides,
+    };
+  }
+
+  function projectsHandlerFor(rows) {
+    const $queryRaw = vi.fn(async () => rows);
+    return { handler: createProjectsHandler({ db: { $queryRaw }, requireUser: activeUser }), $queryRaw };
+  }
+
+  it("scopes the project list query to the verified user", async () => {
+    const { handler, $queryRaw } = projectsHandlerFor([]);
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual([]);
+    // 태그드 템플릿 호출: 첫 인자는 SQL 조각, 그 뒤가 바인딩 값. 유일한 바인딩이 검증된 사용자 ID여야 한다.
+    const [strings, ...values] = $queryRaw.mock.calls[0];
+    expect(strings.join("?")).toMatch(/WHERE p\.user_id = \?::uuid/);
+    expect(values).toEqual([USER_ID]);
+  });
+
   it("reports the real question count parsed from the latest analysis", async () => {
-    const handler = createProjectsHandler({
-      db: {
-        project: {
-          findMany: vi.fn(async () => [
-            {
-              id: "p1",
-              title: "카카오 기획 지원서",
-              company: "카카오",
-              jobKeyword: "기획",
-              createdAt: new Date("2026-08-20T00:00:00Z"),
-              _count: { analyses: 2 },
-              analyses: [
-                {
-                  id: "a1",
-                  totalChars: 100,
-                  aiResponseJson: null,
-                  questionText: "[문항 1] q1\n\n[문항 2] q2\n\n[문항 3] q3",
-                },
-              ],
-            },
-          ]),
-        },
-      },
-      requireUser: activeUser,
-    });
+    const { handler } = projectsHandlerFor([
+      projectRow({ analysis_count: 2, question_text: "[문항 1] q1\n\n[문항 2] q2\n\n[문항 3] q3" }),
+    ]);
     const res = response();
 
     await handler(request(), res);
@@ -101,28 +118,19 @@ describe("protected user APIs", () => {
   });
 
   it("labels a company analysis project and summarizes it from the brief", async () => {
-    const handler = createProjectsHandler({
-      db: {
-        project: {
-          findMany: vi.fn(async () => [{
-            id: "p2",
-            title: "현대자동차 전략기획 기업 분석",
-            company: "현대자동차",
-            jobKeyword: "전략기획",
-            createdAt: new Date("2026-09-06T00:00:00Z"),
-            _count: { analyses: 1 },
-            analyses: [{
-              id: "a2",
-              kind: "COMPANY",
-              totalChars: null,
-              questionText: "",
-              aiResponseJson: { brief: { oneLiner: "전동화로 체급을 바꾸는 완성차" } },
-            }],
-          }]),
-        },
-      },
-      requireUser: activeUser,
-    });
+    const { handler } = projectsHandlerFor([
+      projectRow({
+        id: "p2",
+        title: "현대자동차 전략기획 기업 분석",
+        company: "현대자동차",
+        job_keyword: "전략기획",
+        latest_id: "a2",
+        latest_kind: "COMPANY",
+        total_chars: null,
+        question_text: "",
+        summary: "전동화로 체급을 바꾸는 완성차",
+      }),
+    ]);
     const res = response();
 
     await handler(request(), res);
@@ -136,34 +144,18 @@ describe("protected user APIs", () => {
   });
 
   it("returns the latest analysis status and normalized résumé hashtags as keywords", async () => {
-    const handler = createProjectsHandler({
-      db: {
-        project: {
-          findMany: vi.fn(async () => [{
-            id: "p3",
-            title: "네이버 마케팅 지원서",
-            company: "네이버",
-            jobKeyword: "마케팅",
-            createdAt: new Date("2026-09-06T00:00:00Z"),
-            _count: { analyses: 1 },
-            analyses: [{
-              id: "a3",
-              kind: "RESUME",
-              status: "SUCCESS",
-              totalChars: 1200,
-              questionText: "[문항 1] q1",
-              aiResponseJson: {
-                firstImpression: {
-                  summaryOneLiner: "숫자가 붙는 자소서",
-                  hashtags: ["#커머스 리텐션", "# 커머스 리텐션", "#퍼널 실험", "", "#CRM", "#데이터", "#고객", "#7번째"],
-                },
-              },
-            }],
-          }]),
-        },
-      },
-      requireUser: activeUser,
-    });
+    const { handler } = projectsHandlerFor([
+      projectRow({
+        id: "p3",
+        title: "네이버 마케팅 지원서",
+        company: "네이버",
+        job_keyword: "마케팅",
+        latest_id: "a3",
+        total_chars: 1200,
+        summary: "숫자가 붙는 자소서",
+        keywords: ["#커머스 리텐션", "# 커머스 리텐션", "#퍼널 실험", "", "#CRM", "#데이터", "#고객", "#7번째"],
+      }),
+    ]);
     const res = response();
 
     await handler(request(), res);
@@ -172,30 +164,39 @@ describe("protected user APIs", () => {
     expect(res.body[0].keywords).toEqual(["커머스 리텐션", "퍼널 실험", "CRM", "데이터", "고객", "7번째"]);
   });
 
-  it("uses brief.keywords for company analyses", async () => {
-    const handler = createProjectsHandler({
-      db: {
-        project: {
-          findMany: vi.fn(async () => [{
-            id: "p4",
-            title: "현대자동차 전략기획 기업 분석",
-            company: "현대자동차",
-            jobKeyword: "전략기획",
-            createdAt: new Date("2026-09-06T00:00:00Z"),
-            _count: { analyses: 1 },
-            analyses: [{
-              id: "a4",
-              kind: "COMPANY",
-              status: "SUCCESS",
-              totalChars: null,
-              questionText: "",
-              aiResponseJson: { brief: { oneLiner: "전동화", keywords: ["전동화", "SDV", 42, "전동화"] } },
-            }],
-          }]),
-        },
-      },
-      requireUser: activeUser,
-    });
+  it("strips markdown emphasis the model sometimes wraps around the one-liner and hashtags", async () => {
+    const { handler } = projectsHandlerFor([
+      projectRow({
+        id: "p3b",
+        title: "아티언스 서비스기획 지원서",
+        company: "아티언스",
+        job_keyword: "서비스기획",
+        latest_id: "a3b",
+        total_chars: 1200,
+        summary: "**이탈 데이터를 파고든 경험은 강력하나, AI 서비스 맥락과 연결되지 않습니다.**",
+        keywords: ["**#유저행동데이터**", "#실험기반개선"],
+      }),
+    ]);
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.body[0].summary).toBe("이탈 데이터를 파고든 경험은 강력하나, AI 서비스 맥락과 연결되지 않습니다.");
+    expect(res.body[0].keywords).toEqual(["유저행동데이터", "실험기반개선"]);
+  });
+
+  it("drops non-string and duplicate company keywords", async () => {
+    const { handler } = projectsHandlerFor([
+      projectRow({
+        id: "p4",
+        latest_id: "a4",
+        latest_kind: "COMPANY",
+        total_chars: null,
+        question_text: "",
+        summary: "전동화",
+        keywords: ["전동화", "SDV", 42, "전동화"],
+      }),
+    ]);
     const res = response();
 
     await handler(request(), res);
@@ -204,27 +205,41 @@ describe("protected user APIs", () => {
   });
 
   it("reports a pending analysis with an empty keyword list instead of failing", async () => {
-    const handler = createProjectsHandler({
-      db: {
-        project: {
-          findMany: vi.fn(async () => [{
-            id: "p5",
-            title: "진행 중",
-            company: "토스",
-            jobKeyword: "PM",
-            createdAt: new Date("2026-09-06T00:00:00Z"),
-            _count: { analyses: 1 },
-            analyses: [{ id: "a5", kind: "RESUME", status: "PENDING", totalChars: 900, questionText: "[문항 1] q1", aiResponseJson: null }],
-          }]),
-        },
-      },
-      requireUser: activeUser,
-    });
+    const { handler } = projectsHandlerFor([
+      projectRow({ id: "p5", latest_id: "a5", latest_status: "PENDING", total_chars: 900 }),
+    ]);
     const res = response();
 
     await handler(request(), res);
 
     expect(res.body[0]).toMatchObject({ latest_status: "PENDING", keywords: [], summary: null });
+  });
+
+  it("returns a project that has no analysis yet with null latest fields", async () => {
+    const { handler } = projectsHandlerFor([
+      projectRow({
+        analysis_count: 0,
+        latest_id: null,
+        latest_status: null,
+        latest_kind: null,
+        total_chars: null,
+        question_text: null,
+      }),
+    ]);
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.body[0]).toMatchObject({
+      analysis_count: 0,
+      kind: "RESUME",
+      question_count: 0,
+      latest_analysis_id: null,
+      latest_status: null,
+      total_chars: 0,
+      summary: null,
+      keywords: [],
+    });
   });
 
   it("looks up a project by both its ID and the verified user ID", async () => {

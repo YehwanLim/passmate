@@ -123,7 +123,8 @@ export default function MyProjects() {
                 key={project.id}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.05 * idx }}
+                // 카드마다 50ms 씩 밀리면 18장은 마지막 카드가 1초 넘게 늦는다. 여섯 장까지만 계단식.
+                transition={{ duration: 0.35, delay: 0.05 * Math.min(idx, 5) }}
               >
                 <ProjectCard
                   project={project}
