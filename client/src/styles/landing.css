@@ -258,6 +258,7 @@
   border-radius: 0.375rem;
   font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .landing-nav-link,
@@ -486,7 +487,7 @@
   outline-offset: 2px;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .mobile-nav-toggle,
   .mobile-nav-panel {
     display: none;

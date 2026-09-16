@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
  * - transparent: 랜딩·문서 페이지(#050505). 배경이 거의 비치고 블러만 준다.
  * - solid: 앱 화면(#0A0A0A). 스크롤되는 폼 위에서 글자가 겹치지 않게 불투명하게.
  * 경로 항목은 실제 <a> 라 지연 하이드레이션 전에도 동작하고 크롤러가 따라간다. 현재 페이지는 aria-current 로 표시한다.
+ * 항목이 6개라 768px 미만에서는 한 줄에 안 들어가 햄버거 메뉴로 바꾼다(landing.css 의 미디어쿼리도 같은 기준).
  */
 type SiteHeaderProps = {
   variant?: "transparent" | "solid";
@@ -81,7 +82,7 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
           <Logo className="h-5 w-auto" />
         </Link>
 
-        <div className="hidden sm:flex items-center gap-4 md:gap-7">
+        <div className="hidden md:flex items-center gap-4 lg:gap-7">
           {SITE_NAV_ITEMS.map(item => renderItem(item, "landing-nav-link"))}
         </div>
 
@@ -89,7 +90,7 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
           <AuthButton />
           <button
             type="button"
-            className="mobile-nav-toggle sm:hidden"
+            className="mobile-nav-toggle md:hidden"
             aria-label="모바일 메뉴 열기"
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-site-nav"
@@ -104,7 +105,7 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
         {isMobileMenuOpen && (
           <motion.div
             id="mobile-site-nav"
-            className="mobile-nav-panel sm:hidden"
+            className="mobile-nav-panel md:hidden"
             initial={{ opacity: 0, y: -8, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
