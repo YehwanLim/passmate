@@ -60,7 +60,7 @@ export default function GuideArticle() {
           </header>
 
           <div
-            className="guide-prose prose prose-invert mt-9 max-w-none border-t border-white/[0.08] pt-2 prose-headings:tracking-normal prose-h2:text-xl prose-h2:mt-11 prose-h3:text-lg prose-p:leading-7 prose-li:leading-7 prose-a:text-blue-300 prose-a:no-underline hover:prose-a:underline prose-strong:text-white"
+            className="guide-prose prose prose-invert mt-9 max-w-none border-t border-white/[0.08] pt-2 prose-headings:tracking-normal prose-h2:text-xl prose-h2:mt-11 prose-h3:text-lg prose-p:leading-7 prose-li:leading-7 prose-a:text-blue-300 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-img:mx-auto prose-img:w-auto prose-img:max-h-[600px] prose-img:rounded-lg prose-img:border prose-img:border-white/[0.08]"
             dangerouslySetInnerHTML={{ __html: html }}
           />
 

@@ -24,6 +24,8 @@ keywords: 삼성전자 면접 후기, 삼성전자 원데이 면접, 삼성전�
 + 입사 후 바로 다음 시즌에서는 면접 현장 운영과 프로세스 관리를 담당하는 T/F로 일했기 때문에
 면접자와 운영측 모두의 시선을 담아보도록 하겄습니다
 
+![삼성전자 3급 신입사원 채용 면접 합격 안내](/guide/samsung-dx-marketing-oneday-interview/01.jpg)
+
 합격 시기를 가린 이유는 ..
 이 공간에 셀프 털이 너무 많이 해놔서.. 응 ...
 
@@ -76,6 +78,14 @@ keywords: 삼성전자 면접 후기, 삼성전자 원데이 면접, 삼성전�
 
 인솔을 따라 강의실 같은 곳에 도착하면 본인의 이름을 찾아 앉고..
 책상에는 노트북과 여러가지 키트, 이름표, 안내 자료 등등이 가지런히 놓여있을 것이다
+
+![삼성전자 DX부문 면접 Safety KIT 봉투](/guide/samsung-dx-marketing-oneday-interview/02.jpg)
+*세이푸티 키트*
+
+![면접 키트에 들어 있던 삼성전자 인사팀 감사 카드](/guide/samsung-dx-marketing-oneday-interview/03.jpg)
+
+![면접 키트 구성품: 라텍스 장갑, 손소독 스프레이, 휴대용 선풍기, 홍삼정, 빗](/guide/samsung-dx-marketing-oneday-interview/04.jpg)
+*면접 키트에는 요런 것들이 들어 있었다*
 
 불참자 제외 모든 지원자가 정상 착석하면 그날 진행되는 면접 시스템에 대해 인사팀 담당자가 나와서 간단히 오리엔테이션을 진행한다
 이때 휴대폰 포함 본인이 가져온 모든 면접자료와 가방은 앞에 반납해야 한다
@@ -157,6 +167,8 @@ keywords: 삼성전자 면접 후기, 삼성전자 원데이 면접, 삼성전�
 직무면접, 창의성면접을 정말 괜찮게 봤다고 생각해서 더 실망스러웠다
 이렇게 점잖게 쓰고 있지만 당시에는 면접 끝나고 집가는 길에 사연있는 사람처럼 눈물 줄줄 오열쇼함
 
+![안경이 흘러내리도록 오열하는 짤](/guide/samsung-dx-marketing-oneday-interview/05.jpg)
+
 그래서 임원 면접은 질문 리스트도 생략이다
 대부분 나의 경험의 디테일을 세세하게 묻거나 그 과정에서 느낀 점을 확인하고, 사실 관계를 명확히 하기 위한 질문이었다.
 
@@ -164,14 +176,24 @@ keywords: 삼성전자 면접 후기, 삼성전자 원데이 면접, 삼성전�
 
 그렇게 모든 면접이 끝나면 모든 면접과 테스트 누락없이 봤는지 확인하는 절차를 거친 뒤 교통비 받아서 도망치면 됨
 
+![UNFOLD YOUR CAREER 문구가 적힌 삼성전자 DX부문 면접 쇼핑백](/guide/samsung-dx-marketing-oneday-interview/06.jpg)
+
 이렇게 소중한 면접키트 손에 들고서...
+
+![면접 날 정장을 입고 찍은 셀카](/guide/samsung-dx-marketing-oneday-interview/07.jpg)
 
 정장 씨잘데기 없이 왜 빌렸는지 한탄하며 귀가함
 
+![고추바사삭 치킨과 소스](/guide/samsung-dx-marketing-oneday-interview/08.jpg)
+
 울면서 고추바사삭에 맥주 마심
+
+![삼성전자 DX부문 신입사원 오리엔테이션 초대장](/guide/samsung-dx-marketing-oneday-interview/09.jpg)
 
 그리고 ........
 어찌저찌 이러케 현직자가 되었다네요
+
+![채용 건강검진 세부 안내사항 화면](/guide/samsung-dx-marketing-oneday-interview/10.jpg)
 
 희한하게도 면접까지 합격하고나면 채용 검진을 한다
 의외로 이 검진때문에 합격 취소될까 걱정하는 분들을 많이 봤는데

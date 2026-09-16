@@ -192,6 +192,12 @@ OO사업부에서 가장 해결해야 하는 과제는 무엇이라고 생각하
 면접 경험이 많다면 이런 모의면접 없이도 충분하겠지만,
 본인의 경험이 부족하다고 느낀다면 스터디를 해도 손해볼 건 없다
 
+![노션에 정리한 면접 준비 할 일 표 1 — 진행 완료 항목](/guide/samsung-dx-marketing-interview-prep/01.jpg)
+
+![노션에 정리한 면접 준비 할 일 표 2 — 진행 완료·진행중·진행 예정 항목](/guide/samsung-dx-marketing-interview-prep/02.jpg)
+
+![노션에 정리한 면접 준비 할 일 표 3 — 진행 예정 항목](/guide/samsung-dx-marketing-interview-prep/03.jpg)
+
 다음 면접 후기입니다
 
 [삼성전자 DX 마케팅 합격 후기 ④ 면접 후기 (면접 질문 리스트 - 직무면접, 임원면접, 창의면접, 약식 GSAT)](https://m.blog.naver.com/815lyw/223385652121)
