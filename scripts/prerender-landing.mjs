@@ -208,7 +208,7 @@ export function buildRss(items, { origin = "https://pre-view.me" } = {}) {
     "  <channel>",
     "    <title>Pre:View 취업 가이드</title>",
     `    <link>${origin}/guide</link>`,
-    "    <description>자소서를 내기 전에 읽는 글. 채용 담당자 시선으로 자소서를 읽는 법을 정리합니다.</description>",
+    "    <description>채용 담당자가 진짜 보는 것. 첫인상·문항별·수정 순서·면접 후기로 정리한 Pre:View 취업 가이드.</description>",
     "    <language>ko</language>",
     ...channelItems,
     "  </channel>",

@@ -66,7 +66,8 @@ export default function GuideArticle() {
 
           <GuideCtaCard
             className="mt-12"
-            body="글로 익힌 기준을 내 자소서에 바로 대 보세요. 기업·직무와 문항을 넣으면 1분 안에 채용 담당자 시선의 리포트를 받습니다. 첫 분석은 무료입니다."
+            title="이 기준으로 내 자소서를 읽어 보면 어떨까요"
+            body="기업·직무와 문항을 넣으면 1분 안에 채용 담당자 시선의 리포트가 도착합니다. 첫 분석은 무료입니다."
             withSample
           />
         </article>

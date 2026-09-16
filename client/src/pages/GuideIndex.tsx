@@ -36,7 +36,7 @@ export default function GuideIndex() {
         <div className="flex max-w-2xl flex-col gap-3">
           <p className="text-[13px] font-medium text-blue-300">취업 가이드</p>
           <h1 className="text-[32px] font-bold leading-[1.15] tracking-[-0.03em] md:text-[44px]">
-            자소서를 내기 전에 읽는 글
+            채용 담당자가 진짜 보는 것
           </h1>
           <p className="text-[15px] leading-7 text-gray-400 md:text-[16px]">{GUIDE_INDEX_DESCRIPTION}</p>
         </div>
@@ -99,8 +99,8 @@ export default function GuideIndex() {
 
       <GuideCtaCard
         className="mt-20 md:mt-24"
-        title="읽는 것만으로는 내 자소서가 어떻게 읽히는지 알 수 없습니다"
-        body="기업·직무와 문항을 넣으면 1분 안에 채용 담당자 시선의 리포트를 받습니다. 첫 분석은 무료입니다."
+        title="내 자소서는 지금 어떻게 읽히고 있을까요"
+        body="기업·직무와 문항을 넣으면 1분 안에 채용 담당자 시선의 리포트가 도착합니다. 첫 분석은 무료입니다."
       />
     </GuideLayout>
   );

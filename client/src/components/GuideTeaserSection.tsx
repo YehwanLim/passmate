@@ -21,10 +21,10 @@ export default function GuideTeaserSection() {
           <div className="flex flex-col gap-3">
             <p className="text-[13px] font-medium text-blue-300">취업 가이드</p>
             <h2 id="guide-teaser-title" className="text-3xl md:text-4xl font-bold tracking-tight">
-              자소서를 내기 전에 읽는 글
+              채용 담당자가 진짜 보는 것
             </h2>
             <p className="max-w-xl text-gray-500 font-light text-[15px] leading-[1.8]">
-              리포트에서 반복해서 짚는 것들을 글로 먼저 풀어 둡니다. 읽고 나서 바로 고칠 수 있는 것만.
+              리포트가 매번 짚는 기준을 글로 정리했습니다. 읽고 나면 내 자소서에서 어디부터 고칠지 보입니다.
             </p>
           </div>
           <Link
