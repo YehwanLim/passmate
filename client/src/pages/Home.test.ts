@@ -16,12 +16,10 @@ describe("HERO_TITLE_MOTION", () => {
 describe("HOME_NAV_ITEMS", () => {
   it("shows only immediately usable top navigation items", () => {
     expect(HOME_NAV_ITEMS.map(item => item.label)).toEqual([
-      "서비스 소개",
       "자소서 분석",
       "기업 분석",
       "취업 가이드",
-      "이용권 구매",
-      "내 지원서",
+      "이용권",
     ]);
   });
 
@@ -35,7 +33,7 @@ describe("HOME_NAV_ITEMS", () => {
 
   it("routes the purchase nav item to the standalone entitlements page", () => {
     expect(HOME_NAV_ITEMS).toContainEqual({
-      label: "이용권 구매",
+      label: "이용권",
       type: "route",
       target: "/entitlements",
     });

@@ -17,7 +17,7 @@ describe("entry-server render", () => {
 
     expect(html.length).toBeGreaterThan(10_000);
     expect(html).toContain("10초면");
-    expect(html).toContain("서비스 소개");
+    expect(html).toContain("취업 가이드");
     expect(consoleError).not.toHaveBeenCalled();
   });
 
