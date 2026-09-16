@@ -23,9 +23,7 @@ export default function CompanyReportIntroSection() {
       className="py-28 md:py-36 border-t border-white/[0.04]"
     >
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
-        <div
-          className="grid gap-12 md:grid-cols-[1.1fr_1fr] md:items-center"
-        >
+        <div className="grid gap-12 md:grid-cols-[1.1fr_1fr] md:items-center">
           {/* 설명 */}
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-sky-300">
@@ -46,30 +44,35 @@ export default function CompanyReportIntroSection() {
               <span className="mx-2 text-zinc-700">·</span>
               스탠다드·프리미엄 이용권에 포함
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            {/* 세 버튼을 한 줄에 넣으면 이 칼럼 폭(약 470px)에서 라벨이 두 줄로 접혀 꽉 찬 느낌이 난다.
+                라벨은 한 줄로 고정하고, 주 CTA 한 줄 + 보조 버튼 두 개 한 줄로 나눈다.
+                보조 버튼은 주 CTA 와 높이·모서리를 맞춘다. */}
+            <div className="mt-8 flex flex-col gap-3 sm:items-start">
               <button
                 type="button"
                 onClick={() => navigate("/company-analysis")}
-                className="landing-primary-cta group"
+                className="landing-primary-cta group whitespace-nowrap"
               >
                 <span className="relative z-10">기업 분석 시작하기</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </button>
-              <button
-                type="button"
-                onClick={() => navigate("/company-report?sample=1")}
-                className="h-11 rounded-xl border border-white/[0.12] bg-white/[0.05] px-5 text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
-              >
-                샘플 리포트 보기 · {COMPANY_REPORT_SAMPLE_COMPANY}
-              </button>
-              {/* 이용권 페이지는 #company 로 베이직 카드의 기업 분석 선택을 켠 채 연다 */}
-              <button
-                type="button"
-                onClick={() => navigate("/entitlements#company")}
-                className="h-11 rounded-xl border border-white/[0.12] bg-white/[0.05] px-5 text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
-              >
-                이용권 보기
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => navigate("/company-report?sample=1")}
+                  className="inline-flex min-h-[3.25rem] items-center justify-center whitespace-nowrap rounded-2xl border border-white/[0.12] bg-white/[0.05] px-5 text-[13.5px] font-semibold tracking-[-0.01em] text-zinc-200 transition-colors hover:bg-white/[0.1]"
+                >
+                  샘플 리포트 보기 · {COMPANY_REPORT_SAMPLE_COMPANY}
+                </button>
+                {/* 이용권 페이지는 #company 로 베이직 카드의 기업 분석 선택을 켠 채 연다 */}
+                <button
+                  type="button"
+                  onClick={() => navigate("/entitlements#company")}
+                  className="inline-flex min-h-[3.25rem] items-center justify-center whitespace-nowrap rounded-2xl border border-white/[0.12] bg-white/[0.05] px-5 text-[13.5px] font-semibold tracking-[-0.01em] text-zinc-200 transition-colors hover:bg-white/[0.1]"
+                >
+                  이용권 보기
+                </button>
+              </div>
             </div>
           </div>
 
