@@ -62,7 +62,8 @@ export function guidePrerenderRoute(guide: Guide): PrerenderRoute {
   return { key: path, path, search: "", file: `guide/${guide.slug}.html` };
 }
 
-marked.use({ gfm: true });
+// breaks: 블로그에서 옮긴 글은 문단 안 줄바꿈이 호흡이라 <br> 로 살린다. 직접 쓴 가이드는 문단이 한 줄이라 영향 없다.
+marked.use({ gfm: true, breaks: true });
 
 /** 마크다운 본문 → HTML. 서버(프리렌더)와 클라이언트(하이드레이션)가 같은 marked 버전으로 같은 결과를 낸다. */
 export function renderGuideHtml(markdown: string): string {

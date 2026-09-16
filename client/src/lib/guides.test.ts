@@ -52,7 +52,7 @@ describe("guide summaries (vite `?summary` loader)", () => {
 
   it("gives neighbouring guides different cover hues and two-digit numbers", () => {
     const styles = GUIDE_SUMMARIES.map((_, index) => guideCoverStyle(index));
-    expect(styles.map(style => style.number)).toEqual(["01", "02", "03", "04"].slice(0, styles.length));
+    expect(styles.map(style => style.number)).toEqual(styles.map((_, index) => String(index + 1).padStart(2, "0")));
     for (let index = 1; index < styles.length; index += 1) {
       expect(styles[index].hue).not.toBe(styles[index - 1].hue);
     }
