@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { GuideCover } from "@/components/guide/GuideCover";
 import { GuideCtaCard } from "@/components/guide/GuideCtaCard";
@@ -34,26 +34,26 @@ export default function GuideArticle() {
   const related = GUIDE_SUMMARIES.map((summary, summaryIndex) => ({ summary, cover: guideCoverStyle(summaryIndex) }))
     .filter(({ summary }) => summary.slug !== guide.slug)
     .slice(0, RELATED_COUNT);
-  const metaLine = `${guide.category} · ${formatDate(guide.updated, "ymd-dot")} · ${readingMinutes(guide.bodyChars)}분 읽기`;
+  const metaLine = `${formatDate(guide.updated, "ymd-dot")} · ${readingMinutes(guide.bodyChars)}분 읽기`;
 
   return (
     <GuideLayout>
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-10">
         <article className="lg:col-span-7 lg:col-start-2">
-          <nav aria-label="현재 위치" className="flex items-center gap-2 text-[12px] text-zinc-500">
-            <Link href={GUIDE_INDEX_PATH} className="text-zinc-400 transition-colors hover:text-white">
-              취업 가이드
-            </Link>
-            <ChevronRight className="h-3 w-3" aria-hidden="true" />
-            <span>{guide.category}</span>
-          </nav>
+          <Link
+            href={GUIDE_INDEX_PATH}
+            className="inline-flex items-center gap-1 text-[12px] text-zinc-400 transition-colors hover:text-white"
+          >
+            <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+            취업 가이드
+          </Link>
 
           <GuideCover size="band" hue={cover.hue} number={cover.number} className="mt-7">
             <span className="relative z-10 text-[13px] text-white/70">{metaLine}</span>
           </GuideCover>
 
           <header className="mt-9">
-            <h1 className="text-[30px] font-bold leading-[1.2] tracking-[-0.03em] [word-break:keep-all] md:text-[40px]">
+            <h1 className="text-[30px] font-bold leading-[1.2] tracking-[-0.03em] text-balance [word-break:keep-all] md:text-[40px]">
               {guide.title}
             </h1>
             <p className="mt-4 text-[16px] leading-[1.7] text-gray-400 md:text-[18px]">{guide.description}</p>
@@ -82,7 +82,7 @@ export default function GuideArticle() {
                 className="flex items-center gap-4 rounded-[10px] border border-white/[0.08] bg-white/[0.03] p-3.5 transition-colors hover:border-white/[0.18] hover:bg-white/[0.05]"
               >
                 <GuideCover size="mini" hue={relatedCover.hue} number={relatedCover.number} />
-                <span className="text-[14px] font-semibold leading-[1.45] text-white [word-break:keep-all]">{summary.title}</span>
+                <span className="text-[14px] font-semibold leading-[1.45] text-balance text-white [word-break:keep-all]">{summary.title}</span>
               </Link>
             ))}
             <Link href={GUIDE_INDEX_PATH} className="mt-1.5 text-[13px] font-medium text-zinc-400 transition-colors hover:text-white">

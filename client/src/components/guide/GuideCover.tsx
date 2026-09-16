@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 /**
  * 가이드 커버. 사진 없이 어두운 바탕에 옅은 색조(oklch)와 큰 번호 윤곽선만으로 글을 구분한다.
  * 색·번호는 lib/guideSummaries.ts 의 guideCoverStyle(목록 인덱스)에서 온다.
+ * 제목은 text-balance 로 줄 길이를 고르게 나눈다. keep-all 만 있으면 마지막 어절 하나만 다음 줄로 떨어진다.
  */
 type CoverSize = "featured" | "card" | "band" | "mini";
 
@@ -50,7 +51,7 @@ export function GuideCover({ hue, number, size, title, children, className }: Gu
       style={{ backgroundColor: `oklch(0.26 0.022 ${hue})` }}
     >
       {title && (
-        <h3 className={cn("relative z-10 m-0 font-bold tracking-[-0.02em] [word-break:keep-all]", TITLE_CLASS[size])}>
+        <h3 className={cn("relative z-10 m-0 font-bold tracking-[-0.02em] text-balance [word-break:keep-all]", TITLE_CLASS[size])}>
           {title}
         </h3>
       )}
