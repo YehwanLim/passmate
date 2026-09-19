@@ -106,3 +106,11 @@ describe("GUIDES (client/content/guides)", () => {
     expect(html).toContain('href="/analyze"');
   });
 });
+
+describe("guide bodies", () => {
+  it("has a per-guide body loader for every published guide", async () => {
+    // lib/guideBodies.ts 는 파일 이름으로 본문을 찾는다. frontmatter 의 slug 로 이름을 바꾸면 본문을 못 찾으므로 여기서 막는다.
+    const { hasGuideBody } = await import("./guideBodies");
+    expect(GUIDES.filter(guide => !hasGuideBody(guide.slug)).map(guide => guide.slug)).toEqual([]);
+  });
+});

@@ -1,20 +1,20 @@
-import { marked } from "marked";
 import { parseGuideFile, type Guide } from "@shared/guideFrontmatter";
-import { absoluteUrl, GUIDE_INDEX_PATH, type PrerenderRoute, type RouteMeta } from "@/lib/seo";
+import type { PrerenderRoute } from "@/lib/seo";
 import { guidePath, sortGuides } from "@/lib/guideSummaries";
-import { articleJsonLd, breadcrumbJsonLd } from "@/lib/structuredData";
 
 /**
  * 취업 가이드 글(본문 포함). 원본은 client/content/guides/*.md (frontmatter + 마크다운).
  *
  * - 빌드 프리렌더(entry-server.tsx getPrerenderPages)가 /guide 와 /guide/<slug> 를 HTML 로 굳히고 sitemap·RSS 에 올린다.
- * - 이 모듈은 마크다운 원문 전체를 품으므로 초기 번들(seo.ts, RouteMeta, 랜딩)에서 import 하지 않는다.
- *   목록만 필요하면 lib/guideSummaries.ts 를 쓴다. 가이드 페이지는 lazy 다.
+ * - 이 모듈은 모든 글의 마크다운 원문을 품는다. **브라우저 번들에서 import 하지 않는다** — 프리렌더(entry-server.tsx)와
+ *   테스트 전용이다. 목록은 lib/guideSummaries.ts, 글 하나의 본문은 lib/guideBodies.ts, 메타는 lib/guideMeta.ts.
  * - 본문은 레포 저자가 쓰는 신뢰 소스라 sanitize 없이 HTML 로 바꾼다(GuideArticle 의 dangerouslySetInnerHTML).
  */
 export type { Guide };
 export { parseFrontmatter, parseGuideFile } from "@shared/guideFrontmatter";
 export { guidePath };
+export { guideMeta } from "@/lib/guideMeta";
+export { renderGuideHtml } from "@/lib/guideMarkdown";
 
 const RAW_GUIDES = import.meta.glob("../../content/guides/*.md", {
   query: "?raw",
@@ -31,41 +31,7 @@ export function findGuide(slug: string | undefined): Guide | undefined {
   return slug ? GUIDES.find(guide => guide.slug === slug) : undefined;
 }
 
-export function guideMeta(guide: Guide): RouteMeta {
-  const url = absoluteUrl(guidePath(guide));
-  return {
-    title: `${guide.title} | Pre:View`,
-    description: guide.description,
-    canonical: url,
-    ogType: "article",
-    updated: guide.updated,
-    jsonLd: [
-      articleJsonLd({
-        url,
-        title: guide.title,
-        description: guide.description,
-        datePublished: guide.date,
-        dateModified: guide.updated,
-        keywords: guide.keywords,
-      }),
-      breadcrumbJsonLd([
-        { name: "홈", url: absoluteUrl("/") },
-        { name: "취업 가이드", url: absoluteUrl(GUIDE_INDEX_PATH) },
-        { name: guide.title, url },
-      ]),
-    ],
-  };
-}
-
 export function guidePrerenderRoute(guide: Guide): PrerenderRoute {
   const path = guidePath(guide);
   return { key: path, path, search: "", file: `guide/${guide.slug}.html` };
-}
-
-// breaks: 블로그에서 옮긴 글은 문단 안 줄바꿈이 호흡이라 <br> 로 살린다. 직접 쓴 가이드는 문단이 한 줄이라 영향 없다.
-marked.use({ gfm: true, breaks: true });
-
-/** 마크다운 본문 → HTML. 서버(프리렌더)와 클라이언트(하이드레이션)가 같은 marked 버전으로 같은 결과를 낸다. */
-export function renderGuideHtml(markdown: string): string {
-  return marked.parse(markdown, { async: false });
 }

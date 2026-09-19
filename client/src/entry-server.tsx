@@ -2,8 +2,12 @@ import { renderToString } from "react-dom/server";
 import { Router } from "wouter";
 import App from "./App";
 
-import { GUIDES, guideMeta, guidePath, guidePrerenderRoute } from "./lib/guides";
+import { seedGuideHtml } from "./lib/guideBodies";
+import { GUIDES, guideMeta, guidePath, guidePrerenderRoute, renderGuideHtml } from "./lib/guides";
 import { absoluteUrl, PRERENDER_ROUTES, SEO_ROUTES, type PrerenderRoute, type RouteMeta } from "./lib/seo";
+
+// 본문을 미리 넣어 둔다: GuideArticle 은 글 하나씩 지연 로드하지만(lib/guideBodies.ts) 프리렌더는 기다리지 않고 바로 그린다.
+for (const guide of GUIDES) seedGuideHtml(guide.slug, renderGuideHtml(guide.body));
 
 // 프리렌더 스크립트(.mjs)는 TS 를 직접 읽지 못하므로 프리렌더 목록·검색 메타·가이드 피드를 SSR 번들을 통해 넘긴다.
 export { PRERENDER_ROUTES, SEO_ROUTES };
