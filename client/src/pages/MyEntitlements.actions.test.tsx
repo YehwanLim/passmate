@@ -58,9 +58,9 @@ const BASE_SUMMARY = {
   feedbackRewardClaimed: false,
 };
 
-/** 흰 배경 = 주 버튼. 위계를 클래스로 판별한다. */
+/** 랜딩 CTA 클래스 = 주 버튼. 위계를 클래스로 판별한다. */
 function isPrimary(button: HTMLElement) {
-  return button.className.includes("bg-white text-black");
+  return button.className.includes("landing-primary-cta");
 }
 
 async function renderWith(summary: Partial<typeof BASE_SUMMARY>) {

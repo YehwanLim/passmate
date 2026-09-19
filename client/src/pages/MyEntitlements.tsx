@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Building2, FileText, RefreshCw } from "lucide-react";
+import { ArrowRight, Building2, FileText, RefreshCw } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import { getLoginRedirectPath, useRequireAuth } from "@/hooks/useRequireAuth";
 import {
@@ -10,10 +10,37 @@ import {
 } from "@/lib/entitlements";
 import { supabase } from "@/lib/supabase";
 
-const ACTION_BUTTON_BASE =
-  "h-11 w-full rounded-xl text-sm font-semibold transition-colors";
-const PRIMARY_ACTION_CLASS = `${ACTION_BUTTON_BASE} bg-white text-black hover:bg-zinc-200`;
-const SECONDARY_ACTION_CLASS = `${ACTION_BUTTON_BASE} border border-white/30 bg-white/[0.16] text-white hover:bg-white/[0.24]`;
+// 랜딩의 CTA 쌍과 같은 버튼: 주 버튼은 landing-primary-cta(빛 스침·호버 상승), 보조 버튼은 높이·모서리를 맞춘 유리 표면.
+const PRIMARY_ACTION_CLASS = "landing-primary-cta group w-full";
+const SECONDARY_ACTION_CLASS =
+  "inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-2xl border border-white/[0.12] bg-white/[0.05] px-5 text-[13.5px] font-semibold tracking-[-0.01em] text-zinc-200 transition-colors hover:bg-white/[0.1]";
+
+function ActionButton({
+  primary,
+  onClick,
+  children,
+}: {
+  primary: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={primary ? PRIMARY_ACTION_CLASS : SECONDARY_ACTION_CLASS}
+    >
+      {primary ? (
+        <>
+          <span className="relative z-10">{children}</span>
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </>
+      ) : (
+        children
+      )}
+    </button>
+  );
+}
 
 function CreditSkeleton() {
   return (
@@ -26,6 +53,31 @@ function CreditSkeleton() {
         />
       ))}
     </div>
+  );
+}
+
+/**
+ * 카드 우측의 남은 횟수. 숫자만 덜렁 놓으면 뭘 뜻하는지 읽히지 않아 "N회 남음" 한 줄로 쓴다.
+ * 0회는 가라앉혀 "쓸 수 있는 게 있는지"가 한눈에 갈리게 한다.
+ */
+function RemainingStat({ remaining }: { remaining: number }) {
+  const isEmpty = remaining === 0;
+
+  return (
+    <p
+      className={`shrink-0 whitespace-nowrap pt-0.5 text-right leading-none ${
+        isEmpty ? "text-zinc-600" : "text-white"
+      }`}
+    >
+      <span className="text-3xl font-bold tracking-tight tabular-nums">
+        {remaining}
+      </span>
+      <span
+        className={`ml-0.5 text-sm font-medium ${isEmpty ? "text-zinc-600" : "text-zinc-300"}`}
+      >
+        회 남음
+      </span>
+    </p>
   );
 }
 
@@ -58,14 +110,11 @@ function CreditGroupCard({
             <p className="mt-1 text-xs text-zinc-500">{description}</p>
           </div>
         </div>
-        <p className="shrink-0 text-2xl font-semibold tracking-tight text-white">
-          {remaining}
-          <span className="ml-0.5 text-sm font-medium text-zinc-500">회</span>
-        </p>
+        <RemainingStat remaining={remaining} />
       </div>
 
       {children ? (
-        <div className="mt-4 divide-y divide-white/[0.06] border-t border-white/[0.06]">
+        <div className="mt-4 divide-y divide-white/[0.06] border-t border-white/[0.06] sm:ml-12">
           {children}
         </div>
       ) : null}
@@ -82,15 +131,30 @@ function CreditSummaryRow({
   description: string;
   remaining: number;
 }) {
+  // 0회인 풀은 통째로 가라앉혀서, 실제로 횟수가 남은 이용권만 눈에 들어오게 한다.
+  const isEmpty = remaining === 0;
+
   return (
     <div className="flex items-center justify-between gap-4 py-4">
       <div>
-        <p className="text-sm font-medium text-zinc-300">{title}</p>
+        <p
+          className={`text-sm font-medium ${isEmpty ? "text-zinc-500" : "text-zinc-200"}`}
+        >
+          {title}
+        </p>
         <p className="mt-0.5 text-xs text-zinc-600">{description}</p>
       </div>
-      <p className="shrink-0 text-base font-medium text-zinc-100">
+      <p
+        className={`shrink-0 text-right text-base tabular-nums ${
+          isEmpty ? "font-medium text-zinc-600" : "font-semibold text-white"
+        }`}
+      >
         {remaining}
-        <span className="ml-0.5 text-xs font-normal text-zinc-500">회</span>
+        <span
+          className={`ml-0.5 text-xs font-normal ${isEmpty ? "text-zinc-600" : "text-zinc-400"}`}
+        >
+          회
+        </span>
       </p>
     </div>
   );
@@ -213,38 +277,29 @@ export default function MyEntitlements() {
             </div>
           ) : null}
 
-          <div className="space-y-2.5">
-            <button
-              type="button"
+          <div className="flex flex-col gap-3">
+            <ActionButton
+              primary={hasEssayCredit}
               onClick={() => navigate("/analyze")}
-              className={
-                hasEssayCredit ? PRIMARY_ACTION_CLASS : SECONDARY_ACTION_CLASS
-              }
             >
               자소서 분석하기
-            </button>
+            </ActionButton>
 
             {hasCompanyCredit ? (
-              <button
-                type="button"
+              <ActionButton
+                primary={false}
                 onClick={() => navigate("/company-analysis")}
-                className={SECONDARY_ACTION_CLASS}
               >
                 기업 분석하기
-              </button>
+              </ActionButton>
             ) : null}
 
-            <button
-              type="button"
+            <ActionButton
+              primary={Boolean(summary && !hasEssayCredit && !hasCompanyCredit)}
               onClick={() => navigate("/entitlements")}
-              className={
-                summary && !hasEssayCredit && !hasCompanyCredit
-                  ? PRIMARY_ACTION_CLASS
-                  : SECONDARY_ACTION_CLASS
-              }
             >
               이용권 구매하기
-            </button>
+            </ActionButton>
           </div>
         </section>
       </main>
