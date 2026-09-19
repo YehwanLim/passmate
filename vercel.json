@@ -1,6 +1,7 @@
 {
   "outputDirectory": "dist/public",
   "trailingSlash": false,
+  "regions": ["hnd1"],
   "functions": {
     "api/analyze.js": {
       "maxDuration": 180
