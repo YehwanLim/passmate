@@ -3,6 +3,7 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import { Router } from "wouter";
 import App from "./App";
 import { applyFullStylesheet } from "./applyFullStylesheet";
+import { capturePrerenderedHtml } from "./lib/prerenderedSnapshot";
 import { routeKey } from "./lib/seo";
 import "./fonts/pretendard-variable-dynamic-subset.css";
 import "./index.css";
@@ -61,6 +62,8 @@ const isPrerendered =
   rootElement.hasChildNodes() &&
   rootElement.dataset.prerendered === routeKey(window.location.pathname, window.location.search);
 if (isPrerendered) {
+  // 지연 청크를 못 받으면 ErrorBoundary 가 오류 화면 대신 이 HTML 을 되살린다(lib/prerenderedSnapshot.ts).
+  capturePrerenderedHtml(rootElement);
   // 프로덕션에서는 public/landing-boot.js 가 이 모듈의 평가 자체를 첫 프레임 뒤로 미룬다. 여기서는 한 프레임을
   // 더 양보한 뒤(rAF → 다음 태스크) 하이드레이션해, 모듈이 첫 페인트 전에 실행되는 환경(pnpm preview 등)에서도
   // 프리렌더한 HTML 이 먼저 보이게 한다. 전체 CSS 는 preload 만 걸려 있어(첫 화면 CSS 는 HTML 에 인라인)

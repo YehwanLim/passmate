@@ -1,3 +1,4 @@
+import { getPrerenderedHtml, isChunkLoadError } from "@/lib/prerenderedSnapshot";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
@@ -23,6 +24,12 @@ class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      // 지연 청크 로드 실패(배포 전환 직후, 크롤러 렌더러의 리소스 타임아웃)면 프리렌더된 본문을 되살린다.
+      // 오류 화면이 본문을 덮으면 검색 엔진이 Soft 404 로 판정한다. 링크는 일반 앵커라 그대로 동작한다.
+      const prerenderedHtml = isChunkLoadError(this.state.error) ? getPrerenderedHtml() : null;
+      if (prerenderedHtml) {
+        return <div dangerouslySetInnerHTML={{ __html: prerenderedHtml }} />;
+      }
       return (
         <div className="flex items-center justify-center min-h-screen p-8 bg-background">
           <div className="flex flex-col items-center w-full max-w-2xl p-8">

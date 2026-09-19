@@ -35,6 +35,33 @@ describe("RouteMeta", () => {
     );
   });
 
+  it("keeps the baked head on the first pass of a prerendered page, then applies on navigation", () => {
+    // 가이드 글은 빌드가 frontmatter 제목을 굽는다. 첫 패스에서 resolveRouteMeta 의 일반 제목으로 덮으면
+    // 청크가 못 올 때 그 제목이 색인된다.
+    document.body.innerHTML = '<div id="root" data-prerendered="/guide/growth-story-question"></div>';
+    document.head.innerHTML = `<title>자소서 성장과정 | Pre:View</title>`;
+    mocks.location = "/guide/growth-story-question";
+    const view = render(<RouteMeta />);
+    expect(document.title).toBe("자소서 성장과정 | Pre:View");
+
+    mocks.location = "/terms";
+    view.rerender(<RouteMeta />);
+    expect(document.title).toBe(SEO_ROUTES["/terms"].title);
+
+    mocks.location = "/guide/growth-story-question";
+    view.rerender(<RouteMeta />);
+    expect(document.title).toBe("취업 가이드 | Pre:View");
+    document.body.innerHTML = "";
+  });
+
+  it("applies on the first pass when the prerendered route differs from the address", () => {
+    document.body.innerHTML = '<div id="root" data-prerendered="/404"></div>';
+    mocks.location = "/no-such-page";
+    render(<RouteMeta />);
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe(NOINDEX);
+    document.body.innerHTML = "";
+  });
+
   it("marks unknown and private routes noindex", () => {
     mocks.location = "/no-such-page";
     const view = render(<RouteMeta />);
