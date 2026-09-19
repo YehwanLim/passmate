@@ -47,8 +47,8 @@ export default function ProjectCard({
         {/* 1️⃣ [좌측] 상세 정보 영역 (col-span-3) */}
         {/* ───────────────────────────────────────────────────────────── */}
         <div className="lg:col-span-3 flex flex-col justify-center">
-          {/* 회사/직무 — 카드의 메인 타이틀 (한 번만, 크게, 직무는 오른쪽 태그) */}
-          <div className="flex items-center gap-2.5 mb-5 min-w-0 flex-wrap">
+          {/* 회사/직무 — 카드의 메인 타이틀. 직무는 색 칩 대신 제목 아래 부제로 둔다(긴 직무명도 안 잘림). */}
+          <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
             {project.id === "mock-proj-1" && (
               <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 whitespace-nowrap">
                 샘플
@@ -62,15 +62,15 @@ export default function ProjectCard({
             <h3 className="text-[20px] font-bold text-zinc-50 tracking-tight truncate">
               {project.company_name || project.title || "기업 미지정"}
             </h3>
-            {project.job_role && (
-              <span className="shrink-0 inline-flex items-center px-2.5 py-1 rounded-md bg-blue-500/10 border border-blue-400/20 text-[12px] font-semibold text-blue-300">
-                {project.job_role}
-              </span>
-            )}
           </div>
+          {project.job_role && (
+            <p className="mt-1.5 text-[13.5px] font-medium leading-snug text-zinc-400">
+              {project.job_role}
+            </p>
+          )}
 
           {/* 아이콘 메타 정보 묶음 */}
-          <div className="flex flex-col gap-2.5 text-[12px] text-zinc-500 font-light">
+          <div className="mt-5 flex flex-col gap-2.5 text-[12px] text-zinc-500 font-light">
             <div className="flex items-center gap-2">
               <Calendar className="w-3.5 h-3.5" />
               <span>{formatDate(project.created_at, "ymd-dot")} 작성됨</span>
@@ -89,7 +89,7 @@ export default function ProjectCard({
           <span className="text-[12px] font-semibold text-zinc-500 mb-2.5 tracking-wide">
             한줄 요약
           </span>
-          <p className="text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-4 line-clamp-2">
+          <p className="text-[15.5px] lg:text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-4 break-keep">
             "{project.summary || summaryFallback}"
           </p>
 
