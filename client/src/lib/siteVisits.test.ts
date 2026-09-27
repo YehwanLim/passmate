@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   VISITOR_ID_KEY,
   getVisitorId,
+  readEntrySource,
   resetVisitorIdForTests,
   sendVisit,
   shouldTrackPath,
@@ -77,6 +78,29 @@ describe("siteVisits", () => {
       visitorId: "8c4d2a70-3b1e-4d5f-9a6b-2c1d0e9f8a7b",
       path: "/analyze",
     });
+  });
+
+  it("유입원은 첫 핑에만 실리고, 같은 사이트 referrer 는 유입원이 아니다", async () => {
+    const origin = "https://pre-view.me";
+    expect(readEntrySource("https://blog.naver.com/hansi/1?x=1", "?utm_source=blog", origin)).toEqual({
+      referrer: "https://blog.naver.com/hansi/1?x=1",
+      utmSource: "blog",
+    });
+    expect(readEntrySource(`${origin}/analyze`, "", origin)).toBeNull();
+    expect(readEntrySource("", "?utm_source=bad source", origin)).toBeNull();
+    expect(readEntrySource("", "?utm_source=threads", origin)).toEqual({ referrer: null, utmSource: "threads" });
+
+    const bodies: unknown[] = [];
+    const fetcher: typeof fetch = async (_input, init) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response("{}", { status: 200 });
+    };
+    await sendVisit("/", { fetcher, getAccessToken: async () => null, visitorId: "visitor-1234", source: { referrer: null, utmSource: "threads" } });
+    await sendVisit("/analyze", { fetcher, getAccessToken: async () => null, visitorId: "visitor-1234", source: null });
+    expect(bodies).toEqual([
+      { visitorId: "visitor-1234", path: "/", referrer: null, utmSource: "threads" },
+      { visitorId: "visitor-1234", path: "/analyze" },
+    ]);
   });
 
   it("비로그인이면 Authorization 없이 보내고, 네트워크 실패는 삼킨다", async () => {

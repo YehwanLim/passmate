@@ -9,6 +9,7 @@ import { AnalysisChart } from "@/components/admin/dashboard/AnalysisChart";
 import { RecentActivity } from "@/components/admin/dashboard/RecentActivity";
 import { VisitorChart } from "@/components/admin/dashboard/VisitorChart";
 import { DailyStatsTable } from "@/components/admin/dashboard/DailyStatsTable";
+import { TrafficSourcesTable } from "@/components/admin/dashboard/TrafficSourcesTable";
 import {
   DASHBOARD_RANGE_OPTIONS,
   useDashboardData,
@@ -117,6 +118,13 @@ export default function DashboardPage() {
         visitorChart={data?.visitorChart ?? []}
         signupChart={data?.signupChart ?? []}
         analysisChart={data?.analysisChart ?? []}
+        days={days}
+        isLoading={isLoading}
+      />
+
+      {/* ── 유입원 ────────────────────────────────────────── */}
+      <TrafficSourcesTable
+        data={data?.sourceSummary ?? []}
         days={days}
         isLoading={isLoading}
       />

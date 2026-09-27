@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createSiteVisitHandler, readVisitBody } from "../../../lib/site-visits.js";
+import { createSiteVisitHandler, normalizeReferrer, readVisitBody } from "../../../lib/site-visits.js";
 
 function response() {
   return {
@@ -37,7 +37,7 @@ describe("POST /api/visits — 방문 핑", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ recorded: true });
     expect(db.siteVisit.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: { visitorId: VISITOR_ID, path: "/", userId: null },
+      data: { visitorId: VISITOR_ID, path: "/", userId: null, referrer: null, utmSource: null },
     }));
     expect(db.user.findUnique).not.toHaveBeenCalled();
   });
@@ -82,8 +82,34 @@ describe("POST /api/visits — 방문 핑", () => {
     expect(db.siteVisit.create).not.toHaveBeenCalled();
   });
 
+  it("유입원(referrer·utmSource)은 쿼리를 떼고 저장하고, 이상한 값은 방문은 남기되 유입원만 버린다", async () => {
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null });
+
+    const res = response();
+    await handler({
+      method: "POST", headers: {},
+      body: { visitorId: VISITOR_ID, path: "/", referrer: "https://blog.naver.com/hansi/223?from=search#top", utmSource: "threads" },
+    }, res);
+    expect(res.statusCode).toBe(200);
+    expect(db.siteVisit.create.mock.calls[0][0].data).toEqual(expect.objectContaining({
+      referrer: "https://blog.naver.com/hansi/223", utmSource: "threads",
+    }));
+
+    const odd = response();
+    await handler({
+      method: "POST", headers: {},
+      body: { visitorId: VISITOR_ID, path: "/", referrer: "javascript:alert(1)", utmSource: "bad source!" },
+    }, odd);
+    expect(odd.statusCode).toBe(200);
+    expect(db.siteVisit.create.mock.calls[1][0].data).toEqual(expect.objectContaining({ referrer: null, utmSource: null }));
+
+    expect(normalizeReferrer(`https://example.com/${"a".repeat(300)}`)).toHaveLength(200);
+    expect(normalizeReferrer("not a url")).toBeNull();
+    expect(readVisitBody({ visitorId: VISITOR_ID, path: "/", referrer: 42 })).toBeNull();
+  });
+
   it("readVisitBody 는 관리자 경로·쿼리·초과 길이·모르는 필드를 거른다", () => {
-    expect(readVisitBody({ visitorId: VISITOR_ID, path: "/company-report" })).toEqual({ visitorId: VISITOR_ID, path: "/company-report" });
+    expect(readVisitBody({ visitorId: VISITOR_ID, path: "/company-report" })).toEqual({ visitorId: VISITOR_ID, path: "/company-report", referrer: null, utmSource: null });
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/admin" })).toBeNull();
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/admin/users" })).toBeNull();
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/?q=1" })).toBeNull();

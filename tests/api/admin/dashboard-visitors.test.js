@@ -92,6 +92,29 @@ describe("admin dashboard — 방문자 집계", () => {
     expect(now.getTime() - signupWhere.getTime()).toBeGreaterThanOrEqual(30 * DAY - MINUTE);
   });
 
+  it("유입원은 utm_source 우선·referrer 호스트로 묶어 고유 방문자를 세고, 없는 방문자는 직접 유입으로 남긴다", async () => {
+    const now = new Date();
+    mocks.prisma.siteVisit.findMany.mockResolvedValue([
+      { visitorId: "a", createdAt: now, referrer: "https://blog.naver.com/hansi/1", utmSource: "blog" },
+      { visitorId: "a", createdAt: now, referrer: null, utmSource: null },
+      { visitorId: "b", createdAt: now, referrer: "https://l.threads.net/x", utmSource: null },
+      { visitorId: "c", createdAt: now, referrer: "https://l.threads.net/y", utmSource: null },
+      { visitorId: "d", createdAt: now, referrer: null, utmSource: null },
+    ]);
+
+    const res = createResponse();
+    await dashboardHandler({ method: "GET", query: {} }, res);
+
+    expect(res.body.sourceSummary).toEqual([
+      { source: "l.threads.net", visitors: 2 },
+      { source: "blog", visitors: 1 },
+      { source: "직접 유입·알 수 없음", visitors: 1 },
+    ]);
+    expect(mocks.prisma.siteVisit.findMany.mock.calls[0][0].select).toEqual(
+      expect.objectContaining({ referrer: true, utmSource: true }),
+    );
+  });
+
   it("허용 목록 밖의 days 는 기본 7일로 돌린다", () => {
     expect(readRangeDays({ days: "90" })).toBe(90);
     expect(readRangeDays({ days: "365" })).toBe(7);

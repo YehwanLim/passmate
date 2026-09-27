@@ -56,6 +56,45 @@ export function getVisitorId(storage: Storage | null = sessionStorageOrNull()): 
 /** 테스트에서 모듈 상태를 초기화하기 위한 훅. 프로덕션 코드는 호출하지 않는다. */
 export function resetVisitorIdForTests(): void {
   memoryVisitorId = null;
+  entrySourceConsumed = false;
+}
+
+export type VisitEntrySource = { referrer: string | null; utmSource: string | null };
+
+const UTM_SOURCE_PATTERN = /^[A-Za-z0-9_.-]{1,64}$/;
+
+/**
+ * 이 문서가 어디서 왔는지: 외부 referrer 와 URL 의 utm_source. 같은 사이트 안에서 온 referrer 는
+ * SPA 이동이나 새로고침이라 유입원이 아니므로 버린다. 둘 다 없으면 null.
+ */
+export function readEntrySource(
+  referrer: string = typeof document === "undefined" ? "" : document.referrer,
+  search: string = typeof window === "undefined" ? "" : window.location.search,
+  origin: string = typeof window === "undefined" ? "" : window.location.origin,
+): VisitEntrySource | null {
+  let externalReferrer: string | null = null;
+  if (referrer) {
+    try {
+      const url = new URL(referrer);
+      if (url.origin !== origin) externalReferrer = referrer;
+    } catch {
+      // 파싱이 안 되는 referrer 는 없는 것으로 친다.
+    }
+  }
+  const utm = new URLSearchParams(search).get("utm_source");
+  const utmSource = utm && UTM_SOURCE_PATTERN.test(utm) ? utm : null;
+  if (!externalReferrer && !utmSource) return null;
+  return { referrer: externalReferrer, utmSource };
+}
+
+// 유입원은 한 세션(페이지 로드)에 한 번만 보낸다. 이후 라우트 이동 핑에 같은 referrer 를 또
+// 붙이면 한 사람이 유입원별 집계에 페이지 수만큼 잡힌다.
+let entrySourceConsumed = false;
+
+function consumeEntrySource(): VisitEntrySource | null {
+  if (entrySourceConsumed) return null;
+  entrySourceConsumed = true;
+  return readEntrySource();
 }
 
 // Supabase 클라이언트는 랜딩 진입 번들에서 빼기 위해 지연 로드한다(AuthContext와 같은 이유).
@@ -74,6 +113,8 @@ interface SendVisitOptions {
   fetcher?: typeof fetch;
   getAccessToken?: () => Promise<string | null>;
   visitorId?: string;
+  /** 첫 핑에만 실리는 유입원. 생략하면 문서의 referrer·utm_source 를 한 번만 읽는다. */
+  source?: VisitEntrySource | null;
 }
 
 /**
@@ -82,11 +123,12 @@ interface SendVisitOptions {
  */
 export async function sendVisit(
   path: string,
-  { fetcher, getAccessToken = readAccessToken, visitorId = getVisitorId() }: SendVisitOptions = {},
+  { fetcher, getAccessToken = readAccessToken, visitorId = getVisitorId(), source }: SendVisitOptions = {},
 ): Promise<boolean> {
   if (!shouldTrackPath(path)) return false;
   const doFetch = fetcher ?? (typeof fetch === "function" ? fetch : null);
   if (!doFetch) return false;
+  const entry = source === undefined ? consumeEntrySource() : source;
 
   const accessToken = await getAccessToken();
   try {
@@ -97,7 +139,7 @@ export async function sendVisit(
         "Content-Type": "application/json",
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
-      body: JSON.stringify({ visitorId, path }),
+      body: JSON.stringify({ visitorId, path, ...(entry ?? {}) }),
     });
     return response.ok;
   } catch {
