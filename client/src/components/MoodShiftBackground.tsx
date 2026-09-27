@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import {
   motion,
   useMotionTemplate,
@@ -8,8 +7,6 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { useMouseField } from "@/hooks/useMouseField";
-
-const WOBBLE_FILTER_ID = "mood-shift-wobble";
 
 // 레이어별 패럴랙스 계수 — 마우스가 중심에서 벗어난 만큼 배경이 이동
 const BASE_FACTOR = 0.03;
@@ -44,13 +41,12 @@ function useParallax(
  * - 베이스 그라데이션이 검정이 아니라 은은하게 색을 띠고,
  * - 반짝임 글로우 5개가 떠다니며 밝아졌다 어두워지고,
  * - 마우스 위치에 따라 좌(청록)/우(보라)로 전체 색조가 물들며,
- * - 레이어들이 마우스 방향으로 패럴랙스 이동하고 약하게 꿀렁인다.
+ * - 레이어들이 마우스 방향으로 패럴랙스 이동하고,
  * - 작지만 그라데이션이 뚜렷한 글로우 하나가 출렁이며 커서를 따라온다.
  */
 export default function MoodShiftBackground() {
   const reduceMotion = useReducedMotion();
   const { mouseX, mouseY } = useMouseField();
-  const displacementRef = useRef<SVGFEDisplacementMapElement | null>(null);
 
   // 색조 크로스페이드 — 좌우 이동이 분명히 보이도록 살짝 민첩하게
   const toneX = useSpring(mouseX, { damping: 40, stiffness: 140, mass: 0.8 });
@@ -85,74 +81,18 @@ export default function MoodShiftBackground() {
   // 작지만 단계가 뚜렷한 그라데이션: 밝은 코어 → 청록 → 파랑 → 보라
   const followerGlow = useMotionTemplate`radial-gradient(circle 12vmax at ${coreXPct} ${coreYPct}, rgba(196,215,255,0.24) 0%, rgba(34,211,238,0.17) 14%, rgba(59,130,246,0.09) 36%, rgba(124,58,237,0.05) 55%, transparent 72%)`;
 
-  // 마우스 속도 → 꿀렁 강도(displacement scale)
-  useEffect(() => {
-    if (reduceMotion) {
-      displacementRef.current?.setAttribute("scale", "0");
-      return;
-    }
-    let frame: number;
-    let prev = { x: mouseX.get(), y: mouseY.get(), t: performance.now() };
-    let speed = 0;
-    const tick = () => {
-      const now = performance.now();
-      const dt = Math.max((now - prev.t) / 1000, 0.001);
-      const x = mouseX.get();
-      const y = mouseY.get();
-      const dx = x - prev.x;
-      const dy = y - prev.y;
-      prev = { x, y, t: now };
-      const inst = Math.min(Math.sqrt(dx * dx + dy * dy) / dt / 1400, 1);
-      speed += (inst - speed) * (1 - Math.exp(-4 * dt));
-      displacementRef.current?.setAttribute(
-        "scale",
-        (8 + speed * 26).toFixed(1)
-      );
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [mouseX, mouseY, reduceMotion]);
-
   return (
     <div
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden="true"
     >
-      <svg width="0" height="0" className="absolute">
-        <filter
-          id={WOBBLE_FILTER_ID}
-          x="-20%"
-          y="-20%"
-          width="140%"
-          height="140%"
-        >
-          {/* baseFrequency 를 <animate> 로 드리프트시키지 않는다. SMIL 로 노이즈가 매 프레임 바뀌면
-              WebKit 이 전체 화면 displacement 필터를 매 프레임 다시 그려 GPU 프로세스가 유휴 상태에서도
-              CPU 200%+ 를 쓴다(폰에서는 하이드레이션 지연·스크롤 중 흰 타일로 나타났다).
-              꿀렁임은 아래 rAF 루프가 마우스 속도로 scale 만 바꿔서 낸다. */}
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.006 0.010"
-            numOctaves="2"
-            seed="7"
-            result="wobble-noise"
-          />
-          <feDisplacementMap
-            ref={displacementRef}
-            in="SourceGraphic"
-            in2="wobble-noise"
-            scale="8"
-            xChannelSelector="R"
-            yChannelSelector="G"
-          />
-        </filter>
-      </svg>
-
-      {/* 꿀렁임(SVG 변위 필터)은 index.css `.mood-shift-wobble` 이 마우스 있는 기기에서만 건다.
-          인라인 style 로 걸면 프리렌더 HTML 에 그대로 실려 iPhone 이 CPU 로 전체 화면을 필터링하느라
-          첫 화면 5초·스크롤 시 빈 타일이 났다(09-09, 배경을 끈 사본과 폰에서 대조해 확인). */}
-      <div className={reduceMotion ? "absolute inset-0" : "absolute inset-0 mood-shift-wobble"}>
+      {/* 여기에 전체 화면 SVG 변위 필터(꿀렁임)를 걸지 않는다. 브라우저가 이 레이어 —
+          blur 먹인 글로우 5개 + 매 프레임 다시 쓰는 커서 그라데이션 — 를 합성한 결과 전체에
+          feTurbulence + feDisplacementMap 을 CPU 로 다시 계산해야 하는데, scale 이 매 프레임
+          바뀌어 그 결과가 캐시되지도 않았다. 폰은 09-09 에 (hover)/(pointer) 미디어쿼리로 껐지만
+          창이 큰 데스크톱이 오히려 픽셀이 더 많아, 1756×1609@2x 창에서 배경이 깜빡이고 스크롤이
+          밀렸다(09-27). 꿀렁임만 버리고 그라데이션·글로우·색조·커서 팔로워는 그대로 둔다. */}
+      <div className="absolute inset-0">
         {/* 베이스: 검정이 아니라 네 방향에서 은은하게 색을 띠는 바탕.
             inset-[-10%] 블리드는 패럴랙스 이동 시 가장자리가 비지 않게 한다 */}
         <motion.div
