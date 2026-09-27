@@ -16,11 +16,16 @@ export default function AnalyzeLoginModal({
   open,
   onClose,
   onBeforeRedirect,
+  redirectPath = "/analyze",
+  description = "작성한 내용은 그대로 남아 있어요. 로그인한 뒤 분석 시작을 한 번 더 눌러 주세요. 첫 분석은 무료예요.",
 }: {
   open: boolean;
   onClose: () => void;
   /** 페이지를 떠나는 로그인(카카오·구글 폴백) 직전에 호출된다 */
   onBeforeRedirect?: () => void;
+  /** 로그인 뒤 돌아올 경로. 분석 폼 외(멘토링 예약)에서 재사용할 때 넘긴다 */
+  redirectPath?: string;
+  description?: string;
 }) {
   return (
     <AnimatePresence>
@@ -50,14 +55,11 @@ export default function AnalyzeLoginModal({
                 로그인이 필요해요
               </h3>
             </div>
-            <p className="text-sm text-zinc-400 leading-relaxed mb-6">
-              작성한 내용은 그대로 남아 있어요. 로그인한 뒤
-              분석 시작을 한 번 더 눌러 주세요. 첫 분석은 무료예요.
-            </p>
+            <p className="text-sm text-zinc-400 leading-relaxed mb-6">{description}</p>
 
             <div className="space-y-3">
               <GoogleSignInButton
-                redirectPath="/analyze"
+                redirectPath={redirectPath}
                 onBeforeRedirect={onBeforeRedirect}
                 fallbackNotice={
                   <p className="text-[12px] leading-relaxed text-zinc-500">
@@ -66,7 +68,7 @@ export default function AnalyzeLoginModal({
                   </p>
                 }
               />
-              <KakaoSignInButton redirectPath="/analyze" onBeforeRedirect={onBeforeRedirect} />
+              <KakaoSignInButton redirectPath={redirectPath} onBeforeRedirect={onBeforeRedirect} />
             </div>
 
             <p className="mt-4 text-center text-[12px] leading-relaxed text-zinc-500">

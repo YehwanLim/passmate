@@ -6,6 +6,7 @@ import {
   BrainCircuit,
   MessageSquareCode,
   BarChart3,
+  CalendarClock,
   MessageSquare,
   ScrollText,
   Settings,
@@ -100,6 +101,12 @@ const NAV_GROUPS: AdminNavGroup[] = [
         label: "Feedback",
         icon: MessageSquare,
         href: "/admin/feedback",
+      },
+      {
+        key: "mentoring",
+        label: "Mentoring",
+        icon: CalendarClock,
+        href: "/admin/mentoring",
       },
       {
         key: "logs",

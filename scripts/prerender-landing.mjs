@@ -230,6 +230,7 @@ export const CANVAS_BY_ROUTE = {
   "/company-report?sample=1": { style: SAMPLE_REPORT_CANVAS_STYLE },
   "/terms": { style: LANDING_CANVAS_STYLE },
   "/privacy": { style: LANDING_CANVAS_STYLE },
+  "/mentoring": { style: LANDING_CANVAS_STYLE },
   "/entitlements": { style: "background-color:#0A0A0A" },
 };
 

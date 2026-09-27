@@ -16,6 +16,7 @@ import PromptDetailPage from "./prompts/PromptDetailPage";
 import PromptsPage from "./prompts/PromptsPage";
 import AnalyticsPage from "./analytics/AnalyticsPage";
 import FeedbackPage from "./feedback/FeedbackPage";
+import MentoringPage from "./mentoring/MentoringPage";
 import LogsPage from "./logs/LogsPage";
 import SettingsPage from "./settings/SettingsPage";
 import NotFound from "@/pages/NotFound";
@@ -90,6 +91,7 @@ export default function AdminRoot() {
                 <Route path="/admin/prompts" component={PromptsPage} />
                 <Route path="/admin/analytics" component={AnalyticsPage} />
                 <Route path="/admin/feedback" component={FeedbackPage} />
+                <Route path="/admin/mentoring" component={MentoringPage} />
                 <Route path="/admin/logs" component={LogsPage} />
                 <Route path="/admin/settings" component={SettingsPage} />
                 {/* 관리자 영역 내 404 */}

@@ -92,6 +92,7 @@ describe("beta deployment security configuration", () => {
       { source: "/api/webhooks/groble", destination: "/api/entitlements?grobleWebhook=1" },
       { source: "/api/entitlements/purchase-intents", destination: "/api/entitlements?purchaseIntent=1" },
       { source: "/api/analyze/split", destination: "/api/analyze?split=1" },
+      { source: "/api/analyze/posting", destination: "/api/analyze?posting=1" },
       { source: "/api/analyze/company", destination: "/api/analyze?kind=company" },
       // 공개 예시 리포트는 빌드 때 프리렌더한 정적 HTML 로 받는다(scripts/prerender-landing.mjs 참고).
       {
@@ -99,8 +100,25 @@ describe("beta deployment security configuration", () => {
         has: [{ type: "query", key: "sample", value: "1" }],
         destination: "/sample-report.html",
       },
-      // 랜딩 프리렌더 이후 SPA 셸은 app.html이다(scripts/prerender-landing.mjs 참고).
-      { source: "/((?!api/).*)", destination: "/app.html" },
+      {
+        source: "/company-report",
+        has: [{ type: "query", key: "sample", value: "1" }],
+        destination: "/company-sample-report.html",
+      },
+      // 로그인이 필요 없는 공개 페이지는 전부 프리렌더 HTML 로 받는다(client/src/lib/seo.ts PRERENDER_ROUTES).
+      { source: "/terms", destination: "/terms.html" },
+      { source: "/privacy", destination: "/privacy.html" },
+      { source: "/mentoring", destination: "/mentoring.html" },
+      { source: "/entitlements", destination: "/entitlements.html" },
+      { source: "/guide", destination: "/guide.html" },
+      { source: "/guide/:slug", destination: "/guide/:slug.html" },
+      { source: "/404", destination: "/404.html" },
+      // 앱 화면만 SPA 셸(app.html)로 보낸다. 나열되지 않은 경로는 정적 파일이나 404 로 떨어져 /api/ 가 셸에 삼켜지지 않는다.
+      {
+        source:
+          "/((?:login|analyze|analysis-pending|report-new|company-analysis|company-report|feedback|checkout|my|account|admin)(?:/.*)?)",
+        destination: "/app.html",
+      },
     ]);
 
     // API rewrite가 SPA fallback보다 먼저 와야 한다. fallback의 부정 lookahead가
@@ -114,8 +132,9 @@ describe("beta deployment security configuration", () => {
   it("reserves a bounded background window for the analysis function only", () => {
     const config = JSON.parse(read("vercel.json"));
 
+    // 모델 150s < TTL 175s < maxDuration 180s 가 한 세트다(CLAUDE.md 함정 4).
     expect(config.functions).toEqual({
-      "api/analyze.js": { maxDuration: 120 },
+      "api/analyze.js": { maxDuration: 180 },
     });
   });
 

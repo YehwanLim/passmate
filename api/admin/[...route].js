@@ -6,6 +6,7 @@ import creditsHandler from "../../lib/admin-handlers/credits.js";
 import dashboardHandler from "../../lib/admin-handlers/dashboard.js";
 import entitlementsHandler from "../../lib/admin-handlers/entitlements.js";
 import feedbackHandler from "../../lib/admin-handlers/feedback.js";
+import { mentoringDetailHandler, mentoringHandler } from "../../lib/admin-handlers/mentoring.js";
 import productSettingsHandler from "../../lib/admin-handlers/product-settings.js";
 import promptDetailHandler from "../../lib/admin-handlers/prompt-detail.js";
 import promptsHandler from "../../lib/admin-handlers/prompts.js";
@@ -27,6 +28,8 @@ const DEFAULT_HANDLERS = {
   dashboard: dashboardHandler,
   entitlements: entitlementsHandler,
   feedback: feedbackHandler,
+  mentoring: mentoringHandler,
+  "mentoring-detail": mentoringDetailHandler,
   "product-settings": productSettingsHandler,
   "prompt-detail": promptDetailHandler,
   prompts: promptsHandler,
@@ -49,6 +52,7 @@ function routeSegments(req) {
 const HANDLER_KEY_BY_RESOURCE = Object.freeze({
   analyses: "analysis-detail",
   "analysis-reconciliation": "analysis-reconciliation",
+  mentoring: "mentoring-detail",
   prompts: "prompt-detail",
   users: "user-detail",
 });

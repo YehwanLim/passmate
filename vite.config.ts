@@ -38,6 +38,8 @@ function apiRoute(pathname: string) {
   }
   if (pathname === "/api/account/deletion") return { file: "api/account/[...route].js", query: {} };
   if (pathname === "/api/account/deletion/cancel") return { file: "api/account/[...route].js", query: {} };
+  if (pathname === "/api/account/mentoring/slots" || pathname === "/api/account/mentoring/bookings")
+    return { file: "api/account/[...route].js", query: {} };
 
   const projectAnalysis = pathname.match(/^\/api\/projects\/([^/]+)\/analyses$/);
   if (projectAnalysis) return { file: "api/projects/[projectId]/analyses.js", query: { projectId: projectAnalysis[1] } };

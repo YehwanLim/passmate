@@ -6,6 +6,7 @@ import {
   requireAuthenticatedUser,
 } from "../../lib/auth.js";
 import { ApiError, sendJson, withApiHandler } from "../../lib/api-handler.js";
+import { createMentoringBookingsHandler, createMentoringSlotsHandler } from "../../lib/mentoring.js";
 import prisma from "../../lib/prisma.js";
 
 export function createAccountDeletionHandler({
@@ -92,6 +93,9 @@ function accountRouteSegments(req) {
 export function createAccountRoutesHandler({
   scheduleHandler = createAccountDeletionHandler(),
   cancelHandler = createAccountDeletionCancelHandler(),
+  // 커피챗·모의면접 예약. 12함수 한도 때문에 계정 라우터에 얹는다(슬롯 목록은 로그인 없이 읽힌다).
+  mentoringSlotsHandler = createMentoringSlotsHandler(),
+  mentoringBookingsHandler = createMentoringBookingsHandler(),
 } = {}) {
   return async function accountRoutesHandler(req, res) {
     const segments = accountRouteSegments(req);
@@ -99,6 +103,10 @@ export function createAccountRoutesHandler({
     if (segments.length === 1 && segments[0] === "deletion") return scheduleHandler(req, res);
     if (segments.length === 2 && segments[0] === "deletion" && segments[1] === "cancel") {
       return cancelHandler(req, res);
+    }
+    if (segments.length === 2 && segments[0] === "mentoring") {
+      if (segments[1] === "slots") return mentoringSlotsHandler(req, res);
+      if (segments[1] === "bookings") return mentoringBookingsHandler(req, res);
     }
 
     return withApiHandler(req, res, async () => {

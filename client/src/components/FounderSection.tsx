@@ -15,7 +15,7 @@ import Logo from "@/components/Logo";
 const SHOW_NEWSLETTER_FORM = false;
 
 const founderSignals = [
-  "100회+ 커피챗/멘토링에서 반복된 탈락 패턴 정리",
+  "200회+ 커피챗/멘토링에서 반복된 탈락 패턴 정리",
   "현직 PM 관점의 JD-경험 연결 기준 반영",
   "좋은 문장보다 면접에서 방어 가능한 논리 우선",
   "첫 분석은 무료, 이후 필요한 만큼만 이용",
@@ -39,7 +39,7 @@ export function FounderNoteSection() {
                 말해주지 않았습니다.
               </p>
               <p className="text-gray-500 font-light text-[15px] leading-[1.9] mb-8">
-                100번 넘는 멘토링에서 같은 장면을 반복해서 봤습니다. 경험은
+                200번 넘는 멘토링에서 같은 장면을 반복해서 봤습니다. 경험은
                 있는데 직무와 연결되지 않고, 성과는 있는데 본인의 판단이 보이지
                 않는 상태. 옆에서 30분만 같이 읽으면 메울 수 있는 빈틈인데, 그
                 30분이 없어서 계속 떨어지는 사람들이 있었습니다. 모든 취준생
@@ -80,6 +80,14 @@ export function FounderNoteSection() {
                   </li>
                 ))}
               </ul>
+              {/* 리포트가 아니라 사람과 직접 이야기하고 싶은 방문자는 다른 니즈다. 커피챗은 /mentoring 에서 따로 받는다. */}
+              <Link
+                href="/mentoring"
+                className="mt-6 inline-flex items-center gap-1.5 text-[13.5px] text-zinc-400 transition-colors hover:text-white"
+              >
+                직접 이야기하고 싶다면 커피챗·모의면접
+                <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+              </Link>
             </div>
           </div>
         </div>

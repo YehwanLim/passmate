@@ -40,6 +40,7 @@ model User {
   feedbackCreditGrant FeedbackCreditGrant?
   siteVisits SiteVisit[]
   jobPostings JobPosting[]
+  mentoringBookings MentoringBooking[]
   receivedAdminCreditGrants AdminCreditGrant[] @relation("AdminCreditGrantRecipient")
   issuedAdminCreditGrants   AdminCreditGrant[] @relation("AdminCreditGrantAdministrator")
 
@@ -654,6 +655,10 @@ model SiteVisit {
   visitorId String   @map("visitor_id") @db.VarChar(64)
   userId    String?  @map("user_id") @db.Uuid
   path      String   @db.VarChar(200)
+  /// 외부에서 들어온 첫 방문의 referrer(origin+path, 쿼리 없음). 같은 세션의 이후 이동은 null.
+  referrer  String?  @db.VarChar(200)
+  /// 첫 방문 URL 의 utm_source. 스레드·블로그 등 우리가 붙인 링크 식별자.
+  utmSource String?  @map("utm_source") @db.VarChar(64)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -661,4 +666,58 @@ model SiteVisit {
   @@index([createdAt])
   @@index([userId])
   @@map("site_visits")
+}
+
+// ── 커피챗·모의면접 예약 ──────────────────────────────────────────
+// 관리자가 가능한 시간을 슬롯으로 열고, 로그인한 사용자가 슬롯 하나를 골라 신청한다.
+// 결제(모의면접)는 사이트 밖(Groble)이라 여기엔 없고, 관리자가 입금 확인 뒤 CONFIRMED 로 바꾼다.
+
+enum MentoringSlotStatus {
+  OPEN
+  BOOKED
+  CLOSED
+}
+
+enum MentoringSessionType {
+  RESUME_REVIEW
+  COFFEE_CHAT
+  MOCK_INTERVIEW
+}
+
+enum MentoringBookingStatus {
+  REQUESTED
+  CONFIRMED
+  CANCELLED
+}
+
+model MentoringSlot {
+  id          String              @id @default(uuid()) @db.Uuid
+  startsAt    DateTime            @map("starts_at") @db.Timestamptz
+  durationMin Int                 @map("duration_min")
+  status      MentoringSlotStatus @default(OPEN)
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  bookings MentoringBooking[]
+
+  @@index([startsAt])
+  @@map("mentoring_slots")
+}
+
+model MentoringBooking {
+  id          String                 @id @default(uuid()) @db.Uuid
+  slotId      String                 @map("slot_id") @db.Uuid
+  userId      String                 @map("user_id") @db.Uuid
+  sessionType MentoringSessionType   @map("session_type")
+  /// 신청자가 적은 상황·질문(최대 1,000자). 자소서 본문은 받지 않는다.
+  message     String                 @db.Text
+  status      MentoringBookingStatus @default(REQUESTED)
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  slot MentoringSlot @relation(fields: [slotId], references: [id], onDelete: Restrict)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([slotId])
+  @@index([userId])
+  @@map("mentoring_bookings")
 }

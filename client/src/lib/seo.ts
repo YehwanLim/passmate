@@ -107,6 +107,13 @@ export const SEO_ROUTES: Record<string, RouteMeta> = {
     canonical: absolute(GUIDE_INDEX_PATH),
     updated: "2026-09-14",
   },
+  "/mentoring": {
+    title: "현직 PM 커피챗·모의면접 신청 | Pre:View",
+    description:
+      "대기업 현직 5년차 PM과 직접 이야기하는 커피챗, 자소서 리뷰, 모의면접. 200회 넘는 멘토링에서 본 것을 그대로 전합니다. 신청 후 이틀 안에 답장.",
+    canonical: absolute("/mentoring"),
+    updated: "2026-09-25",
+  },
   "/terms": {
     title: "이용약관 | Pre:View",
     description: "Pre:View 서비스 이용약관. 이용권, 결제와 환불, 분석 결과의 이용 범위를 안내합니다.",
@@ -156,6 +163,7 @@ export const PRERENDER_ROUTES: readonly PrerenderRoute[] = [
   { key: COMPANY_REPORT_SAMPLE_PATH, path: "/company-report", search: "sample=1", file: "company-sample-report.html" },
   { key: "/terms", path: "/terms", search: "", file: "terms.html" },
   { key: "/privacy", path: "/privacy", search: "", file: "privacy.html" },
+  { key: "/mentoring", path: "/mentoring", search: "", file: "mentoring.html" },
   { key: "/entitlements", path: "/entitlements", search: "", file: "entitlements.html" },
   // 가이드 글(/guide/<slug>)은 content/guides 에서 나오므로 entry-server.tsx 의 getPrerenderPages() 가 덧붙인다.
   { key: GUIDE_INDEX_PATH, path: GUIDE_INDEX_PATH, search: "", file: "guide.html" },

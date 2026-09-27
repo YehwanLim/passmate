@@ -131,10 +131,9 @@ export default function Home() {
             className="landing-rise text-[16px] md:text-[18px] text-gray-400 max-w-2xl mx-auto leading-[1.75] font-light mb-12"
             style={{ "--rise-delay": "0.5s" } as CSSProperties}
           >
-            강점은 더 선명하게, 빈틈은 더 꼼꼼하게.
-            <br />
-            현직자의 시선으로 &lsquo;같이 일하고 싶은 사람&rsquo;으로 기억될 수
-            있도록 피드백합니다.
+            대기업 현직 5년차 PM이 커피챗 200회+에서 본 탈락 패턴으로,
+            <br className="hidden md:inline" />
+            지원한 회사 기준에서 당신의 자소서가 어떻게 읽히는지 알려드립니다.
           </p>
 
           {/* CTA */}
@@ -148,6 +147,10 @@ export default function Home() {
               <span className="relative z-10">내 자소서 무료로 분석하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
+            {/* 무료 조건은 지금까지 가격표 아래에만 있었다. 첫 화면에서 "가입해야 하는 유료 서비스"로 오해하지 않게 CTA 바로 아래에 둔다. */}
+            <p className="mt-4 text-[13px] text-zinc-500">
+              첫 1회 무료 · 카드 등록 없음 · 리포트는 1분 안에
+            </p>
           </div>
 
           {/* 로그인 없이 결과물부터 보고 싶은 방문자용. 카드 전체와 카드 하단 버튼이 같은 예시 리포트로 간다
@@ -258,11 +261,8 @@ export default function Home() {
           ══════════════════════════════════════════════════ */}
       <ReportShowcase />
 
-      {/* ── 기업 분석 리포트 소개 — 자소서 쇼케이스 다음, 가격 앞. 두 상품을 다 본 뒤 가격을 만나게 ── */}
+      {/* ── 기업 분석 리포트 소개 — 자소서 쇼케이스 다음. 두 상품을 다 본 뒤 신뢰 → 가격 순으로 내려간다 ── */}
       <CompanyReportIntroSection />
-
-      {/* ── Pricing Section — 리포트를 본 직후 가격 대비가 가장 강하게 남는다 ── */}
-      <PricingSection />
 
       {SHOW_SOCIAL_PROOF && <SocialProofSection />}
 
@@ -271,6 +271,10 @@ export default function Home() {
 
       {/* ── Process Section ── */}
       <ProcessSection />
+
+      {/* ── Pricing Section — 누가 만들었고 어떻게 되는지 본 뒤에 가격. 첫 방문자의 81%가 첫 화면에서 나가던 시점(09-25)에
+          가격이 파운더·프로세스보다 앞에 있어 "유료구나"를 신뢰보다 먼저 만났다 ── */}
+      <PricingSection />
 
       {/* 취업 가이드 최신 3편 — 검색으로 들어온 글 독자와 랜딩 방문자를 잇는 진입점 */}
       <GuideTeaserSection />
