@@ -1,20 +1,30 @@
-import { useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation, type RouteComponentProps } from "wouter";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
+import InAppBrowserNotice from "@/components/InAppBrowserNotice";
 import KakaoSignInButton from "@/components/KakaoSignInButton";
 import Logo from "@/components/Logo";
 import MoodShiftBackground from "@/components/MoodShiftBackground";
+import { detectInAppBrowser, type InAppBrowserKind } from "@/lib/inAppBrowser";
 import { ArrowLeft, Lock, Shield } from "lucide-react";
 
 // ============================================================
 // 로그인 페이지
 // ============================================================
-export default function Login() {
+export default function Login({
+  inAppBrowser,
+}: Partial<RouteComponentProps> & {
+  /** 테스트용. 기본은 User-Agent 로 판별한다 */
+  inAppBrowser?: InAppBrowserKind | null;
+} = {}) {
   const [, navigate] = useLocation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const redirectPath = getSafeRedirectPath();
+  // 인앱 브라우저(카카오톡·인스타그램 등)에서는 Google 이 로그인을 막으므로 안내 카드로 바꾸고 카카오만 남긴다.
+  const [detectedInApp] = useState(() => detectInAppBrowser());
+  const inApp = inAppBrowser === undefined ? detectedInApp : inAppBrowser;
 
   // 이미 로그인된 사용자는 메인으로 리다이렉트
   useEffect(() => {
@@ -81,7 +91,11 @@ export default function Login() {
             </p>
 
             <div className="mt-8 space-y-3">
-              <GoogleSignInButton redirectPath={redirectPath} />
+              {inApp ? (
+                <InAppBrowserNotice kind={inApp} />
+              ) : (
+                <GoogleSignInButton redirectPath={redirectPath} />
+              )}
               <KakaoSignInButton redirectPath={redirectPath} />
             </div>
 

@@ -1,16 +1,20 @@
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogIn } from "lucide-react";
 import { Link } from "wouter";
 
 import GoogleSignInButton from "@/components/GoogleSignInButton";
+import InAppBrowserNotice from "@/components/InAppBrowserNotice";
 import KakaoSignInButton from "@/components/KakaoSignInButton";
 import { Button } from "@/components/ui/button";
+import { detectInAppBrowser, type InAppBrowserKind } from "@/lib/inAppBrowser";
 
 /**
  * 분석 폼 제출 시점의 로그인 모달. 폼은 로그인 없이 쓰게 두고, 크레딧을 쓰는 순간에만 로그인을 받는다.
  * GIS 버튼은 페이지를 떠나지 않으므로 뒤의 입력이 메모리에 그대로 남는다.
  * 카카오는 전체 페이지 리다이렉트라 떠나기 직전 onBeforeRedirect 로 호출하는 쪽이 초안을 저장한다.
  * 로그인에 성공하면 호출하는 쪽이 isAuthenticated 를 보고 닫는다. 제출은 사용자가 한 번 더 누른다.
+ * 인앱 브라우저(카카오톡·인스타그램 등)에서는 Google 이 로그인을 막으므로 그 자리에 안내 카드를 놓고 카카오만 남긴다.
  */
 export default function AnalyzeLoginModal({
   open,
@@ -18,6 +22,7 @@ export default function AnalyzeLoginModal({
   onBeforeRedirect,
   redirectPath = "/analyze",
   description = "작성한 내용은 그대로 남아 있어요. 로그인한 뒤 분석 시작을 한 번 더 눌러 주세요. 첫 분석은 무료예요.",
+  inAppBrowser,
 }: {
   open: boolean;
   onClose: () => void;
@@ -26,7 +31,12 @@ export default function AnalyzeLoginModal({
   /** 로그인 뒤 돌아올 경로. 분석 폼 외(멘토링 예약)에서 재사용할 때 넘긴다 */
   redirectPath?: string;
   description?: string;
+  /** 테스트용. 기본은 User-Agent 로 판별한다 */
+  inAppBrowser?: InAppBrowserKind | null;
 }) {
+  const [detectedInApp] = useState(() => detectInAppBrowser());
+  const inApp = inAppBrowser === undefined ? detectedInApp : inAppBrowser;
+
   return (
     <AnimatePresence>
       {open && (
@@ -58,16 +68,20 @@ export default function AnalyzeLoginModal({
             <p className="text-sm text-zinc-400 leading-relaxed mb-6">{description}</p>
 
             <div className="space-y-3">
-              <GoogleSignInButton
-                redirectPath={redirectPath}
-                onBeforeRedirect={onBeforeRedirect}
-                fallbackNotice={
-                  <p className="text-[12px] leading-relaxed text-zinc-500">
-                    브라우저 설정에 따라 로그인 페이지를 거치며, 그 경우 내용을 다시
-                    입력해야 할 수 있어요.
-                  </p>
-                }
-              />
+              {inApp ? (
+                <InAppBrowserNotice kind={inApp} />
+              ) : (
+                <GoogleSignInButton
+                  redirectPath={redirectPath}
+                  onBeforeRedirect={onBeforeRedirect}
+                  fallbackNotice={
+                    <p className="text-[12px] leading-relaxed text-zinc-500">
+                      브라우저 설정에 따라 로그인 페이지를 거치며, 그 경우 내용을 다시
+                      입력해야 할 수 있어요.
+                    </p>
+                  }
+                />
+              )}
               <KakaoSignInButton redirectPath={redirectPath} onBeforeRedirect={onBeforeRedirect} />
             </div>
 
