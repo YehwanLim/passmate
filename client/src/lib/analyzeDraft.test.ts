@@ -39,9 +39,15 @@ describe("analyzeDraft", () => {
   it("round-trips the form through sessionStorage and removes it once taken", () => {
     saveAnalyzeDraft(DRAFT);
 
-    expect(takeAnalyzeDraft()).toEqual(DRAFT);
+    expect(takeAnalyzeDraft()).toEqual({ ...DRAFT, submitOnReturn: false });
     expect(window.sessionStorage.getItem(ANALYZE_DRAFT_KEY)).toBeNull();
     expect(takeAnalyzeDraft()).toBeNull();
+  });
+
+  it("remembers that the user had already pressed 분석 시작, so the return trip can submit for them", () => {
+    saveAnalyzeDraft({ ...DRAFT, submitOnReturn: true });
+
+    expect(takeAnalyzeDraft()?.submitOnReturn).toBe(true);
   });
 
   it("returns null when nothing was saved", () => {
@@ -87,6 +93,7 @@ describe("analyzeDraft", () => {
       jobRole: "",
       questions: [{ id: "a", question: "Q", answer: "A" }],
       jobPosting: null,
+      submitOnReturn: false,
     });
   });
 

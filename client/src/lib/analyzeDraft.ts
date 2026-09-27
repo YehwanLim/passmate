@@ -15,6 +15,8 @@ export interface AnalyzeDraft {
   jobRole: string;
   questions: QuestionItem[];
   jobPosting: JobPostingRecord | null;
+  /** 떠나기 전에 이미 "분석 시작"을 눌렀는가. 돌아와서 로그인이 확인되면 제출을 대신 누른다(useSubmitAfterLogin). */
+  submitOnReturn?: boolean;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -58,6 +60,7 @@ function parseDraft(raw: string): AnalyzeDraft | null {
     jobRole: parsed.jobRole,
     questions: parsed.questions.filter(isQuestionItem),
     jobPosting: isJobPostingRecord(parsed.jobPosting) ? parsed.jobPosting : null,
+    submitOnReturn: parsed.submitOnReturn === true,
   };
 }
 

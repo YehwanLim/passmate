@@ -71,22 +71,44 @@ describe("Analyze login prompt", () => {
     expect(answer.value).toBe(LONG_ANSWER);
   });
 
-  it("closes the prompt once the visitor logs in, leaving the submit to them", async () => {
+  it("closes the prompt once the visitor logs in and submits for them, since they already pressed 분석 시작", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
+    vi.stubGlobal("fetch", fetchSpy);
     const view = render(<Analyze />);
     fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), {
       target: { value: LONG_ANSWER },
     });
     fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
     expect(screen.getByText("로그인이 필요해요")).toBeTruthy();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     mocks.useAuth.mockReturnValue(LOGGED_IN);
     view.rerender(<Analyze />);
 
     // 모달은 퇴장 애니메이션 뒤에 사라진다.
     await waitFor(() => expect(screen.queryByText("로그인이 필요해요")).toBeNull());
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
+    expect(fetchSpy.mock.calls[0][0]).toBe("/api/analyze");
     expect(
       (screen.getByPlaceholderText("여기에 답변을 작성해 주세요.") as HTMLTextAreaElement).value
     ).toBe(LONG_ANSWER);
+  });
+
+  it("does not submit on login when the visitor had closed the prompt", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
+    vi.stubGlobal("fetch", fetchSpy);
+    const view = render(<Analyze />);
+    fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), {
+      target: { value: LONG_ANSWER },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
+    fireEvent.click(screen.getByRole("button", { name: "닫기" }));
+
+    mocks.useAuth.mockReturnValue(LOGGED_IN);
+    view.rerender(<Analyze />);
+
+    await waitFor(() => expect(screen.queryByText("로그인이 필요해요")).toBeNull());
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   // 카카오는 전체 페이지 리다이렉트라 메모리의 폼이 사라진다. 떠나기 전에 초안을 sessionStorage 에 남긴다.
@@ -104,6 +126,8 @@ describe("Analyze login prompt", () => {
 
     const stored = JSON.parse(window.sessionStorage.getItem(ANALYZE_DRAFT_KEY) ?? "null");
     expect(stored?.questions?.[0]?.answer).toBe(LONG_ANSWER);
+    // 돌아오면 제출을 대신 누르라는 표시. 모달은 "분석 시작"을 눌러야만 뜨므로 항상 참이다.
+    expect(stored?.submitOnReturn).toBe(true);
     await waitFor(() => expect(signInWithKakao).toHaveBeenCalledTimes(1));
     expect(signInWithKakao).toHaveBeenCalledWith({
       redirectTo: `${window.location.origin}/login?redirect=%2Fanalyze`,
@@ -132,5 +156,49 @@ describe("Analyze login prompt", () => {
     expect(screen.getByDisplayValue("PM")).toBeTruthy();
     // 한 번 복원한 초안은 지워서, 새로 들어온 방문을 옛 초안이 덮지 않게 한다.
     expect(window.sessionStorage.getItem(ANALYZE_DRAFT_KEY)).toBeNull();
+  });
+
+  it("submits right away after the Kakao round-trip when the draft says 분석 시작 was already pressed", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
+    vi.stubGlobal("fetch", fetchSpy);
+    window.sessionStorage.setItem(
+      ANALYZE_DRAFT_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        company: "토스",
+        jobRole: "PM",
+        questions: [{ id: "q1", question: "지원 동기", answer: LONG_ANSWER }],
+        jobPosting: null,
+        submitOnReturn: true,
+      })
+    );
+    mocks.useAuth.mockReturnValue(LOGGED_IN);
+    render(<Analyze />);
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
+    expect(fetchSpy.mock.calls[0][0]).toBe("/api/analyze");
+    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    expect(body.company).toBe("토스");
+    // 제출 본문은 sanitizeText 를 거쳐 앞뒤 공백이 정리된다.
+    expect(body.questions[0].answer).toBe(LONG_ANSWER.trim());
+  });
+
+  it("does not submit after the round-trip when the draft was saved without that flag", () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    window.sessionStorage.setItem(
+      ANALYZE_DRAFT_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        company: "토스",
+        jobRole: "PM",
+        questions: [{ id: "q1", question: "지원 동기", answer: LONG_ANSWER }],
+        jobPosting: null,
+      })
+    );
+    mocks.useAuth.mockReturnValue(LOGGED_IN);
+    render(<Analyze />);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

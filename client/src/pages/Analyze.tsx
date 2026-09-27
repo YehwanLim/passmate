@@ -56,6 +56,7 @@ import {
 } from "@/lib/analysisSubmit";
 import { readQueryParam } from "@/lib/readQueryParam";
 import { saveAnalyzeDraft, takeAnalyzeDraft } from "@/lib/analyzeDraft";
+import { useSubmitAfterLogin } from "@/hooks/useSubmitAfterLogin";
 import {
   extractTextFromFile,
   requestAiSplit,
@@ -111,7 +112,8 @@ export default function Analyze() {
   const [jobPosting, setJobPosting] = useState<JobPostingRecord | null>(
     () => draft?.jobPosting ?? null
   );
-  // 모달 안에서(또는 다른 탭에서) 로그인되면 닫는다. 제출은 사용자가 다시 누른다 — 클릭 없이 크레딧을 쓰지 않는다.
+  // 모달 안에서(또는 다른 탭에서) 로그인되면 닫는다. "분석 시작"을 눌러서 모달이 떴던 경우에는
+  // 아래 useSubmitAfterLogin 이 제출까지 이어 준다(이미 한 번 누른 의도를 잇는 것이라 크레딧은 그 클릭에 대한 것).
   useEffect(() => {
     if (isAuthenticated) setLoginPromptOpen(false);
   }, [isAuthenticated]);
@@ -391,6 +393,7 @@ export default function Analyze() {
 
       if (result.kind === "auth_required") {
         trackAnalysisFailed("cover_letter", "auth_required");
+        submitAfterLogin.arm();
         setLoginPromptOpen(true);
         return;
       }
@@ -412,6 +415,7 @@ export default function Analyze() {
     if (authLoading) return;
     if (!isAuthenticated) {
       trackLoginPrompt("analyze_submit");
+      submitAfterLogin.arm();
       setLoginPromptOpen(true);
       return;
     }
@@ -443,6 +447,14 @@ export default function Analyze() {
 
     executeSubmit();
   };
+
+  // 로그인 모달이 "분석 시작" 때문에 떴다면, 로그인이 끝나는 순간 제출을 대신 누른다.
+  // 카카오는 페이지를 떠났다 오므로 초안의 submitOnReturn 으로 마운트 때부터 켠다. 훅 선언이 handleSubmit 뒤인 건 최신 클로저를 쓰기 위해서다.
+  const submitAfterLogin = useSubmitAfterLogin({
+    isAuthenticated,
+    onSubmit: handleSubmit,
+    initiallyArmed: draft?.submitOnReturn === true,
+  });
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28">
@@ -721,9 +733,12 @@ export default function Analyze() {
 
       <AnalyzeLoginModal
         open={loginPromptOpen && !isAuthenticated}
-        onClose={() => setLoginPromptOpen(false)}
+        onClose={() => {
+          submitAfterLogin.disarm();
+          setLoginPromptOpen(false);
+        }}
         onBeforeRedirect={() =>
-          saveAnalyzeDraft({ company, jobRole, questions, jobPosting })
+          saveAnalyzeDraft({ company, jobRole, questions, jobPosting, submitOnReturn: true })
         }
       />
 
