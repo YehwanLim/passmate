@@ -2,14 +2,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-const mocks = vi.hoisted(() => ({ useAuth: vi.fn(), signInWithKakao: vi.fn() }));
+const mocks = vi.hoisted(() => ({ useAuth: vi.fn(), signInWithKakao: vi.fn(), sendClientEvent: vi.fn() }));
 
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: mocks.useAuth }));
+vi.mock("@/lib/siteVisits", () => ({ sendClientEvent: mocks.sendClientEvent }));
 
 import KakaoSignInButton from "./KakaoSignInButton";
 
 describe("KakaoSignInButton", () => {
   beforeEach(() => {
+    mocks.sendClientEvent.mockReset().mockResolvedValue(true);
     mocks.signInWithKakao.mockReset().mockResolvedValue(undefined);
     mocks.useAuth.mockReturnValue({
       isAuthenticated: false,
@@ -49,6 +51,8 @@ describe("KakaoSignInButton", () => {
       expect(screen.getByText("카카오 로그인을 시작하지 못했어요. 다시 시도해 주세요.")).toBeTruthy()
     );
     expect((button as HTMLButtonElement).disabled).toBe(false);
+    // 왜 안 됐는지 서버에 남긴다. 사용자 데이터는 없고 Supabase 오류 문구뿐이다.
+    expect(mocks.sendClientEvent).toHaveBeenCalledWith("kakao_start_failed", "provider is not enabled");
   });
 
   it("ignores a second click while the redirect is being prepared", async () => {

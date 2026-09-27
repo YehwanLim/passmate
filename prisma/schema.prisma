@@ -39,6 +39,7 @@ model User {
   paymentEntitlements PaymentEntitlement[]
   feedbackCreditGrant FeedbackCreditGrant?
   siteVisits SiteVisit[]
+  clientEvents ClientEvent[]
   jobPostings JobPosting[]
   mentoringBookings MentoringBooking[]
   receivedAdminCreditGrants AdminCreditGrant[] @relation("AdminCreditGrantRecipient")
@@ -659,6 +660,8 @@ model SiteVisit {
   referrer  String?  @db.VarChar(200)
   /// 첫 방문 URL 의 utm_source. 스레드·블로그 등 우리가 붙인 링크 식별자.
   utmSource String?  @map("utm_source") @db.VarChar(64)
+  /// 첫 방문 핑의 인앱 브라우저 종류(client/src/lib/inAppBrowser.ts 의 kind). 일반 브라우저는 null.
+  inAppBrowser String? @map("in_app_browser") @db.VarChar(32)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -666,6 +669,25 @@ model SiteVisit {
   @@index([createdAt])
   @@index([userId])
   @@map("site_visits")
+}
+
+// ── 클라이언트 이벤트 ─────────────────────────────────────────────
+// 로그인 화면에서 생기는 실패·노출 이벤트(lib/site-visits.js CLIENT_EVENT_NAMES). 방문(site_visits)과 섞지 않는다.
+// 자소서 본문·이메일·토큰은 넣지 않는다. detail 은 짧은 코드나 오류 문구 앞부분만.
+model ClientEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  visitorId    String   @map("visitor_id") @db.VarChar(64)
+  userId       String?  @map("user_id") @db.Uuid
+  name         String   @db.VarChar(48)
+  detail       String?  @db.VarChar(120)
+  inAppBrowser String?  @map("in_app_browser") @db.VarChar(32)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([name, createdAt])
+  @@index([createdAt])
+  @@map("client_events")
 }
 
 // ── 커피챗·모의면접 예약 ──────────────────────────────────────────

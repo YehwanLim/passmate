@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { sendClientEvent } from "@/lib/siteVisits";
 
 // 카카오 로그인 버튼 디자인 가이드: 배경 #FEE500, 글자·심볼 검정 85%.
 function KakaoSymbol({ className = "w-5 h-5" }: { className?: string }) {
@@ -49,9 +50,11 @@ export default function KakaoSignInButton({
         )}`,
       });
       // signInWithOAuth 가 페이지를 카카오로 보내므로 성공 시 이 아래는 실행되지 않는다.
-    } catch {
+    } catch (caught) {
       setError("카카오 로그인을 시작하지 못했어요. 다시 시도해 주세요.");
       setIsSigningIn(false);
+      // 왜 안 됐는지 서버에 남긴다. Supabase 오류 문구뿐이다.
+      void sendClientEvent("kakao_start_failed", caught instanceof Error ? caught.message : "unknown");
     }
   };
 

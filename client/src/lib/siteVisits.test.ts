@@ -5,6 +5,7 @@ import {
   getVisitorId,
   readEntrySource,
   resetVisitorIdForTests,
+  sendClientEvent,
   sendVisit,
   shouldTrackPath,
 } from "./siteVisits";
@@ -101,6 +102,64 @@ describe("siteVisits", () => {
       { visitorId: "visitor-1234", path: "/", referrer: null, utmSource: "threads" },
       { visitorId: "visitor-1234", path: "/analyze" },
     ]);
+  });
+
+  it("인앱 브라우저 종류는 첫 핑에만 실린다", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    const fetcher: typeof fetch = async (_input, init) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response("{}", { status: 200 });
+    };
+    const base = { fetcher, getAccessToken: async () => null, visitorId: "visitor-1234", source: null };
+
+    await sendVisit("/", { ...base, inAppBrowser: "kakaotalk" });
+    await sendVisit("/analyze", { ...base, inAppBrowser: null });
+    // 기본값(생략)은 한 번만 UA 로 판별한다. 이 테스트 환경(jsdom)은 일반 브라우저라 null 이고, 두 번째부터는 아예 붙지 않는다.
+    resetVisitorIdForTests();
+    await sendVisit("/", base);
+    await sendVisit("/guide", base);
+
+    expect(bodies[0]).toEqual({ visitorId: "visitor-1234", path: "/", inAppBrowser: "kakaotalk" });
+    expect(bodies[1]).toEqual({ visitorId: "visitor-1234", path: "/analyze" });
+    expect(bodies[2]).toEqual({ visitorId: "visitor-1234", path: "/" });
+    expect(bodies[3]).toEqual({ visitorId: "visitor-1234", path: "/guide" });
+  });
+
+  it("로그인 화면 이벤트는 같은 엔드포인트에 event 필드로 보내고, 실패는 삼킨다", async () => {
+    const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
+    const fetcher: typeof fetch = async (input, init) => {
+      calls.push([input, init]);
+      return new Response("{}", { status: 200 });
+    };
+
+    const ok = await sendClientEvent("google_signin_failed", "Invalid nonce", {
+      fetcher,
+      getAccessToken: async () => "token-1",
+      visitorId: "visitor-1234",
+      inAppBrowser: "instagram",
+    });
+
+    expect(ok).toBe(true);
+    const [url, init] = calls[0];
+    expect(url).toBe("/api/visits");
+    expect(init?.headers).toEqual(expect.objectContaining({ Authorization: "Bearer token-1" }));
+    expect(JSON.parse(String(init?.body))).toEqual({
+      visitorId: "visitor-1234",
+      event: "google_signin_failed",
+      detail: "Invalid nonce",
+      inAppBrowser: "instagram",
+    });
+
+    const bare = await sendClientEvent("login_prompt_in_app", undefined, {
+      fetcher, getAccessToken: async () => null, visitorId: "visitor-1234", inAppBrowser: null,
+    });
+    expect(bare).toBe(true);
+    expect(JSON.parse(String(calls[1][1]?.body))).toEqual({ visitorId: "visitor-1234", event: "login_prompt_in_app" });
+
+    const failing: typeof fetch = async () => { throw new Error("offline"); };
+    await expect(
+      sendClientEvent("kakao_start_failed", "x", { fetcher: failing, getAccessToken: async () => null, visitorId: "visitor-1234" }),
+    ).resolves.toBe(false);
   });
 
   it("비로그인이면 Authorization 없이 보내고, 네트워크 실패는 삼킨다", async () => {

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     analysis: { count: vi.fn(), findMany: vi.fn() },
     tokenUsage: { findMany: vi.fn() },
     siteVisit: { findMany: vi.fn() },
+    clientEvent: { groupBy: vi.fn() },
     paymentEntitlement: { findMany: vi.fn() },
     purchaseProductSetting: { findMany: vi.fn() },
   },
@@ -40,6 +41,7 @@ describe("admin dashboard — 방문자 집계", () => {
     mocks.prisma.analysis.findMany.mockResolvedValue([]);
     mocks.prisma.tokenUsage.findMany.mockResolvedValue([]);
     mocks.prisma.siteVisit.findMany.mockResolvedValue([]);
+    mocks.prisma.clientEvent.groupBy.mockResolvedValue([]);
     mocks.prisma.paymentEntitlement.findMany.mockResolvedValue([]);
     mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue([]);
   });
@@ -113,6 +115,32 @@ describe("admin dashboard — 방문자 집계", () => {
     expect(mocks.prisma.siteVisit.findMany.mock.calls[0][0].select).toEqual(
       expect.objectContaining({ referrer: true, utmSource: true }),
     );
+  });
+
+  it("로그인 건강: 인앱 브라우저로 들어온 고유 방문자와 로그인 화면 이벤트 건수를 기간 안에서 센다", async () => {
+    const now = new Date();
+    mocks.prisma.siteVisit.findMany.mockResolvedValue([
+      { visitorId: "a", createdAt: now, referrer: null, utmSource: null, inAppBrowser: "kakaotalk" },
+      { visitorId: "a", createdAt: now, referrer: null, utmSource: null, inAppBrowser: null },
+      { visitorId: "b", createdAt: now, referrer: null, utmSource: null, inAppBrowser: "instagram" },
+      { visitorId: "c", createdAt: now, referrer: null, utmSource: null, inAppBrowser: null },
+    ]);
+    mocks.prisma.clientEvent.groupBy.mockResolvedValue([
+      { name: "login_prompt_in_app", _count: { _all: 3 } },
+      { name: "google_signin_failed", _count: { _all: 1 } },
+    ]);
+
+    const res = createResponse();
+    await dashboardHandler({ method: "GET", query: {} }, res);
+
+    expect(res.body.loginHealth).toEqual({
+      inAppVisitors: 2,
+      events: { login_prompt_in_app: 3, google_button_unavailable: 0, google_signin_failed: 1, kakao_start_failed: 0 },
+    });
+    expect(mocks.prisma.siteVisit.findMany.mock.calls[0][0].select).toEqual(expect.objectContaining({ inAppBrowser: true }));
+    const groupArgs = mocks.prisma.clientEvent.groupBy.mock.calls[0][0];
+    expect(groupArgs.by).toEqual(["name"]);
+    expect(now.getTime() - groupArgs.where.createdAt.gte.getTime()).toBeGreaterThanOrEqual(7 * DAY - MINUTE);
   });
 
   it("허용 목록 밖의 days 는 기본 7일로 돌린다", () => {

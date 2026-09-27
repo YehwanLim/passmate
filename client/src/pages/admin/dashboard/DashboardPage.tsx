@@ -127,6 +127,7 @@ export default function DashboardPage() {
         data={data?.sourceSummary ?? []}
         days={days}
         isLoading={isLoading}
+        loginHealth={data?.loginHealth ?? null}
       />
 
       {/* ── 최근 활동 ─────────────────────────────────────── */}

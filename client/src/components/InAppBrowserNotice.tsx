@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, Smartphone } from "lucide-react";
 
 import { externalBrowserAction, inAppBrowserLabel, type InAppBrowserKind } from "@/lib/inAppBrowser";
+import { sendClientEvent } from "@/lib/siteVisits";
 
 /**
  * 인앱 브라우저(카카오톡·인스타그램·스레드·네이버 앱 등) 안에서 로그인 화면이 열렸을 때 보이는 안내.
@@ -21,6 +22,11 @@ export default function InAppBrowserNotice({
 }) {
   const action = externalBrowserAction(kind, url, userAgent);
   const [copied, setCopied] = useState(false);
+
+  // 이 카드가 보였다 = 인앱에서 로그인 화면까지 왔다. 몇 명이 여기서 막히는지 대시보드가 센다.
+  useEffect(() => {
+    void sendClientEvent("login_prompt_in_app", kind);
+  }, [kind]);
 
   const copyLink = async () => {
     try {

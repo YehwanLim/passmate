@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+
+const mocks = vi.hoisted(() => ({ sendClientEvent: vi.fn() }));
+vi.mock("@/lib/siteVisits", () => ({ sendClientEvent: mocks.sendClientEvent }));
 
 import InAppBrowserNotice from "./InAppBrowserNotice";
 
@@ -9,9 +12,18 @@ const IOS = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/
 const ANDROID = "Mozilla/5.0 (Linux; Android 13; SM-S908N; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
 
 describe("InAppBrowserNotice", () => {
+  beforeEach(() => mocks.sendClientEvent.mockReset().mockResolvedValue(true));
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+  });
+
+  it("카드가 보이는 순간 서버에 '인앱에서 로그인 화면을 봤다'를 한 번 남긴다", () => {
+    const view = render(<InAppBrowserNotice kind="threads" url={URL_} userAgent={`${IOS} Barcelona 300.0.0.0`} />);
+    view.rerender(<InAppBrowserNotice kind="threads" url={URL_} userAgent={`${IOS} Barcelona 300.0.0.0`} />);
+
+    expect(mocks.sendClientEvent).toHaveBeenCalledTimes(1);
+    expect(mocks.sendClientEvent).toHaveBeenCalledWith("login_prompt_in_app", "threads");
   });
 
   it("어느 앱인지 말해 주고, 카카오톡은 외부 브라우저 열기 링크를 준다", () => {

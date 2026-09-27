@@ -5,6 +5,8 @@
  * 방문자 ID 는 탭 세션 동안만 유지되는 무작위 값이라(sessionStorage) 기기를 추적하는
  * 영구 식별자가 아니며, 인증·권한·리포트 접근의 근거로 쓰지 않는다.
  */
+import { detectInAppBrowser, type InAppBrowserKind } from "@/lib/inAppBrowser";
+
 export const VISIT_ENDPOINT = "/api/visits";
 export const VISITOR_ID_KEY = "preview:visitor-session-id";
 const VISITOR_ID_PATTERN = /^[A-Za-z0-9-]{8,64}$/;
@@ -57,6 +59,7 @@ export function getVisitorId(storage: Storage | null = sessionStorageOrNull()): 
 export function resetVisitorIdForTests(): void {
   memoryVisitorId = null;
   entrySourceConsumed = false;
+  inAppBrowserConsumed = false;
 }
 
 export type VisitEntrySource = { referrer: string | null; utmSource: string | null };
@@ -97,6 +100,15 @@ function consumeEntrySource(): VisitEntrySource | null {
   return readEntrySource();
 }
 
+// 인앱 브라우저 종류도 유입원처럼 첫 핑에만 붙인다. 한 방문자의 브라우저는 세션 안에서 바뀌지 않는다.
+let inAppBrowserConsumed = false;
+
+function consumeInAppBrowser(): InAppBrowserKind | null {
+  if (inAppBrowserConsumed) return null;
+  inAppBrowserConsumed = true;
+  return detectInAppBrowser();
+}
+
 // Supabase 클라이언트는 랜딩 진입 번들에서 빼기 위해 지연 로드한다(AuthContext와 같은 이유).
 // 정적 import로 되돌리면 App → VisitTracker → 여기 경로로 @supabase/*가 진입 청크에 도로 들어간다.
 async function readAccessToken(): Promise<string | null> {
@@ -109,26 +121,25 @@ async function readAccessToken(): Promise<string | null> {
   }
 }
 
-interface SendVisitOptions {
+interface SendOptions {
   fetcher?: typeof fetch;
   getAccessToken?: () => Promise<string | null>;
   visitorId?: string;
+  /** 생략하면 UA 로 판별한다(방문 핑은 첫 핑에만). null 이면 붙이지 않는다. */
+  inAppBrowser?: InAppBrowserKind | null;
+}
+
+interface SendVisitOptions extends SendOptions {
   /** 첫 핑에만 실리는 유입원. 생략하면 문서의 referrer·utm_source 를 한 번만 읽는다. */
   source?: VisitEntrySource | null;
 }
 
-/**
- * 실패해도 조용히 넘어간다 — 집계는 부가 기능이라 사용자 흐름을 막거나 에러를 띄우면 안 된다.
- * 로그인 상태면 토큰을 함께 보내 서버가 계정 ID 를 붙이게 하고, 아니면 익명으로 남는다.
- */
-export async function sendVisit(
-  path: string,
-  { fetcher, getAccessToken = readAccessToken, visitorId = getVisitorId(), source }: SendVisitOptions = {},
+async function postToVisits(
+  body: Record<string, unknown>,
+  { fetcher, getAccessToken = readAccessToken }: Pick<SendOptions, "fetcher" | "getAccessToken">,
 ): Promise<boolean> {
-  if (!shouldTrackPath(path)) return false;
   const doFetch = fetcher ?? (typeof fetch === "function" ? fetch : null);
   if (!doFetch) return false;
-  const entry = source === undefined ? consumeEntrySource() : source;
 
   const accessToken = await getAccessToken();
   try {
@@ -139,10 +150,56 @@ export async function sendVisit(
         "Content-Type": "application/json",
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
-      body: JSON.stringify({ visitorId, path, ...(entry ?? {}) }),
+      body: JSON.stringify(body),
     });
     return response.ok;
   } catch {
     return false;
   }
+}
+
+/**
+ * 실패해도 조용히 넘어간다 — 집계는 부가 기능이라 사용자 흐름을 막거나 에러를 띄우면 안 된다.
+ * 로그인 상태면 토큰을 함께 보내 서버가 계정 ID 를 붙이게 하고, 아니면 익명으로 남는다.
+ */
+export async function sendVisit(
+  path: string,
+  { fetcher, getAccessToken, visitorId = getVisitorId(), source, inAppBrowser }: SendVisitOptions = {},
+): Promise<boolean> {
+  if (!shouldTrackPath(path)) return false;
+  const entry = source === undefined ? consumeEntrySource() : source;
+  const inApp = inAppBrowser === undefined ? consumeInAppBrowser() : inAppBrowser;
+
+  return postToVisits(
+    { visitorId, path, ...(entry ?? {}), ...(inApp ? { inAppBrowser: inApp } : {}) },
+    { fetcher, getAccessToken },
+  );
+}
+
+/** lib/site-visits.js CLIENT_EVENT_NAMES 와 같은 목록. 서버가 목록 밖의 이름을 거절한다. */
+export type ClientEventName =
+  | "login_prompt_in_app"
+  | "google_button_unavailable"
+  | "google_signin_failed"
+  | "kakao_start_failed";
+
+/**
+ * 로그인 화면에서 생긴 실패·노출을 서버에 남긴다(같은 /api/visits 엔드포인트, `event` 필드).
+ * detail 은 짧은 코드나 오류 문구뿐이어야 한다 — 자소서 본문·이메일·토큰을 넣지 않는다. 실패는 삼킨다.
+ */
+export async function sendClientEvent(
+  event: ClientEventName,
+  detail?: string,
+  { fetcher, getAccessToken, visitorId = getVisitorId(), inAppBrowser }: SendOptions = {},
+): Promise<boolean> {
+  const inApp = inAppBrowser === undefined ? detectInAppBrowser() : inAppBrowser;
+  return postToVisits(
+    {
+      visitorId,
+      event,
+      ...(detail ? { detail: detail.slice(0, 120) } : {}),
+      ...(inApp ? { inAppBrowser: inApp } : {}),
+    },
+    { fetcher, getAccessToken },
+  );
 }

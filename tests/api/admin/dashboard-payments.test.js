@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     analysis: { count: vi.fn(), findMany: vi.fn() },
     tokenUsage: { findMany: vi.fn() },
     siteVisit: { findMany: vi.fn() },
+    clientEvent: { groupBy: vi.fn() },
     paymentEntitlement: { findMany: vi.fn() },
     purchaseProductSetting: { findMany: vi.fn() },
   },
@@ -38,6 +39,7 @@ describe("admin dashboard — 결제 요약", () => {
     mocks.prisma.analysis.findMany.mockResolvedValue([]);
     mocks.prisma.tokenUsage.findMany.mockResolvedValue([]);
     mocks.prisma.siteVisit.findMany.mockResolvedValue([]);
+    mocks.prisma.clientEvent.groupBy.mockResolvedValue([]);
     mocks.prisma.paymentEntitlement.findMany.mockResolvedValue([]);
     mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue([]);
   });

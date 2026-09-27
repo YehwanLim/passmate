@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { createSignInNonce, loadGoogleIdentity } from "@/lib/googleIdentity";
+import { sendClientEvent } from "@/lib/siteVisits";
 import { AlertCircle } from "lucide-react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as
@@ -97,6 +98,8 @@ export default function GoogleSignInButton({
                 "로그인 처리 중 오류가 발생했습니다. 다시 시도해 주세요.",
               );
               setIsSigningIn(false);
+              // 왜 안 됐는지 서버에 남긴다. Supabase 오류 문구뿐, 토큰은 보내지 않는다.
+              void sendClientEvent("google_signin_failed", signInError.message);
             }
             // 성공 시 onAuthStateChange → 호출하는 화면이 isAuthenticated 로 다음 동작을 한다
           },
@@ -113,8 +116,14 @@ export default function GoogleSignInButton({
           locale: "ko",
         });
         setGisStatus("ready");
-      } catch {
-        if (!cancelled) setGisStatus("fallback");
+      } catch (caught) {
+        if (cancelled) return;
+        setGisStatus("fallback");
+        // GIS 를 못 그린 이유(스크립트 차단·초기화 실패). 어떤 환경에서 폴백으로 빠지는지 세기 위해.
+        void sendClientEvent(
+          "google_button_unavailable",
+          caught instanceof Error ? caught.message : "gis_init_failed",
+        );
       }
     })();
 
@@ -143,6 +152,7 @@ export default function GoogleSignInButton({
           : "로그인 중 오류가 발생했습니다. 다시 시도해 주세요.";
       setError(message);
       setIsSigningIn(false);
+      void sendClientEvent("google_signin_failed", message);
     }
   };
 

@@ -11,8 +11,13 @@ export interface ChartPoint { date: string; count: number; }
 export interface VisitorChartPoint { date: string; visitors: number; pageViews: number; }
 /** 유입원(utm_source 또는 referrer 호스트)별 고유 방문자. 마지막 행은 유입원을 모르는 방문자일 수 있다. */
 export interface SourceSummaryRow { source: string; visitors: number; }
+/** 로그인 건강. 인앱 브라우저(Google 로그인이 막히는 WebView)로 들어온 고유 방문자와 로그인 화면 이벤트 건수(lib/site-visits.js CLIENT_EVENT_NAMES). */
+export interface LoginHealth {
+  inAppVisitors: number;
+  events: { login_prompt_in_app: number; google_button_unavailable: number; google_signin_failed: number; kakao_start_failed: number };
+}
 export interface ActivityItem { id: string; userEmail: string; status: "PENDING" | "SUCCESS" | "FAILED"; createdAt: string; modelName: string | null; }
-export interface DashboardData { range: { days: DashboardRangeDays }; kpi: KpiData; paymentSummary: PaymentSummary; visitorChart: VisitorChartPoint[]; sourceSummary: SourceSummaryRow[]; signupChart: ChartPoint[]; analysisChart: ChartPoint[]; recentActivity: ActivityItem[]; }
+export interface DashboardData { range: { days: DashboardRangeDays }; kpi: KpiData; paymentSummary: PaymentSummary; visitorChart: VisitorChartPoint[]; sourceSummary: SourceSummaryRow[]; loginHealth: LoginHealth; signupChart: ChartPoint[]; analysisChart: ChartPoint[]; recentActivity: ActivityItem[]; }
 
 const POLL_MS = 5 * 60 * 1000;
 const MOUNTED_AT = new Date();
