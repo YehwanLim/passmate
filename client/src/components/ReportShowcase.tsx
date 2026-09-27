@@ -122,7 +122,7 @@ export default function ReportShowcase() {
   return (
     <section
       id="service-intro"
-      className="py-24 md:py-40 border-t border-white/[0.04]"
+      className="border-t border-white/[0.04] pb-16 pt-24 md:pb-24 md:pt-40"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="text-center mb-14 md:mb-20">
@@ -159,8 +159,10 @@ export default function ReportShowcase() {
           </div>
         </div>
 
-        {/* 리포트를 다 본 직후가 설득이 가장 뜨거운 지점 — 중간 CTA */}
-        <div className="mt-14 text-center md:mt-16">
+        {/* 리포트를 다 본 직후가 설득이 가장 뜨거운 지점 — 중간 CTA.
+            스크롤 구동일 때 프레임은 100vh 안에 세로 가운데 정렬이라 트랙 끝에 이미 빈 칸이 남는다.
+            거기에 여백을 더 얹으면 미리보기와 CTA 사이가 한 화면처럼 벌어져 보여, 그때는 margin 을 없앤다. */}
+        <div className={`text-center ${isScrollDriven ? "" : "mt-14 md:mt-16"}`}>
           <button
             className="landing-primary-cta group"
             onClick={() => navigate("/analyze")}

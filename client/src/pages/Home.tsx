@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import ReportShowcase from "@/components/ReportShowcase";
 import SocialProofSection from "@/components/SocialProofSection";
-import { BrandName } from "@/components/BrandName";
 import ProcessSection from "@/components/ProcessSection";
 import GuideTeaserSection from "@/components/GuideTeaserSection";
 import PricingSection from "@/components/PricingSection";
+import ChatGptComparisonSection from "@/components/ChatGptComparisonSection";
 import CompanyReportIntroSection from "@/components/CompanyReportIntroSection";
 import CompanyMarqueeSection from "@/components/CompanyMarqueeSection";
 import FounderSection, {
@@ -131,9 +131,11 @@ export default function Home() {
             className="landing-rise text-[16px] md:text-[18px] text-gray-400 max-w-2xl mx-auto leading-[1.75] font-light mb-12"
             style={{ "--rise-delay": "0.5s" } as CSSProperties}
           >
-            대기업 현직 5년차 PM이 커피챗 200회+에서 본 탈락 패턴으로,
+            대기업 현직 PM이 200회 이상의 커피챗을 진행하며 알게 된 패턴을
+            기준으로,{" "}
+            {/* JSX 는 요소와 붙은 줄바꿈 공백을 지운다. br 이 숨겨지는 모바일에서 "기준으로,여러분의"로 붙지 않도록 공백을 명시한다. */}
             <br className="hidden md:inline" />
-            지원한 회사 기준에서 당신의 자소서가 어떻게 읽히는지 알려드립니다.
+            여러분의 자소서가 어떻게 읽히는지 알려드려요.
           </p>
 
           {/* CTA */}
@@ -149,7 +151,7 @@ export default function Home() {
             </Link>
             {/* 무료 조건은 지금까지 가격표 아래에만 있었다. 첫 화면에서 "가입해야 하는 유료 서비스"로 오해하지 않게 CTA 바로 아래에 둔다. */}
             <p className="mt-4 text-[13px] text-zinc-500">
-              첫 1회 무료 · 카드 등록 없음 · 리포트는 1분 안에
+              첫 1회 무료 · 카드 등록 없음 · 내 자소서는 나만 볼 수 있어요
             </p>
           </div>
 
@@ -159,40 +161,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          STEP 2-A: Pain Point
-          ══════════════════════════════════════════════════ */}
-      <section className="relative py-28 md:py-36 overflow-hidden">
-        {/* Subtle center glow */}
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 50% 40% at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 70%)",
-          }}
-        />
-
-        <div className="relative max-w-3xl mx-auto px-6 lg:px-10 text-center">
-          <h2
-            className="text-[1.75rem] md:text-[2.25rem] lg:text-[2.75rem] font-bold leading-[1.25] tracking-[-0.02em] mb-6"
-          >
-            아직도 AI로 만든 자소서 <br className="hidden md:inline" />
-            그대로 복붙하세요?
-          </h2>
-
-          <p
-            className="text-[15px] md:text-[17px] text-gray-400 font-light leading-[1.85] max-w-2xl mx-auto"
-          >
-            매끈한 문장은 이제 누구나 씁니다.
-            <br />
-            서류를 읽는 실무자 눈에는 다 비슷해 보일 뿐이에요.
-            <br />
-            <BrandName />는 문장을 다듬는 대신, 지원한 회사의 채용 기준으로
-            <br />
-            당신의 자소서가 어떻게 읽히는지 알려드립니다.
-          </p>
-        </div>
-      </section>
+      {/* ── ChatGPT 와의 차이 — 히어로 다음. 방문자가 가장 먼저 떠올리는 대안이 ChatGPT 라, 왜 또 필요한지부터 답한다 ── */}
+      <ChatGptComparisonSection />
 
       {/* ── Before & After ── */}
       <section className="py-28 md:py-36 border-t border-white/[0.04]">
