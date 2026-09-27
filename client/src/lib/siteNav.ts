@@ -12,7 +12,7 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
   { label: "자소서 분석", type: "route", target: "/analyze" },
   { label: "기업 분석", type: "route", target: "/company-analysis" },
   { label: "취업 가이드", type: "route", target: "/guide" },
-  { label: "멘토링", type: "route", target: "/mentoring" },
+  // 멘토링(/mentoring)은 페이지·파운더 섹션 링크·sitemap 은 그대로 두고, 손볼 것이 남아 상단 메뉴에서만 잠시 뺐다(09-27).
   { label: "이용권", type: "route", target: "/entitlements" },
 ];
 
