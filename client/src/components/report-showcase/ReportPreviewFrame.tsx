@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useState } from "react";
 
 import { REPORT_PREVIEW_SCENES } from "./reportShowcaseSampleData";
 import { DiagnosisPreview } from "./scenes/DiagnosisPreview";
@@ -39,19 +40,36 @@ function MiniReportNavigator({
   );
 }
 
+// 다음 장면은 오른쪽에서 들어오고 이전 장면은 왼쪽으로 빠진다 — 화살표 방향과 같은 한 장씩 넘기는 움직임.
+const sceneSlide = {
+  enter: (direction: number) => ({ opacity: 0, x: direction * 56 }),
+  center: { opacity: 1, x: 0 },
+  exit: (direction: number) => ({ opacity: 0, x: direction * -56 }),
+};
+
 function ActiveReportScene({ activeIndex }: { activeIndex: number }) {
   const activeScene = REPORT_PREVIEW_SCENES[activeIndex];
+  const [previousIndex, setPreviousIndex] = useState(activeIndex);
+  const [direction, setDirection] = useState(1);
+
+  if (previousIndex !== activeIndex) {
+    setDirection(activeIndex > previousIndex ? 1 : -1);
+    setPreviousIndex(activeIndex);
+  }
 
   // initial={false}: 첫 마운트에선 등장 애니메이션을 건너뛴다. 프리렌더 HTML 에 opacity:0 이 구워지면
-  // JS 가 올 때까지 리포트 미리보기가 통째로 비어 보인다. 장면 전환(퇴장→등장)은 그대로다.
+  // JS 가 올 때까지 리포트 미리보기가 통째로 비어 보인다.
+  // popLayout: 나가는 장면과 들어오는 장면이 겹쳐 움직여, 사이에 빈 프레임이 끼지 않는다.
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false} custom={direction}>
       <motion.div
         key={activeScene.id}
-        initial={{ opacity: 0, y: 22, filter: "blur(6px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        exit={{ opacity: 0, y: -22, filter: "blur(6px)" }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
+        custom={direction}
+        variants={sceneSlide}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         className="pb-16 lg:h-full lg:pb-0"
       >
         {activeScene.id === "impression" && <FirstImpressionPreview />}
@@ -75,10 +93,11 @@ export function ReportPreviewFrame({
   goToPreviousScene: () => void;
   goToNextScene: () => void;
 }) {
-  const activeScene = REPORT_PREVIEW_SCENES[activeIndex];
+  const isFirstScene = activeIndex === 0;
+  const isLastScene = activeIndex === REPORT_PREVIEW_SCENES.length - 1;
 
   return (
-    <div className="relative mx-auto w-full min-w-0 max-w-7xl lg:h-[min(42rem,calc(100svh-4rem))]">
+    <div className="relative mx-auto w-full min-w-0 max-w-7xl lg:h-[min(44rem,calc(100svh-10.5rem))]">
       <div className="flex w-full gap-8 lg:h-full">
         <MiniReportNavigator
           activeIndex={activeIndex}
@@ -90,7 +109,8 @@ export function ReportPreviewFrame({
           <button
             type="button"
             aria-label="이전 리포트 미리보기"
-            className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
+            className="left-0 -translate-x-1/2 absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.16] bg-[#111]/95 text-zinc-200 shadow-xl shadow-black/30 backdrop-blur transition-[background-color,color,opacity] hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-0 lg:flex"
+            disabled={isFirstScene}
             onClick={goToPreviousScene}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -99,7 +119,8 @@ export function ReportPreviewFrame({
           <button
             type="button"
             aria-label="다음 리포트 미리보기"
-            className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.12] bg-[#090909]/90 text-white shadow-xl shadow-black/30 backdrop-blur transition-colors hover:bg-white hover:text-black lg:flex"
+            className="right-0 translate-x-1/2 absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.16] bg-[#111]/95 text-zinc-200 shadow-xl shadow-black/30 backdrop-blur transition-[background-color,color,opacity] hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-0 lg:flex"
+            disabled={isLastScene}
             onClick={goToNextScene}
           >
             <ArrowRight className="h-5 w-5" />
@@ -118,12 +139,6 @@ export function ReportPreviewFrame({
                     <span className="font-normal text-zinc-500">예시</span>
                   </span>
                 </div>
-                {/* 리포트 본문의 문장 하이라이트와 같은 형광펜 표현으로 현재 장면의 읽기 기준을 보여준다 */}
-                <p className="text-[13px] font-medium text-emerald-100">
-                  <span className="box-decoration-clone rounded-[4px] bg-emerald-300/[0.13] px-1.5 py-1">
-                    {activeScene.indexLabel}. {activeScene.lens}
-                  </span>
-                </p>
               </div>
               <div className="flex flex-wrap gap-2 xl:hidden">
                 {REPORT_PREVIEW_SCENES.map((scene, index) => (
@@ -143,7 +158,7 @@ export function ReportPreviewFrame({
               </div>
             </div>
 
-            <div className="lg:min-h-0 lg:flex-1">
+            <div className="relative overflow-hidden lg:min-h-0 lg:flex-1">
               <ActiveReportScene activeIndex={activeIndex} />
             </div>
 
@@ -159,7 +174,8 @@ export function ReportPreviewFrame({
                 <button
                   type="button"
                   aria-label="이전 리포트 미리보기"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-30"
+                  disabled={isFirstScene}
                   onClick={goToPreviousScene}
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -167,7 +183,8 @@ export function ReportPreviewFrame({
                 <button
                   type="button"
                   aria-label="다음 리포트 미리보기"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-30"
+                  disabled={isLastScene}
                   onClick={goToNextScene}
                 >
                   <ArrowRight className="h-4 w-4" />

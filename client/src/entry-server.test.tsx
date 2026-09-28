@@ -42,7 +42,9 @@ describe("entry-server render", () => {
 
   it("renders the landing, not the 404 fallback, for the root path", () => {
     const html = render("/");
-    expect(html).not.toContain("404");
+    // 숫자 "404" 만 찾으면 개발용 data-loc="파일:404" 줄번호에도 걸린다. 404 화면의 제목·문구로 본다.
+    expect(html).not.toContain(">404<");
+    expect(html).not.toContain("Page Not Found");
     expect(html).toContain("<h1");
   });
 });

@@ -7,8 +7,6 @@ export type PreviewScene = {
   tab: string;
   eyebrow: string;
   title: string;
-  // 구 "이렇게 읽습니다" 섹션의 단계별 읽기 기준을 장면 위에 얹는다.
-  lens: string;
 };
 
 export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
@@ -18,7 +16,6 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
     tab: "첫인상",
     eyebrow: "First Read",
     title: "데이터 기반 실행형 PM",
-    lens: "먼저, 어떤 사람으로 기억되는지 봅니다",
   },
   {
     id: "diagnosis",
@@ -26,7 +23,6 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
     tab: "핵심 진단",
     eyebrow: "Core Diagnosis",
     title: "강점은 뚜렷하지만 회사 맥락이 약합니다",
-    lens: "경험이 회사 기준과 만나는지 봅니다",
   },
   {
     id: "line",
@@ -34,7 +30,6 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
     tab: "문장 피드백",
     eyebrow: "Line-by-line",
     title: "원문 옆에서 문장별 피드백을 바로 확인합니다",
-    lens: "문장마다 근거가 충분한지 봅니다",
   },
   {
     id: "interview",
@@ -42,7 +37,6 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
     tab: "예상 질문",
     eyebrow: "Interview Drill",
     title: "면접에서 이어질 질문까지 미리 점검합니다",
-    lens: "면접에서 방어 가능한지 봅니다",
   },
 ];
 
