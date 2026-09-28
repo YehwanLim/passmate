@@ -4,7 +4,6 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { COMPANY_REPORT_SAMPLE_COMPANY } from "@/constants/companyReportSampleMeta";
 import { COMPANY_REPORT_NAV_SECTIONS } from "@/pages/companyReportNavigation";
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn() }));
@@ -54,17 +53,17 @@ describe("CompanyReportIntroSection", () => {
     }
   });
 
-  it("opens the analysis form and the company ticket from its two calls to action", () => {
+  it("offers only two calls to action: start an analysis and see the sample", () => {
     render(<CompanyReportIntroSection />);
+    expect(screen.getAllByRole("button")).toHaveLength(2);
     fireEvent.click(screen.getByRole("button", { name: "기업 분석 시작하기" }));
     expect(mocks.navigate).toHaveBeenCalledWith("/company-analysis");
-    fireEvent.click(screen.getByRole("button", { name: "이용권 보기" }));
-    expect(mocks.navigate).toHaveBeenCalledWith("/entitlements#company");
   });
 
-  it("takes the price from lib/pricing and never hard-codes won amounts", () => {
-    expect(source).toContain("PRICING.company.salePrice");
+  it("leaves prices and tickets to the pricing section", () => {
+    expect(source).not.toContain("PRICING");
     expect(source).not.toMatch(/\d,\d{3}원/);
+    expect(source).not.toContain("이용권");
   });
 
   it("keeps score, percent, and AI decoration out of the copy", () => {
@@ -76,7 +75,7 @@ describe("CompanyReportIntroSection", () => {
   it("opens the public sample report for the sample company", () => {
     render(<CompanyReportIntroSection />);
     screen
-      .getByRole("button", { name: new RegExp(`샘플 리포트 보기.*${COMPANY_REPORT_SAMPLE_COMPANY}`) })
+      .getByRole("button", { name: "샘플 리포트 보기" })
       .click();
     expect(mocks.navigate).toHaveBeenCalledWith("/company-report?sample=1");
   });

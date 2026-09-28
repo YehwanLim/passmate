@@ -1,8 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 
-import { COMPANY_REPORT_SAMPLE_COMPANY } from "@/constants/companyReportSampleMeta";
-import { PRICING, formatKrw } from "@/lib/pricing";
 import { COMPANY_REPORT_NAV_SECTIONS } from "@/pages/companyReportNavigation";
 
 /* ─────────────────────────────────────────────────────────
@@ -32,22 +30,17 @@ export default function CompanyReportIntroSection() {
             <h2 className="mt-4 text-3xl md:text-4xl font-bold tracking-tight leading-snug text-balance">
               자소서를 쓰기 전에,
               <br />
-              <span className="text-sky-300">회사부터</span> 읽습니다
+              <span className="text-sky-300">회사부터</span> 분석해보세요.
             </h2>
             <p className="mt-5 text-gray-400 font-light text-[15px] leading-[1.8] max-w-lg text-pretty">
-              무엇을 팔아 돈을 버는지, 요즘 힘을 싣는 사업이 무엇인지, 그 안에서
-              지원 직무가 어떤 문제를 푸는지. 공개 자료를 출처와 함께 정리해
-              자소서에 쓸 사업 소재까지 이어 드려요.
+              무엇을 팔아 돈을 버는지, 요즘 힘을 주고 있는 사업은 무엇인지, 각
+              직무별 마주한 주요 문제는 무엇인지. 회사에 대한 기초 지식과 심화
+              정보까지 한 눈에 알아보고, 자소서에 쓸 소재까지 함께
+              정리해드립니다.
             </p>
-            <p className="mt-5 text-[13.5px] text-zinc-500">
-              기업 분석 1회 {formatKrw(PRICING.company.salePrice)}
-              <span className="mx-2 text-zinc-700">·</span>
-              스탠다드·프리미엄 이용권에 포함
-            </p>
-            {/* 세 버튼을 한 줄에 넣으면 이 칼럼 폭(약 470px)에서 라벨이 두 줄로 접혀 꽉 찬 느낌이 난다.
-                라벨은 한 줄로 고정하고, 주 CTA 한 줄 + 보조 버튼 두 개 한 줄로 나눈다.
+            {/* 가격은 아래 가격 섹션이 맡는다. 두 버튼은 좌우로 나란히 두고, 라벨은 한 줄로 고정한다.
                 보조 버튼은 주 CTA 와 높이·모서리를 맞춘다. */}
-            <div className="mt-8 flex flex-col gap-3 sm:items-start">
+            <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => navigate("/company-analysis")}
@@ -56,23 +49,13 @@ export default function CompanyReportIntroSection() {
                 <span className="relative z-10">기업 분석 시작하기</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </button>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => navigate("/company-report?sample=1")}
-                  className="inline-flex min-h-[3.25rem] items-center justify-center whitespace-nowrap rounded-2xl border border-white/[0.12] bg-white/[0.05] px-5 text-[13.5px] font-semibold tracking-[-0.01em] text-zinc-200 transition-colors hover:bg-white/[0.1]"
-                >
-                  샘플 리포트 보기 · {COMPANY_REPORT_SAMPLE_COMPANY}
-                </button>
-                {/* 이용권 페이지는 #company 로 베이직 카드의 기업 분석 선택을 켠 채 연다 */}
-                <button
-                  type="button"
-                  onClick={() => navigate("/entitlements#company")}
-                  className="inline-flex min-h-[3.25rem] items-center justify-center whitespace-nowrap rounded-2xl border border-white/[0.12] bg-white/[0.05] px-5 text-[13.5px] font-semibold tracking-[-0.01em] text-zinc-200 transition-colors hover:bg-white/[0.1]"
-                >
-                  이용권 보기
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/company-report?sample=1")}
+                className="inline-flex min-h-[3.25rem] items-center justify-center whitespace-nowrap rounded-2xl border border-white/[0.12] bg-white/[0.05] px-5 text-[13.5px] font-semibold tracking-[-0.01em] text-zinc-200 transition-colors hover:bg-white/[0.1]"
+              >
+                샘플 리포트 보기
+              </button>
             </div>
           </div>
 
@@ -95,8 +78,8 @@ export default function CompanyReportIntroSection() {
               ))}
             </ol>
             <p className="mt-5 text-[12.5px] font-light leading-relaxed text-zinc-500">
-              공개 자료를 바탕으로 정리한 브리프예요. 수치는 부록의 출처
-              원문에서 확인할 수 있어요.
+              공개된 자료를 바탕으로 정리된 리포트입니다. 각 내용의 출처는
+              리포트의 부록에서 확인하실 수 있습니다.
             </p>
           </div>
         </div>
