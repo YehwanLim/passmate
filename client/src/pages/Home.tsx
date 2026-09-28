@@ -149,10 +149,6 @@ export default function Home() {
               <span className="relative z-10">내 자소서 무료로 분석하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
-            {/* 무료 조건은 지금까지 가격표 아래에만 있었다. 첫 화면에서 "가입해야 하는 유료 서비스"로 오해하지 않게 CTA 바로 아래에 둔다. */}
-            <p className="mt-4 text-[13px] text-zinc-500">
-              첫 1회 무료 · 카드 등록 없음 · 내 자소서는 나만 볼 수 있어요
-            </p>
           </div>
 
           {/* 로그인 없이 결과물부터 보고 싶은 방문자용. 카드 전체와 카드 하단 버튼이 같은 예시 리포트로 간다
