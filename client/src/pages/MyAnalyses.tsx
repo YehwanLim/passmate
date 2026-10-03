@@ -1,148 +1,256 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { motion } from "framer-motion";
-import { Sparkles, Building2, Briefcase } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { ProjectSummary, AnalysisSummary } from "@/types/my";
+import { Building2, Briefcase } from "lucide-react";
+import type { AnalysisSummary } from "@/types/my";
 import AnalysisCard from "@/components/my/AnalysisCard";
-import EmptyState from "@/components/my/EmptyState";
+import ApplicationEditor from "@/components/my/ApplicationEditor";
 import SkeletonCard from "@/components/my/SkeletonCard";
-import SubtleBackground from "@/components/SubtleBackground";
 import SiteHeader from "@/components/SiteHeader";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useDraftAutosave } from "@/hooks/useDraftAutosave";
 import { getAuthorizationHeader } from "@/lib/apiAuth";
+import { parseAnalysisSections } from "@/lib/analysisSections";
+import { analysisPendingPath } from "@/lib/analysisRequest";
+import { resolveIdempotencyKey, submitAnalysisRequest, type IdempotentRequest } from "@/lib/analysisSubmit";
+import {
+  WorkspaceApiError,
+  daysUntil,
+  fetchApplication,
+  saveApplicationQuestions,
+  type ApplicationDetail,
+  type ApplicationQuestionDraft,
+} from "@/lib/workspace";
+import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
+import { WORKSPACE_COPY } from "./workspaceCopy";
 
-// =============================================================================
-// Page Component
-// =============================================================================
+const MAX_QUESTIONS = 5;
+const MAX_PROMPT_CHARS = 300;
+
+function deadlineLabel(deadline: string | null): string {
+  const days = daysUntil(deadline);
+  if (days === null) return WORKSPACE_COPY.deadlineNone;
+  if (days < 0) return WORKSPACE_COPY.deadlinePassed;
+  if (days === 0) return WORKSPACE_COPY.deadlineToday;
+  return `D-${days}`;
+}
+
+// 지원서가 바뀌면 자동 저장 기준선·멱등성 키까지 새로 시작하도록 projectId 로 인스턴스를 가른다.
 export default function MyAnalyses() {
-  const [, setLocation] = useLocation();
-  const { user, isLoading: authLoading } = useRequireAuth(); // 미인증 시 /login 리다이렉트
-  const params = useParams<{ projectId: string }>();
-  const projectId = params.projectId;
+  const { projectId } = useParams<{ projectId: string }>();
+  return <ApplicationWorkspace key={projectId} projectId={projectId} />;
+}
 
-  const [project, setProject] = useState<ProjectSummary | null>(null);
+function ApplicationWorkspace({ projectId }: { projectId: string }) {
+  const [, navigate] = useLocation();
+  const { user, isLoading: authLoading } = useRequireAuth(); // 미인증 시 /login 리다이렉트
+
+  const [detail, setDetail] = useState<ApplicationDetail | null>(null);
+  const [questions, setQuestions] = useState<ApplicationQuestionDraft[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [seeded, setSeeded] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [analyses, setAnalyses] = useState<AnalysisSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<{ title: string; message: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const baseUpdatedAt = useRef<string | null>(null);
+  const analysisRequestRef = useRef<IdempotentRequest | null>(null);
 
   useEffect(() => {
     if (authLoading || !user?.id || !projectId) return;
-
-    const fetchData = async () => {
+    let cancelled = false;
+    (async () => {
       try {
-        setLoadError(null);
-        const authHeaders = await getAuthorizationHeader();
-        // Project 단건 + Analysis 리스트 병렬 조회
-        const [projRes, analysesRes] = await Promise.all([
-          fetch(`/api/projects/${projectId}`, { headers: authHeaders }),
-          fetch(`/api/projects/${projectId}/analyses`, { headers: authHeaders }),
+        const headers = await getAuthorizationHeader();
+        const [application, analysesRes] = await Promise.all([
+          fetchApplication(projectId),
+          fetch(`/api/projects/${encodeURIComponent(projectId)}/analyses`, { headers }),
         ]);
+        if (cancelled) return;
+        setDetail(application);
+        setAnalyses(analysesRes.ok ? await analysesRes.json() : []);
+        baseUpdatedAt.current = application.questions_updated_at;
 
-        if (!projRes.ok || !analysesRes.ok)
-          throw new Error(`HTTP ${projRes.status}/${analysesRes.status}`);
-
-        const projData: ProjectSummary = await projRes.json();
-        const analysesData: AnalysisSummary[] = await analysesRes.json();
-
-        setProject(projData);
-        setAnalyses(analysesData);
-      } catch (e) {
-        setProject(null);
-        setAnalyses([]);
-        setLoadError(e instanceof Error ? e.message : "지원서 분석을 불러오지 못했습니다.");
-      } finally {
-        setIsLoading(false);
+        let drafts: ApplicationQuestionDraft[] = application.questions.map((q) => ({
+          prompt: q.prompt,
+          charLimit: q.char_limit,
+          answer: q.answer,
+        }));
+        let fromAnalysis = false;
+        // 작업실 이전 지원서: 문항 초안이 없으면 최신 진단의 문항·답변으로 미리 채운다(저장 전까지 DB 에 쓰지 않음).
+        if (drafts.length === 0 && application.latest_analysis_id) {
+          const res = await fetch(`/api/analysis/${encodeURIComponent(application.latest_analysis_id)}`, { headers });
+          if (res.ok) {
+            const analysis = await res.json();
+            drafts = parseAnalysisSections(analysis.question_text, analysis.input_text)
+              .slice(0, MAX_QUESTIONS)
+              .map((s) => ({ prompt: s.question.slice(0, MAX_PROMPT_CHARS), charLimit: null, answer: s.answer }));
+            fromAnalysis = drafts.length > 0;
+          }
+        }
+        if (cancelled) return;
+        if (drafts.length === 0) drafts = [{ prompt: "", charLimit: null, answer: "" }];
+        setSeeded(fromAnalysis);
+        setQuestions(drafts);
+        setLoaded(true);
+      } catch {
+        if (!cancelled) setLoadError("지원서를 불러오지 못했어요. 새로고침해 주세요.");
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-
-    fetchData();
   }, [authLoading, projectId, user?.id]);
+
+  const save = useCallback(
+    async (value: ApplicationQuestionDraft[]) => {
+      const result = await saveApplicationQuestions(projectId, value, baseUpdatedAt.current);
+      baseUpdatedAt.current = result.questions_updated_at;
+      setSeeded(false);
+    },
+    [projectId]
+  );
+
+  // 미리채움은 서버에 아직 없는 값이라 빈 배열을 기준선으로 줘서 바로 저장되게 한다.
+  const autosave = useDraftAutosave({
+    value: questions,
+    save,
+    enabled: loaded,
+    baseline: seeded ? [] : undefined,
+    isConflict: (error) => error instanceof WorkspaceApiError && error.code === "STALE_DRAFT",
+  });
+
+  // 화면을 떠날 때 디바운스 중이던 마지막 입력을 내보낸다(훅 정리 단계는 타이머만 지운다).
+  // 불러오기 전에는 기준선이 없어 빈 값을 덮어쓸 수 있으므로 loaded 일 때만.
+  const flushRef = useRef(autosave.flush);
+  flushRef.current = autosave.flush;
+  const loadedRef = useRef(false);
+  loadedRef.current = loaded;
+  useEffect(
+    () => () => {
+      if (loadedRef.current) void flushRef.current();
+    },
+    []
+  );
+
+  const updateQuestion = (index: number, patch: Partial<ApplicationQuestionDraft>) => {
+    setQuestions((current) => current.map((q, i) => (i === index ? { ...q, ...patch } : q)));
+    if (seeded) setSeeded(false);
+  };
+
+  const diagnose = async () => {
+    if (!detail || submitting) return;
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      await autosave.flush();
+      const payload = {
+        projectId,
+        questions: questions.map((q, i) => ({ question: q.prompt.trim() || `문항 ${i + 1}`, answer: q.answer })),
+        ...(detail.company_name ? { company: detail.company_name } : {}),
+        ...(detail.job_role ? { jobKeyword: detail.job_role } : {}),
+      };
+      const request = resolveIdempotencyKey(analysisRequestRef.current, JSON.stringify(payload));
+      analysisRequestRef.current = request;
+      const result = await submitAnalysisRequest("/api/analyze", payload, request.idempotencyKey);
+      if (result.kind === "accepted") {
+        analysisRequestRef.current = null;
+        navigate(analysisPendingPath(result.receipt.analysisRequestId));
+        return;
+      }
+      if (result.kind === "rejected") {
+        setSubmitError({
+          title: getAnalyzeErrorTitle(result.errorData, result.status),
+          message: getAnalyzeErrorMessage(result.errorData),
+        });
+        return;
+      }
+      setSubmitError({ title: "분석 실패", message: getAnalyzeErrorMessage(null) });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] pb-28">
-      {/* ════════ GNB ════════ */}
       <SiteHeader />
-
-      {/* ════════ Project Summary Header ════════ */}
-      <div className="container pt-10 pb-8">
-        {isLoading || !project ? (
-          <div className="space-y-3">
-            <div className="h-6 w-48 bg-white/[0.06] rounded-md animate-pulse" />
-            <div className="h-4 w-32 bg-white/[0.04] rounded-md animate-pulse" />
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            {/* 회사 · 직무 */}
-            <div className="flex items-center gap-2 mb-1">
-              {project.company_name && (
-                <span className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500">
-                  <Building2 className="w-3.5 h-3.5" />
-                  {project.company_name}
-                </span>
-              )}
-              {project.company_name && project.job_role && (
-                <span className="text-zinc-700">·</span>
-              )}
-              {project.job_role && (
-                <span className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500">
-                  <Briefcase className="w-3.5 h-3.5" />
-                  {project.job_role}
-                </span>
-              )}
-            </div>
-
-            {/* 제목 */}
-            <h1 className="text-xl font-bold text-zinc-100 tracking-tight mb-2">
-              작성한 자소서
-            </h1>
-            <p className="text-[13px] text-zinc-500 font-light">
-              작성한 문항과 내용을 한눈에 확인할 수 있습니다.
-            </p>
-          </motion.div>
-        )}
-      </div>
-
-      {/* ════════ Analysis List ════════ */}
-      <div className="container">
-        {isLoading ? (
-          <div className="grid gap-3">
-            {[1, 2, 3].map((i) => (
-              <SkeletonCard key={i} variant="analysis" />
-            ))}
-          </div>
-        ) : loadError ? (
+      <div className="container space-y-6 pt-10">
+        {loadError ? (
           <p role="alert" className="py-10 text-center text-sm text-red-400">
             {loadError}
           </p>
-        ) : analyses.length === 0 ? (
-          <EmptyState
-            title="분석된 문항이 없어요"
-            description="이 프로젝트에 아직 분석 결과가 없습니다."
-            ctaLabel="자소서 분석하러 가기"
-          />
+        ) : !detail || !loaded ? (
+          <SkeletonCard variant="analysis" />
         ) : (
-          <motion.div
-            className="grid gap-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-          >
-            {analyses.map((analysis, idx) => (
-              <motion.div
-                key={analysis.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.05 * idx }}
+          <>
+            <header className="space-y-1">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-zinc-500">
+                {detail.company_name && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {detail.company_name}
+                  </span>
+                )}
+                {detail.job_role && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    {detail.job_role}
+                  </span>
+                )}
+                <span className="text-zinc-400">{deadlineLabel(detail.deadline)}</span>
+              </div>
+              <h1 className="text-xl font-bold tracking-tight text-zinc-100">{detail.title}</h1>
+            </header>
+
+            {seeded && <p className="text-[13px] text-zinc-400">{WORKSPACE_COPY.seeded}</p>}
+
+            <ApplicationEditor
+              questions={questions}
+              activeIndex={Math.min(activeIndex, questions.length - 1)}
+              onSelect={setActiveIndex}
+              onChange={updateQuestion}
+              onAdd={() => {
+                setQuestions((current) => [...current, { prompt: "", charLimit: null, answer: "" }]);
+                setActiveIndex(questions.length);
+                setSeeded(false);
+              }}
+              onRemove={(index) => {
+                setQuestions((current) => current.filter((_, i) => i !== index));
+                setActiveIndex(0);
+                setSeeded(false);
+              }}
+              saveState={autosave.state}
+            />
+
+            <div className="flex flex-col items-end gap-2">
+              <button
+                type="button"
+                onClick={diagnose}
+                disabled={submitting}
+                className="h-11 rounded-xl bg-white px-5 text-sm font-semibold text-black transition-opacity disabled:opacity-50"
               >
-                <AnalysisCard analysis={analysis} />
-              </motion.div>
-            ))}
-          </motion.div>
+                {WORKSPACE_COPY.diagnose}
+              </button>
+              {submitError && (
+                <p role="alert" className="text-[13px] text-red-400">
+                  {submitError.title} · {submitError.message}
+                </p>
+              )}
+            </div>
+
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-zinc-300">{WORKSPACE_COPY.history}</h2>
+              {analyses.length === 0 ? (
+                <p className="text-[13px] text-zinc-500">{WORKSPACE_COPY.historyEmpty}</p>
+              ) : (
+                <div className="grid gap-3">
+                  {analyses.map((analysis) => (
+                    <AnalysisCard key={analysis.id} analysis={analysis} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         )}
       </div>
     </div>
