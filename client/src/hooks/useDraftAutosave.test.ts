@@ -57,4 +57,29 @@ describe("useDraftAutosave", () => {
     await act(async () => { vi.advanceTimersByTime(1500); });
     expect(result.current.state).toBe("error");
   });
+
+  it("저장 전에 기준선 값으로 되돌리면 보내지 않고 대기를 푼다", async () => {
+    const save = vi.fn(async () => {});
+    const { result, rerender } = renderHook(({ value }) => useDraftAutosave({ value, save, enabled: true }), {
+      initialProps: { value: "a" },
+    });
+    rerender({ value: "ab" });
+    expect(result.current.state).toBe("pending");
+    rerender({ value: "a" });
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(save).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("idle");
+
+    // 한 번 저장한 뒤에는 마지막 저장값으로 되돌려도 saved 로 돌아간다.
+    rerender({ value: "b" });
+    await act(async () => { vi.advanceTimersByTime(1500); });
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toBe("saved");
+    rerender({ value: "bc" });
+    expect(result.current.state).toBe("pending");
+    rerender({ value: "b" });
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toBe("saved");
+  });
 });

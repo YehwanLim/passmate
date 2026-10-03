@@ -24,6 +24,7 @@ export function useDraftAutosave<T>({
   const [state, setState] = useState<AutosaveState>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const savedSnapshot = useRef<string | null>(null);
+  const hasSaved = useRef(false);
   const latest = useRef(value);
   const saveRef = useRef(save);
   const conflictRef = useRef(isConflict);
@@ -46,6 +47,7 @@ export function useDraftAutosave<T>({
     try {
       await saveRef.current(latest.current);
       savedSnapshot.current = snapshot;
+      hasSaved.current = true;
       setLastSavedAt(new Date());
       setState("saved");
     } catch (error) {
@@ -60,7 +62,11 @@ export function useDraftAutosave<T>({
       savedSnapshot.current = baseline === undefined ? snapshot : JSON.stringify(baseline);
       if (baseline === undefined) return;
     }
-    if (snapshot === savedSnapshot.current) return;
+    if (snapshot === savedSnapshot.current) {
+      // 저장 전에 값이 기준선으로 되돌아오면 대기 상태를 풀어 준다.
+      setState((current) => (current === "pending" ? (hasSaved.current ? "saved" : "idle") : current));
+      return;
+    }
     setState("pending");
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
