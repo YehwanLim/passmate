@@ -112,6 +112,11 @@ function vitePluginApi(): Plugin {
               res.statusCode = code;
               return this;
             },
+            // 204 응답(지원서·경험 삭제)은 본문 없이 res.status(204).end() 로 끝낸다 — Vercel 응답 객체와 맞춘다
+            end(chunk?: string) {
+              res.end(chunk);
+              return this;
+            },
           };
 
           await handler(
