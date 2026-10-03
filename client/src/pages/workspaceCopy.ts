@@ -2,6 +2,16 @@
 export const WORKSPACE_COPY = {
   tabs: { applications: "내 지원서", experiences: "내 경험" },
   newApplication: "새 지원서",
+  newApplicationForm: {
+    company: "회사",
+    job: "직무",
+    deadline: "마감일",
+    submit: "만들기",
+    cancel: "취소",
+    companyRequired: "회사 이름을 적어 주세요.",
+    limitReached: "지원서는 200개까지 만들 수 있어요.",
+    createFailed: "지원서를 만들지 못했어요. 잠시 후 다시 시도해 주세요.",
+  },
   deadlineNone: "마감 미정",
   deadlineToday: "오늘 마감",
   deadlinePassed: "마감",

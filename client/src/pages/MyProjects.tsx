@@ -11,6 +11,11 @@ import SubtleBackground from "@/components/SubtleBackground";
 import SiteHeader from "@/components/SiteHeader";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
+import NewApplicationForm from "@/components/my/NewApplicationForm";
+import ExperienceVault from "@/components/my/ExperienceVault";
+import MyCreditsPanel from "@/components/my/MyCreditsPanel";
+import { sortApplications } from "@/lib/workspace";
+import { WORKSPACE_COPY } from "./workspaceCopy";
 
 // =============================================================================
 // Page Component
@@ -21,6 +26,10 @@ export default function MyProjects() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"applications" | "experiences">(
+    () => (typeof window !== "undefined" && window.location.hash === "#experiences" ? "experiences" : "applications")
+  );
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (authLoading || !user?.id) return;
@@ -31,7 +40,7 @@ export default function MyProjects() {
         const response = await fetch("/api/projects", { headers: await getAuthorizationHeader() });
         if (!response.ok) throw new Error("지원서를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
         const data: ProjectSummary[] = await response.json();
-        setProjects(data);
+        setProjects(sortApplications(data));
       } catch (e) {
         setProjects([]);
         if (e instanceof AuthenticationRequiredError) {
@@ -93,56 +102,100 @@ export default function MyProjects() {
         </motion.div>
       </div>
 
-      {/* ════════ Project List ════════ */}
+      {/* ════════ 대시보드: 왼쪽 이용권 칸 + 오른쪽 탭 ════════ */}
       <div className="container">
-        {isLoading ? (
-          <div className="grid gap-4">
-            {[1, 2, 3].map((i) => (
-            <SkeletonCard key={i} variant="project" />
-          ))}
-        </div>
-        ) : loadError ? (
-          <p role="alert" className="py-10 text-center text-sm text-red-400">
-            {loadError}
-          </p>
-        ) : projects.length === 0 ? (
-          <EmptyState
-            title="아직 분석한 지원서가 없어요"
-            description="자소서를 분석하면 여기에서 확인하고 다시 활용할 수 있습니다."
-            ctaLabel="자소서 분석하러 가기"
-          />
-        ) : (
-          <motion.div
-            className="grid gap-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-          >
-            {projects.map((project, idx) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                // 카드마다 50ms 씩 밀리면 18장은 마지막 카드가 1초 넘게 늦는다. 여섯 장까지만 계단식.
-                transition={{ duration: 0.35, delay: 0.05 * Math.min(idx, 5) }}
-              >
-                <ProjectCard
-                  project={project}
-                  onViewQuestions={() => navigate(`/my/${project.id}`)}
-                  onViewReport={() => {
-                    if (project.latest_analysis_id) {
-                      const query = `analysisId=${encodeURIComponent(project.latest_analysis_id)}`;
-                      navigate(project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`);
-                    } else {
-                      setLoadError("저장된 분석 리포트를 찾을 수 없습니다.");
-                    }
+        <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <MyCreditsPanel email={user?.email ?? null} />
+          </div>
+          <div className="min-w-0">
+            <div role="tablist" className="mb-6 flex gap-1 border-b border-white/[0.06]">
+              {(["applications", "experiences"] as const).map((key) => (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={tab === key}
+                  type="button"
+                  onClick={() => {
+                    setTab(key);
+                    window.history.replaceState(null, "", key === "experiences" ? "#experiences" : window.location.pathname);
                   }}
-                  onDelete={() => handleDelete(project.id)}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
+                  className={`px-3 py-2 text-sm ${tab === key ? "border-b-2 border-white text-zinc-100" : "text-zinc-500 hover:text-zinc-300"}`}
+                >
+                  {WORKSPACE_COPY.tabs[key]}
+                </button>
+              ))}
+            </div>
+            {tab === "experiences" ? (
+              <ExperienceVault />
+            ) : (
+              <>
+                <div className="mb-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setCreating(true)}
+                    className="h-10 rounded-xl bg-white px-4 text-sm font-semibold text-black"
+                  >
+                    {WORKSPACE_COPY.newApplication}
+                  </button>
+                </div>
+                {creating && (
+                  <div className="mb-4">
+                    <NewApplicationForm onCreated={(id) => navigate(`/my/${id}`)} onCancel={() => setCreating(false)} />
+                  </div>
+                )}
+                {isLoading ? (
+                  <div className="grid gap-4">
+                    {[1, 2, 3].map((i) => (
+                    <SkeletonCard key={i} variant="project" />
+                  ))}
+                </div>
+                ) : loadError ? (
+                  <p role="alert" className="py-10 text-center text-sm text-red-400">
+                    {loadError}
+                  </p>
+                ) : projects.length === 0 ? (
+                  <EmptyState
+                    title="아직 분석한 지원서가 없어요"
+                    description="자소서를 분석하면 여기에서 확인하고 다시 활용할 수 있습니다."
+                    ctaLabel="자소서 분석하러 가기"
+                  />
+                ) : (
+                  <motion.div
+                    className="grid gap-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                  >
+                    {projects.map((project, idx) => (
+                      <motion.div
+                        key={project.id}
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        // 카드마다 50ms 씩 밀리면 18장은 마지막 카드가 1초 넘게 늦는다. 여섯 장까지만 계단식.
+                        transition={{ duration: 0.35, delay: 0.05 * Math.min(idx, 5) }}
+                      >
+                        <ProjectCard
+                          project={project}
+                          onViewQuestions={() => navigate(`/my/${project.id}`)}
+                          onViewReport={() => {
+                            if (project.latest_analysis_id) {
+                              const query = `analysisId=${encodeURIComponent(project.latest_analysis_id)}`;
+                              navigate(project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`);
+                            } else {
+                              setLoadError("저장된 분석 리포트를 찾을 수 없습니다.");
+                            }
+                          }}
+                          onDelete={() => handleDelete(project.id)}
+                        />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ════════ 향후 확장 영역 (멘토링 BM 등) ════════ */}

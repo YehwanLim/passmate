@@ -2,6 +2,8 @@ import { Calendar, FileText, ClipboardCheck, Building2 } from "lucide-react";
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
 import { formatDate } from "@/lib/formatDate";
+import { daysUntil } from "@/lib/workspace";
+import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 interface ProjectCardProps {
   project: ProjectSummary;
@@ -13,6 +15,14 @@ interface ProjectCardProps {
 function formatChars(chars: number | null): string {
   if (!chars) return "—";
   return chars.toLocaleString();
+}
+
+function deadlineBadge(deadline: string | null | undefined): string | null {
+  const days = daysUntil(deadline ?? null);
+  if (days === null) return null;
+  if (days < 0) return WORKSPACE_COPY.deadlinePassed;
+  if (days === 0) return WORKSPACE_COPY.deadlineToday;
+  return WORKSPACE_COPY.deadlineDays(days);
 }
 
 export default function ProjectCard({
@@ -34,9 +44,11 @@ export default function ProjectCard({
       ? "분석에 실패했습니다. 다시 시도해 주세요."
       : "한줄 요약이 없는 리포트입니다.";
   const keywordFallback = isPending ? "분석 대기중" : isFailed ? "분석 실패" : null;
+  const badge = deadlineBadge(project.deadline);
+  const draftTotal = project.draft_question_count ?? 0;
 
   return (
-    <div className="relative border border-zinc-800 bg-zinc-900/80 rounded-2xl p-6 lg:p-7 transition-all duration-300 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20 group">
+    <div data-testid="application-card" className="relative border border-zinc-800 bg-zinc-900/80 rounded-2xl p-6 lg:p-7 transition-all duration-300 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20 group">
       {/* 모바일 대응: 케밥 메뉴를 우측 상단 절대위치로 뺌 */}
       <div className="absolute top-6 right-5 lg:hidden z-10">
         {kebabItems.length > 0 && <KebabMenu items={kebabItems} />}
@@ -67,6 +79,16 @@ export default function ProjectCard({
             <p className="mt-1.5 text-[13.5px] font-medium leading-snug text-zinc-400">
               {project.job_role}
             </p>
+          )}
+          {(badge || draftTotal > 0) && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+              {badge && <span className="text-[12px] font-semibold text-zinc-200">{badge}</span>}
+              {draftTotal > 0 && (
+                <span className="text-[12px] text-zinc-500">
+                  {WORKSPACE_COPY.progress(project.answered_count ?? 0, draftTotal)}
+                </span>
+              )}
+            </div>
           )}
 
           {/* 아이콘 메타 정보 묶음 */}
