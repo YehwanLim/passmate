@@ -52,10 +52,47 @@ describe("useDraftAutosave", () => {
     await act(async () => { vi.advanceTimersByTime(1500); });
     expect(result.current.state).toBe("conflict");
 
-    save.mockImplementation(async () => { throw new Error("network"); });
-    rerender({ value: "c" });
+    const failing = vi.fn(async () => { throw new Error("network"); });
+    const other = renderHook(({ value }) => useDraftAutosave({ value, save: failing, enabled: true }), {
+      initialProps: { value: "a" },
+    });
+    other.rerender({ value: "b" });
+    await act(async () => { vi.advanceTimersByTime(1500); });
+    expect(other.result.current.state).toBe("error");
+  });
+
+  it("충돌 뒤에는 더 고쳐도 다시 보내지 않고 conflict 로 남는다", async () => {
+    const conflict = new Error("STALE_DRAFT");
+    const save = vi.fn(async () => { throw conflict; });
+    const { result, rerender } = renderHook(({ value }) => useDraftAutosave({
+      value, save, enabled: true, isConflict: (e) => e === conflict,
+    }), { initialProps: { value: "a" } });
+    rerender({ value: "b" });
+    await act(async () => { vi.advanceTimersByTime(1500); });
+    expect(save).toHaveBeenCalledTimes(1);
+
+    rerender({ value: "bc" });
+    expect(result.current.state).toBe("conflict");
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    await act(async () => { await result.current.flush(); });
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toBe("conflict");
+  });
+
+  it("실패한 뒤 flush 로 다시 저장할 수 있다", async () => {
+    const save = vi.fn(async () => { throw new Error("network"); });
+    const { result, rerender } = renderHook(({ value }) => useDraftAutosave({ value, save, enabled: true }), {
+      initialProps: { value: "a" },
+    });
+    rerender({ value: "b" });
     await act(async () => { vi.advanceTimersByTime(1500); });
     expect(result.current.state).toBe("error");
+
+    save.mockImplementation(async () => {});
+    await act(async () => { await result.current.flush(); });
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenLastCalledWith("b");
+    expect(result.current.state).toBe("saved");
   });
 
   it("저장 전에 기준선 값으로 되돌리면 보내지 않고 대기를 푼다", async () => {

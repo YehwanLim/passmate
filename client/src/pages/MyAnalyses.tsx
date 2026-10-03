@@ -25,6 +25,49 @@ import { WORKSPACE_COPY } from "./workspaceCopy";
 
 const MAX_QUESTIONS = 5;
 const MAX_PROMPT_CHARS = 300;
+// 이 기기 임시 보관. passmate_ 접두사라 로그아웃 때 clearPassMateStorage 가 같이 지운다.
+const BACKUP_PREFIX = "passmate_workspace_draft_";
+
+function isDraftList(value: unknown): value is ApplicationQuestionDraft[] {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.length <= MAX_QUESTIONS &&
+    value.every((item: unknown) => {
+      if (typeof item !== "object" || item === null) return false;
+      const q = item as Record<string, unknown>;
+      return typeof q.prompt === "string" && typeof q.answer === "string" && (q.charLimit === null || typeof q.charLimit === "number");
+    })
+  );
+}
+
+// 저장소는 사생활 보호 모드 등에서 없거나 예외를 던질 수 있다. 그때는 서버 자동 저장만 한다.
+function readBackup(key: string): ApplicationQuestionDraft[] | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    return isDraftList(parsed) ? parsed.map(({ prompt, charLimit, answer }) => ({ prompt, charLimit, answer })) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeBackup(key: string, value: ApplicationQuestionDraft[]) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // 보관하지 못해도 화면은 그대로 쓴다.
+  }
+}
+
+function clearBackup(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // 지우지 못해도 다음 불러오기에서 서버 내용과 비교해 다시 정리한다.
+  }
+}
 
 function deadlineLabel(deadline: string | null): string {
   const days = daysUntil(deadline);
@@ -54,6 +97,8 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
   const [historyFailed, setHistoryFailed] = useState(false);
   const [submitError, setSubmitError] = useState<{ title: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [backup, setBackup] = useState<ApplicationQuestionDraft[] | null>(null);
+  const backupKey = `${BACKUP_PREFIX}${projectId}`;
   const baseUpdatedAt = useRef<string | null>(null);
   const analysisRequestRef = useRef<IdempotentRequest | null>(null);
 
@@ -95,6 +140,9 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
         }
         if (cancelled) return;
         if (drafts.length === 0) drafts = [{ prompt: "", charLimit: null, answer: "" }];
+        // 지난번에 저장하지 못한 내용이 이 기기에 남아 있으면 불러올지 묻는다. 서버와 같으면 묻지 않는다.
+        const stored = readBackup(`${BACKUP_PREFIX}${projectId}`);
+        setBackup(stored && JSON.stringify(stored) !== JSON.stringify(drafts) ? stored : null);
         setSeeded(fromAnalysis);
         setQuestions(drafts);
         setLoaded(true);
@@ -136,6 +184,28 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
     },
     []
   );
+
+  // 저장되지 않은 동안(대기·저장 중·실패·충돌)은 이 기기에 보관하고, 서버와 맞으면 지운다.
+  // 남은 보관본을 사용자가 고르기 전에는 덮어쓰거나 지우지 않는다.
+  useEffect(() => {
+    if (!loaded || backup) return;
+    if (autosave.state === "saved" || autosave.state === "idle") clearBackup(backupKey);
+    else writeBackup(backupKey, questions);
+  }, [loaded, backup, autosave.state, questions, backupKey]);
+
+  const restoreBackup = () => {
+    if (!backup) return;
+    // 고친 내용처럼 에디터에 넣으면 평소 자동 저장이 지금 불러온 기준 시각으로 저장한다.
+    setQuestions(backup);
+    setActiveIndex(0);
+    setSeeded(false);
+    setBackup(null);
+  };
+
+  const dismissBackup = () => {
+    clearBackup(backupKey);
+    setBackup(null);
+  };
 
   const updateQuestion = (index: number, patch: Partial<ApplicationQuestionDraft>) => {
     setQuestions((current) => current.map((q, i) => (i === index ? { ...q, ...patch } : q)));
@@ -208,6 +278,20 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
 
             {seeded && <p className="text-[13px] text-zinc-400">{WORKSPACE_COPY.seeded}</p>}
 
+            {backup && (
+              <div role="status" className="flex flex-wrap items-center gap-3 rounded-xl border border-white/[0.08] bg-white/5 px-4 py-3 text-[13px] text-zinc-300">
+                <span>{WORKSPACE_COPY.backup.notice}</span>
+                <div className="ml-auto flex gap-2">
+                  <button type="button" onClick={dismissBackup} className="h-9 rounded-lg px-3 text-[13px] text-zinc-400 hover:text-zinc-200">
+                    {WORKSPACE_COPY.backup.dismiss}
+                  </button>
+                  <button type="button" onClick={restoreBackup} className="h-9 rounded-lg bg-white px-3 text-[13px] font-semibold text-black">
+                    {WORKSPACE_COPY.backup.restore}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <ApplicationEditor
               questions={questions}
               activeIndex={Math.min(activeIndex, questions.length - 1)}
@@ -225,6 +309,13 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
               }}
               saveState={autosave.state}
             />
+            {autosave.state === "error" && (
+              <div className="-mt-3 flex justify-end">
+                <button type="button" onClick={() => void autosave.flush()} className="text-[13px] font-medium text-zinc-300 underline underline-offset-4 hover:text-zinc-100">
+                  {WORKSPACE_COPY.save.retry}
+                </button>
+              </div>
+            )}
 
             <div className="flex flex-col items-end gap-2">
               <button

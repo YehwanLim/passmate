@@ -5,6 +5,7 @@ export type AutosaveState = "idle" | "pending" | "saving" | "saved" | "error" | 
 /**
  * 작업실 에디터 자동 저장. 입력이 delayMs 동안 멈추면 저장하고, 마지막 저장값과 같으면 보내지 않는다.
  * enabled 가 켜지는 순간의 값은 서버에서 불러온 값으로 보고 저장 기준선으로 삼는다.
+ * 충돌(conflict)이 나면 같은 기준 시각으로 다시 보내 봐야 또 충돌이므로, 화면이 다시 마운트될 때까지 더 보내지 않는다.
  */
 export function useDraftAutosave<T>({
   value,
@@ -26,6 +27,7 @@ export function useDraftAutosave<T>({
   const savedSnapshot = useRef<string | null>(null);
   const hasSaved = useRef(false);
   const inFlight = useRef(false);
+  const conflicted = useRef(false);
   const latest = useRef(value);
   const saveRef = useRef(save);
   const conflictRef = useRef(isConflict);
@@ -45,7 +47,7 @@ export function useDraftAutosave<T>({
       timer.current = null;
     }
     // 저장은 한 번에 하나만. 진행 중이면 끝난 뒤 최신 값과 비교해서 다시 보낸다(flush 포함).
-    if (inFlight.current) return;
+    if (inFlight.current || conflicted.current) return;
     inFlight.current = true;
     try {
       for (;;) {
@@ -58,7 +60,8 @@ export function useDraftAutosave<T>({
         try {
           await saveRef.current(latest.current);
         } catch (error) {
-          setState(conflictRef.current(error) ? "conflict" : "error");
+          conflicted.current = conflictRef.current(error);
+          setState(conflicted.current ? "conflict" : "error");
           return;
         }
         savedSnapshot.current = snapshot;
@@ -80,7 +83,7 @@ export function useDraftAutosave<T>({
   }, [settle]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || conflicted.current) return;
     const snapshot = JSON.stringify(value);
     if (savedSnapshot.current === null) {
       savedSnapshot.current = baseline === undefined ? snapshot : JSON.stringify(baseline);

@@ -38,13 +38,37 @@ const DETAIL = {
   questions_updated_at: "2026-10-03T01:00:00.000Z",
 };
 
+// 이 테스트 환경의 jsdom 에는 localStorage 가 없어 메모리 저장소로 대신한다.
+function memoryStorage(): Storage {
+  const data = new Map<string, string>();
+  return {
+    get length() { return data.size; },
+    key: (index: number) => Array.from(data.keys())[index] ?? null,
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => { data.set(key, String(value)); },
+    removeItem: (key: string) => { data.delete(key); },
+    clear: () => data.clear(),
+  };
+}
+
 beforeEach(() => {
+  vi.stubGlobal("localStorage", memoryStorage());
   mocks.fetchApplication.mockResolvedValue(DETAIL);
   mocks.saveApplicationQuestions.mockResolvedValue({ questions_updated_at: "2026-10-03T02:00:00.000Z" });
   mocks.fetchMock.mockResolvedValue(new Response("[]", { status: 200, headers: { "content-type": "application/json" } }));
   vi.stubGlobal("fetch", mocks.fetchMock);
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  vi.clearAllMocks();
+});
+
+const BACKUP_KEY = "passmate_workspace_draft_p1";
+const readBackup = () => {
+  const raw = window.localStorage.getItem(BACKUP_KEY);
+  return raw ? JSON.parse(raw) : null;
+};
 
 describe("작업 화면", () => {
   it("저장된 문항과 글자 수를 보여 준다", async () => {
@@ -149,5 +173,75 @@ describe("작업 화면", () => {
     unmount();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(mocks.saveApplicationQuestions).not.toHaveBeenCalled();
+  });
+
+  describe("이 기기 임시 보관", () => {
+    it("저장하지 못하면 이 기기에 보관하고 다시 저장으로 저장되면 지운다", async () => {
+      mocks.saveApplicationQuestions.mockRejectedValue(new Error("network"));
+      render(<MyAnalyses />);
+      fireEvent.change(await screen.findByDisplayValue("가".repeat(250)), { target: { value: "나".repeat(10) } });
+      expect(readBackup()).toEqual([{ prompt: "지원 동기", charLimit: 700, answer: "나".repeat(10) }]);
+
+      const retry = await screen.findByRole("button", { name: "다시 저장" }, { timeout: 3000 });
+      expect(readBackup()).toEqual([{ prompt: "지원 동기", charLimit: 700, answer: "나".repeat(10) }]);
+
+      mocks.saveApplicationQuestions.mockResolvedValue({ questions_updated_at: "2026-10-03T02:00:00.000Z" });
+      fireEvent.click(retry);
+      await waitFor(() => expect(screen.getByText("저장됨")).toBeTruthy());
+      expect(mocks.saveApplicationQuestions).toHaveBeenCalledTimes(2);
+      expect(readBackup()).toBeNull();
+    });
+
+    it("충돌이면 새로고침하라고만 하지 않고 이 창의 내용을 이 기기에 보관한다", async () => {
+      const { WorkspaceApiError } = await import("@/lib/workspace");
+      mocks.saveApplicationQuestions.mockRejectedValue(new WorkspaceApiError("STALE_DRAFT", 409));
+      render(<MyAnalyses />);
+      fireEvent.change(await screen.findByDisplayValue("가".repeat(250)), { target: { value: "다".repeat(5) } });
+      expect(await screen.findByText(/이 창의 내용은 이 기기에 보관했어요/, undefined, { timeout: 3000 })).toBeTruthy();
+      expect(readBackup()).toEqual([{ prompt: "지원 동기", charLimit: 700, answer: "다".repeat(5) }]);
+    });
+
+    it("서버 내용과 다른 보관본이 있으면 불러올 수 있다", async () => {
+      window.localStorage.setItem(BACKUP_KEY, JSON.stringify([{ prompt: "지원 동기", charLimit: 700, answer: "보관한 답변" }]));
+      render(<MyAnalyses />);
+      fireEvent.click(await screen.findByRole("button", { name: "이 기기에 남은 내용 불러오기" }));
+      expect(await screen.findByDisplayValue("보관한 답변")).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "이 기기에 남은 내용 불러오기" })).toBeNull();
+      await waitFor(() => expect(mocks.saveApplicationQuestions).toHaveBeenCalledWith(
+        "p1",
+        [{ prompt: "지원 동기", charLimit: 700, answer: "보관한 답변" }],
+        "2026-10-03T01:00:00.000Z"
+      ), { timeout: 3000 });
+      await waitFor(() => expect(readBackup()).toBeNull());
+    });
+
+    it("보관본을 닫으면 지우고, 고치기 전에는 보관본을 건드리지 않는다", async () => {
+      const stored = [{ prompt: "지원 동기", charLimit: 700, answer: "보관한 답변" }];
+      window.localStorage.setItem(BACKUP_KEY, JSON.stringify(stored));
+      render(<MyAnalyses />);
+      await screen.findByRole("button", { name: "이 기기에 남은 내용 불러오기" });
+      expect(readBackup()).toEqual(stored);
+      fireEvent.click(screen.getByRole("button", { name: "보관본 지우기" }));
+      expect(readBackup()).toBeNull();
+      expect(screen.queryByRole("button", { name: "이 기기에 남은 내용 불러오기" })).toBeNull();
+      expect(screen.getByDisplayValue("가".repeat(250))).toBeTruthy();
+    });
+
+    it("서버 내용과 같은 보관본은 안내 없이 지운다", async () => {
+      window.localStorage.setItem(BACKUP_KEY, JSON.stringify([{ prompt: "지원 동기", charLimit: 700, answer: "가".repeat(250) }]));
+      render(<MyAnalyses />);
+      await screen.findByDisplayValue("가".repeat(250));
+      expect(screen.queryByRole("button", { name: "이 기기에 남은 내용 불러오기" })).toBeNull();
+      await waitFor(() => expect(readBackup()).toBeNull());
+    });
+
+    it("브라우저 저장소를 못 써도 화면과 자동 저장은 동작한다", async () => {
+      const denied = () => { throw new Error("denied"); };
+      vi.stubGlobal("localStorage", { ...memoryStorage(), getItem: denied, setItem: denied, removeItem: denied });
+      const { unmount } = render(<MyAnalyses />);
+      fireEvent.change(await screen.findByDisplayValue("가".repeat(250)), { target: { value: "라" } });
+      unmount();
+      await waitFor(() => expect(mocks.saveApplicationQuestions).toHaveBeenCalledTimes(1));
+    });
   });
 });
