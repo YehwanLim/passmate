@@ -6,6 +6,7 @@ import {
   requireAuthenticatedUser,
 } from "../../lib/auth.js";
 import { ApiError, sendJson, withApiHandler } from "../../lib/api-handler.js";
+import { createExperienceDetailHandler, createExperiencesHandler } from "../../lib/experiences.js";
 import { createMentoringBookingsHandler, createMentoringSlotsHandler } from "../../lib/mentoring.js";
 import prisma from "../../lib/prisma.js";
 
@@ -96,6 +97,9 @@ export function createAccountRoutesHandler({
   // 커피챗·모의면접 예약. 12함수 한도 때문에 계정 라우터에 얹는다(슬롯 목록은 로그인 없이 읽힌다).
   mentoringSlotsHandler = createMentoringSlotsHandler(),
   mentoringBookingsHandler = createMentoringBookingsHandler(),
+  // 내 경험(경험 금고) CRUD. 같은 12함수 한도 사유로 계정 라우터에 얹는다.
+  experiencesHandler = createExperiencesHandler(),
+  experienceDetailHandler = createExperienceDetailHandler(),
 } = {}) {
   return async function accountRoutesHandler(req, res) {
     const segments = accountRouteSegments(req);
@@ -107,6 +111,11 @@ export function createAccountRoutesHandler({
     if (segments.length === 2 && segments[0] === "mentoring") {
       if (segments[1] === "slots") return mentoringSlotsHandler(req, res);
       if (segments[1] === "bookings") return mentoringBookingsHandler(req, res);
+    }
+    if (segments.length === 1 && segments[0] === "experiences") return experiencesHandler(req, res);
+    if (segments.length === 2 && segments[0] === "experiences") {
+      req.query = { ...(req.query ?? {}), experienceId: segments[1] };
+      return experienceDetailHandler(req, res);
     }
 
     return withApiHandler(req, res, async () => {
