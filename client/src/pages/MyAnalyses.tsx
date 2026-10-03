@@ -17,7 +17,9 @@ import {
   daysUntil,
   fetchApplication,
   saveApplicationQuestions,
+  updateApplicationMeta,
   type ApplicationDetail,
+  type ApplicationMeta,
   type ApplicationQuestionDraft,
 } from "@/lib/workspace";
 import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
@@ -77,6 +79,83 @@ function deadlineLabel(deadline: string | null): string {
   return WORKSPACE_COPY.deadlineDays(days);
 }
 
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+// <input type="date"> 값(YYYY-MM-DD)은 한국 날짜로 맞춘다. 마감은 그날 23:59 KST 로 저장한다.
+function toKstDateInput(deadline: string | null): string {
+  if (!deadline) return "";
+  const time = new Date(deadline).getTime();
+  return Number.isNaN(time) ? "" : new Date(time + KST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+const metaField = "w-full rounded-lg border border-white/[0.08] bg-transparent px-3 py-2 text-sm text-zinc-100";
+
+function ApplicationMetaForm({
+  projectId,
+  detail,
+  onSaved,
+  onCancel,
+}: {
+  projectId: string;
+  detail: ApplicationDetail;
+  onSaved: (meta: ApplicationMeta) => void;
+  onCancel: () => void;
+}) {
+  const labels = WORKSPACE_COPY.newApplicationForm;
+  const [company, setCompany] = useState(detail.company_name ?? "");
+  const [jobKeyword, setJobKeyword] = useState(detail.job_role ?? "");
+  const [deadline, setDeadline] = useState(toKstDateInput(detail.deadline));
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!company.trim()) {
+      setError(labels.companyRequired);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      onSaved(
+        await updateApplicationMeta(projectId, {
+          company: company.trim(),
+          jobKeyword: jobKeyword.trim() || null,
+          deadline: deadline ? `${deadline}T23:59:00+09:00` : null,
+        })
+      );
+    } catch {
+      setError(WORKSPACE_COPY.meta.failed);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="grid gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:grid-cols-3">
+      <label className="block space-y-1 text-[13px] text-zinc-400">
+        <span>{labels.company}</span>
+        <input aria-label={labels.company} value={company} onChange={(e) => setCompany(e.target.value)} maxLength={100} className={metaField} />
+      </label>
+      <label className="block space-y-1 text-[13px] text-zinc-400">
+        <span>{labels.job}</span>
+        <input aria-label={labels.job} value={jobKeyword} onChange={(e) => setJobKeyword(e.target.value)} maxLength={100} className={metaField} />
+      </label>
+      <label className="block space-y-1 text-[13px] text-zinc-400">
+        <span>{labels.deadline}</span>
+        <input aria-label={labels.deadline} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={metaField} />
+      </label>
+      <div className="flex items-center justify-end gap-2 sm:col-span-3">
+        {error && <p role="alert" className="mr-auto text-[13px] text-red-400">{error}</p>}
+        <button type="button" onClick={onCancel} className="h-9 rounded-lg px-3 text-sm text-zinc-400">{WORKSPACE_COPY.meta.cancel}</button>
+        <button type="submit" disabled={busy} className="h-9 rounded-lg bg-white px-4 text-sm font-semibold text-black disabled:opacity-50">
+          {WORKSPACE_COPY.meta.save}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // 지원서가 바뀌면 자동 저장 기준선·멱등성 키까지 새로 시작하도록 projectId 로 인스턴스를 가른다.
 export default function MyAnalyses() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -98,6 +177,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
   const [submitError, setSubmitError] = useState<{ title: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [backup, setBackup] = useState<ApplicationQuestionDraft[] | null>(null);
+  const [editingMeta, setEditingMeta] = useState(false);
   const backupKey = `${BACKUP_PREFIX}${projectId}`;
   const baseUpdatedAt = useRef<string | null>(null);
   const analysisRequestRef = useRef<IdempotentRequest | null>(null);
@@ -272,9 +352,30 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                   </span>
                 )}
                 <span className="text-zinc-400">{deadlineLabel(detail.deadline)}</span>
+                {!editingMeta && (
+                  <button type="button" onClick={() => setEditingMeta(true)} className="text-zinc-400 underline underline-offset-4 hover:text-zinc-200">
+                    {WORKSPACE_COPY.meta.edit}
+                  </button>
+                )}
               </div>
               <h1 className="text-xl font-bold tracking-tight text-zinc-100">{detail.title}</h1>
             </header>
+
+            {editingMeta && (
+              <ApplicationMetaForm
+                projectId={projectId}
+                detail={detail}
+                onCancel={() => setEditingMeta(false)}
+                onSaved={(meta) => {
+                  setDetail((current) =>
+                    current
+                      ? { ...current, title: meta.title, company_name: meta.company_name, job_role: meta.job_role, deadline: meta.deadline }
+                      : current
+                  );
+                  setEditingMeta(false);
+                }}
+              />
+            )}
 
             {seeded && <p className="text-[13px] text-zinc-400">{WORKSPACE_COPY.seeded}</p>}
 

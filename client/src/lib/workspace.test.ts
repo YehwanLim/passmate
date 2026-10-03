@@ -8,6 +8,7 @@ import {
   daysUntil,
   saveApplicationQuestions,
   sortApplications,
+  updateApplicationMeta,
 } from "./workspace";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -63,5 +64,21 @@ describe("saveApplicationQuestions", () => {
     })));
     await expect(saveApplicationQuestions("p1", [], null)).rejects.toMatchObject({ code: "STALE_DRAFT", status: 409 });
     await expect(saveApplicationQuestions("p1", [], null)).rejects.toBeInstanceOf(WorkspaceApiError);
+  });
+});
+
+describe("updateApplicationMeta", () => {
+  it("PATCH 로 메타를 보내고 서버가 돌려준 헤더 값을 돌려준다", async () => {
+    const body = { id: "p1", title: "한솔제지 · 영업", company_name: "한솔제지", job_role: "영업", deadline: "2026-10-20T14:59:00.000Z" };
+    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => new Response(JSON.stringify(body), {
+      status: 200, headers: { "content-type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await updateApplicationMeta("p1", { company: "한솔제지", jobKeyword: "영업", deadline: "2026-10-20T23:59:00+09:00" });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/projects/p1");
+    expect(init.method).toBe("PATCH");
+    expect(JSON.parse(init.body as string)).toEqual({ company: "한솔제지", jobKeyword: "영업", deadline: "2026-10-20T23:59:00+09:00" });
+    expect(result).toEqual(body);
   });
 });

@@ -46,6 +46,12 @@ export const WORKSPACE_COPY = {
     restore: "이 기기에 남은 내용 불러오기",
     dismiss: "보관본 지우기",
   },
+  meta: {
+    edit: "수정",
+    save: "저장",
+    cancel: "취소",
+    failed: "저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
+  },
   seeded: "지난 진단의 문항을 불러왔어요. 고치면 이 지원서에 저장돼요.",
   diagnose: "이 지원서로 진단받기",
   history: "지난 진단",

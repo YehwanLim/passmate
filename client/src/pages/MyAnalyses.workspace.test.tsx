@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   fetchApplication: vi.fn(),
   saveApplicationQuestions: vi.fn(),
+  updateApplicationMeta: vi.fn(),
   submitAnalysisRequest: vi.fn(),
   fetchMock: vi.fn(),
 }));
@@ -22,6 +23,7 @@ vi.mock("@/lib/workspace", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/workspace")>()),
   fetchApplication: mocks.fetchApplication,
   saveApplicationQuestions: mocks.saveApplicationQuestions,
+  updateApplicationMeta: mocks.updateApplicationMeta,
 }));
 vi.mock("@/lib/analysisSubmit", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/analysisSubmit")>()),
@@ -242,6 +244,61 @@ describe("작업 화면", () => {
       fireEvent.change(await screen.findByDisplayValue("가".repeat(250)), { target: { value: "라" } });
       unmount();
       await waitFor(() => expect(mocks.saveApplicationQuestions).toHaveBeenCalledTimes(1));
+    });
+  });
+
+  describe("회사·직무·마감 수정", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("마감일을 고치면 KST 23:59 로 보내고 머리말 D-day 를 바꾼다", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-03T03:00:00Z"));
+      mocks.updateApplicationMeta.mockResolvedValue({
+        id: "p1", title: "한솔제지 · 국내영업", company_name: "한솔제지", job_role: "국내영업", deadline: "2026-10-20T14:59:00.000Z",
+      });
+      render(<MyAnalyses />);
+      expect(await screen.findByText("D-8")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "수정" }));
+      const deadline = screen.getByLabelText("마감일") as HTMLInputElement;
+      expect(deadline.value).toBe("2026-10-11");
+      fireEvent.change(deadline, { target: { value: "2026-10-20" } });
+      fireEvent.click(screen.getByRole("button", { name: "저장" }));
+      await waitFor(() => expect(mocks.updateApplicationMeta).toHaveBeenCalledWith("p1", {
+        company: "한솔제지", jobKeyword: "국내영업", deadline: "2026-10-20T23:59:00+09:00",
+      }));
+      expect(await screen.findByText("D-17")).toBeTruthy();
+      expect(screen.queryByLabelText("마감일")).toBeNull();
+    });
+
+    it("마감일을 비우면 null 로 보내고, 회사가 비면 보내지 않는다", async () => {
+      mocks.updateApplicationMeta.mockResolvedValue({
+        id: "p1", title: "한솔제지 · 국내영업", company_name: "한솔제지", job_role: "국내영업", deadline: null,
+      });
+      render(<MyAnalyses />);
+      fireEvent.click(await screen.findByRole("button", { name: "수정" }));
+      fireEvent.change(screen.getByLabelText("회사"), { target: { value: "  " } });
+      fireEvent.click(screen.getByRole("button", { name: "저장" }));
+      expect(await screen.findByText("회사 이름을 적어 주세요.")).toBeTruthy();
+      expect(mocks.updateApplicationMeta).not.toHaveBeenCalled();
+
+      fireEvent.change(screen.getByLabelText("회사"), { target: { value: "한솔제지" } });
+      fireEvent.change(screen.getByLabelText("마감일"), { target: { value: "" } });
+      fireEvent.click(screen.getByRole("button", { name: "저장" }));
+      await waitFor(() => expect(mocks.updateApplicationMeta).toHaveBeenCalledWith("p1", {
+        company: "한솔제지", jobKeyword: "국내영업", deadline: null,
+      }));
+      expect(await screen.findByText("마감 미정")).toBeTruthy();
+    });
+
+    it("저장에 실패하면 폼을 둔 채 오류를 알린다", async () => {
+      mocks.updateApplicationMeta.mockRejectedValue(new Error("network"));
+      render(<MyAnalyses />);
+      fireEvent.click(await screen.findByRole("button", { name: "수정" }));
+      fireEvent.change(screen.getByLabelText("직무"), { target: { value: "해외영업" } });
+      fireEvent.click(screen.getByRole("button", { name: "저장" }));
+      expect(await screen.findByText("저장하지 못했어요. 잠시 후 다시 시도해 주세요.")).toBeTruthy();
+      expect(screen.getByLabelText("직무")).toBeTruthy();
+      expect(screen.queryByText("해외영업")).toBeNull();
     });
   });
 });

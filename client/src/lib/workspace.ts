@@ -67,11 +67,19 @@ export function fetchApplication(id: string): Promise<ApplicationDetail> {
   return request(`/api/projects/${encodeURIComponent(id)}`);
 }
 
-export async function updateApplicationMeta(
+export type ApplicationMeta = {
+  id: string;
+  title: string;
+  company_name: string | null;
+  job_role: string | null;
+  deadline: string | null;
+};
+
+export function updateApplicationMeta(
   id: string,
   meta: { company?: string; jobKeyword?: string | null; deadline?: string | null }
-): Promise<void> {
-  await request(`/api/projects/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(meta) });
+): Promise<ApplicationMeta> {
+  return request(`/api/projects/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(meta) });
 }
 
 export function saveApplicationQuestions(
