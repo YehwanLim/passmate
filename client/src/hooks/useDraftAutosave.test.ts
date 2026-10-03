@@ -82,4 +82,73 @@ describe("useDraftAutosave", () => {
     expect(save).toHaveBeenCalledTimes(1);
     expect(result.current.state).toBe("saved");
   });
+
+  describe("저장이 진행 중일 때", () => {
+    function controlledSave() {
+      const resolvers: Array<() => void> = [];
+      const save = vi.fn(
+        (_value: string) => new Promise<void>((resolve) => { resolvers.push(resolve); }),
+      );
+      return { save, resolvers };
+    }
+
+    it("저장 중 값이 바뀌면 끝난 뒤 새 값을 한 번 더 보내고 그 사이엔 saved 가 아니다", async () => {
+      const { save, resolvers } = controlledSave();
+      const { result, rerender } = renderHook(({ value }) => useDraftAutosave({ value, save, enabled: true }), {
+        initialProps: { value: "a" },
+      });
+      rerender({ value: "b" });
+      await act(async () => { vi.advanceTimersByTime(1500); });
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(result.current.state).toBe("saving");
+
+      rerender({ value: "c" });
+      await act(async () => { vi.advanceTimersByTime(1500); });
+      // 첫 저장이 끝나기 전에는 두 번째 저장을 동시에 보내지 않는다.
+      expect(save).toHaveBeenCalledTimes(1);
+
+      await act(async () => { resolvers[0](); });
+      expect(save).toHaveBeenCalledTimes(2);
+      expect(save).toHaveBeenLastCalledWith("c");
+      expect(result.current.state).toBe("saving");
+
+      await act(async () => { resolvers[1](); });
+      expect(result.current.state).toBe("saved");
+      expect(save).toHaveBeenCalledTimes(2);
+    });
+
+    it("저장 중 마지막 저장값으로 되돌려도 서버 값과 맞추려고 다시 보낸다", async () => {
+      const { save, resolvers } = controlledSave();
+      const { result, rerender } = renderHook(({ value }) => useDraftAutosave({ value, save, enabled: true }), {
+        initialProps: { value: "a" },
+      });
+      rerender({ value: "b" });
+      await act(async () => { vi.advanceTimersByTime(1500); });
+      expect(save).toHaveBeenCalledWith("b");
+
+      rerender({ value: "a" });
+      await act(async () => { resolvers[0](); });
+      expect(save).toHaveBeenCalledTimes(2);
+      expect(save).toHaveBeenLastCalledWith("a");
+      expect(result.current.state).toBe("saving");
+
+      await act(async () => { resolvers[1](); });
+      expect(result.current.state).toBe("saved");
+    });
+
+    it("flush 를 저장 중에 불러도 동시에 두 번 보내지 않는다", async () => {
+      const { save, resolvers } = controlledSave();
+      const { result, rerender } = renderHook(({ value }) => useDraftAutosave({ value, save, enabled: true }), {
+        initialProps: { value: "a" },
+      });
+      rerender({ value: "b" });
+      await act(async () => { vi.advanceTimersByTime(1500); });
+      await act(async () => { await result.current.flush(); });
+      expect(save).toHaveBeenCalledTimes(1);
+
+      await act(async () => { resolvers[0](); });
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(result.current.state).toBe("saved");
+    });
+  });
 });
