@@ -27,6 +27,8 @@ const row = (id: string, deadline: string | null, extra = {}) => ({
 });
 
 beforeEach(() => {
+  // 앞 테스트가 내 경험 탭으로 바꾸며 남긴 #experiences 를 지운다.
+  window.history.replaceState(null, "", "/");
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-03T03:00:00Z"));
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([
@@ -63,6 +65,29 @@ describe("내 지원서 현황판", () => {
     render(<MyProjects />);
     fireEvent.click(await screen.findByRole("tab", { name: "내 경험" }));
     expect(screen.getByText("경험 탭 내용")).toBeTruthy();
+  });
+
+  it("진단 전 지원서는 리포트 대신 작성 중 안내·초안 문항 수·이어서 쓰기를 보여 준다", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([
+      row("draft", null, { question_count: 0 }),
+      row("done", null, { question_count: 2, latest_analysis_id: "a1", summary: "요약", latest_status: "SUCCESS" }),
+    ]), { status: 200, headers: { "content-type": "application/json" } })));
+    render(<MyProjects />);
+    const cards = await screen.findAllByTestId("application-card");
+    const draft = cards.find((card) => within(card).queryByText("draft"))!;
+    expect(within(draft).queryByRole("button", { name: /리포트 보기/ })).toBeNull();
+    expect(within(draft).getByText(/아직 진단받지 않은 지원서예요/)).toBeTruthy();
+    expect(within(draft).queryByText(/한줄 요약이 없는 리포트입니다/)).toBeNull();
+    expect(within(draft).getByText("3개 문항")).toBeTruthy();
+    expect(within(draft).queryByText("0개 문항")).toBeNull();
+    fireEvent.click(within(draft).getByRole("button", { name: /이어서 쓰기/ }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/my/draft");
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    const done = cards.find((card) => within(card).queryByText("done"))!;
+    expect(within(done).getByText("2개 문항")).toBeTruthy();
+    fireEvent.click(within(done).getByRole("button", { name: /리포트 보기/ }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/report-new?analysisId=a1");
   });
 
   it("어느 탭에서든 이용권 칸이 함께 보인다", async () => {

@@ -20,6 +20,10 @@ export const WORKSPACE_COPY = {
   loadError: "지원서를 불러오지 못했어요. 새로고침해 주세요.",
   diagnoseFailed: "분석 실패",
   progress: (answered: number, total: number) => `${total}문항 중 ${answered}문항 작성`,
+  draftCard: {
+    summary: "아직 진단받지 않은 지원서예요.",
+    open: "이어서 쓰기",
+  },
   editor: {
     addQuestion: "문항 추가",
     removeQuestion: "문항 삭제",

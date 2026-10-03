@@ -38,7 +38,11 @@ export default function ProjectCard({
   // (구버전 리포트는 키워드 필드가 없을 수 있다).
   const isPending = project.latest_status === "PENDING";
   const isFailed = project.latest_status === "FAILED";
-  const summaryFallback = isPending
+  // "새 지원서"로 만들고 아직 진단받지 않은 지원서: 리포트가 없으니 작성 화면이 주 동작이다.
+  const isDraftOnly = !isCompany && !project.latest_analysis_id;
+  const summaryFallback = isDraftOnly
+    ? WORKSPACE_COPY.draftCard.summary
+    : isPending
     ? "아직 분석이 완료되지 않았습니다."
     : isFailed
       ? "분석에 실패했습니다. 다시 시도해 주세요."
@@ -99,7 +103,9 @@ export default function ProjectCard({
             </div>
             <div className="flex items-center gap-2">
               {isCompany ? <Building2 className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
-              <span>{isCompany ? "기업 분석 리포트" : `${project.question_count ?? project.analysis_count}개 문항`}</span>
+              <span>{isCompany
+                  ? "기업 분석 리포트"
+                  : `${isDraftOnly ? draftTotal : project.question_count ?? project.analysis_count}개 문항`}</span>
             </div>
           </div>
         </div>
@@ -112,7 +118,7 @@ export default function ProjectCard({
             한줄 요약
           </span>
           <p className="text-[15.5px] lg:text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-4 break-keep">
-            "{project.summary || summaryFallback}"
+            {isDraftOnly ? summaryFallback : `"${project.summary || summaryFallback}"`}
           </p>
 
           <div className="mt-auto">
@@ -143,17 +149,27 @@ export default function ProjectCard({
           </div>
 
           <div className="flex flex-col gap-3 my-auto lg:py-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewReport();
-              }}
-              className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg bg-blue-600 text-[13px] font-semibold text-white hover:bg-blue-500 transition-all duration-200"
-            >
-              <ClipboardCheck className="w-3.5 h-3.5" />
-              <span>리포트 보기</span>
-            </button>
-            {isCompany ? null : (
+            {isDraftOnly ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
+                className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg bg-white text-[13px] font-semibold text-black hover:bg-zinc-200 transition-all duration-200"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>{WORKSPACE_COPY.draftCard.open}</span>
+              </button>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewReport();
+                }}
+                className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg bg-blue-600 text-[13px] font-semibold text-white hover:bg-blue-500 transition-all duration-200"
+              >
+                <ClipboardCheck className="w-3.5 h-3.5" />
+                <span>리포트 보기</span>
+              </button>
+            )}
+            {isCompany || isDraftOnly ? null : (
               <button
                 onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
                 className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg border border-zinc-700 bg-zinc-800/40 text-[13px] font-medium text-zinc-300 hover:bg-zinc-700/60 hover:text-zinc-100 transition-all duration-200"

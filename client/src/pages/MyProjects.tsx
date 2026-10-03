@@ -183,7 +183,8 @@ export default function MyProjects() {
                               const query = `analysisId=${encodeURIComponent(project.latest_analysis_id)}`;
                               navigate(project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`);
                             } else {
-                              setLoadError("저장된 분석 리포트를 찾을 수 없습니다.");
+                              // 진단 전 지원서는 리포트가 없다. 목록 전체 오류로 바꾸지 않고 작성 화면으로 보낸다.
+                              navigate(`/my/${project.id}`);
                             }
                           }}
                           onDelete={() => handleDelete(project.id)}
