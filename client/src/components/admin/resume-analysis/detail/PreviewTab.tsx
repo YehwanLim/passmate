@@ -7,13 +7,15 @@ import type { AnalysisDetail } from "@/hooks/admin/useAnalysisDetail";
 import {
   diagnosisTextList,
   stringList,
+  stripEmphasisDeep,
   textValue,
   toReportObject,
   type ReportObject,
 } from "@/pages/admin/resume-analysis/analysisDetailFormat";
 
 /** 1. 사용자가 실제로 받는 리포트 형태 */
-export function PreviewTab({ detail, report }: { detail: AnalysisDetail; report: ReportObject | null }) {
+export function PreviewTab({ detail, report: rawReport }: { detail: AnalysisDetail; report: ReportObject | null }) {
+  const report = stripEmphasisDeep(rawReport);
   const companyInsight = toReportObject(report?.companyInsight);
   const firstImpression = toReportObject(report?.firstImpression);
   const questionTabs = Array.isArray(report?.questionTabs)
@@ -156,7 +158,7 @@ export function PreviewTab({ detail, report }: { detail: AnalysisDetail; report:
             </CardHeader>
             <CardContent className="space-y-4">
               {detail.project_analyses.map((analysis, index) => {
-                const analysisReport = toReportObject(analysis.ai_response_json);
+                const analysisReport = stripEmphasisDeep(toReportObject(analysis.ai_response_json));
                 const questionTab = questionTabs[index] ?? null;
                 const feedbackCards = Array.isArray(questionTab?.feedbackCards)
                   ? questionTab.feedbackCards

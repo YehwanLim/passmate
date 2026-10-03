@@ -55,6 +55,18 @@ export function toReportObject(value: unknown): ReportObject | null {
     : null;
 }
 
+// 모델 원문에 섞인 `**강조**` 표시를 미리보기에서 뗀다. 사용자 리포트 화면도 강조 표시 없이 그린다.
+export function stripEmphasisDeep<T>(value: T): T {
+  if (typeof value === "string") return value.replace(/\*\*/g, "") as T;
+  if (Array.isArray(value)) return value.map(stripEmphasisDeep) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, stripEmphasisDeep(item)])
+    ) as T;
+  }
+  return value;
+}
+
 export function stringList(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
