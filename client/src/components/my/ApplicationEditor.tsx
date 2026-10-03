@@ -5,6 +5,13 @@ import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 const MAX_QUESTIONS = 5;
 const COPY = WORKSPACE_COPY.editor;
+const MAX_CHAR_LIMIT = 10000;
+
+// 서버가 1..10000 정수만 받는다. 그 밖의 입력은 제한 없음(null)으로 두어 저장이 막히지 않게 한다.
+export function parseCharLimit(raw: string): number | null {
+  const value = Number(raw);
+  return raw.trim() !== "" && Number.isInteger(value) && value >= 1 && value <= MAX_CHAR_LIMIT ? value : null;
+}
 
 function saveLabel(state: AutosaveState): string {
   if (state === "idle") return "";
@@ -46,7 +53,7 @@ export default function ApplicationEditor({
               index === activeIndex ? "bg-white/[0.06] text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
-            {`문항 ${index + 1}`}
+            {WORKSPACE_COPY.questionLabel(index + 1)}
           </button>
         ))}
         {questions.length < MAX_QUESTIONS && (
@@ -80,9 +87,9 @@ export default function ApplicationEditor({
             <input
               type="number"
               min={1}
-              max={10000}
+              max={MAX_CHAR_LIMIT}
               value={active.charLimit ?? ""}
-              onChange={(e) => onChange(activeIndex, { charLimit: e.target.value ? Number(e.target.value) : null })}
+              onChange={(e) => onChange(activeIndex, { charLimit: parseCharLimit(e.target.value) })}
               aria-label={COPY.charLimitLabel}
               placeholder={COPY.charLimitLabel}
               className="w-28 rounded-lg border border-white/[0.08] bg-transparent px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600"

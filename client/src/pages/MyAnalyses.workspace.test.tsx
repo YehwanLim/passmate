@@ -84,7 +84,7 @@ describe("작업 화면", () => {
     });
     render(<MyAnalyses />);
     expect(await screen.findByDisplayValue("성장 과정")).toBeTruthy();
-    expect(screen.getByText(/지난 진단의 문항을 불러왔어요/)).toBeTruthy();
+    expect(screen.getByText(/지난 진단의 문항을 불러와 이 지원서에 저장했어요/)).toBeTruthy();
   });
 
   it("자동 저장 대기 중에 화면을 떠나도 마지막 입력을 저장한다", async () => {
@@ -99,6 +99,22 @@ describe("작업 화면", () => {
       [{ prompt: "지원 동기", charLimit: 700, answer: "나".repeat(10) }],
       "2026-10-03T01:00:00.000Z"
     );
+  });
+
+  it("지난 진단 목록을 못 불러오면 비어 있다고 하지 않고 오류를 알린다", async () => {
+    mocks.fetchMock.mockResolvedValue(new Response("{}", { status: 500, headers: { "content-type": "application/json" } }));
+    render(<MyAnalyses />);
+    expect(await screen.findByText(/지난 진단을 불러오지 못했어요/)).toBeTruthy();
+    expect(screen.queryByText(/아직 진단받은 적이 없어요/)).toBeNull();
+  });
+
+  it("글자 수 제한에 범위 밖 값을 넣으면 제한 없음으로 저장한다", async () => {
+    render(<MyAnalyses />);
+    const limit = await screen.findByLabelText("글자 수 제한");
+    fireEvent.change(limit, { target: { value: "10001" } });
+    await waitFor(() => expect((limit as HTMLInputElement).value).toBe(""));
+    fireEvent.change(limit, { target: { value: "800" } });
+    expect((limit as HTMLInputElement).value).toBe("800");
   });
 
   it("불러오기 전에 떠나면 아무것도 저장하지 않는다", async () => {

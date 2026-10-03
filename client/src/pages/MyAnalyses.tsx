@@ -31,7 +31,7 @@ function deadlineLabel(deadline: string | null): string {
   if (days === null) return WORKSPACE_COPY.deadlineNone;
   if (days < 0) return WORKSPACE_COPY.deadlinePassed;
   if (days === 0) return WORKSPACE_COPY.deadlineToday;
-  return `D-${days}`;
+  return WORKSPACE_COPY.deadlineDays(days);
 }
 
 // 지원서가 바뀌면 자동 저장 기준선·멱등성 키까지 새로 시작하도록 projectId 로 인스턴스를 가른다.
@@ -51,6 +51,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
   const [loaded, setLoaded] = useState(false);
   const [analyses, setAnalyses] = useState<AnalysisSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [historyFailed, setHistoryFailed] = useState(false);
   const [submitError, setSubmitError] = useState<{ title: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const baseUpdatedAt = useRef<string | null>(null);
@@ -68,7 +69,11 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
         ]);
         if (cancelled) return;
         setDetail(application);
-        setAnalyses(analysesRes.ok ? await analysesRes.json() : []);
+        if (analysesRes.ok) {
+          setAnalyses(await analysesRes.json());
+        } else {
+          setHistoryFailed(true);
+        }
         baseUpdatedAt.current = application.questions_updated_at;
 
         let drafts: ApplicationQuestionDraft[] = application.questions.map((q) => ({
@@ -94,7 +99,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
         setQuestions(drafts);
         setLoaded(true);
       } catch {
-        if (!cancelled) setLoadError("지원서를 불러오지 못했어요. 새로고침해 주세요.");
+        if (!cancelled) setLoadError(WORKSPACE_COPY.loadError);
       }
     })();
     return () => {
@@ -146,7 +151,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
       await autosave.flush();
       const payload = {
         projectId,
-        questions: questions.map((q, i) => ({ question: q.prompt.trim() || `문항 ${i + 1}`, answer: q.answer })),
+        questions: questions.map((q, i) => ({ question: q.prompt.trim() || WORKSPACE_COPY.questionLabel(i + 1), answer: q.answer })),
         ...(detail.company_name ? { company: detail.company_name } : {}),
         ...(detail.job_role ? { jobKeyword: detail.job_role } : {}),
       };
@@ -165,7 +170,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
         });
         return;
       }
-      setSubmitError({ title: "분석 실패", message: getAnalyzeErrorMessage(null) });
+      setSubmitError({ title: WORKSPACE_COPY.diagnoseFailed, message: getAnalyzeErrorMessage(null) });
     } finally {
       setSubmitting(false);
     }
@@ -240,7 +245,9 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
 
             <section className="space-y-3">
               <h2 className="text-sm font-semibold text-zinc-300">{WORKSPACE_COPY.history}</h2>
-              {analyses.length === 0 ? (
+              {historyFailed ? (
+                <p role="alert" className="text-[13px] text-red-400">{WORKSPACE_COPY.historyError}</p>
+              ) : analyses.length === 0 ? (
                 <p className="text-[13px] text-zinc-500">{WORKSPACE_COPY.historyEmpty}</p>
               ) : (
                 <div className="grid gap-3">

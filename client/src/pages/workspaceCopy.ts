@@ -5,6 +5,10 @@ export const WORKSPACE_COPY = {
   deadlineNone: "마감 미정",
   deadlineToday: "오늘 마감",
   deadlinePassed: "마감",
+  deadlineDays: (days: number) => `D-${days}`,
+  questionLabel: (n: number) => `문항 ${n}`,
+  loadError: "지원서를 불러오지 못했어요. 새로고침해 주세요.",
+  diagnoseFailed: "분석 실패",
   progress: (answered: number, total: number) => `${total}문항 중 ${answered}문항 작성`,
   editor: {
     addQuestion: "문항 추가",
@@ -22,10 +26,11 @@ export const WORKSPACE_COPY = {
     error: "저장하지 못했어요. 잠시 후 다시 시도해요.",
     conflict: "다른 창에서 먼저 저장했어요. 새로고침하면 최신 내용을 불러와요.",
   },
-  seeded: "지난 진단의 문항을 불러왔어요. 고치면 이 지원서에 저장돼요.",
+  seeded: "지난 진단의 문항을 불러와 이 지원서에 저장했어요.",
   diagnose: "이 지원서로 진단받기",
   history: "지난 진단",
   historyEmpty: "아직 진단받은 적이 없어요.",
+  historyError: "지난 진단을 불러오지 못했어요. 새로고침해 주세요.",
   credits: {
     account: "내 계정",
     heading: "남은 이용권",
