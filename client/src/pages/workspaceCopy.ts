@@ -67,5 +67,12 @@ export const WORKSPACE_COPY = {
     save: "저장",
     cancel: "취소",
     remove: "삭제",
+    edit: "수정",
+    titleRequired: "이 경험을 한 줄로 부르는 이름을 적어 주세요.",
+    limitReached: "경험은 100개까지 적어 둘 수 있어요.",
+    saveFailed: "저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
+    loadError: "경험을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+    deleteFailed: "지우지 못했어요. 잠시 후 다시 시도해 주세요.",
+    confirmRemove: (title: string) => `'${title}' 경험을 지울까요?`,
   },
 } as const;
