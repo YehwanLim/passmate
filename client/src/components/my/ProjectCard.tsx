@@ -52,13 +52,13 @@ export default function ProjectCard({
   const draftTotal = project.draft_question_count ?? 0;
 
   return (
-    <div data-testid="application-card" className="relative border border-zinc-800 bg-zinc-900/80 rounded-2xl p-6 lg:p-7 transition-all duration-300 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20 group">
+    <div data-testid="application-card" className="relative border border-zinc-800 bg-zinc-900/80 rounded-xl p-4 lg:px-5 lg:py-4 transition-colors duration-200 hover:border-zinc-700 group">
       {/* 모바일 대응: 케밥 메뉴를 우측 상단 절대위치로 뺌 */}
-      <div className="absolute top-6 right-5 lg:hidden z-10">
+      <div className="absolute top-3 right-3 lg:hidden z-10">
         {kebabItems.length > 0 && <KebabMenu items={kebabItems} />}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6">
         {/* ───────────────────────────────────────────────────────────── */}
         {/* 1️⃣ [좌측] 상세 정보 영역 (col-span-3) */}
         {/* ───────────────────────────────────────────────────────────── */}
@@ -75,17 +75,17 @@ export default function ProjectCard({
                 기업 분석
               </span>
             )}
-            <h3 className="text-[20px] font-bold text-zinc-50 tracking-tight truncate">
+            <h3 className="text-[16px] font-bold text-zinc-50 tracking-tight truncate">
               {project.company_name || project.title || "기업 미지정"}
             </h3>
           </div>
           {project.job_role && (
-            <p className="mt-1.5 text-[13.5px] font-medium leading-snug text-zinc-400">
+            <p className="mt-0.5 text-[12.5px] font-medium leading-snug text-zinc-400">
               {project.job_role}
             </p>
           )}
           {(badge || draftTotal > 0) && (
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
               {badge && <span className="text-[12px] font-semibold text-zinc-200">{badge}</span>}
               {draftTotal > 0 && (
                 <span className="text-[12px] text-zinc-500">
@@ -96,13 +96,14 @@ export default function ProjectCard({
           )}
 
           {/* 아이콘 메타 정보 묶음 */}
-          <div className="mt-5 flex flex-col gap-2.5 text-[12px] text-zinc-500 font-light">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5" />
+          {/* 메타는 한 줄로: 두 줄로 쌓으면 카드 높이만 커진다 */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-zinc-500 font-light">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3 h-3" />
               <span>{formatDate(project.created_at, "ymd-dot")} 작성됨</span>
             </div>
-            <div className="flex items-center gap-2">
-              {isCompany ? <Building2 className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+            <div className="flex items-center gap-1.5">
+              {isCompany ? <Building2 className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
               <span>{isCompany
                   ? "기업 분석 리포트"
                   : `${isDraftOnly ? draftTotal : project.question_count ?? project.analysis_count}개 문항`}</span>
@@ -113,27 +114,28 @@ export default function ProjectCard({
         {/* ───────────────────────────────────────────────────────────── */}
         {/* 2️⃣ [중앙] 피드백 대시보드 영역 (col-span-6) */}
         {/* ───────────────────────────────────────────────────────────── */}
-        <div className="lg:col-span-6 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-5 lg:pt-0 lg:pl-8">
+        <div className="lg:col-span-6 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-3 lg:pt-0 lg:pl-6">
           {/* 진단 전 지원서에는 요약이 없으니 "한줄 요약" 이름표를 달지 않는다 */}
           {!isDraftOnly && (
-            <span className="text-[12px] font-semibold text-zinc-500 mb-2.5 tracking-wide">
+            <span className="text-[11px] font-semibold text-zinc-500 mb-1 tracking-wide">
               한줄 요약
             </span>
           )}
-          <p className="text-[15.5px] lg:text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-4 break-keep">
+          <p className="line-clamp-2 text-[14px] text-zinc-100 font-semibold leading-[1.55] break-keep">
             {isDraftOnly ? summaryFallback : `"${project.summary || summaryFallback}"`}
           </p>
 
-          <div className="mt-auto">
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+          <div className="mt-1.5">
+            <div className="flex flex-wrap gap-x-2.5 gap-y-1">
               {keywords.length > 0 ? (
-                keywords.map((kw, idx) => (
-                  <span key={idx} className="text-[13px] font-medium text-zinc-500">
+                // 키워드는 앞 4개만 — 다 늘어놓으면 줄이 늘어 카드가 커진다
+                keywords.slice(0, 4).map((kw, idx) => (
+                  <span key={idx} className="text-[12px] font-medium text-zinc-500">
                     #{kw}
                   </span>
                 ))
               ) : keywordFallback ? (
-                <span className="text-[14px] font-medium text-zinc-500 bg-zinc-800/50 px-4 py-2 rounded-lg border border-zinc-700/50">
+                <span className="text-[12px] font-medium text-zinc-500 bg-zinc-800/50 px-2.5 py-1 rounded-md border border-zinc-700/50">
                   {keywordFallback}
                 </span>
               ) : null}
@@ -144,18 +146,18 @@ export default function ProjectCard({
         {/* ───────────────────────────────────────────────────────────── */}
         {/* 3️⃣ [우측] 액션 그룹 (col-span-3) */}
         {/* ───────────────────────────────────────────────────────────── */}
-        <div className="lg:col-span-3 flex flex-col border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-6 lg:pt-0 lg:pl-8">
+        <div className="lg:col-span-3 flex flex-col border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-3 lg:pt-0 lg:pl-6">
 
           {/* 데스크탑: 케밥 메뉴를 버튼 위 전용 줄에 배치(절대위치 제거 → 버튼과 안 겹침) */}
-          <div className="hidden lg:flex justify-end -mt-2 -mr-2">
+          <div className="hidden lg:flex justify-end -mt-1 -mr-2">
             {kebabItems.length > 0 && <KebabMenu items={kebabItems} />}
           </div>
 
-          <div className="flex flex-col gap-3 my-auto lg:py-2">
+          <div className="flex flex-row gap-2 my-auto lg:flex-col">
             {isDraftOnly ? (
               <button
                 onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
-                className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg bg-white text-[13px] font-semibold text-black hover:bg-zinc-200 transition-all duration-200"
+                className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-white text-[13px] font-semibold text-black hover:bg-zinc-200 transition-all duration-200"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>{WORKSPACE_COPY.draftCard.open}</span>
@@ -166,7 +168,7 @@ export default function ProjectCard({
                   e.stopPropagation();
                   onViewReport();
                 }}
-                className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg bg-white text-[13px] font-semibold text-black hover:bg-zinc-200 transition-all duration-200"
+                className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-white text-[13px] font-semibold text-black hover:bg-zinc-200 transition-all duration-200"
               >
                 <ClipboardCheck className="w-3.5 h-3.5" />
                 <span>리포트 보기</span>
@@ -175,7 +177,7 @@ export default function ProjectCard({
             {isCompany || isDraftOnly ? null : (
               <button
                 onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
-                className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg border border-zinc-700 bg-zinc-800/40 text-[13px] font-medium text-zinc-300 hover:bg-zinc-700/60 hover:text-zinc-100 transition-all duration-200"
+                className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-zinc-700 bg-zinc-800/40 text-[13px] font-medium text-zinc-300 hover:bg-zinc-700/60 hover:text-zinc-100 transition-all duration-200"
               >
                 <FileText className="w-3.5 h-3.5 text-zinc-500" />
                 <span>작성한 자소서 보기</span>
