@@ -31,6 +31,14 @@ export interface ProjectSummary {
   latest_status?: AnalysisStatus | null;
   /** 분석 종류. 구버전 응답에 없으면 RESUME 으로 본다. */
   kind?: "RESUME" | "COMPANY";
+  /** 접수 마감 ISO 8601. 작업실 이전 지원서나 미입력이면 null/undefined */
+  deadline?: string | null;
+  /** 마지막 수정 시각 */
+  updated_at?: string;
+  /** 작업실 문항 수(초안 기준) */
+  draft_question_count?: number;
+  /** 답변을 쓴 문항 수 */
+  answered_count?: number;
 }
 
 /** 분석 상태 enum — DB AnalysisStatus와 동일 */
