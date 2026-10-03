@@ -40,7 +40,7 @@ export const WORKSPACE_COPY = {
     error: "저장하지 못했어요. 잠시 후 다시 시도해요.",
     conflict: "다른 창에서 먼저 저장했어요. 새로고침하면 최신 내용을 불러와요.",
   },
-  seeded: "지난 진단의 문항을 불러와 이 지원서에 저장했어요.",
+  seeded: "지난 진단의 문항을 불러왔어요. 고치면 이 지원서에 저장돼요.",
   diagnose: "이 지원서로 진단받기",
   history: "지난 진단",
   historyEmpty: "아직 진단받은 적이 없어요.",

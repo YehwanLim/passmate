@@ -72,7 +72,7 @@ describe("작업 화면", () => {
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(expect.stringContaining("r1")));
   });
 
-  it("문항이 없고 지난 진단이 있으면 그 문항으로 미리 채운다", async () => {
+  function mockLegacyProject() {
     mocks.fetchApplication.mockResolvedValue({ ...DETAIL, questions: [], questions_updated_at: null, latest_analysis_id: "a9" });
     mocks.fetchMock.mockImplementation(async (url: string) => {
       if (String(url).includes("/api/analysis/a9")) {
@@ -82,9 +82,35 @@ describe("작업 화면", () => {
       }
       return new Response("[]", { status: 200, headers: { "content-type": "application/json" } });
     });
+  }
+
+  it("문항이 없고 지난 진단이 있으면 그 문항으로 미리 채운다", async () => {
+    mockLegacyProject();
     render(<MyAnalyses />);
     expect(await screen.findByDisplayValue("성장 과정")).toBeTruthy();
-    expect(screen.getByText(/지난 진단의 문항을 불러와 이 지원서에 저장했어요/)).toBeTruthy();
+    expect(screen.getByText("지난 진단의 문항을 불러왔어요. 고치면 이 지원서에 저장돼요.")).toBeTruthy();
+  });
+
+  it("미리 채운 지원서는 고치기 전에는 저장하지 않는다", async () => {
+    mockLegacyProject();
+    const { unmount } = render(<MyAnalyses />);
+    await screen.findByDisplayValue("성장 과정");
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(mocks.saveApplicationQuestions).not.toHaveBeenCalled();
+  });
+
+  it("미리 채운 지원서를 고치면 한 번 저장한다", async () => {
+    mockLegacyProject();
+    const { unmount } = render(<MyAnalyses />);
+    fireEvent.change(await screen.findByDisplayValue("어릴 때"), { target: { value: "어릴 때부터" } });
+    unmount();
+    await waitFor(() => expect(mocks.saveApplicationQuestions).toHaveBeenCalledTimes(1));
+    expect(mocks.saveApplicationQuestions).toHaveBeenCalledWith(
+      "p1",
+      [{ prompt: "성장 과정", charLimit: null, answer: "어릴 때부터" }],
+      null
+    );
   });
 
   it("자동 저장 대기 중에 화면을 떠나도 마지막 입력을 저장한다", async () => {

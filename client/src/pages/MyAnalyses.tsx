@@ -116,12 +116,11 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
     [projectId]
   );
 
-  // 미리채움은 서버에 아직 없는 값이라 빈 배열을 기준선으로 줘서 바로 저장되게 한다.
+  // 미리채움도 불러온 값 그대로를 기준선으로 삼는다. 사용자가 고치기 전에는 DB 에 쓰지 않는다.
   const autosave = useDraftAutosave({
     value: questions,
     save,
     enabled: loaded,
-    baseline: seeded ? [] : undefined,
     isConflict: (error) => error instanceof WorkspaceApiError && error.code === "STALE_DRAFT",
   });
 
