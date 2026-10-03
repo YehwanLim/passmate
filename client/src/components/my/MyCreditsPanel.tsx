@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { ChevronRight } from "lucide-react";
 import { fetchEntitlementSummary, type EntitlementSummary } from "@/lib/entitlements";
 import { supabase } from "@/lib/supabase";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
@@ -32,12 +33,21 @@ export default function MyCreditsPanel({ email }: { email: string | null }) {
     <>
     {/* 폰: 칸 두 개가 탭을 한참 밀어내지 않도록 남은 횟수만 한 줄로. 불러오기 전·실패 시엔 비워 둔다 */}
     {summary && !failed && (
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 lg:hidden">
-        <p className="min-w-0 truncate text-[13px] text-zinc-300">
-          {COPY.compactLine(summary.remaining, summary.companyAnalysisEnabled ? summary.companyRemaining : null)}
-        </p>
-        <button type="button" onClick={() => navigate("/entitlements")} className="shrink-0 text-[13px] font-semibold text-zinc-100 hover:text-white">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] py-3 pl-4 pr-3 lg:hidden">
+        <div className="min-w-0">
+          <p className="text-[12px] text-zinc-500">{COPY.heading}</p>
+          <p className="mt-0.5 truncate text-[14px] font-semibold text-zinc-100">
+            {COPY.compactLine(summary.remaining, summary.companyAnalysisEnabled ? summary.companyRemaining : null)}
+          </p>
+        </div>
+        {/* 넓은 화면의 "이용권 사기" 버튼과 같은 표면 — 글자만 덩그러니 있으면 누르는 곳으로 안 읽힌다 */}
+        <button
+          type="button"
+          onClick={() => navigate("/entitlements")}
+          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl border border-white/[0.12] bg-white/[0.05] px-3.5 text-[13px] font-semibold text-zinc-100 transition-colors hover:bg-white/[0.1]"
+        >
           {COPY.buy}
+          <ChevronRight className="h-3.5 w-3.5 text-zinc-400" aria-hidden="true" />
         </button>
       </div>
     )}
