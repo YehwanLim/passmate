@@ -78,6 +78,7 @@ describe("내 지원서 현황판", () => {
     expect(within(draft).queryByRole("button", { name: /리포트 보기/ })).toBeNull();
     expect(within(draft).getByText(/아직 진단받지 않은 지원서예요/)).toBeTruthy();
     expect(within(draft).queryByText(/한줄 요약이 없는 리포트입니다/)).toBeNull();
+    expect(within(draft).queryByText("한줄 요약")).toBeNull();
     expect(within(draft).getByText("3개 문항")).toBeTruthy();
     expect(within(draft).queryByText("0개 문항")).toBeNull();
     fireEvent.click(within(draft).getByRole("button", { name: /이어서 쓰기/ }));
@@ -86,6 +87,7 @@ describe("내 지원서 현황판", () => {
 
     const done = cards.find((card) => within(card).queryByText("done"))!;
     expect(within(done).getByText("2개 문항")).toBeTruthy();
+    expect(within(done).getByText("한줄 요약")).toBeTruthy();
     fireEvent.click(within(done).getByRole("button", { name: /리포트 보기/ }));
     expect(mocks.navigate).toHaveBeenCalledWith("/report-new?analysisId=a1");
   });

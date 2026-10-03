@@ -40,6 +40,20 @@ describe("MyCreditsPanel", () => {
     render(<MyCreditsPanel email={null} />);
     await screen.findByText("2회");
     expect(screen.queryByText("기업 분석")).toBeNull();
+    expect(screen.getByText("자소서 진단 2회")).toBeTruthy();
+  });
+
+  it("폰용 한 줄 요약에 두 가지 남은 횟수를 함께 보여 준다", async () => {
+    mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 3, premiumRemaining: 3, companyRemaining: 1 }));
+    render(<MyCreditsPanel email={null} />);
+    expect(await screen.findByText("자소서 진단 3회 · 기업 분석 1회")).toBeTruthy();
+  });
+
+  it("못 불러오면 폰용 한 줄 요약은 띄우지 않는다", async () => {
+    mocks.fetchEntitlementSummary.mockRejectedValue(new Error("x"));
+    render(<MyCreditsPanel email={null} />);
+    await screen.findByText("이용권 정보를 불러오지 못했어요.");
+    expect(screen.queryByText(/자소서 진단 \d+회/)).toBeNull();
   });
 
   it("못 불러오면 조용히 한 줄로 알린다", async () => {

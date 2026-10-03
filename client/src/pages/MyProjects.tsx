@@ -94,10 +94,10 @@ export default function MyProjects() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">
-            지원서 관리
+            {WORKSPACE_COPY.page.title}
           </h1>
           <p className="text-[14px] text-zinc-500 font-light">
-            분석한 자소서를 확인하고, 다시 활용할 수 있습니다.
+            {WORKSPACE_COPY.page.subtitle}
           </p>
         </motion.div>
       </div>

@@ -114,9 +114,12 @@ export default function ProjectCard({
         {/* 2️⃣ [중앙] 피드백 대시보드 영역 (col-span-6) */}
         {/* ───────────────────────────────────────────────────────────── */}
         <div className="lg:col-span-6 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-5 lg:pt-0 lg:pl-8">
-          <span className="text-[12px] font-semibold text-zinc-500 mb-2.5 tracking-wide">
-            한줄 요약
-          </span>
+          {/* 진단 전 지원서에는 요약이 없으니 "한줄 요약" 이름표를 달지 않는다 */}
+          {!isDraftOnly && (
+            <span className="text-[12px] font-semibold text-zinc-500 mb-2.5 tracking-wide">
+              한줄 요약
+            </span>
+          )}
           <p className="text-[15.5px] lg:text-[17px] text-zinc-100 font-semibold leading-[1.6] mb-4 break-keep">
             {isDraftOnly ? summaryFallback : `"${project.summary || summaryFallback}"`}
           </p>
@@ -163,7 +166,7 @@ export default function ProjectCard({
                   e.stopPropagation();
                   onViewReport();
                 }}
-                className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg bg-blue-600 text-[13px] font-semibold text-white hover:bg-blue-500 transition-all duration-200"
+                className="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg bg-white text-[13px] font-semibold text-black hover:bg-zinc-200 transition-all duration-200"
               >
                 <ClipboardCheck className="w-3.5 h-3.5" />
                 <span>리포트 보기</span>

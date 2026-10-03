@@ -29,7 +29,19 @@ export default function MyCreditsPanel({ email }: { email: string | null }) {
   }, []);
 
   return (
-    <aside className="space-y-4">
+    <>
+    {/* 폰: 칸 두 개가 탭을 한참 밀어내지 않도록 남은 횟수만 한 줄로. 불러오기 전·실패 시엔 비워 둔다 */}
+    {summary && !failed && (
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 lg:hidden">
+        <p className="min-w-0 truncate text-[13px] text-zinc-300">
+          {COPY.compactLine(summary.remaining, summary.companyAnalysisEnabled ? summary.companyRemaining : null)}
+        </p>
+        <button type="button" onClick={() => navigate("/entitlements")} className="shrink-0 text-[13px] font-semibold text-zinc-100 hover:text-white">
+          {COPY.buy}
+        </button>
+      </div>
+    )}
+    <aside className="hidden space-y-4 lg:block">
       <section className={card}>
         <p className="text-[13px] text-zinc-500">{COPY.account}</p>
         {email && <p className="mt-1 truncate text-sm text-zinc-200">{email}</p>}
@@ -67,5 +79,6 @@ export default function MyCreditsPanel({ email }: { email: string | null }) {
         </button>
       </section>
     </aside>
+    </>
   );
 }

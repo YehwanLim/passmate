@@ -76,13 +76,15 @@ export default function ApplicationEditor({
 
       {active && (
         <div className="space-y-3 p-4">
-          <div className="flex gap-2">
-            <input
+          {/* 문항 원문은 길어서 한 줄 칸이면 폰에서 잘린다 — 줄바꿈되는 칸으로 두고, 폰에서는 글자 수 칸을 아래로 내린다 */}
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+            <textarea
               value={active.prompt}
-              onChange={(e) => onChange(activeIndex, { prompt: e.target.value })}
+              onChange={(e) => onChange(activeIndex, { prompt: e.target.value.replace(/\n/g, " ") })}
               placeholder={COPY.promptPlaceholder}
               maxLength={300}
-              className="min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-transparent px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600"
+              rows={2}
+              className="min-w-0 basis-full resize-none rounded-lg border border-white/[0.08] bg-transparent px-3 py-2 text-sm leading-relaxed text-zinc-100 placeholder:text-zinc-600 sm:basis-auto sm:flex-1"
             />
             <input
               type="number"

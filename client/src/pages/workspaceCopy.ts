@@ -67,6 +67,13 @@ export const WORKSPACE_COPY = {
     buy: "이용권 사기",
     detail: "자세히 보기",
     error: "이용권 정보를 불러오지 못했어요.",
+    // 폰에서는 칸 두 개 대신 한 줄로 줄인다. 기업 분석이 꺼져 있으면 그 부분은 뺀다.
+    compactLine: (essay: number, company: number | null) =>
+      company === null ? `자소서 진단 ${essay}회` : `자소서 진단 ${essay}회 · 기업 분석 ${company}회`,
+  },
+  page: {
+    title: "마이페이지",
+    subtitle: "지원서를 쓰고, 진단받고, 내 경험을 모아 두는 곳이에요.",
   },
   experiences: {
     add: "경험 추가",
