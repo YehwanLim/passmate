@@ -44,6 +44,7 @@ model User {
   mentoringBookings MentoringBooking[]
   receivedAdminCreditGrants AdminCreditGrant[] @relation("AdminCreditGrantRecipient")
   issuedAdminCreditGrants   AdminCreditGrant[] @relation("AdminCreditGrantAdministrator")
+  experiences Experience[]
 
   @@map("users")
 }
@@ -355,16 +356,54 @@ model Project {
   title       String  @db.VarChar(200)
   company     String? @db.VarChar(100)    // 지원 기업명
   jobKeyword  String? @map("job_keyword") @db.VarChar(100) // 지원 직무
+  deadline    DateTime? @db.Timestamptz                    // 접수 마감(작업실)
+  postingSlug String?   @map("posting_slug") @db.VarChar(120) // 공고 보드에서 시작한 지원서(P2)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  analyses Analysis[]
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyses  Analysis[]
+  questions ApplicationQuestion[]
 
   @@index([userId])
   @@map("projects")
+}
+
+// 작업실 문항 초안. 지원서 하나에 1~5개, position 은 1부터.
+model ApplicationQuestion {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  position  Int
+  prompt    String   @db.Text
+  charLimit Int?     @map("char_limit")
+  answer    String   @default("") @db.Text
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, position])
+  @@map("application_questions")
+}
+
+// 내 경험(경험 금고). 직접 입력. 본문은 로그·감사 이벤트 금지.
+model Experience {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String   @db.VarChar(100)
+  period    String?  @db.VarChar(50)
+  situation String   @default("") @db.Text
+  action    String   @default("") @db.Text
+  result    String   @default("") @db.Text
+  tags      String[] @default([])
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("experiences")
 }
 
 // =============================================================================
