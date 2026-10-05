@@ -1,17 +1,31 @@
 import { getAuthorizationHeader } from "@/lib/apiAuth";
+import type { JobPostingSummary } from "@/types/jobPosting";
 import type { ProjectSummary } from "@/types/my";
 
 /**
  * 내 지원서(작업실)·내 경험 API 클라이언트.
  * 서버: api/projects.js, api/projects/[projectId]/index.js, lib/experiences.js(계정 라우터 /api/account/experiences).
  */
-export type ApplicationQuestionDraft = { prompt: string; charLimit: number | null; answer: string };
+export type ApplicationQuestionDraft = {
+  prompt: string;
+  charLimit: number | null;
+  answer: string;
+  /** "이 초안으로 채우기" 때 고른 경험 id(최대 2). 서버가 본인 것만 남긴다 */
+  draftExperienceIds?: string[];
+};
 
 export type ApplicationDetail = ProjectSummary & {
   deadline: string | null;
   posting_slug: string | null;
   latest_analysis_id: string | null;
-  questions: Array<{ position: number; prompt: string; char_limit: number | null; answer: string }>;
+  job_posting: { job_posting_id: string; source_url: string | null; summary: JobPostingSummary } | null;
+  questions: Array<{
+    position: number;
+    prompt: string;
+    char_limit: number | null;
+    answer: string;
+    draft_experience_ids?: string[];
+  }>;
   questions_updated_at: string | null;
 };
 
@@ -73,11 +87,12 @@ export type ApplicationMeta = {
   company_name: string | null;
   job_role: string | null;
   deadline: string | null;
+  job_posting_id?: string | null;
 };
 
 export function updateApplicationMeta(
   id: string,
-  meta: { company?: string; jobKeyword?: string | null; deadline?: string | null }
+  meta: { company?: string; jobKeyword?: string | null; deadline?: string | null; jobPostingId?: string | null }
 ): Promise<ApplicationMeta> {
   return request(`/api/projects/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(meta) });
 }
