@@ -5,8 +5,8 @@ const EXP = { id: "e1", title: "손님 불만을 단골로 바꾼 3개월", peri
 const base = { question: "지원 동기를 쓰세요", charLimit: 1000, company: "CJ", jobKeyword: "서비스 기획", posting: null, experiences: [EXP], avoidExperienceIds: [] };
 
 describe("buildDraftPrompt", () => {
-  it("목표 글자 수는 제한의 90%, 제한이 없으면 700", () => {
-    expect(draftTargetChars(1000)).toBe(900);
+  it("목표 글자 수는 제한의 75%, 제한이 없으면 700", () => {
+    expect(draftTargetChars(1000)).toBe(750);
     expect(draftTargetChars(null)).toBe(700);
   });
 
@@ -15,7 +15,7 @@ describe("buildDraftPrompt", () => {
     expect(prompt).toContain("[경험 id=e1]");
     expect(prompt).toContain("재방문 120명");
     expect(prompt).toContain("지원 동기를 쓰세요");
-    expect(prompt).toContain("900자. 1000자를 넘지 않는다");
+    expect(prompt).toContain("750자. 1000자를 넘지 않는다");
     expect(buildDraftPrompt({ ...base, charLimit: null })).not.toContain("넘지 않는다");
     expect(prompt).toContain("CJ");
   });

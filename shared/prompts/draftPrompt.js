@@ -3,8 +3,9 @@
 
 const FIELD_MAX = 400;
 
+// 모델이 목표보다 5~25% 길게 쓴다(10-06 실측). 제한 안에 들어오도록 목표를 75% 로 둔다.
 export function draftTargetChars(charLimit) {
-  return Number.isInteger(charLimit) && charLimit > 0 ? Math.floor(charLimit * 0.9) : 700;
+  return Number.isInteger(charLimit) && charLimit > 0 ? Math.floor(charLimit * 0.75) : 700;
 }
 
 function clip(value) {
