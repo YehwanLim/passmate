@@ -14,6 +14,7 @@ const DETAIL_SELECT = {
   deadline: true,
   postingSlug: true,
   createdAt: true,
+  jobPosting: { select: { id: true, sourceUrl: true, summaryJson: true } },
   _count: { select: { analyses: true } },
   analyses: {
     orderBy: { createdAt: "desc" },
@@ -22,7 +23,7 @@ const DETAIL_SELECT = {
   },
   questions: {
     orderBy: { position: "asc" },
-    select: { position: true, prompt: true, charLimit: true, answer: true, updatedAt: true },
+    select: { position: true, prompt: true, charLimit: true, answer: true, draftExperienceIds: true, updatedAt: true },
   },
 };
 
@@ -63,6 +64,13 @@ export function createProjectDetailHandler({
           select: { id: true, company: true, jobKeyword: true },
         });
         if (!current) throw new ApiError("NOT_FOUND", 404);
+        if (typeof data.jobPostingId === "string") {
+          const posting = await db.jobPosting.findFirst({
+            where: { id: data.jobPostingId, userId: applicationUser.id },
+            select: { id: true },
+          });
+          if (!posting) throw new ApiError("INVALID_REQUEST", 400);
+        }
         if ("company" in data || "jobKeyword" in data) {
           const company = "company" in data ? data.company : current.company;
           const jobKeyword = "jobKeyword" in data ? data.jobKeyword : current.jobKeyword;
@@ -71,7 +79,7 @@ export function createProjectDetailHandler({
         const updated = await db.project.update({
           where: { id: current.id },
           data,
-          select: { id: true, title: true, company: true, jobKeyword: true, deadline: true },
+          select: { id: true, title: true, company: true, jobKeyword: true, deadline: true, jobPostingId: true },
         });
         return sendJson(res, 200, {
           id: updated.id,
@@ -79,6 +87,7 @@ export function createProjectDetailHandler({
           company_name: updated.company ?? null,
           job_role: updated.jobKeyword ?? null,
           deadline: updated.deadline ?? null,
+          job_posting_id: updated.jobPostingId ?? null,
         }, requestId);
       }
 
@@ -87,6 +96,16 @@ export function createProjectDetailHandler({
         const { questions, baseUpdatedAt } = normalizeQuestionSave(req.body);
         const owned = await db.project.findFirst({ where, select: { id: true } });
         if (!owned) throw new ApiError("NOT_FOUND", 404);
+        // 초안 경험은 본인 경험 id 만 남긴다(남의 id 는 조용히 버린다).
+        const wanted = [...new Set(questions.flatMap((q) => q.draftExperienceIds))];
+        if (wanted.length > 0) {
+          const own = await db.experience.findMany({
+            where: { userId: applicationUser.id, id: { in: wanted } },
+            select: { id: true },
+          });
+          const ownIds = new Set(own.map((e) => e.id));
+          for (const q of questions) q.draftExperienceIds = q.draftExperienceIds.filter((id) => ownIds.has(id));
+        }
 
         const savedAt = await db.$transaction(async (tx) => {
           const before = await tx.applicationQuestion.aggregate({
@@ -134,12 +153,20 @@ export function createProjectDetailHandler({
         summary: extractSummary(latest?.aiResponseJson),
         deadline: project.deadline ?? null,
         posting_slug: project.postingSlug ?? null,
+        job_posting: project.jobPosting
+          ? {
+              job_posting_id: project.jobPosting.id,
+              source_url: project.jobPosting.sourceUrl ?? null,
+              summary: project.jobPosting.summaryJson,
+            }
+          : null,
         latest_analysis_id: latest?.id ?? null,
         questions: questions.map((q) => ({
           position: q.position,
           prompt: q.prompt,
           char_limit: q.charLimit ?? null,
           answer: q.answer,
+          draft_experience_ids: q.draftExperienceIds ?? [],
         })),
         questions_updated_at: latestQuestionTime(questions),
       }, requestId);
