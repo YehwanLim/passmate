@@ -18,7 +18,6 @@ import {
   COMPANY_REPORT_INCLUDED_FEATURES,
   PRICING,
   REPORT_INCLUDED_FEATURES,
-  SEASONAL_DISCOUNT_LABEL,
   TIERS,
   formatKrw,
   savingsFor,
@@ -190,10 +189,6 @@ export default function Entitlements() {
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
-
-            <p className="seasonal-discount-label w-fit pt-2 text-[14px] font-bold">
-              {SEASONAL_DISCOUNT_LABEL}
-            </p>
 
             <div className="grid gap-5 pt-1 md:grid-cols-3">
               {TIERS.map((tier) => {

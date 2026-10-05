@@ -24,17 +24,17 @@ export type PricingPlan = {
 export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
   single: {
     label: "자소서 진단 1회",
-    listPrice: 5_900,
+    listPrice: 3_900,
     salePrice: 3_900,
-    discountLabel: "2,000원 절약",
+    discountLabel: "",
     uses: 1,
     companyUses: 0,
   },
   company: {
     label: "기업 분석 1회",
-    listPrice: 5_900,
+    listPrice: 3_900,
     salePrice: 3_900,
-    discountLabel: "2,000원 절약",
+    discountLabel: "",
     uses: 0,
     companyUses: 1,
   },
@@ -74,8 +74,6 @@ export const TIERS = [
 
 /** 스탠다드 기준 회당 가격(원, 9,900 / 3회). 반올림 값이며 pricing.test.ts가 산술 일치를 검증한다. */
 export const STANDARD_PER_USE_PRICE = 3_300;
-
-export const SEASONAL_DISCOUNT_LABEL = "하반기 채용 시즌 기념 할인";
 
 /**
  * 어떤 이용권이든 자소서 리포트에 공통으로 담기는 구성.

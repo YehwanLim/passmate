@@ -16,17 +16,14 @@ import {
 describe("pricing constants", () => {
   it("keeps discount labels arithmetically consistent with list and sale prices", () => {
     // 카피(할인율 배지)와 실제 가격이 어긋나지 않도록 산술 일치를 강제한다.
-    const singleDiscount = Math.round(
-      (1 - PRICING.single.salePrice / PRICING.single.listPrice) * 100
-    );
     const tripleDiscount = Math.round(
       (1 - PRICING.triple.salePrice / PRICING.triple.listPrice) * 100
     );
 
-    expect(singleDiscount).toBe(34);
-    // 단품도 번들과 같은 "N원 절약" 꼴로 — 베이직 카드에서 자소서/기업을 오갈 때 표기가 흔들리지 않는다.
-    expect(savingsFor(PRICING.single)).toBe(2_000);
-    expect(PRICING.single.discountLabel).toBe("2,000원 절약");
+    // 단품은 정가 표기 없이 판매가 그대로 — 끝나는 날 없는 할인은 정가를 못 믿게 만든다(10-05).
+    expect(PRICING.single.listPrice).toBe(PRICING.single.salePrice);
+    expect(savingsFor(PRICING.single)).toBe(0);
+    expect(PRICING.single.discountLabel).toBe("");
     expect(tripleDiscount).toBe(50);
     expect(PRICING.triple.discountLabel).toContain("50%");
   });
@@ -98,8 +95,8 @@ describe("tier pricing", () => {
   it("prices the company single like the resume single", () => {
     expect(PRICING.company.listPrice).toBe(PRICING.single.listPrice);
     expect(PRICING.company.salePrice).toBe(PRICING.single.salePrice);
-    expect(savingsFor(PRICING.company)).toBe(2_000);
-    expect(PRICING.company.discountLabel).toBe("2,000원 절약");
+    expect(savingsFor(PRICING.company)).toBe(0);
+    expect(PRICING.company.discountLabel).toBe("");
   });
 
   it("maps server product keys to pricing keys and labels", () => {

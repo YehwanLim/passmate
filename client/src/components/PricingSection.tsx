@@ -5,7 +5,6 @@ import {
   COMPANY_REPORT_INCLUDED_FEATURES,
   PRICING,
   REPORT_INCLUDED_FEATURES,
-  SEASONAL_DISCOUNT_LABEL,
   STANDARD_PER_USE_PRICE,
   TIERS,
   formatKrw,
@@ -146,10 +145,7 @@ export default function PricingSection() {
         <div
           className="text-center mb-14"
         >
-          <p className="seasonal-discount-label mx-auto w-fit text-lg md:text-xl font-bold">
-            {SEASONAL_DISCOUNT_LABEL}
-          </p>
-          <h2 className="mt-5 text-3xl md:text-4xl font-bold tracking-tight leading-snug">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-snug">
             합격에 가까워지는 비용,
             <br />
             <span className="text-sky-300">커피 한 잔</span>이면 충분합니다
