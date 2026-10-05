@@ -1,0 +1,37 @@
+import { describe, expect, it } from "vitest";
+import { buildDraftPrompt, draftTargetChars } from "../../../shared/prompts/draftPrompt.js";
+
+const EXP = { id: "e1", title: "손님 불만을 단골로 바꾼 3개월", period: "2024.03~05", situation: "카페 리뷰 2.8점", action: "불만 유형을 표로 정리", result: "재방문 120명", tags: ["고객"] };
+const base = { question: "지원 동기를 쓰세요", charLimit: 1000, company: "CJ", jobKeyword: "서비스 기획", posting: null, experiences: [EXP], avoidExperienceIds: [] };
+
+describe("buildDraftPrompt", () => {
+  it("목표 글자 수는 제한의 90%, 제한이 없으면 700", () => {
+    expect(draftTargetChars(1000)).toBe(900);
+    expect(draftTargetChars(null)).toBe(700);
+  });
+
+  it("경험 블록에 id 와 네 칸을 넣고 문항·회사·목표 글자 수를 적는다", () => {
+    const prompt = buildDraftPrompt(base);
+    expect(prompt).toContain("[경험 id=e1]");
+    expect(prompt).toContain("재방문 120명");
+    expect(prompt).toContain("지원 동기를 쓰세요");
+    expect(prompt).toContain("900자");
+    expect(prompt).toContain("CJ");
+  });
+
+  it("공고가 없으면 회사 사실 금지 문구, 있으면 공고 블록", () => {
+    expect(buildDraftPrompt(base)).toContain("[회사 조사 필요]");
+    const withPosting = buildDraftPrompt({ ...base, posting: { summary: { requirements: ["데이터 분석"] }, rawText: "공고 본문" } });
+    expect(withPosting).toContain("[공고]");
+    expect(withPosting).toContain("데이터 분석");
+  });
+
+  it("피할 경험이 있으면 그 id 를 적고, 없으면 블록이 없다", () => {
+    expect(buildDraftPrompt(base)).not.toContain("[피할 경험]");
+    expect(buildDraftPrompt({ ...base, avoidExperienceIds: ["e9"] })).toContain("[피할 경험] e9");
+  });
+
+  it("예시 문장을 넣지 않는다(모델이 베낀다) — 따옴표로 된 예문 블록이 없다", () => {
+    expect(buildDraftPrompt(base)).not.toMatch(/예시 문장|예:\s*"/);
+  });
+});
