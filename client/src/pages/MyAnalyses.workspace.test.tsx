@@ -379,3 +379,28 @@ describe("내 경험으로 초안 쓰기", () => {
     expect(screen.queryByRole("button", { name: "내 경험으로 초안 쓰기" })).toBeNull();
   });
 });
+
+describe("오늘 한도를 다 쓰면", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", memoryStorage());
+    mocks.fetchApplication.mockResolvedValue({
+      ...DETAIL,
+      questions: [...DETAIL.questions, { position: 2, prompt: "협업 경험", char_limit: null, answer: "" }],
+    });
+    mocks.listExperiences.mockResolvedValue([{ id: "e1", title: "경험" }]);
+    mocks.fetchMock.mockResolvedValue(new Response("[]", { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", mocks.fetchMock);
+  });
+
+  it("다른 문항으로 옮겨도 버튼을 막고 이유를 보여 준다", async () => {
+    mocks.requestExperienceDraft.mockResolvedValue({ kind: "rate_limited" });
+    render(<MyAnalyses />);
+    fireEvent.click(await screen.findByRole("button", { name: "내 경험으로 초안 쓰기" }));
+    await screen.findByText(/오늘 무료 초안 2개를 다 썼어요/);
+    expect((screen.getByRole("button", { name: "내 경험으로 초안 쓰기" }) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "문항 2" }));
+    expect((screen.getByRole("button", { name: "내 경험으로 초안 쓰기" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/오늘 무료 초안 2개를 다 썼어요/)).toBeTruthy();
+  });
+});

@@ -199,6 +199,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
   const [experienceTitles, setExperienceTitles] = useState<Map<string, string>>(new Map());
   const [experienceCount, setExperienceCount] = useState<number | null>(null);
   const [draft, setDraft] = useState<DraftUiState>(null);
+  const [draftLimitReached, setDraftLimitReached] = useState(false);
   const [posting, setPosting] = useState<JobPostingRecord | null>(null);
   const [postingError, setPostingError] = useState(false);
   const draftSeq = useRef(0);
@@ -361,6 +362,9 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
       charLimit: q.charLimit,
       avoidExperienceIds: previous,
     });
+    if (result.kind === "rate_limited" || (result.kind === "ok" && result.remainingToday === 0)) {
+      setDraftLimitReached(true);
+    }
     // 기다리는 동안 다른 문항에서 새로 요청했으면 늦게 온 결과는 버린다.
     if (seq === draftSeq.current) setDraft({ index, status: "done", result });
   };
@@ -528,6 +532,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
               onCloseDraft={() => setDraft(null)}
               experienceTitles={experienceTitles}
               experienceCount={experienceCount}
+              draftLimitReached={draftLimitReached}
             />
             {autosave.state === "error" && (
               <div className="-mt-3 flex justify-end">

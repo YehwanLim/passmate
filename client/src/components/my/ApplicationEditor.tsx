@@ -57,6 +57,7 @@ export default function ApplicationEditor({
   onCloseDraft,
   experienceTitles,
   experienceCount,
+  draftLimitReached,
 }: {
   questions: ApplicationQuestionDraft[];
   activeIndex: number;
@@ -72,6 +73,8 @@ export default function ApplicationEditor({
   experienceTitles: Map<string, string>;
   /** 모르면 null(버튼은 열어 두고 서버가 판단한다) */
   experienceCount: number | null;
+  /** 오늘 무료 초안을 다 썼다(새로고침 전까지 화면이 기억한다) */
+  draftLimitReached: boolean;
 }) {
   const active = questions[activeIndex];
   const counts = countChars(active?.answer ?? "");
@@ -154,6 +157,7 @@ export default function ApplicationEditor({
             onCloseDraft={onCloseDraft}
             experienceTitles={experienceTitles}
             experienceCount={experienceCount}
+            limitReached={draftLimitReached}
           />
           <textarea
             value={active.answer}
@@ -183,6 +187,7 @@ function DraftControls({
   onCloseDraft,
   experienceTitles,
   experienceCount,
+  limitReached,
 }: {
   question: ApplicationQuestionDraft;
   index: number;
@@ -192,6 +197,7 @@ function DraftControls({
   onCloseDraft: () => void;
   experienceTitles: Map<string, string>;
   experienceCount: number | null;
+  limitReached: boolean;
 }) {
   const result = draft?.status === "done" ? draft.result : null;
   const notice = result ? draftNotice(result) : null;
@@ -210,14 +216,20 @@ function DraftControls({
           <button
             type="button"
             onClick={() => onRequestDraft(index)}
-            disabled={draft?.status === "loading" || needsPrompt}
+            disabled={draft?.status === "loading" || needsPrompt || limitReached}
             className="h-9 rounded-lg border border-white/[0.12] px-3 text-[13px] text-zinc-100 hover:border-white/[0.24] disabled:opacity-50"
           >
             {DRAFT.button}
           </button>
         )}
         <span className="text-[12px] text-zinc-500">
-          {experienceCount === 0 ? DRAFT.noExperiences : needsPrompt ? DRAFT.needPrompt : DRAFT.freeNote}
+          {experienceCount === 0
+            ? DRAFT.noExperiences
+            : limitReached && result?.kind !== "rate_limited"
+              ? DRAFT.rateLimited
+              : needsPrompt
+                ? DRAFT.needPrompt
+                : DRAFT.freeNote}
         </span>
         {used.length > 0 && (
           <span className="text-[12px] text-zinc-500">
