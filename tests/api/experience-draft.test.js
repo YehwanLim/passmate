@@ -30,6 +30,17 @@ describe("normalizeDraftOutput", () => {
     expect(out.sentences[0].text).toBe("매출 [실제 수치] 올랐습니다.");
   });
 
+  it("기간 2024.09~11 같은 점 표기는 연·월 숫자로도 인정한다(앞자리 0 무시)", () => {
+    const exps = [{ id: "e3", title: "공모전", period: "2024.09~11", situation: "", action: "", result: "", tags: [] }];
+    const out = normalizeDraftOutput({
+      status: "ok",
+      chosen: [{ experienceId: "e3", reason: "r" }],
+      sentences: [sentence("2024년 9월부터 11월까지 진행했고 3번 수정했습니다.", "experience", ["e3"])],
+    }, { experiences: exps, postingText: "" });
+    expect(out.sentences[0].text).toBe("2024년 9월부터 11월까지 진행했고 [실제 수치]번 수정했습니다.");
+    expect(out.replacedNumbers).toBe(1);
+  });
+
   it("남의 경험 id 는 버리고, 출처가 빈 experience 문장은 unsourced", () => {
     const out = normalizeDraftOutput({
       status: "ok",

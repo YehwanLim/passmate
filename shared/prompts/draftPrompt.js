@@ -56,7 +56,9 @@ export function buildDraftPrompt({ question, charLimit, company, jobKeyword, pos
     "",
     `[지원] 회사: ${company || "미정"} / 직무: ${jobKeyword || "미정"}`,
     `[문항] ${question}`,
-    `[분량] 공백 포함 약 ${target}자`,
+    Number.isInteger(charLimit) && charLimit > 0
+      ? `[분량] 공백 포함 약 ${target}자. ${charLimit}자를 넘지 않는다`
+      : `[분량] 공백 포함 약 ${target}자`,
     posting ? postingBlock(posting) : null,
     avoidExperienceIds?.length
       ? `[피할 경험] ${avoidExperienceIds.join(", ")} — 다른 문항에서 이미 썼다. 더 맞는 경험이 없을 때만 쓴다.`
@@ -69,9 +71,9 @@ export function buildDraftPrompt({ question, charLimit, company, jobKeyword, pos
     '  "status": "문항에 맞는 경험이 있으면 ok, 어떤 경험도 이 문항의 근거가 되지 못하면 needs_more",',
     '  "chosen": [{ "experienceId": "근거로 고른 경험의 id. 1~2개만 고른다. 나열하지 않는다", "reason": "이 문항에 이 경험을 고른 이유 한 문장" }],',
     '  "sentences": [{',
-    '    "text": "초안 한 문장. 순서는 ① 이 직무가 하는 일 ② 그 일에 필요한 역량 ③ 나에게 그 역량이 있다는 한 줄 ④ 근거 경험(상황→내가 한 일→달라진 것) ⑤ 입사 후 이걸 하겠다. 과장 동사와 수식어를 쓰지 않는다",',
+    '    "text": "초안 한 문장. 순서는 ① 이 직무가 하는 일 ② 그 일에 필요한 역량 ③ 나에게 그 역량이 있다는 한 줄 ④ 근거 경험(상황→내가 한 일→달라진 것. 경험에 적힌 내용만 다시 쓰고, 적혀 있지 않은 동기·감정·다른 사람의 반응은 덧붙이지 않는다) ⑤ 입사 후 이걸 하겠다. 과장 동사와 수식어를 쓰지 않는다. ⑤ 에는 매출·성장률 같은 숫자 목표를 쓰지 않는다",',
     '    "kind": "①② 는 job, ③④ 는 experience, ⑤ 는 plan",',
-    '    "sourceIds": ["이 문장의 사실이 나온 경험 id. experience 문장은 반드시 1개 이상, job·plan 은 빈 배열"]',
+    '    "sourceIds": ["이 문장의 사실이 나온 경험 id. experience 문장은 반드시 1개 이상이고, ③ 문장도 근거로 고른 경험 id 를 넣는다. job·plan 은 빈 배열"]',
     "  }],",
     '  "needMore": "status 가 needs_more 일 때만: 이 문항에 어떤 경험이 있으면 쓸 수 있는지 한 문장. ok 면 빈 문자열"',
     "}",

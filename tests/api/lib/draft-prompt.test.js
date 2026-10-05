@@ -15,7 +15,8 @@ describe("buildDraftPrompt", () => {
     expect(prompt).toContain("[경험 id=e1]");
     expect(prompt).toContain("재방문 120명");
     expect(prompt).toContain("지원 동기를 쓰세요");
-    expect(prompt).toContain("900자");
+    expect(prompt).toContain("900자. 1000자를 넘지 않는다");
+    expect(buildDraftPrompt({ ...base, charLimit: null })).not.toContain("넘지 않는다");
     expect(prompt).toContain("CJ");
   });
 
@@ -29,6 +30,13 @@ describe("buildDraftPrompt", () => {
   it("피할 경험이 있으면 그 id 를 적고, 없으면 블록이 없다", () => {
     expect(buildDraftPrompt(base)).not.toContain("[피할 경험]");
     expect(buildDraftPrompt({ ...base, avoidExperienceIds: ["e9"] })).toContain("[피할 경험] e9");
+  });
+
+  it("③ 역량 문장에도 근거 경험 id 를 붙이고, 입사 후 문장에는 숫자 목표를 쓰지 않게 한다", () => {
+    const prompt = buildDraftPrompt(base);
+    expect(prompt).toContain("③ 문장도 근거로 고른 경험 id");
+    expect(prompt).toContain("숫자 목표를 쓰지 않는다");
+    expect(prompt).toContain("적혀 있지 않은 동기·감정·다른 사람의 반응은 덧붙이지 않는다");
   });
 
   it("예시 문장을 넣지 않는다(모델이 베낀다) — 따옴표로 된 예문 블록이 없다", () => {

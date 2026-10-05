@@ -78,7 +78,7 @@ export const WORKSPACE_COPY = {
   draft: {
     button: "내 경험으로 초안 쓰기",
     freeNote: "하루 2개 무료",
-    generating: "경험을 고르고 초안을 쓰고 있어요… (20~30초)",
+    generating: "경험을 고르고 초안을 쓰고 있어요… (10초 정도)",
     chosenLabel: "고른 경험",
     sourceLabel: (title: string) => `출처: ${title}`,
     unsourced: "경험에서 근거를 찾지 못한 문장이에요. 사실인지 확인해 주세요.",
