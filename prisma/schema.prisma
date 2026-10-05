@@ -358,6 +358,7 @@ model Project {
   jobKeyword  String? @map("job_keyword") @db.VarChar(100) // 지원 직무
   deadline    DateTime? @db.Timestamptz                    // 접수 마감(작업실)
   postingSlug String?   @map("posting_slug") @db.VarChar(120) // 공고 보드에서 시작한 지원서(P2)
+  jobPostingId String?  @map("job_posting_id") @db.Uuid             // 작업실에 붙인 공고(초안·진단 기준)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -366,8 +367,10 @@ model Project {
   user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   analyses  Analysis[]
   questions ApplicationQuestion[]
+  jobPosting JobPosting?          @relation(fields: [jobPostingId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([jobPostingId])
   @@map("projects")
 }
 
@@ -379,6 +382,7 @@ model ApplicationQuestion {
   prompt    String   @db.Text
   charLimit Int?     @map("char_limit")
   answer    String   @default("") @db.Text
+  draftExperienceIds String[] @default([]) @map("draft_experience_ids") // "이 초안으로 채우기" 때 고른 경험
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -516,6 +520,7 @@ model JobPosting {
   // Relations
   user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   analyses Analysis[]
+  projects Project[]
 
   @@index([userId])
   @@map("job_postings")
