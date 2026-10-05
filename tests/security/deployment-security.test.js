@@ -93,6 +93,7 @@ describe("beta deployment security configuration", () => {
       { source: "/api/entitlements/purchase-intents", destination: "/api/entitlements?purchaseIntent=1" },
       { source: "/api/analyze/split", destination: "/api/analyze?split=1" },
       { source: "/api/analyze/posting", destination: "/api/analyze?posting=1" },
+      { source: "/api/analyze/draft", destination: "/api/analyze?draft=1" },
       { source: "/api/analyze/company", destination: "/api/analyze?kind=company" },
       // 공개 예시 리포트는 빌드 때 프리렌더한 정적 HTML 로 받는다(scripts/prerender-landing.mjs 참고).
       {
