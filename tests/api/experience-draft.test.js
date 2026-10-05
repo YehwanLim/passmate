@@ -141,7 +141,7 @@ describe("POST /api/analyze?draft=1", () => {
     expect(res.body).toMatchObject({ status: "ok", draft_text: "재방문 1200명", remaining_today: 1, replaced_numbers: 0 });
     expect(res.body.chosen[0]).toEqual({ experience_id: "e1", title: "카페 단골 만들기", reason: "r" });
     expect(res.body.sentences[0]).toEqual({ text: "재방문 1200명", kind: "experience", source_ids: ["e1"], unsourced: false });
-    expect(deps.callModel.mock.calls[0][0]).toContain("[피할 경험] e2");
+    expect(deps.callModel.mock.calls[0][0]).toContain("[피할 경험] E2");
     expect(deps.refundRateLimit).not.toHaveBeenCalled();
   });
 
@@ -188,6 +188,30 @@ describe("POST /api/analyze?draft=1", () => {
     await handler(post(BODY), res);
     expect(res.body).toEqual({ status: "needs_more", need_more: "협업 경험이 필요해요", remaining_today: 2 });
     expect(deps.refundRateLimit).toHaveBeenCalledTimes(1);
+  });
+
+  it("모델에는 짧은 별칭(E1·E2)만 보이고, 응답은 실제 id 로 되돌린다(긴 uuid 를 모델이 틀리게 베끼는 문제)", async () => {
+    const A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const exps = [
+      { ...EXPS[0], id: A },
+      { ...EXPS[1], id: B },
+    ];
+    const db = makeDb({ experiences: exps, project: { id: PROJECT, company: "CJ", jobKeyword: null, jobPostingId: null, questions: [{ draftExperienceIds: [B] }] } });
+    const callModel = vi.fn(async () => ({
+      status: "ok",
+      chosen: [{ experienceId: "E1", reason: "r" }],
+      sentences: [{ text: "재방문 1200명", kind: "experience", sourceIds: ["e1"] }],
+    }));
+    const { handler } = makeHandler({ db, callModel });
+    const res = createResponse();
+    await handler(post(BODY), res);
+    const prompt = callModel.mock.calls[0][0];
+    expect(prompt).toContain("[경험 id=E1]");
+    expect(prompt).toContain("[피할 경험] E2");
+    expect(prompt).not.toContain(A);
+    expect(res.body.chosen[0].experience_id).toBe(A);
+    expect(res.body.sentences[0]).toMatchObject({ source_ids: [A], unsourced: false, text: "재방문 1200명" });
   });
 
   it("공고가 붙어 있으면 본인 공고만 읽어 프롬프트에 넣는다", async () => {
