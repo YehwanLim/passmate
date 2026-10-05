@@ -1,11 +1,36 @@
 import { Plus, Trash2 } from "lucide-react";
+import { Link } from "wouter";
+import DraftPreview from "@/components/my/DraftPreview";
 import type { AutosaveState } from "@/hooks/useDraftAutosave";
+import type { DraftResult } from "@/lib/experienceDraft";
 import { countChars, type ApplicationQuestionDraft } from "@/lib/workspace";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 const MAX_QUESTIONS = 5;
 const COPY = WORKSPACE_COPY.editor;
 const MAX_CHAR_LIMIT = 10000;
+const DRAFT = WORKSPACE_COPY.draft;
+const EXPERIENCES_PATH = "/my#experiences";
+
+/** 문항 하나의 초안 요청 상태. 한 번에 한 문항만 보여 준다. */
+export type DraftUiState = { index: number; status: "loading" } | { index: number; status: "done"; result: DraftResult } | null;
+
+export function draftNotice(result: DraftResult): string | null {
+  switch (result.kind) {
+    case "ok":
+      return null;
+    case "needs_more":
+      return DRAFT.needsMore(result.needMore);
+    case "no_experiences":
+      return DRAFT.noExperiences;
+    case "rate_limited":
+      return DRAFT.rateLimited;
+    case "auth_required":
+      return DRAFT.authRequired;
+    default:
+      return DRAFT.failed;
+  }
+}
 
 // 서버가 1..10000 정수만 받는다. 그 밖의 입력은 제한 없음(null)으로 두어 저장이 막히지 않게 한다.
 export function parseCharLimit(raw: string): number | null {
@@ -26,6 +51,12 @@ export default function ApplicationEditor({
   onAdd,
   onRemove,
   saveState,
+  draft,
+  onRequestDraft,
+  onApplyDraft,
+  onCloseDraft,
+  experienceTitles,
+  experienceCount,
 }: {
   questions: ApplicationQuestionDraft[];
   activeIndex: number;
@@ -34,6 +65,13 @@ export default function ApplicationEditor({
   onAdd: () => void;
   onRemove: (index: number) => void;
   saveState: AutosaveState;
+  draft: DraftUiState;
+  onRequestDraft: (index: number, opts?: { retry: boolean }) => void;
+  onApplyDraft: (index: number) => void;
+  onCloseDraft: () => void;
+  experienceTitles: Map<string, string>;
+  /** 모르면 null(버튼은 열어 두고 서버가 판단한다) */
+  experienceCount: number | null;
 }) {
   const active = questions[activeIndex];
   const counts = countChars(active?.answer ?? "");
@@ -107,6 +145,16 @@ export default function ApplicationEditor({
               </button>
             )}
           </div>
+          <DraftControls
+            question={active}
+            index={activeIndex}
+            draft={draft && draft.index === activeIndex ? draft : null}
+            onRequestDraft={onRequestDraft}
+            onApplyDraft={onApplyDraft}
+            onCloseDraft={onCloseDraft}
+            experienceTitles={experienceTitles}
+            experienceCount={experienceCount}
+          />
           <textarea
             value={active.answer}
             onChange={(e) => onChange(activeIndex, { answer: e.target.value })}
@@ -123,5 +171,84 @@ export default function ApplicationEditor({
         </div>
       )}
     </section>
+  );
+}
+
+function DraftControls({
+  question,
+  index,
+  draft,
+  onRequestDraft,
+  onApplyDraft,
+  onCloseDraft,
+  experienceTitles,
+  experienceCount,
+}: {
+  question: ApplicationQuestionDraft;
+  index: number;
+  draft: DraftUiState;
+  onRequestDraft: (index: number, opts?: { retry: boolean }) => void;
+  onApplyDraft: (index: number) => void;
+  onCloseDraft: () => void;
+  experienceTitles: Map<string, string>;
+  experienceCount: number | null;
+}) {
+  const result = draft?.status === "done" ? draft.result : null;
+  const notice = result ? draftNotice(result) : null;
+  const needsPrompt = question.prompt.trim().length === 0;
+  const used = (question.draftExperienceIds ?? []).map((id) => experienceTitles.get(id)).filter(Boolean);
+  const pointToExperiences = result?.kind === "no_experiences" || result?.kind === "needs_more";
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {experienceCount === 0 ? (
+          <Link href={EXPERIENCES_PATH} className="text-[13px] text-zinc-300 underline underline-offset-4 hover:text-zinc-100">
+            {DRAFT.goExperiences}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onRequestDraft(index)}
+            disabled={draft?.status === "loading" || needsPrompt}
+            className="h-9 rounded-lg border border-white/[0.12] px-3 text-[13px] text-zinc-100 hover:border-white/[0.24] disabled:opacity-50"
+          >
+            {DRAFT.button}
+          </button>
+        )}
+        <span className="text-[12px] text-zinc-500">
+          {experienceCount === 0 ? DRAFT.noExperiences : needsPrompt ? DRAFT.needPrompt : DRAFT.freeNote}
+        </span>
+        {used.length > 0 && (
+          <span className="text-[12px] text-zinc-500">
+            {DRAFT.usedLabel}: {used.join(", ")}
+          </span>
+        )}
+      </div>
+      {draft?.status === "loading" && (
+        <p className="text-[13px] text-zinc-400" aria-live="polite">
+          {DRAFT.generating}
+        </p>
+      )}
+      {notice && (
+        <p role="status" className="text-[13px] text-zinc-300">
+          {notice}{" "}
+          {pointToExperiences && (
+            <Link href={EXPERIENCES_PATH} className="underline underline-offset-4 hover:text-zinc-100">
+              {DRAFT.goExperiences}
+            </Link>
+          )}
+        </p>
+      )}
+      {result?.kind === "ok" && (
+        <DraftPreview
+          draft={result}
+          hasAnswer={question.answer.trim().length > 0}
+          onApply={() => onApplyDraft(index)}
+          onRetry={() => onRequestDraft(index, { retry: true })}
+          onClose={onCloseDraft}
+        />
+      )}
+    </div>
   );
 }

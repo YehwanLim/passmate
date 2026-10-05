@@ -588,6 +588,10 @@ export default function Analyze() {
               >
                 예시 리포트 먼저 보기
               </Link>
+              {" · "}
+              <Link href="/my" className="text-zinc-300 underline underline-offset-4 hover:text-white">
+                내 경험으로 초안 쓰기
+              </Link>
               {isPhone && (
                 <>
                   {" · "}
