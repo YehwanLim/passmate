@@ -46,9 +46,10 @@ function postingBlock(posting) {
 
 export function buildDraftPrompt({ question, charLimit, company, jobKeyword, posting, experiences, avoidExperienceIds }) {
   const target = draftTargetChars(charLimit);
+  const companyName = company ? `회사 이름 '${company}'은 그대로 쓴다. ` : "";
   const companyRule = posting
-    ? "회사·직무에 대한 사실은 [공고]에 적힌 것만 쓴다."
-    : "공고가 없다. 회사의 사업·제품·수치·문화 같은 회사 고유 사실은 쓰지 않는다. 꼭 필요하면 그 자리에 [회사 조사 필요]를 남긴다.";
+    ? `${companyName}회사·직무에 대한 사실은 [공고]에 적힌 것만 쓴다.`
+    : `공고가 없다. ${companyName}회사의 사업·제품·수치·문화 같은 회사 고유 사실은 쓰지 않는다. 꼭 필요하면 그 자리에 [회사 조사 필요]를 남긴다.`;
 
   return [
     "너는 신입 공채 지원자의 자기소개서 초안을 함께 쓰는 조력자다. 아래 [경험]에 적힌 사실만 재료로 [문항]에 답한다.",

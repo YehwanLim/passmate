@@ -8,12 +8,15 @@ const COPY = WORKSPACE_COPY.draft;
 export default function DraftPreview({
   draft,
   hasAnswer,
+  canRetry = true,
   onApply,
   onRetry,
   onClose,
 }: {
   draft: DraftOk;
   hasAnswer: boolean;
+  /** 오늘 무료 초안을 다 썼으면 false */
+  canRetry?: boolean;
   onApply: () => void;
   onRetry: () => void;
   onClose: () => void;
@@ -77,7 +80,8 @@ export default function DraftPreview({
           <button
             type="button"
             onClick={onRetry}
-            className="h-9 rounded-lg border border-white/[0.12] px-3 text-[13px] text-zinc-200"
+            disabled={!canRetry}
+            className="h-9 rounded-lg border border-white/[0.12] px-3 text-[13px] text-zinc-200 disabled:opacity-50"
           >
             {COPY.retry}
           </button>

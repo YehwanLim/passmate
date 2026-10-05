@@ -20,6 +20,11 @@ describe("buildDraftPrompt", () => {
     expect(prompt).toContain("CJ");
   });
 
+  it("회사 이름은 빈칸으로 두지 않고 그대로 쓰게 한다", () => {
+    expect(buildDraftPrompt(base)).toContain("회사 이름 'CJ'은 그대로 쓴다");
+    expect(buildDraftPrompt({ ...base, company: null })).not.toContain("회사 이름");
+  });
+
   it("공고가 없으면 회사 사실 금지 문구, 있으면 공고 블록", () => {
     expect(buildDraftPrompt(base)).toContain("[회사 조사 필요]");
     const withPosting = buildDraftPrompt({ ...base, posting: { summary: { requirements: ["데이터 분석"] }, rawText: "공고 본문" } });

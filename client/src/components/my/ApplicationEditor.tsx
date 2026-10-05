@@ -256,6 +256,7 @@ function DraftControls({
         <DraftPreview
           draft={result}
           hasAnswer={question.answer.trim().length > 0}
+          canRetry={!limitReached}
           onApply={() => onApplyDraft(index)}
           onRetry={() => onRequestDraft(index, { retry: true })}
           onClose={onCloseDraft}

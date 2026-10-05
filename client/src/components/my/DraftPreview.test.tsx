@@ -33,6 +33,11 @@ describe("DraftPreview", () => {
     expect(screen.getByText(/노란 칸은/)).toBeTruthy();
   });
 
+  it("오늘 한도를 다 썼으면 다시 만들기를 막는다", () => {
+    render(<DraftPreview draft={draft} hasAnswer={false} canRetry={false} onApply={() => {}} onRetry={() => {}} onClose={() => {}} />);
+    expect((screen.getByText("다른 경험으로 다시") as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("답이 비어 있으면 묻지 않고 바로 채운다", () => {
     const onApply = vi.fn();
     const confirm = vi.spyOn(window, "confirm");
