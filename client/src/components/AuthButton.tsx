@@ -8,11 +8,16 @@ import { useAuth } from "@/contexts/AuthContext";
  * AuthButton
  *
  * Header에서 사용하는 인증 상태 버튼 컴포넌트.
- * - 비로그인: "로그인" 버튼 → /login 이동
+ * - 비로그인: "로그인" 버튼 → /login 이동. 랜딩(/)에서 누르면 로그인 뒤 분석 폼(/analyze)으로 보낸다 —
+ *   랜딩으로 되돌려 보내면 가입하고도 다음 할 일을 못 찾고 나갔다(10-01 실사례).
  * - 로그인: 프로필 이미지 + 이름 + 드롭다운 (로그아웃)
  */
+export function loginPathFrom(currentPath: string): string {
+  return currentPath === "/" ? "/login?redirect=%2Fanalyze" : "/login";
+}
+
 export default function AuthButton() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -58,7 +63,7 @@ export default function AuthButton() {
     return (
       <button
         id="header-login-btn"
-        onClick={() => navigate("/login")}
+        onClick={() => navigate(loginPathFrom(location))}
         className="header-action-link text-[13px] font-medium h-8 px-3 rounded-md"
       >
         로그인

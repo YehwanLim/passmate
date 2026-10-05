@@ -2,10 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   VISITOR_ID_KEY,
+  deviceClass,
   getVisitorId,
   readEntrySource,
   resetVisitorIdForTests,
   sendClientEvent,
+  sendFunnelEvent,
   sendVisit,
   shouldTrackPath,
 } from "./siteVisits";
@@ -160,6 +162,24 @@ describe("siteVisits", () => {
     await expect(
       sendClientEvent("kakao_start_failed", "x", { fetcher: failing, getAccessToken: async () => null, visitorId: "visitor-1234" }),
     ).resolves.toBe(false);
+  });
+
+  it("퍼널 이벤트는 detail 에 기기:위치만 싣고, 꺼져 있으면(개발 빌드) 요청을 보내지 않는다", async () => {
+    const calls: Array<RequestInit | undefined> = [];
+    const fetcher: typeof fetch = async (_input, init) => {
+      calls.push(init);
+      return new Response("{}", { status: 200 });
+    };
+    const base = { fetcher, getAccessToken: async () => null, visitorId: "visitor-1234", inAppBrowser: null };
+
+    await expect(sendFunnelEvent("landing_cta_click", "hero", { ...base, enabled: false })).resolves.toBe(false);
+    expect(calls).toHaveLength(0);
+
+    await sendFunnelEvent("landing_cta_click", "hero", { ...base, enabled: true });
+    await sendFunnelEvent("signup_complete", undefined, { ...base, enabled: true });
+    const device = deviceClass();
+    expect(JSON.parse(String(calls[0]?.body))).toEqual({ visitorId: "visitor-1234", event: "landing_cta_click", detail: `${device}:hero` });
+    expect(JSON.parse(String(calls[1]?.body))).toEqual({ visitorId: "visitor-1234", event: "signup_complete", detail: device });
   });
 
   it("비로그인이면 Authorization 없이 보내고, 네트워크 실패는 삼킨다", async () => {

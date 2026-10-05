@@ -427,6 +427,7 @@ export default function ReportShowcase() {
           <div className="text-center">
             <button
               className="landing-primary-cta group"
+              data-funnel-cta="showcase"
               onClick={() => navigate("/analyze")}
             >
               <span className="relative z-10">내 자소서 분석해보기</span>

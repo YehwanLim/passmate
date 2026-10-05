@@ -8,6 +8,7 @@ import React, {
 import type { Session } from "@supabase/supabase-js";
 import type { AuthState, UserProfile } from "@/types/auth";
 import { trackLogin, trackSignUp } from "@/lib/analytics";
+import { sendFunnelEvent } from "@/lib/siteVisits";
 import { getGoogleOAuthOptions } from "@/lib/authOptions";
 import { clearPassMateStorage } from "@/utils/storage";
 
@@ -88,6 +89,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ).getTime();
             if (Math.abs(updatedAt - createdAt) < 5000) {
               trackSignUp(provider);
+              // DB 퍼널에도 남긴다. 콜백 안에서 세션 조회(토큰 첨부)를 기다리지 않도록 다음 틱으로 미룬다.
+              setTimeout(() => void sendFunnelEvent("signup_complete", provider), 0);
             }
           }
         } else {

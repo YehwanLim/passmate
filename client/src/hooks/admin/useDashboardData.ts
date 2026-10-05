@@ -14,7 +14,11 @@ export interface SourceSummaryRow { source: string; visitors: number; }
 /** 로그인 건강. 인앱 브라우저(Google 로그인이 막히는 WebView)로 들어온 고유 방문자와 로그인 화면 이벤트 건수(lib/site-visits.js CLIENT_EVENT_NAMES). */
 export interface LoginHealth {
   inAppVisitors: number;
-  events: { login_prompt_in_app: number; google_button_unavailable: number; google_signin_failed: number; kakao_start_failed: number };
+  events: {
+    login_prompt_in_app: number; google_button_unavailable: number; google_signin_failed: number; kakao_start_failed: number;
+    /** 랜딩 → 폼 → 가입 퍼널 건수. 구버전 서버 응답엔 없다. */
+    landing_cta_click?: number; analyze_form_start?: number; analyze_submit_click?: number; signup_complete?: number;
+  };
 }
 export interface ActivityItem { id: string; userEmail: string; status: "PENDING" | "SUCCESS" | "FAILED"; createdAt: string; modelName: string | null; }
 export interface DashboardData { range: { days: DashboardRangeDays }; kpi: KpiData; paymentSummary: PaymentSummary; visitorChart: VisitorChartPoint[]; sourceSummary: SourceSummaryRow[]; loginHealth: LoginHealth; signupChart: ChartPoint[]; analysisChart: ChartPoint[]; recentActivity: ActivityItem[]; }

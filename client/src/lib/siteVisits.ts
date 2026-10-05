@@ -181,10 +181,38 @@ export type ClientEventName =
   | "login_prompt_in_app"
   | "google_button_unavailable"
   | "google_signin_failed"
-  | "kakao_start_failed";
+  | "kakao_start_failed"
+  | FunnelEventName;
+
+/** 랜딩 → 폼 → 가입 퍼널. 어디서 사람이 떨어지는지 DB 에서 기기별로 보려고 남긴다. */
+export type FunnelEventName = "landing_cta_click" | "analyze_form_start" | "analyze_submit_click" | "signup_complete";
+
+/** 폰(m)·PC(d) 구분. 손가락 입력이 주 포인터면 폰으로 친다. 판별이 안 되면 d. */
+export function deviceClass(): "m" | "d" {
+  try {
+    return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches ? "m" : "d";
+  } catch {
+    return "d";
+  }
+}
+
+// 개발 서버도 같은 DB 를 보므로 방문 핑(VisitTracker)과 같이 프로덕션 빌드에서만 보낸다.
+const FUNNEL_TRACKING_ENABLED = import.meta.env.PROD;
 
 /**
- * 로그인 화면에서 생긴 실패·노출을 서버에 남긴다(같은 /api/visits 엔드포인트, `event` 필드).
+ * 퍼널 이벤트. detail 은 `기기:위치`(예: `m:hero`) 형태의 짧은 코드뿐이다 — 자소서 본문·이메일을 넣지 않는다.
+ */
+export function sendFunnelEvent(
+  event: FunnelEventName,
+  where?: string,
+  { enabled = FUNNEL_TRACKING_ENABLED, ...options }: SendOptions & { enabled?: boolean } = {},
+): Promise<boolean> {
+  if (!enabled) return Promise.resolve(false);
+  return sendClientEvent(event, where ? `${deviceClass()}:${where}` : deviceClass(), options);
+}
+
+/**
+ * 로그인 화면에서 생긴 실패·노출과 퍼널 이벤트를 서버에 남긴다(같은 /api/visits 엔드포인트, `event` 필드).
  * detail 은 짧은 코드나 오류 문구뿐이어야 한다 — 자소서 본문·이메일·토큰을 넣지 않는다. 실패는 삼킨다.
  */
 export async function sendClientEvent(

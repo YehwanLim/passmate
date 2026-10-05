@@ -73,6 +73,15 @@ export function TrafficSourcesTable({ data, days, isLoading, loginHealth }: Traf
             {loginHealth.events.kakao_start_failed.toLocaleString("ko-KR")}
           </p>
         )}
+        {!isLoading && loginHealth && (
+          // 랜딩 CTA → 폼 입력 시작 → 제출 클릭 → 가입. 건수라 같은 사람이 여러 번 누르면 여러 번 센다.
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            퍼널: 랜딩 버튼 {(loginHealth.events.landing_cta_click ?? 0).toLocaleString("ko-KR")} · 폼 입력 시작{" "}
+            {(loginHealth.events.analyze_form_start ?? 0).toLocaleString("ko-KR")} · 제출 클릭{" "}
+            {(loginHealth.events.analyze_submit_click ?? 0).toLocaleString("ko-KR")} · 가입{" "}
+            {(loginHealth.events.signup_complete ?? 0).toLocaleString("ko-KR")}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

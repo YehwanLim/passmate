@@ -171,7 +171,14 @@ describe("POST /api/visits — 방문 핑", () => {
       "google_button_unavailable",
       "google_signin_failed",
       "kakao_start_failed",
+      "landing_cta_click",
+      "analyze_form_start",
+      "analyze_submit_click",
+      "signup_complete",
     ]);
+    expect(readClientEventBody({ visitorId: VISITOR_ID, event: "landing_cta_click", detail: "m:hero" })).toEqual({
+      visitorId: VISITOR_ID, name: "landing_cta_click", detail: "m:hero", inAppBrowser: null,
+    });
   });
 
   it("readVisitBody 는 관리자 경로·쿼리·초과 길이·모르는 필드를 거른다", () => {

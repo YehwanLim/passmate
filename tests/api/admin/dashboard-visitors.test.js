@@ -135,7 +135,10 @@ describe("admin dashboard — 방문자 집계", () => {
 
     expect(res.body.loginHealth).toEqual({
       inAppVisitors: 2,
-      events: { login_prompt_in_app: 3, google_button_unavailable: 0, google_signin_failed: 1, kakao_start_failed: 0 },
+      events: {
+        login_prompt_in_app: 3, google_button_unavailable: 0, google_signin_failed: 1, kakao_start_failed: 0,
+        landing_cta_click: 0, analyze_form_start: 0, analyze_submit_click: 0, signup_complete: 0,
+      },
     });
     expect(mocks.prisma.siteVisit.findMany.mock.calls[0][0].select).toEqual(expect.objectContaining({ inAppBrowser: true }));
     const groupArgs = mocks.prisma.clientEvent.groupBy.mock.calls[0][0];

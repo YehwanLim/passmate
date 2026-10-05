@@ -36,8 +36,12 @@ import JobPostingSection from "@/components/analyze/JobPostingSection";
 import JobPostingStickyBar from "@/components/analyze/JobPostingStickyBar";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { sanitizeText } from "@/utils/sanitize";
+import { supabase } from "@/lib/supabase";
+import { fetchEntitlementSummary } from "@/lib/entitlements";
+import { deviceClass, sendFunnelEvent } from "@/lib/siteVisits";
+import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
 import { checkDuplicateQuestions } from "@/utils/textSimilarity";
 import { UI_LABELS } from "@/constants/labels";
 import {
@@ -140,6 +144,48 @@ export default function Analyze() {
     null
   );
   const analysisRequestRef = useRef<IdempotentRequest | null>(null);
+  // 무료 분석이 남았는지. 가입하고도 "이제 뭐 하지?"에서 멈추던 사람에게 바로 보이게 한다. null = 모름/표시 안 함.
+  const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
+  // 폼에 처음 손댄 순간을 한 번만 남긴다(퍼널: 폼 도달 → 입력 시작 → 제출).
+  const formStartSentRef = useRef(false);
+  const markFormStart = useCallback((how: "typed" | "file") => {
+    if (formStartSentRef.current) return;
+    formStartSentRef.current = true;
+    void sendFunnelEvent("analyze_form_start", how);
+  }, []);
+  // 폰에서 초안이 손에 없을 때 PC 로 옮겨 가라고 주소를 복사해 준다.
+  const [isPhone] = useState(() => deviceClass() === "m");
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) return;
+        const summary = await fetchEntitlementSummary(token);
+        if (!cancelled) setFreeRemaining(summary.freeRemaining);
+      } catch {
+        // 잔여 표시는 편의 정보다. 실패해도 폼은 쓸 수 있고 서버가 최종 판단한다.
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated]);
+
+  const copyAnalyzeLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/analyze`);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 3000);
+    } catch {
+      // 클립보드가 막힌 브라우저(일부 인앱)는 조용히 넘어간다. 주소창에서 복사할 수 있다.
+    }
+  };
 
   // ── 글자 수 계산 ──
   const totalChars = useMemo(
@@ -156,6 +202,7 @@ export default function Analyze() {
   // ── 문항 CRUD (6000자 Hard Block 포함) ──
   const handleUpdateQuestion = useCallback(
     (id: string, field: "question" | "answer", value: string) => {
+      markFormStart("typed");
       setQuestions(prev => {
         if (field === "answer") {
           const otherChars = prev
@@ -169,7 +216,7 @@ export default function Analyze() {
         return prev.map(q => (q.id === id ? { ...q, [field]: value } : q));
       });
     },
-    []
+    [markFormStart]
   );
 
   const handleDeleteQuestion = useCallback(
@@ -261,6 +308,7 @@ export default function Analyze() {
     const file = event.target.files?.[0];
     event.target.value = ""; // 같은 파일 재선택 허용
     if (!file || fileImportStage) return;
+    markFormStart("file");
 
     try {
       setFileImportStage("extracting");
@@ -461,10 +509,12 @@ export default function Analyze() {
       <SiteHeader />
 
       {/* ════════ MAIN FORM ════════ */}
+      {/* initial={false}: 첫 화면은 등장 애니메이션 없이 바로 보인다. 폰 첫 로드에서 청크를 받은 뒤에도
+          폼이 투명한 상태로 시작해 빈 화면이 더 길어졌다(10-02 실측 2초+). */}
       <motion.section
         className="py-12 md:py-20"
         variants={ANALYZE_CONTAINER_VARIANTS}
-        initial="hidden"
+        initial={false}
         animate="visible"
       >
         <div className="container max-w-3xl mx-auto px-4">
@@ -523,6 +573,33 @@ export default function Analyze() {
             </div>
             <p className="mt-2.5 text-xs text-zinc-600">
               PDF·Word(.docx) 파일만 올릴 수 있어요
+            </p>
+            {freeRemaining !== null && freeRemaining > 0 && (
+              <p className="mt-4 text-sm text-zinc-300">
+                무료 분석 {freeRemaining}회가 남아 있어요
+              </p>
+            )}
+            {/* 붙여넣을 초안이 지금 손에 없는 방문자용 출구. 폰이면 주소를 복사해 PC 에서 이어 하게 한다. */}
+            <p className="mt-3 text-[12.5px] text-zinc-500">
+              아직 자소서가 없다면{" "}
+              <Link
+                href={RESUME_REPORT_SAMPLE_PATH}
+                className="text-zinc-300 underline underline-offset-4 hover:text-white"
+              >
+                예시 리포트 먼저 보기
+              </Link>
+              {isPhone && (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    onClick={copyAnalyzeLink}
+                    className="text-zinc-300 underline underline-offset-4 hover:text-white"
+                  >
+                    {linkCopied ? "주소를 복사했어요" : "PC에서 이어 하게 주소 복사"}
+                  </button>
+                </>
+              )}
             </p>
           </motion.div>
 
@@ -591,7 +668,7 @@ export default function Analyze() {
             </div>
 
             <div className="space-y-5">
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {questions.map((item, index) => (
                   <QuestionCard
                     key={item.id}
@@ -693,7 +770,11 @@ export default function Analyze() {
 
           {/* 결제 + 분석 버튼 */}
           <Button
-            onClick={handleSubmit}
+            onClick={() => {
+              // 로그인 뒤 자동 제출(useSubmitAfterLogin)은 handleSubmit 을 직접 부르므로 여기서만 센다 — 사람의 클릭 1번 = 1건.
+              void sendFunnelEvent("analyze_submit_click", isAuthenticated ? "authed" : "anon");
+              handleSubmit();
+            }}
             disabled={!canSubmit}
             size="lg"
             className={ANALYZE_SUBMIT_BUTTON_CLASS}

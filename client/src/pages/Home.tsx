@@ -18,6 +18,35 @@ import { useEffect, type CSSProperties } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 import { Link } from "wouter";
 import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
+import { sendFunnelEvent } from "@/lib/siteVisits";
+
+/**
+ * 랜딩에서 눌린 요소가 퍼널 버튼이면 그 위치 이름을 돌려준다. 분석 폼·예시 리포트·기업 분석으로 가는 것만 센다.
+ * 위치는 `data-funnel-cta`(히어로·쇼케이스·하단)가 있으면 그것, 없으면 링크 주소로 정한다.
+ */
+export function landingCtaWhere(target: EventTarget | null): string | null {
+  if (!(target instanceof Element)) return null;
+  const el = target.closest<HTMLElement>("[data-funnel-cta], a[href]");
+  if (!el) return null;
+  if (el.dataset.funnelCta) return el.dataset.funnelCta;
+  const href = el.getAttribute("href") ?? "";
+  if (href.includes("sample=1")) return "sample";
+  if (href.startsWith("/company-analysis")) return "company";
+  if (href.startsWith("/analyze")) return "analyze";
+  return null;
+}
+
+function trackLandingCta(event: React.MouseEvent) {
+  const where = landingCtaWhere(event.target);
+  if (where) void sendFunnelEvent("landing_cta_click", where);
+}
+
+// 랜딩 → 폼 이동이 빈 화면 없이 바로 그려지도록 폼 청크를 미리 받는다. 첫 화면 그리기와 겹치지 않게 유휴 시간에.
+function prefetchAnalyze() {
+  void import("./Analyze").catch(() => {
+    // 미리 받기 실패는 무시한다 — 실제 이동 때 App 의 lazy 가 다시 받는다.
+  });
+}
 
 // 히어로 h1은 랜딩의 LCP 요소다. opacity 0 → 1 등장은 브라우저가 애니메이션이 끝날 때까지
 // LCP를 미루고(모바일 Lighthouse 7.7s), blur 필터는 큰 글자를 매 프레임 다시 그린다.
@@ -83,11 +112,21 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(prefetchAnalyze, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(prefetchAnalyze, 2500);
+    return () => window.clearTimeout(id);
+  }, []);
+
   /* ─── Render ─── */
   return (
     <div
       className="min-h-screen bg-[#050505] text-white"
       style={{ overflowX: "clip" }}
+      onClickCapture={trackLandingCta}
     >
       {/* ── Mood Shift Background (마우스 반응형) ── */}
       <MoodShiftBackground />
@@ -145,7 +184,7 @@ export default function Home() {
           >
             {/* 일반 링크: 번들 평가가 첫 프레임 뒤로 미뤄져 있어(public/landing-boot.js) 그 사이 탭해도 이동해야 한다.
                 하이드레이션 뒤에는 wouter 가 클라이언트 라우팅으로 가로챈다. */}
-            <Link href="/analyze" className="landing-primary-cta group">
+            <Link href="/analyze" className="landing-primary-cta group" data-funnel-cta="hero">
               <span className="relative z-10">내 자소서 무료로 분석하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>

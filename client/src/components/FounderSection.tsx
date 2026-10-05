@@ -139,7 +139,7 @@ export default function FounderSection() {
           </p>
           <div>
             {/* 일반 링크: 번들 평가가 첫 프레임 뒤로 미뤄져 있어 그 사이 탭해도 이동해야 한다(Home.tsx CTA 와 동일). */}
-            <Link href="/analyze" className="landing-primary-cta group">
+            <Link href="/analyze" className="landing-primary-cta group" data-funnel-cta="final">
               <span className="relative z-10">무료 분석 시작하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
