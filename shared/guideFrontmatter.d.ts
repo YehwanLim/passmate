@@ -2,8 +2,12 @@ export type GuideSummary = {
   slug: string;
   title: string;
   description: string;
-  /** 목록 탭·카드 메타에 쓰는 분류. 예: 첫인상, 문항별, AI 활용, 수정하기 */
+  /** 목록 탭에 쓰는 분류: "자소서" | "면접 후기". 화면 카드에는 보이지 않는다. */
   category: string;
+  /** 커버 이미지 경로(/guide/<slug>/cover.png). 면접 후기처럼 만든 커버가 있을 때. */
+  cover: string | null;
+  /** 이미지가 없을 때 그리는 글자 커버(블로그 커버 틀). frontmatter coverLabel·coverTitle·coverSub·coverPoint·coverPointNote */
+  coverText: GuideCoverText | null;
   /** YYYY-MM-DD */
   date: string;
   /** YYYY-MM-DD. 없으면 date 와 같다. */
@@ -12,6 +16,18 @@ export type GuideSummary = {
   draft: boolean;
   /** 본문 글자 수(읽기 시간 계산용) */
   bodyChars: number;
+};
+
+export type GuideCoverText = {
+  /** 작은 분류 줄. 비어 있을 수 있다 */
+  label: string;
+  /** 큰 키워드 */
+  title: string;
+  sub: string;
+  /** 가로선 아래 강조 줄 */
+  point: string;
+  /** 강조 줄 옆 작은 덧말. 비어 있을 수 있다 */
+  pointNote: string;
 };
 
 export type Guide = GuideSummary & {

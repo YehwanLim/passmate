@@ -61,14 +61,13 @@ export default function GuideArticle() {
             취업 가이드
           </Link>
 
-          <GuideCover size="band" hue={cover.hue} number={cover.number} className="mt-7">
-            <span className="relative z-10 text-[13px] text-white/70">{metaLine}</span>
-          </GuideCover>
+          <GuideCover tone={cover} text={guide.coverText} image={guide.cover} className="mt-7 w-[200px] md:w-[240px]" />
 
           <header className="mt-9">
             <h1 className="text-[30px] font-bold leading-[1.2] tracking-[-0.03em] text-balance [word-break:keep-all] md:text-[40px]">
               {guide.title}
             </h1>
+            <p className="mt-3 text-[13px] text-zinc-500">{metaLine}</p>
             <p className="mt-4 text-[16px] leading-[1.7] text-gray-400 md:text-[18px]">{guide.description}</p>
           </header>
 
@@ -78,8 +77,8 @@ export default function GuideArticle() {
 
           <GuideCtaCard
             className="mt-12"
-            title="이 기준으로 내 자소서를 읽어 보면 어떨까요"
-            body="기업·직무와 문항을 넣으면 1분 안에 채용 담당자 시선의 리포트가 도착합니다. 첫 분석은 무료입니다."
+            title="다 쓴 자소서, 내기 전에 한 번 읽혀 보세요"
+            body="지원 회사와 문항을 넣으면 채용 담당자가 읽는 순서대로 첫인상과 고칠 곳을 짚어 드려요. 첫 분석은 무료예요."
             withSample
           />
         </article>
@@ -93,7 +92,7 @@ export default function GuideArticle() {
                 href={guidePath(summary)}
                 className="flex items-center gap-4 rounded-[10px] border border-white/[0.08] bg-white/[0.03] p-3.5 transition-colors hover:border-white/[0.18] hover:bg-white/[0.05]"
               >
-                <GuideCover size="mini" hue={relatedCover.hue} number={relatedCover.number} />
+                <GuideCover tone={relatedCover} image={summary.cover} mini className="w-12 flex-none" />
                 <span className="text-[14px] font-semibold leading-[1.45] text-balance text-white [word-break:keep-all]">{summary.title}</span>
               </Link>
             ))}

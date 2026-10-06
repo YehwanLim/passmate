@@ -28,18 +28,30 @@ export function readingMinutes(bodyChars: number): number {
 }
 
 /**
- * 커버 색조. 참고 팔레트(파우더 블루 · 오키드 · 복숭아 · 민트)를 목록 순서대로 돌려 쓴다.
- * 이웃한 글이 같은 색을 갖지 않도록 slug 해시가 아니라 목록 인덱스로 정한다.
+ * 글자 커버 색. 흰 바탕 페이지에 맞춘 옅은 판 + 진한 글씨(블로그 공채 커버 틀, 10-06 승인).
+ * 이웃한 글이 같은 색을 갖지 않도록 slug 해시가 아니라 목록 인덱스로 돌려 쓴다.
  */
-export const GUIDE_COVER_HUES = [240, 325, 40, 160] as const;
+export type GuideCoverStyle = {
+  /** 판 */
+  background: string;
+  /** 큰 키워드·부제·가로선 */
+  ink: string;
+  /** 강조 줄 */
+  accent: string;
+  /** 작은 분류 줄 */
+  label: string;
+};
 
-export type GuideCoverStyle = { hue: number; number: string };
+export const GUIDE_COVER_TONES: readonly GuideCoverStyle[] = [
+  { background: "#e8f3ff", ink: "#0b2c46", accent: "#0064ff", label: "#3a6ea5" },
+  { background: "#fff0e6", ink: "#4a1f0e", accent: "#e8590c", label: "#b4541f" },
+  { background: "#e6f6ec", ink: "#123b22", accent: "#1f9254", label: "#2f7346" },
+  { background: "#f1ecfb", ink: "#2a1d4a", accent: "#6b4bc4", label: "#5a43a0" },
+  { background: "#fff6d9", ink: "#3d2e06", accent: "#b7860b", label: "#8a6a0f" },
+];
 
 export function guideCoverStyle(index: number): GuideCoverStyle {
-  return {
-    hue: GUIDE_COVER_HUES[index % GUIDE_COVER_HUES.length],
-    number: String(index + 1).padStart(2, "0"),
-  };
+  return GUIDE_COVER_TONES[index % GUIDE_COVER_TONES.length];
 }
 
 /** 목록에서의 위치(최신순). 본문 페이지가 같은 번호·색을 쓰기 위해 찾는다. */

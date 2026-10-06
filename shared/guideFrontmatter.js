@@ -6,6 +6,8 @@
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SLUG = /^[a-z0-9-]+$/;
+// 커버 이미지는 client/public/guide/ 아래 파일만. 외부 주소는 CSP·깨짐 위험이 있어 받지 않는다.
+const COVER = /^\/guide\/[a-z0-9-]+\/[a-z0-9-]+\.(png|jpe?g|webp)$/;
 
 /**
  * @param {string} raw
@@ -46,11 +48,28 @@ export function parseGuideFile(filePath, raw) {
     if (!DATE.test(value)) throw new Error(`guide ${fileSlug} has a non YYYY-MM-DD ${field}: ${value}`);
   }
   if (!SLUG.test(slug)) throw new Error(`guide ${fileSlug} has a slug that is not lowercase-kebab: ${slug}`);
+  if (data.cover && !COVER.test(data.cover)) throw new Error(`guide ${fileSlug} has a cover outside /guide/: ${data.cover}`);
+  // 글자 커버(블로그 커버 틀): 작은 분류 줄 → 큰 키워드 → 부제 → 가로선 → 강조 줄(+작은 덧말).
+  let coverText = null;
+  if (data.coverTitle || data.coverSub || data.coverPoint) {
+    for (const field of ["coverTitle", "coverSub", "coverPoint"]) {
+      if (!data[field]) throw new Error(`guide ${fileSlug} has a text cover without "${field}"`);
+    }
+    coverText = {
+      label: data.coverLabel || "",
+      title: data.coverTitle,
+      sub: data.coverSub,
+      point: data.coverPoint,
+      pointNote: data.coverPointNote || "",
+    };
+  }
   return {
     slug,
     title: data.title,
     description: data.description,
     category: data.category,
+    cover: data.cover || null,
+    coverText,
     date: data.date,
     updated,
     keywords: (data.keywords ?? "")

@@ -42,15 +42,19 @@ export default function GuideTeaserSection() {
             return (
               <Link key={guide.slug} href={guidePath(guide)} className="group flex flex-col gap-3">
                 <GuideCover
-                  size="card"
-                  hue={cover.hue}
-                  number={cover.number}
-                  title={guide.title}
-                  className="transition-colors group-hover:border-white/[0.18]"
+                  tone={cover}
+                  text={guide.coverText}
+                  image={guide.cover}
+                  className="transition-transform duration-200 group-hover:-translate-y-1"
                 />
-                <span className="text-[12px] text-zinc-500">
-                  {guide.category} · {readingMinutes(guide.bodyChars)}분 읽기
-                </span>
+
+                <h3 className="text-[16px] font-semibold leading-[1.45] text-balance text-white [word-break:keep-all]">
+
+                  {guide.title}
+
+                </h3>
+
+                <span className="text-[12px] text-zinc-500">{readingMinutes(guide.bodyChars)}분 읽기</span>
               </Link>
             );
           })}

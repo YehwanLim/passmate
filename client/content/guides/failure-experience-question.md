@@ -1,7 +1,12 @@
 ---
 title: 자소서 실패 경험·도전 경험, 결과보다 판단을 쓰는 법
 description: 실패 경험은 얼마나 크게 실패했는지가 아니라 실패 앞에서 무엇을 판단했는지를 보는 문항입니다. 채용 담당자가 걸러내는 가짜 실패, 경험 고르는 기준, 판단 중심 구조와 예시를 정리합니다.
-category: 문항별
+category: 자소서
+coverLabel: 자소서 문항
+coverTitle: 실패 경험
+coverSub: 결과보다 판단
+coverPoint: 고르는 기준
+coverPointNote: 가짜 실패 거르기
 date: 2026-09-16
 updated: 2026-09-16
 keywords: 자소서 실패 경험, 도전 경험 자소서, 자소서 어려움 극복 경험, 실패 경험 예시, 자소서 첨삭

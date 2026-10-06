@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { findGuide, GUIDES, guideMeta, guidePrerenderRoute, parseFrontmatter, parseGuideFile, renderGuideHtml } from "./guides";
 import { GUIDE_SUMMARIES, guideCategories, guideCoverStyle, readingMinutes } from "./guideSummaries";
@@ -38,6 +39,18 @@ describe("parseGuideFile", () => {
     expect(() => parseGuideFile("/x/a.md", "---\ntitle: t\ndescription: d\ncategory: c\ndate: 14.09.2026\n---\n")).toThrow(/YYYY-MM-DD/);
     expect(() => parseGuideFile("/x/My Guide.md", raw)).toThrow(/slug/);
   });
+
+  it("reads the text cover fields and an optional cover image, which must live under /guide/", () => {
+    const withText = raw.replace("date:", "coverLabel: 자소서 문항\ncoverTitle: 지원동기\ncoverSub: 칭찬에서 끝내지 않기\ncoverPoint: 칭찬 뒤 세 줄\ndate:");
+    expect(parseGuideFile("/content/guides/my-guide.md", withText).coverText).toEqual({
+      label: "자소서 문항", title: "지원동기", sub: "칭찬에서 끝내지 않기", point: "칭찬 뒤 세 줄", pointNote: "",
+    });
+    expect(parseGuideFile("/content/guides/my-guide.md", raw).coverText).toBeNull();
+    expect(() => parseGuideFile("/x/a.md", raw.replace("date:", "coverTitle: 지원동기\ndate:"))).toThrow(/coverSub/);
+    const withImage = raw.replace("date:", "cover: /guide/my-guide/cover.png\ndate:");
+    expect(parseGuideFile("/content/guides/my-guide.md", withImage).cover).toBe("/guide/my-guide/cover.png");
+    expect(() => parseGuideFile("/x/a.md", raw.replace("date:", "cover: https://evil.example/x.png\ndate:"))).toThrow(/cover/);
+  });
 });
 
 describe("guide summaries (vite `?summary` loader)", () => {
@@ -50,15 +63,23 @@ describe("guide summaries (vite `?summary` loader)", () => {
     }
   });
 
-  it("gives neighbouring guides different cover hues and two-digit numbers", () => {
+  it("gives neighbouring guides different cover tones", () => {
     const styles = GUIDE_SUMMARIES.map((_, index) => guideCoverStyle(index));
-    expect(styles.map(style => style.number)).toEqual(styles.map((_, index) => String(index + 1).padStart(2, "0")));
     for (let index = 1; index < styles.length; index += 1) {
-      expect(styles[index].hue).not.toBe(styles[index - 1].hue);
+      expect(styles[index].background).not.toBe(styles[index - 1].background);
     }
     expect(readingMinutes(200)).toBe(1);
     expect(readingMinutes(2600)).toBe(5);
-    expect(guideCategories(GUIDE_SUMMARIES).length).toBeGreaterThanOrEqual(3);
+    expect(guideCategories(GUIDE_SUMMARIES)).toEqual(expect.arrayContaining(["자소서", "면접 후기"]));
+  });
+
+  it("gives every card a cover that tells it apart: an image or a text cover", () => {
+    // 10-06: 커버가 전부 같은 판이라 무엇을 눌러야 할지 모르겠다는 피드백. 분류는 두 가지로만 둔다.
+    for (const guide of GUIDE_SUMMARIES) {
+      expect(["자소서", "면접 후기"], guide.slug).toContain(guide.category);
+      expect(Boolean(guide.cover || guide.coverText), guide.slug).toBe(true);
+      if (guide.cover) expect(existsSync(new URL(`../../public${guide.cover}`, import.meta.url)), guide.cover).toBe(true);
+    }
   });
 });
 

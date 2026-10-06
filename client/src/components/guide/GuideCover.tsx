@@ -1,72 +1,53 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { GuideCoverText } from "@shared/guideFrontmatter";
+import type { GuideCoverStyle } from "@/lib/guideSummaries";
 import { cn } from "@/lib/utils";
 
 /**
- * 가이드 커버. 사진 없이 어두운 바탕에 옅은 색조(oklch)와 큰 번호 윤곽선만으로 글을 구분한다.
- * 색·번호는 lib/guideSummaries.ts 의 guideCoverStyle(목록 인덱스)에서 온다.
- * 제목은 text-balance 로 줄 길이를 고르게 나눈다. keep-all 만 있으면 마지막 어절 하나만 다음 줄로 떨어진다.
+ * 가이드 커버(4:5). 블로그 커버와 같은 틀이라 목록에서 무엇을 눌러야 할지 큰 키워드로 보인다(10-06).
+ * - image 가 있으면 그 이미지(면접 후기: 회사 색 커버).
+ * - 없으면 글자 커버: 작은 분류 줄 → 큰 키워드 → 부제 → 가로선 → 강조 줄. 글자 크기는 cqw 라 어느 너비에서도 같은 비율이다.
+ * 너비는 부모가 정한다(카드는 w-full, 본문 머리는 고정 너비).
  */
-type CoverSize = "featured" | "card" | "band" | "mini";
-
 type GuideCoverProps = {
-  hue: number;
-  number: string;
-  size: CoverSize;
-  /** featured·card 에서 플레이트 안에 넣는 제목 */
-  title?: string;
-  /** band 에서 번호 옆에 넣는 메타 줄 등 */
-  children?: ReactNode;
+  tone: GuideCoverStyle;
+  text?: GuideCoverText | null;
+  image?: string | null;
+  /** mini: 이어서 읽기 썸네일. 글자를 그리지 않는다 */
+  mini?: boolean;
   className?: string;
 };
 
-const PLATE_CLASS: Record<CoverSize, string> = {
-  featured: "h-[300px] rounded-xl p-7 md:h-[420px] md:p-8",
-  card: "h-[220px] rounded-[10px] p-5 md:h-[240px]",
-  band: "h-[180px] rounded-xl p-6 md:h-[220px] md:p-7",
-  mini: "h-14 w-[72px] flex-none rounded-md p-2",
-};
-
-const TITLE_CLASS: Record<CoverSize, string> = {
-  featured: "max-w-[520px] text-[28px] leading-[1.2] md:text-[44px]",
-  card: "max-w-[300px] text-[21px] leading-[1.3] md:text-[22px]",
-  band: "",
-  mini: "",
-};
-
-const NUMBER_STYLE: Record<CoverSize, CSSProperties> = {
-  featured: { fontSize: 168, right: 24, bottom: -22 },
-  card: { fontSize: 120, right: 18, bottom: -16 },
-  band: { fontSize: 200, right: 22, bottom: -30 },
-  mini: { fontSize: 22, right: 8, bottom: 6 },
-};
-
-export function GuideCover({ hue, number, size, title, children, className }: GuideCoverProps) {
+export function GuideCover({ tone, text, image, mini = false, className }: GuideCoverProps) {
   return (
     <div
-      className={cn(
-        "relative flex flex-col justify-end overflow-hidden border border-white/[0.08] text-white",
-        PLATE_CLASS[size],
-        className
-      )}
-      style={{ backgroundColor: `oklch(0.26 0.022 ${hue})` }}
+      className={cn("relative aspect-[4/5] overflow-hidden rounded-2xl [container-type:inline-size]", mini && "rounded-md", className)}
+      style={{ backgroundColor: tone.background, color: tone.ink }}
     >
-      {title && (
-        <h3 className={cn("relative z-10 m-0 font-bold tracking-[-0.02em] text-balance [word-break:keep-all]", TITLE_CLASS[size])}>
-          {title}
-        </h3>
+      {image ? (
+        <img src={image} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        text &&
+        !mini && (
+          <div className="flex h-full flex-col justify-center px-[9cqw] tracking-[-0.02em] [word-break:keep-all]">
+            {text.label && (
+              <p className="text-[3.4cqw] font-semibold" style={{ color: tone.label }}>
+                {text.label}
+              </p>
+            )}
+            <p className="mt-[1cqw] text-[12.5cqw] font-extrabold leading-[1.1] tracking-[-0.04em]">{text.title}</p>
+            <p className="mt-[0.6cqw] text-[7cqw] font-bold leading-[1.25]">{text.sub}</p>
+            <div className="mb-[3.2cqw] mt-[4.5cqw] border-t-[0.3cqw]" style={{ borderColor: tone.ink }} />
+            <p className="text-[7.4cqw] font-extrabold leading-[1.2]" style={{ color: tone.accent }}>
+              {text.point}
+              {text.pointNote && (
+                <span className="ml-[1.4cqw] text-[3.3cqw] font-semibold opacity-75" style={{ color: tone.ink }}>
+                  {text.pointNote}
+                </span>
+              )}
+            </p>
+          </div>
+        )
       )}
-      {children}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute font-bold leading-none tracking-[-0.06em]"
-        style={{
-          ...NUMBER_STYLE[size],
-          color: "transparent",
-          WebkitTextStroke: `1px oklch(0.84 0.04 ${hue})`,
-        }}
-      >
-        {number}
-      </span>
     </div>
   );
 }
