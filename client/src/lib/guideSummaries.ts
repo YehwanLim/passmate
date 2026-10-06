@@ -46,12 +46,12 @@ export type GuideCoverStyle = {
 
 const PLATE = { background: "#f2f4f6", ink: "#191f28", label: "#6b7684", line: "#d1d6db" } as const;
 
+// 강조색은 채도를 낮춘 4색(10-06 3번 시안: 선명한 5색은 알록달록하다는 피드백).
 export const GUIDE_COVER_TONES: readonly GuideCoverStyle[] = [
-  { ...PLATE, accent: "#3182f6" },
-  { ...PLATE, accent: "#00a86b" },
-  { ...PLATE, accent: "#7048e8" },
-  { ...PLATE, accent: "#f2665c" },
-  { ...PLATE, accent: "#0c8599" },
+  { ...PLATE, accent: "#4a6fa5" },
+  { ...PLATE, accent: "#4f7d68" },
+  { ...PLATE, accent: "#76689c" },
+  { ...PLATE, accent: "#9a6b5c" },
 ];
 
 export function guideCoverStyle(index: number): GuideCoverStyle {
