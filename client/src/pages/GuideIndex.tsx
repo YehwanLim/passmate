@@ -62,10 +62,10 @@ export default function GuideIndex() {
 
       {featured && (
         <section className="grid grid-cols-1 gap-6 border-b border-white/[0.08] pb-12 lg:grid-cols-12 lg:gap-10 lg:pb-14">
-          <Link href={guidePath(featured.guide)} className="block max-w-[420px] lg:col-span-5">
+          <Link href={guidePath(featured.guide)} className="block lg:col-span-6">
             <GuideCover tone={featured.cover} text={featured.guide.coverText} image={featured.guide.cover} />
           </Link>
-          <div className="flex flex-col justify-end gap-4 lg:col-span-7 lg:py-2">
+          <div className="flex flex-col justify-end gap-4 lg:col-span-6 lg:py-2">
             <Link href={guidePath(featured.guide)}>
               <h2 className="text-[24px] font-bold leading-[1.3] tracking-[-0.02em] text-balance [word-break:keep-all] md:text-[30px]">
                 {featured.guide.title}
@@ -86,7 +86,7 @@ export default function GuideIndex() {
       )}
 
       {rest.length > 0 && (
-        <section className="grid grid-cols-2 gap-x-4 gap-y-9 pt-12 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4">
+        <section className="grid grid-cols-1 gap-x-6 gap-y-9 pt-12 sm:grid-cols-2 lg:grid-cols-3">
           {rest.map(({ guide, cover }) => (
             <Link key={guide.slug} href={guidePath(guide)} className="group flex flex-col gap-3.5">
               <GuideCover

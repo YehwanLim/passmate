@@ -61,7 +61,7 @@ export default function GuideArticle() {
             취업 가이드
           </Link>
 
-          <GuideCover tone={cover} text={guide.coverText} image={guide.cover} className="mt-7 w-[200px] md:w-[240px]" />
+          <GuideCover tone={cover} text={guide.coverText} image={guide.cover} className="mt-7 w-full max-w-[400px]" />
 
           <header className="mt-9">
             <h1 className="text-[30px] font-bold leading-[1.2] tracking-[-0.03em] text-balance [word-break:keep-all] md:text-[40px]">
@@ -92,7 +92,7 @@ export default function GuideArticle() {
                 href={guidePath(summary)}
                 className="flex items-center gap-4 rounded-[10px] border border-white/[0.08] bg-white/[0.03] p-3.5 transition-colors hover:border-white/[0.18] hover:bg-white/[0.05]"
               >
-                <GuideCover tone={relatedCover} image={summary.cover} mini className="w-12 flex-none" />
+                <GuideCover tone={relatedCover} image={summary.cover} mini className="w-16 flex-none" />
                 <span className="text-[14px] font-semibold leading-[1.45] text-balance text-white [word-break:keep-all]">{summary.title}</span>
               </Link>
             ))}
