@@ -25,18 +25,18 @@ export default function FeedbackSection({ analysisId, rewardAvailable }: Feedbac
   if (!analysisId) return null
 
   return (
-    <section className="py-12">
-      <div className="rounded-2xl border border-white/[0.06] bg-zinc-900/40 px-6 py-7 sm:px-8">
+    <section className="print:hidden">
+      <div className="rounded-3xl bg-surface px-6 py-7 sm:px-10">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <div className="flex min-w-0 items-start gap-3.5">
-            <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
-              <MessageSquareQuote className="size-4 text-zinc-400" />
+            <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-fill">
+              <MessageSquareQuote className="size-4 text-ink-4" />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-medium text-white">
+              <p className="text-[16px] font-bold text-ink">
                 {UI_LABELS.FEEDBACK_TEASER_TITLE}
               </p>
-              <p className="mt-1 text-xs leading-5 text-zinc-500">
+              <p className="mt-1 text-[14px] leading-5 text-ink-4">
                 {rewardAvailable
                   ? UI_LABELS.FEEDBACK_TEASER_DESC_REWARD
                   : UI_LABELS.FEEDBACK_TEASER_DESC_PLAIN}
@@ -48,7 +48,7 @@ export default function FeedbackSection({ analysisId, rewardAvailable }: Feedbac
             onClick={() =>
               navigate(`/feedback?analysisId=${encodeURIComponent(analysisId)}`)
             }
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-[13px] font-semibold text-black transition-colors duration-200 hover:bg-gray-200 sm:ml-auto"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-[14px] font-bold text-white transition-colors duration-200 hover:bg-brand-hover sm:ml-auto"
           >
             <span>
               {rewardAvailable

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -26,9 +26,9 @@ vi.mock("@/lib/supabase", () => ({ supabase: { auth: { getSession: async () => (
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
 import PassMateReport from "./ReportResult";
 
-/** 상단 sticky 칩 바의 칩들(data-section). 좌측 목차(MiniNavigator)는 data-section 이 없어 섞이지 않는다. */
-function chipTexts() {
-  return Array.from(document.querySelectorAll("[data-section]")).map((chip) => chip.textContent);
+/** "더 자세히" 칸에 접혀 있는 줄의 제목(숫자 포함). */
+function detailTitles() {
+  return Array.from(document.querySelectorAll("#section-details h3 button > span > span:first-child")).map((title) => title.textContent);
 }
 
 describe("ReportResult public sample", () => {
@@ -61,28 +61,27 @@ describe("ReportResult public sample", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("shows the posting-fit section as 03 and renumbers the rest when the sample carries a job posting", async () => {
+  it("puts the summary first and folds posting fit into the details when the sample carries a job posting", async () => {
     window.history.replaceState({}, "", "/report-new?sample=1");
 
     render(<PassMateReport />);
 
-    expect(await screen.findByRole("heading", { name: /공고에서 찾는 것, 자소서에 있는 것/ })).toBeTruthy();
+    expect(await screen.findByText("채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "잘 읽히는 점 3" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "고칠 점 3" })).toBeTruthy();
+    // 요약에는 항목마다 ** 로 고른 핵심 문장만 싣는다.
+    expect(screen.getByText("문제를 데이터로 좁히는 순서가 몸에 밴 지원자로 읽힙니다.")).toBeTruthy();
+    expect(detailTitles()).toEqual(["예상 면접 질문5", "공고 적합도", "합격 기준", "다음 단계4", "실무자 코멘트"]);
+
+    // 공고 적합도는 접혀 있다가 누르면 열린다.
+    expect(screen.queryByText("현대자동차 · 서비스 기획 채용공고 기준")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /공고 적합도/ }));
     expect(screen.getByText("현대자동차 · 서비스 기획 채용공고 기준")).toBeTruthy();
     expect(screen.getByText("커넥티드카·모빌리티 서비스에 대한 이해")).toBeTruthy();
     expect(screen.getByText("없음")).toBeTruthy();
-    expect(chipTexts()).toEqual([
-      "01첫인상",
-      "02합격 기준",
-      "03공고 적합도",
-      "04핵심 진단",
-      "05문장 분석",
-      "06예상 질문",
-      "07다음 단계",
-      "08실무자 코멘트",
-    ]);
   });
 
-  it("keeps the 7-section layout for a stored report without posting fit", async () => {
+  it("leaves posting fit out of the details for a stored report without it", async () => {
     window.history.replaceState({}, "", "/report-new?analysisId=analysis-1");
     mocks.useAuth.mockReturnValue({ user: { name: "지원자" }, isLoading: false, isAuthenticated: true });
     mocks.getAuthorizationHeader.mockResolvedValue({});
@@ -101,17 +100,10 @@ describe("ReportResult public sample", () => {
 
     render(<PassMateReport />);
 
-    expect(await screen.findByRole("heading", { name: /이 자소서는 이렇게 읽히고 있어요/ })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: /공고에서 찾는 것, 자소서에 있는 것/ })).toBeNull();
-    expect(chipTexts()).toEqual([
-      "01첫인상",
-      "02합격 기준",
-      "03핵심 진단",
-      "04문장 분석",
-      "05예상 질문",
-      "06다음 단계",
-      "07실무자 코멘트",
-    ]);
+    expect(await screen.findByText("채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
+    expect(screen.getByText("지원자님 · 문항 2개")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "내 지원서" })).toBeTruthy();
+    expect(detailTitles()).toEqual(["예상 면접 질문5", "합격 기준", "다음 단계4", "실무자 코멘트"]);
   });
 
   it("still keeps a real report id behind login", async () => {

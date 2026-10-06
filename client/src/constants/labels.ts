@@ -41,6 +41,19 @@ export const UI_LABELS = {
   POSITION_GAP: "지금 가장 아쉬운 부분",
   POSITION_STRATEGY: "이렇게 좁히세요",
 
+  // 리포트 요약(A안): 맨 위 한 장 + 아래 접어 두는 "더 자세히"
+  REPORT_EYEBROW: "자소서 진단 리포트",
+  SUMMARY_READ_AS: "채용 담당자에게 이렇게 읽혀요",
+  SUMMARY_STRENGTHS: "잘 읽히는 점",
+  SUMMARY_GAPS: "고칠 점",
+  DETAILS_TITLE: "더 자세히",
+  DETAILS_DESC: "요약과 문장 코멘트를 받친 근거예요. 필요한 것만 펼쳐 보세요.",
+  DETAILS_INTERVIEW: "예상 면접 질문",
+  DETAILS_POSTING_FIT: "공고 적합도",
+  DETAILS_HIRING_CRITERIA: "합격 기준",
+  DETAILS_ACTION_PLAN: "다음 단계",
+  DETAILS_PM_COMMENT: "실무자 코멘트",
+
   // Act 3: Line-by-line Analysis
   LINE_BY_LINE_ANALYSIS: "문장별로 더 다듬어볼 수 있어요",
   AI_COMMENTARY: "문장별 코멘트",

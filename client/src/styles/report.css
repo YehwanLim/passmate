@@ -57,11 +57,6 @@ html {
   transform: translateX(2px);
 }
 
-@media (min-width: 1280px) {
-  #section-line-analysis {
-    padding-left: 190px;
-  }
-}
 /* ── Report: 공용 섹션 앵커 여백 — 기업 분석 리포트처럼 id 가 다른 리포트도 같은 값을 쓴다 ── */
 .report-section-anchor {
   scroll-margin-top: 112px;
@@ -74,15 +69,15 @@ html {
 
 /* ── Report: 컴팩트 레이아웃 하단 코멘트 시트 ── */
 .report-sheet > div:first-child {
-  background: rgba(255, 255, 255, 0.14);
+  background: #d1d6db;
 }
 .report-sheet-nav {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(9, 9, 9, 0.9);
-  color: #a1a1aa;
+  border: 1px solid #e5e8eb;
+  background: #ffffff;
+  color: #4e5968;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -93,8 +88,8 @@ html {
   opacity: 0.3;
 }
 .report-sheet-nav:not(:disabled):active {
-  background: #fff;
-  color: #111;
+  background: #191f28;
+  color: #fff;
 }
 /* 이전/다음: 본문은 진행 방향으로 밀리며 페이드아웃 → 반대편에서 페이드인 */
 .report-sheet-body {
@@ -135,15 +130,15 @@ html {
   padding: 8px 12px 8px 10px;
   border: none;
   border-radius: 999px;
-  background: #fafafa;
-  color: #111;
+  background: #191f28;
+  color: #fff;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 10px 28px rgba(25, 31, 40, 0.22);
   animation: reportCoachBob 1.8s ease-in-out 0.3s infinite;
 }
 .report-coach::after {
@@ -154,7 +149,7 @@ html {
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  background: #fafafa;
+  background: #191f28;
   transform: rotate(45deg);
 }
 .report-coach-dot {
@@ -176,8 +171,8 @@ html {
   100% { box-shadow: 0 0 0 9px rgba(74, 222, 128, 0); }
 }
 @keyframes reportCoachRing {
-  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
-  100% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(185, 120, 0, 0.4); }
+  100% { box-shadow: 0 0 0 8px rgba(185, 120, 0, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .report-coach,
@@ -190,88 +185,48 @@ html {
   }
 }
 
-/* ── Annotation Highlight: Soft Ink Tint ── */
+/* ── 문장 형광펜(자소서 리포트 · 흰 카드 위): 잘 읽히는 문장 = 초록, 고칠 문장 = 노랑 ── */
 .annotation-hl {
   position: relative;
   display: inline;
   cursor: pointer;
-  transition: all 0.3s ease-in-out;
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
   border-radius: 4px;
-  padding: 2px 4px;
-  color: #e4e4e7;
+  padding: 2px 3px;
+  color: #191f28;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
+.annotation-hl.praise-hl { background: #e3f5eb; }
+.annotation-hl.improvement-hl { background: #ffedb5; }
+.annotation-hl.praise-hl:hover { background: #d3efdf; }
+.annotation-hl.improvement-hl:hover { background: #ffe597; }
 
-/* Default: soft translucent tint (praise = emerald, improvement = amber) */
-.annotation-hl.praise-hl {
-  background: rgba(52, 211, 153, 0.11);
-}
-.annotation-hl.improvement-hl {
-  background: rgba(252, 211, 77, 0.10);
-}
-
-.annotation-hl:hover {
-  color: #fff;
-}
-.annotation-hl.praise-hl:hover {
-  background: rgba(52, 211, 153, 0.15);
-}
-.annotation-hl.improvement-hl:hover {
-  background: rgba(252, 211, 77, 0.13);
-}
-
-/* Active: slightly deeper tint */
-.annotation-hl.active.praise-hl {
-  background: rgba(52, 211, 153, 0.18);
-  color: #fff;
-}
+/* 고른 문장: 한 단계 진하게 + 노랑은 밑줄 */
+.annotation-hl.active.praise-hl { background: #c9ebd8; }
 .annotation-hl.active.improvement-hl {
-  background: rgba(252, 211, 77, 0.16);
-  color: #fff;
+  background: #ffe08a;
+  box-shadow: inset 0 -2px 0 #e0a100;
 }
 
-/* Dimming effect — highlights remain faintly visible */
-.original-text-dimmed .annotation-hl:not(.active) {
-  color: rgba(180, 180, 180, 0.7);
-  transition: all 0.3s ease-in-out;
-}
-.original-text-dimmed .annotation-hl.praise-hl:not(.active) {
-  background: rgba(52, 211, 153, 0.07);
-}
-.original-text-dimmed .annotation-hl.improvement-hl:not(.active) {
-  background: rgba(252, 211, 77, 0.06);
-}
-/* Hover in dimmed state: brighten the tint */
-.original-text-dimmed .annotation-hl.praise-hl:not(.active):hover {
-  background: rgba(52, 211, 153, 0.11);
-  color: #ddd;
-}
-.original-text-dimmed .annotation-hl.improvement-hl:not(.active):hover {
-  background: rgba(252, 211, 77, 0.10);
-  color: #ddd;
-}
+/* 하나를 고르면 나머지는 옅어진다(형광펜은 희미하게 남는다) */
 .original-text-dimmed p {
-  color: rgba(180, 180, 180, 0.45);
-  transition: color 0.3s ease-in-out;
+  color: #b0b8c1;
+  transition: color 0.25s ease;
 }
-.original-text-dimmed .annotation-hl.active.praise-hl {
-  color: #fff;
-  background: rgba(52, 211, 153, 0.18);
-  transition: all 0.3s ease-in-out;
-}
-.original-text-dimmed .annotation-hl.active.improvement-hl {
-  color: #fff;
-  background: rgba(252, 211, 77, 0.16);
-  transition: all 0.3s ease-in-out;
-}
+.original-text-dimmed .annotation-hl:not(.active) { color: #6b7684; }
+.original-text-dimmed .annotation-hl.praise-hl:not(.active) { background: #eff9f3; }
+.original-text-dimmed .annotation-hl.improvement-hl:not(.active) { background: #fff6d9; }
+.original-text-dimmed .annotation-hl:not(.active):hover { color: #333d4b; }
 
-/* Number badge: always visible, inline before the sentence */
+/* 번호 배지: 문장 앞에 항상 보인다 */
 .annotation-badge {
   display: inline-flex;
   width: 17px;
   height: 17px;
   border-radius: 50%;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 800;
   align-items: center;
   justify-content: center;
   margin-right: 5px;
@@ -280,22 +235,10 @@ html {
   transition: background 0.2s ease, color 0.2s ease;
   pointer-events: none;
 }
-.annotation-hl.praise-hl .annotation-badge {
-  background: rgba(52, 211, 153, 0.3);
-  color: #bbf7d0;
-}
-.annotation-hl.improvement-hl .annotation-badge {
-  background: rgba(252, 211, 77, 0.26);
-  color: #fef08a;
-}
-.annotation-hl.active.praise-hl .annotation-badge {
-  background: #4ADE80;
-  color: #111;
-}
-.annotation-hl.active.improvement-hl .annotation-badge {
-  background: #FBBF24;
-  color: #111;
-}
+.annotation-hl.praise-hl .annotation-badge { background: rgba(10, 123, 85, 0.16); color: #0a7b55; }
+.annotation-hl.improvement-hl .annotation-badge { background: rgba(185, 120, 0, 0.2); color: #8a5a00; }
+.annotation-hl.active.praise-hl .annotation-badge { background: #0a7b55; color: #fff; }
+.annotation-hl.active.improvement-hl .annotation-badge { background: #b97800; color: #fff; }
 
 /* ── Fade-in ── */
 @keyframes fadeInUp {
@@ -314,47 +257,36 @@ html {
   gap: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: rgba(180, 180, 180, 0.6);
-  letter-spacing: 0.02em;
+  color: #8b95a1;
 }
-.doc-header .separator {
-  color: rgba(180, 180, 180, 0.25);
-}
+.doc-header .separator { color: #d1d6db; }
 
-/* ── Section Navigator Tabs ── */
+/* ── 문항 탭 ── */
 .section-tab {
   position: relative;
   white-space: nowrap;
   flex-shrink: 0;
-  padding: 10px 0;
-  margin-right: 28px;
-  font-size: 14px;
-  font-weight: 400;
-  color: rgba(160, 160, 160, 0.5);
+  padding: 12px 0;
+  margin-right: 26px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #8b95a1;
   background: none;
   border: none;
   cursor: pointer;
-  transition: color 0.25s ease;
-  letter-spacing: 0.01em;
+  transition: color 0.2s ease;
 }
 .section-tab:last-child { margin-right: 0; }
-.section-tab:hover { color: rgba(200, 200, 200, 0.8); }
+.section-tab:hover { color: #4e5968; }
 .section-tab .tab-num {
-  margin-right: 8px;
-  font-size: 11.5px;
+  margin-right: 7px;
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
-  color: #52525b;
-  transition: color 0.25s ease;
+  color: #b0b8c1;
 }
-.section-tab.active {
-  color: #E5E5E5;
-  font-weight: 500;
-}
-.section-tab.active .tab-num {
-  color: #a1a1aa;
-}
+.section-tab.active { color: #191f28; font-weight: 700; }
+.section-tab.active .tab-num { color: #6b7684; }
 .section-tab.active::after {
   content: '';
   position: absolute;
@@ -362,70 +294,49 @@ html {
   left: 0;
   right: 0;
   height: 2px;
-  background: rgba(255, 255, 255, 0.55);
+  background: #191f28;
   border-radius: 1px;
 }
 
-/* ── Source Text: Reading Typography ── */
+/* ── 자소서 원문 ── */
 .source-text-body {
   font-size: 16px;
-  line-height: 2.15;
-  color: rgba(200, 200, 200, 0.85);
+  line-height: 2.05;
+  color: #4e5968;
   white-space: pre-wrap;
   word-break: keep-all;
-  transition: all 0.3s ease-in-out;
+  transition: color 0.25s ease;
 }
-.source-text-body p {
-  margin-bottom: 24px;
-}
-.source-text-body p:last-child {
-  margin-bottom: 0;
-}
+.source-text-body p { margin-bottom: 22px; }
+.source-text-body p:last-child { margin-bottom: 0; }
 
-/* ── Subtitle Highlight: shows which subtitle the 소제목 진단 refers to ── */
-.subtitle-hl {
-  border-radius: 4px;
-  padding: 2px 4px;
-}
-.subtitle-hl.watching {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
+/* 소제목 진단이 가리키는 소제목 */
+.subtitle-hl { border-radius: 4px; padding: 2px 4px; }
+.subtitle-hl.watching { background: #f2f4f6; color: #191f28; font-weight: 600; }
 
-/* ── Character Count Metadata ── */
 .char-count {
   font-size: 14px;
   font-weight: 500;
-  color: rgba(180, 180, 180, 0.6);
-  letter-spacing: 0.04em;
+  color: #8b95a1;
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Commentary Accordion Item: hairline list, soft panel when open ── */
+/* ── 문장 코멘트 목록: 얇은 선, 펼치면 옅은 회색 판 ── */
 .commentary-item {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  transition: background 0.28s ease, border-radius 0.28s ease,
-              padding 0.28s ease, margin 0.28s ease;
+  border-bottom: 1px solid #f2f4f6;
+  transition: background 0.28s ease, border-radius 0.28s ease, padding 0.28s ease, margin 0.28s ease;
 }
-.commentary-item:last-child {
-  border-bottom: none;
-}
-/* 펼친 패널은 좌우로만 넓어진다(패딩을 음수 마진으로 상쇄) —
-   행의 위치가 토글 전후에 전혀 움직이지 않게. */
+.commentary-item:last-child { border-bottom: none; }
+/* 펼친 판은 좌우로만 넓어진다(패딩을 음수 마진으로 상쇄) — 행 위치가 토글 전후에 움직이지 않게. */
 .commentary-item.expanded {
-  background: rgba(255, 255, 255, 0.03);
+  background: #f9fafb;
   border-radius: 14px;
   border-bottom-color: transparent;
   padding: 0 12px;
   margin: 0 -12px;
 }
-.commentary-item.focused {
-  background: rgba(255, 255, 255, 0.045);
-}
-.commentary-item.focused .commentary-preview {
-  color: #fff;
-  font-weight: 500;
-}
+.commentary-item.focused { background: #f2f4f6; }
+.commentary-item.focused .commentary-preview { color: #191f28; font-weight: 600; }
 
 .commentary-trigger {
   display: flex;
@@ -437,13 +348,9 @@ html {
   background: none;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
-.commentary-trigger:hover {
-  opacity: 0.85;
-}
+.commentary-trigger:hover .commentary-preview { color: #191f28; }
 
-/* Commentary number: translucent, colored by feedback type */
 .commentary-num {
   width: 22px;
   height: 22px;
@@ -452,213 +359,140 @@ html {
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   flex-shrink: 0;
   margin-top: 1px;
-  transition: all 0.25s ease;
-  background: rgba(255, 255, 255, 0.10);
-  color: rgba(230, 230, 230, 0.9);
+  background: #f2f4f6;
+  color: #4e5968;
 }
 .commentary-item.praise .commentary-num,
-.report-sheet-head.praise .commentary-num {
-  background: rgba(52, 211, 153, 0.14);
-  color: #6ee7b7;
-  border: 1px solid rgba(52, 211, 153, 0.3);
-}
+.report-sheet-head.praise .commentary-num { background: #e6f6ee; color: #0a7b55; }
 .commentary-item.improvement .commentary-num,
-.report-sheet-head.improvement .commentary-num {
-  background: rgba(252, 211, 77, 0.12);
-  color: #fcd34d;
-  border: 1px solid rgba(252, 211, 77, 0.28);
-}
+.report-sheet-head.improvement .commentary-num { background: #fff1c2; color: #8a5a00; }
 
 .commentary-preview {
-  font-size: 14px;
-  line-height: 1.65;
-  color: rgba(210, 210, 210, 0.85);
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333d4b;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  transition: color 0.25s ease;
+  transition: color 0.2s ease;
 }
 .commentary-item.expanded .commentary-preview {
-  color: #ddd;
+  color: #191f28;
   -webkit-line-clamp: unset;
   overflow: visible;
 }
 
-/* grid-template-rows 0fr→1fr는 실제 콘텐츠 높이만큼만 움직여서
-   max-height 트릭처럼 닫힐 때 멈칫하는 구간이 없다. */
+/* grid-template-rows 0fr→1fr는 실제 콘텐츠 높이만큼만 움직여서 닫힐 때 멈칫하지 않는다. */
 .commentary-body {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  padding-left: 36px;
-  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.24s ease;
+  padding-left: 34px;
+  transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.24s ease;
 }
-.commentary-item.expanded .commentary-body {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
-.commentary-body-inner {
-  overflow: hidden;
-  min-height: 0;
-}
+.commentary-item.expanded .commentary-body { grid-template-rows: 1fr; opacity: 1; }
+.commentary-body-inner { overflow: hidden; min-height: 0; }
 
-/* ═══ Commentary Typography Hierarchy ═══ */
-
-/*
- * TIER 2 — Block Labels (예상 면접 질문, 개선한 문장)
- * A hairline above each label marks the start of a new block,
- * so visibility comes from position rather than size.
- */
+/* 블록 이름(예상 면접 질문 · 개선한 문장): 위에 얇은 선으로 새 블록임을 알린다 */
 .commentary-label {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0;
-  color: #d4d4d8;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 16px;
-  margin-top: 18px;
-  margin-bottom: 10px;
+  color: #6b7684;
+  border-top: 1px solid #e5e8eb;
+  padding-top: 14px;
+  margin-top: 16px;
+  margin-bottom: 8px;
 }
-.commentary-label:first-child {
-  border-top: none;
-  padding-top: 0;
-  margin-top: 4px;
-}
+.commentary-label:first-child { border-top: none; padding-top: 0; margin-top: 4px; }
 
-/*
- * TIER 3 — Headlines / Key Insights (개선안 문장, praisePoint, interview question)
- * Bright, prominent, tight line-height. These "pop" off the page.
- */
+/* 바꿔 쓸 문장 · 예상 질문 */
 .commentary-headline {
   font-size: 15px;
-  font-weight: 600;
-  line-height: 1.55;
-  color: rgba(245, 245, 245, 0.95);
-  margin-bottom: 20px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #191f28;
+  margin-bottom: 16px;
 }
 
-/*
- * TIER 4a — Body Text (detailedAnalysis, explanatory prose)
- * Stepped back from headlines. Comfortable reading rhythm.
- */
+/* 설명 본문 */
 .commentary-body-text {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.9;
-  color: rgba(190, 190, 190, 0.78);
+  font-size: 15px;
+  line-height: 1.75;
+  color: #333d4b;
   margin-bottom: 4px;
 }
 
-/*
- * TIER 4b — Metadata (출제 의도, intent 등)
- * Most subdued. Informational footnote feel.
- */
+/* 출제 의도 같은 각주 */
 .commentary-meta {
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 13px;
   line-height: 1.6;
-  color: rgba(140, 140, 140, 0.55);
+  color: #8b95a1;
   margin-top: 4px;
   margin-bottom: 4px;
 }
 
-/*
- * Original sentence quote — italic, quiet, distinct from analysis
- */
+/* 원문 인용(하단 시트) */
 .commentary-quote {
-  font-size: 13px;
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.75;
-  color: rgba(180, 180, 180, 0.65);
-  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #6b7684;
+  margin-bottom: 18px;
 }
 
-/* ── Commentary Chevron ── */
 .commentary-chevron {
   width: 16px;
   height: 16px;
-  color: rgba(140, 140, 140, 0.35);
+  color: #b0b8c1;
   flex-shrink: 0;
   margin-top: 3px;
   margin-left: auto;
-  transition: transform 0.3s ease, color 0.25s ease;
+  transition: transform 0.3s ease, color 0.2s ease;
 }
-.commentary-item.expanded .commentary-chevron {
-  transform: rotate(180deg);
-  color: rgba(200, 200, 200, 0.5);
-}
+.commentary-item.expanded .commentary-chevron { transform: rotate(180deg); color: #6b7684; }
 
-/* ── Focus Mode: Full card display ── */
-.focus-card {
-  padding: 20px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-.focus-card:last-child {
-  border-bottom: none;
-}
+/* ── 집중 모드 ── */
+.focus-card { padding: 4px 0 20px; }
 
-/* ── View mode toggle ── */
+/* ── 보기 모드 전환 ── */
 .view-mode-toggle {
   display: flex;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  padding: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #f2f4f6;
+  border-radius: 10px;
+  padding: 3px;
 }
 /* 컴팩트 레이아웃(lg 미만)에서는 코멘트가 하단 시트로 열리므로 보기 모드 토글이 의미가 없다.
    위 display:flex가 레이어 밖 일반 CSS라 Tailwind hidden 유틸리티로는 숨겨지지 않는다. */
 @media (max-width: 1023px) {
-  .view-mode-toggle {
-    display: none;
-  }
+  .view-mode-toggle { display: none; }
 }
 .view-mode-btn {
-  padding: 5px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(160, 160, 160, 0.6);
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7684;
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
   white-space: nowrap;
 }
-.view-mode-btn:hover {
-  color: rgba(200, 200, 200, 0.8);
-}
-.view-mode-btn.active {
-  background: rgba(255, 255, 255, 0.08);
-  color: #E5E5E5;
-}
+.view-mode-btn:hover { color: #333d4b; }
+.view-mode-btn.active { background: #ffffff; color: #191f28; box-shadow: 0 1px 2px rgba(25, 31, 40, 0.08); }
 
 /* ── Section divider ── */
 .section-divider { border-bottom: 1px solid #2A2A2A; }
 
-/* ── Visible thin scrollbar for right panel ── */
-.commentary-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-.commentary-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.commentary-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-}
-.commentary-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-.commentary-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
-}
+/* ── 오른쪽 코멘트 칸의 얇은 스크롤바 ── */
+.commentary-scroll::-webkit-scrollbar { width: 4px; }
+.commentary-scroll::-webkit-scrollbar-track { background: transparent; }
+.commentary-scroll::-webkit-scrollbar-thumb { background: #e5e8eb; border-radius: 4px; }
+.commentary-scroll::-webkit-scrollbar-thumb:hover { background: #d1d6db; }
+.commentary-scroll { scrollbar-width: thin; scrollbar-color: #e5e8eb transparent; }
 
 /* ── Report access lock card ── */
 .report-lock-card {

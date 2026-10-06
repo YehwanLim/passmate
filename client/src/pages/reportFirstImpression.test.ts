@@ -9,6 +9,7 @@ import {
   limitReportText,
   normalizeDiagnosisEntries,
   parseHighlightedText,
+  pickKeySentence,
   resolveHiringMemoryItems,
   splitPersonaForHeroLines,
   splitMentorComment,
@@ -280,5 +281,19 @@ describe("report first impression editorial helpers", () => {
     expect(segments.map((segment) => segment.text).join("")).toBe("LG디스플레이의 마케팅 직무 질문입니다.")
     expect(segments.map((segment) => segment.text).join("")).not.toContain("span class")
     expect(segments.map((segment) => segment.text).join("")).not.toContain("<span")
+  })
+})
+
+describe("pickKeySentence", () => {
+  it("uses the emphasized sentence when the model marked one", () => {
+    expect(pickKeySentence("앞 문장입니다. **핵심 문장입니다.** 뒤 문장입니다.")).toBe("핵심 문장입니다.")
+  })
+
+  it("falls back to the first sentence without emphasis", () => {
+    expect(pickKeySentence("첫 문장입니다. 둘째 문장입니다.")).toBe("첫 문장입니다.")
+  })
+
+  it("returns the whole text when it has no sentence end", () => {
+    expect(pickKeySentence("  마침표 없는 한 줄  ")).toBe("마침표 없는 한 줄")
   })
 })

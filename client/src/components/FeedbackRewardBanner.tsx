@@ -26,18 +26,18 @@ export default function FeedbackRewardBanner({
   if (!rewardAvailable) return null
 
   return (
-    <div className="print:hidden mt-6 flex flex-col gap-3 rounded-xl border border-cyan-300/[0.16] bg-cyan-300/[0.05] px-4 py-3.5 sm:flex-row sm:items-center sm:px-5">
+    <div className="print:hidden flex flex-col gap-3 rounded-2xl bg-surface px-4 py-3.5 sm:flex-row sm:items-center sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg border border-cyan-300/[0.18] bg-cyan-300/[0.08]">
-          <Gift className="size-3.5 text-cyan-200" />
+        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-soft">
+          <Gift className="size-3.5 text-brand-ink" />
         </span>
-        <p className="min-w-0 text-[13px] leading-5 text-zinc-300">
+        <p className="min-w-0 text-[14px] leading-5 text-ink-2">
           {UI_LABELS.FEEDBACK_BANNER_TEXT}
         </p>
       </div>
       <Link
         href={`/feedback?analysisId=${encodeURIComponent(analysisId)}`}
-        className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-cyan-200 transition-colors hover:text-white sm:ml-auto"
+        className="inline-flex shrink-0 items-center gap-1.5 text-[14px] font-bold text-brand-ink transition-colors hover:text-brand sm:ml-auto"
       >
         <span>{UI_LABELS.FEEDBACK_BANNER_CTA}</span>
         <ArrowRight className="size-3.5" />
