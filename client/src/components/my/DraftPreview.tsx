@@ -31,34 +31,36 @@ export default function DraftPreview({
 
   return (
     <div className="space-y-4 rounded-2xl bg-fill-soft p-5">
-      <div className="space-y-1.5">
-        <p className="text-[12.5px] font-semibold text-ink-4">{COPY.chosenLabel}</p>
+      {/* 고른 경험과 초안을 각자 흰 칸에 나누고, 출처는 문장 끝이 아니라 그 아래 줄에 둔다(본문과 라벨이 섞여 보이지 않게) */}
+      <div className="space-y-1 rounded-xl bg-surface px-4 py-3">
+        <p className="text-[12px] font-semibold text-ink-4">{COPY.chosenLabel}</p>
         {draft.chosen.map((c) => (
-          <p key={c.experienceId} className="text-[14px] leading-relaxed text-ink-3">
-            <span className="font-bold text-ink">{c.title}</span>
-            <span className="text-ink-5"> · </span>
-            <span>{c.reason}</span>
-          </p>
+          <div key={c.experienceId}>
+            <p className="text-[15px] font-bold text-ink">{c.title}</p>
+            <p className="text-[13px] leading-relaxed text-ink-4">{c.reason}</p>
+          </div>
         ))}
       </div>
 
-      <div className="space-y-2 text-[15px] leading-[1.75] text-ink">
+      <div className="space-y-3 rounded-xl bg-surface px-4 py-4">
         {draft.sentences.map((s, i) => {
           const sources = s.sourceIds.map((id) => titleOf.get(id)).filter(Boolean).join(", ");
           return (
-            <p key={i}>
-              {splitBlanks(s.text).map((part, j) =>
-                part.blank ? (
-                  <mark key={j} className="rounded bg-blank-soft px-1 font-semibold text-blank">
-                    {part.text}
-                  </mark>
-                ) : (
-                  <span key={j}>{part.text}</span>
-                )
-              )}
-              {sources && <span className="ml-1.5 text-[12px] text-ink-4">{COPY.sourceLabel(sources)}</span>}
-              {s.unsourced && <span className="mt-0.5 block text-[13px] text-blank">{COPY.unsourced}</span>}
-            </p>
+            <div key={i}>
+              <p className="text-[15px] leading-[1.7] text-ink">
+                {splitBlanks(s.text).map((part, j) =>
+                  part.blank ? (
+                    <mark key={j} className="rounded bg-blank-soft px-1 font-semibold text-blank">
+                      {part.text}
+                    </mark>
+                  ) : (
+                    <span key={j}>{part.text}</span>
+                  )
+                )}
+              </p>
+              {sources && <p className="mt-0.5 text-[12px] text-ink-4">{COPY.sourceLabel(sources)}</p>}
+              {s.unsourced && <p className="mt-0.5 text-[12px] text-blank">{COPY.unsourced}</p>}
+            </div>
           );
         })}
       </div>
