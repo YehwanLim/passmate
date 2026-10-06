@@ -2,7 +2,13 @@
 title: 현대자동차 1차 면접 후기 | 마케팅 면접 질문 25개 실제 상황
 description: 비대면 40분에 질문 25개가 쏟아진 현대자동차 마케팅 1차 면접 복기. 왜 떨어졌는지 냉정하게 다시 보면, 결과는 자소서를 제출하는 순간 절반쯤 정해져 있었다.
 category: 면접 후기
-cover: /guide/hyundai-motor-marketing-interview/cover.png
+coverTone: hyundai
+coverLogo: /guide/logos/hyundai-white.svg
+coverLabel: 마케팅 직무
+coverTitle: 현대자동차
+coverSub: 1차 면접 후기
+coverPoint: 질문 25개
+coverPointNote: 비대면 40분 / 4:1
 date: 2026-09-08
 updated: 2026-09-08
 keywords: 현대자동차 면접 후기, 현대자동차 마케팅 면접, 현대차 1차 면접 질문, 마케팅 면접 질문 리스트, 면접 불합격 후기

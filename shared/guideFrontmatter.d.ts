@@ -28,6 +28,10 @@ export type GuideCoverText = {
   point: string;
   /** 강조 줄 옆 작은 덧말. 비어 있을 수 있다 */
   pointNote: string;
+  /** 회사 색 키(COMPANY_COVER_TONES). 없으면 목록 순서대로 옅은 판 */
+  tone: string | null;
+  /** /guide/logos/*.svg 흰 로고 */
+  logo: string | null;
 };
 
 export type Guide = GuideSummary & {

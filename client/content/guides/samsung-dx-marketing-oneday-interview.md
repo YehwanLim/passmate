@@ -2,7 +2,13 @@
 title: 삼성전자 DX 마케팅 합격 후기 ④ 원데이 면접 질문 리스트
 description: 인성면접·창의성 면접·직무역량면접·약식 GSAT을 하루에 보는 삼성전자 원데이 면접. 도착부터 종료까지 진행 순서와 직무 면접에서 받은 질문 리스트를 지원자와 운영자 시선으로 정리했다.
 category: 면접 후기
-cover: /guide/samsung-dx-marketing-oneday-interview/cover.png
+coverTone: samsung
+coverLogo: /guide/logos/samsung-white.svg
+coverLabel: 마케팅 직무 / 합격 후기 4
+coverTitle: 삼성전자
+coverSub: 원데이 면접 후기
+coverPoint: 면접 4개 하루에
+coverPointNote: 3~5시간
 date: 2024-03-16
 updated: 2026-09-06
 keywords: 삼성전자 면접 후기, 삼성전자 원데이 면접, 삼성전자 직무면접 질문, 삼성전자 창의성 면접, 삼성전자 임원면접, 약식 GSAT

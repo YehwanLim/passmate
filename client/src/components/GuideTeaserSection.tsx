@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { GuideCover } from "@/components/guide/GuideCover";
-import { GUIDE_SUMMARIES, guideCoverStyle, guidePath, readingMinutes } from "@/lib/guideSummaries";
+import { GUIDE_SUMMARIES, guideCoverTone, guidePath, readingMinutes } from "@/lib/guideSummaries";
 import { GUIDE_INDEX_PATH } from "@/lib/seo";
 
 const TEASER_COUNT = 3;
@@ -38,7 +38,7 @@ export default function GuideTeaserSection() {
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {guides.map((guide, index) => {
-            const cover = guideCoverStyle(index);
+            const cover = guideCoverTone(guide, index);
             return (
               <Link key={guide.slug} href={guidePath(guide)} className="group flex flex-col gap-3">
                 <GuideCover

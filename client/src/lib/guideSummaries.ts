@@ -54,6 +54,18 @@ export function guideCoverStyle(index: number): GuideCoverStyle {
   return GUIDE_COVER_TONES[index % GUIDE_COVER_TONES.length];
 }
 
+/** 면접 후기 커버의 회사 색. 블로그 커버(.agents/blog-job-posts/covers/src/iv-*.html)와 같은 값이다. */
+export const COMPANY_COVER_TONES: Readonly<Record<string, GuideCoverStyle>> = {
+  hyundai: { background: "#002c5f", ink: "#ffffff", accent: "#bcd3f2", label: "#9fbbe0" },
+  samsung: { background: "#1428a0", ink: "#ffffff", accent: "#c3cbf6", label: "#c3cbf6" },
+};
+
+/** 글의 커버 색: 회사 색이 지정돼 있으면 그것, 아니면 목록 위치의 옅은 판. */
+export function guideCoverTone(guide: Pick<GuideSummary, "coverText">, index: number): GuideCoverStyle {
+  const tone = guide.coverText?.tone;
+  return (tone && COMPANY_COVER_TONES[tone]) || guideCoverStyle(index);
+}
+
 /** 목록에서의 위치(최신순). 본문 페이지가 같은 번호·색을 쓰기 위해 찾는다. */
 export function guideIndexOf(slug: string): number {
   return GUIDE_SUMMARIES.findIndex(guide => guide.slug === slug);

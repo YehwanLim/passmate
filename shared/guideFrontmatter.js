@@ -8,6 +8,8 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SLUG = /^[a-z0-9-]+$/;
 // 커버 이미지는 client/public/guide/ 아래 파일만. 외부 주소는 CSP·깨짐 위험이 있어 받지 않는다.
 const COVER = /^\/guide\/[a-z0-9-]+\/[a-z0-9-]+\.(png|jpe?g|webp)$/;
+const COVER_LOGO = /^\/guide\/logos\/[a-z0-9-]+\.(svg|png)$/;
+const COVER_TONE = /^[a-z]+$/;
 
 /**
  * @param {string} raw
@@ -55,12 +57,19 @@ export function parseGuideFile(filePath, raw) {
     for (const field of ["coverTitle", "coverSub", "coverPoint"]) {
       if (!data[field]) throw new Error(`guide ${fileSlug} has a text cover without "${field}"`);
     }
+    if (data.coverLogo && !COVER_LOGO.test(data.coverLogo)) {
+      throw new Error(`guide ${fileSlug} has a coverLogo outside /guide/logos/: ${data.coverLogo}`);
+    }
+    if (data.coverTone && !COVER_TONE.test(data.coverTone)) throw new Error(`guide ${fileSlug} has a bad coverTone: ${data.coverTone}`);
     coverText = {
       label: data.coverLabel || "",
       title: data.coverTitle,
       sub: data.coverSub,
       point: data.coverPoint,
       pointNote: data.coverPointNote || "",
+      // 면접 후기: 회사 색(lib/guideSummaries.ts COMPANY_COVER_TONES 의 키)과 흰 로고
+      tone: data.coverTone || null,
+      logo: data.coverLogo || null,
     };
   }
   return {

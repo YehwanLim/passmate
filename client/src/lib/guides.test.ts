@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { findGuide, GUIDES, guideMeta, guidePrerenderRoute, parseFrontmatter, parseGuideFile, renderGuideHtml } from "./guides";
-import { GUIDE_SUMMARIES, guideCategories, guideCoverStyle, readingMinutes } from "./guideSummaries";
+import { COMPANY_COVER_TONES, GUIDE_SUMMARIES, guideCategories, guideCoverStyle, guideCoverTone, readingMinutes } from "./guideSummaries";
 
 // 타깃은 신입 공채 지원자뿐이다(.agents/product-marketing.md). 가이드 본문에서도 경력직 키워드를 쓰지 않는다.
 const FORBIDDEN_KEYWORDS = /이직|경력직|경력기술서|커리어 전환/;
@@ -43,8 +43,11 @@ describe("parseGuideFile", () => {
   it("reads the text cover fields and an optional cover image, which must live under /guide/", () => {
     const withText = raw.replace("date:", "coverLabel: 자소서 문항\ncoverTitle: 지원동기\ncoverSub: 칭찬에서 끝내지 않기\ncoverPoint: 칭찬 뒤 세 줄\ndate:");
     expect(parseGuideFile("/content/guides/my-guide.md", withText).coverText).toEqual({
-      label: "자소서 문항", title: "지원동기", sub: "칭찬에서 끝내지 않기", point: "칭찬 뒤 세 줄", pointNote: "",
+      label: "자소서 문항", title: "지원동기", sub: "칭찬에서 끝내지 않기", point: "칭찬 뒤 세 줄", pointNote: "", tone: null, logo: null,
     });
+    const company = withText.replace("date:", "coverTone: hyundai\ncoverLogo: /guide/logos/hyundai-white.svg\ndate:");
+    expect(parseGuideFile("/content/guides/my-guide.md", company).coverText).toMatchObject({ tone: "hyundai", logo: "/guide/logos/hyundai-white.svg" });
+    expect(() => parseGuideFile("/x/a.md", withText.replace("date:", "coverLogo: https://x.example/a.svg\ndate:"))).toThrow(/coverLogo/);
     expect(parseGuideFile("/content/guides/my-guide.md", raw).coverText).toBeNull();
     expect(() => parseGuideFile("/x/a.md", raw.replace("date:", "coverTitle: 지원동기\ndate:"))).toThrow(/coverSub/);
     const withImage = raw.replace("date:", "cover: /guide/my-guide/cover.png\ndate:");
@@ -79,7 +82,23 @@ describe("guide summaries (vite `?summary` loader)", () => {
       expect(["자소서", "면접 후기"], guide.slug).toContain(guide.category);
       expect(Boolean(guide.cover || guide.coverText), guide.slug).toBe(true);
       if (guide.cover) expect(existsSync(new URL(`../../public${guide.cover}`, import.meta.url)), guide.cover).toBe(true);
+      const logo = guide.coverText?.logo;
+      if (logo) expect(existsSync(new URL(`../../public${logo}`, import.meta.url)), logo).toBe(true);
+      const tone = guide.coverText?.tone;
+      if (tone) expect(Object.keys(COMPANY_COVER_TONES), `${guide.slug} tone`).toContain(tone);
     }
+  });
+
+  it("draws interview reviews with the same text cover as other guides, in the company colour (10-06: 글씨 크기 일관성)", () => {
+    const interviews = GUIDE_SUMMARIES.filter(guide => guide.category === "면접 후기");
+    expect(interviews.length).toBeGreaterThan(0);
+    for (const [index, guide] of interviews.entries()) {
+      expect(guide.cover, guide.slug).toBeNull();
+      expect(guide.coverText?.tone, guide.slug).toBeTruthy();
+      expect(guideCoverTone(guide, index)).toBe(COMPANY_COVER_TONES[guide.coverText!.tone!]);
+    }
+    const plain = GUIDE_SUMMARIES.find(guide => !guide.coverText?.tone)!;
+    expect(guideCoverTone(plain, 0)).toBe(guideCoverStyle(0));
   });
 });
 

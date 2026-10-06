@@ -7,7 +7,7 @@ import { GuideLayout } from "@/components/guide/GuideLayout";
 import { formatDate } from "@/lib/formatDate";
 import { hasGuideBody, readGuideHtml } from "@/lib/guideBodies";
 import { guideMeta } from "@/lib/guideMeta";
-import { GUIDE_SUMMARIES, guideCoverStyle, guideIndexOf, guidePath, readingMinutes } from "@/lib/guideSummaries";
+import { GUIDE_SUMMARIES, guideCoverTone, guideIndexOf, guidePath, readingMinutes } from "@/lib/guideSummaries";
 import { applyDocumentMeta, GUIDE_INDEX_PATH, SEO_ROUTES } from "@/lib/seo";
 import NotFound from "./NotFound";
 
@@ -38,9 +38,9 @@ export default function GuideArticle() {
   if (!guide) return <NotFound />;
 
   const index = guideIndexOf(guide.slug);
-  const cover = guideCoverStyle(index);
+  const cover = guideCoverTone(guide, index);
   // 이어서 읽기: 같은 분류를 먼저, 모자라면 최신순으로 채운다. 분류별로 내부 링크가 묶여야 검색엔진이 주제 묶음으로 읽는다.
-  const others = GUIDE_SUMMARIES.map((summary, summaryIndex) => ({ summary, cover: guideCoverStyle(summaryIndex) })).filter(
+  const others = GUIDE_SUMMARIES.map((summary, summaryIndex) => ({ summary, cover: guideCoverTone(summary, summaryIndex) })).filter(
     ({ summary }) => summary.slug !== guide.slug
   );
   const related = [

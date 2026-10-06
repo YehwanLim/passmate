@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/formatDate";
 import {
   GUIDE_SUMMARIES,
   guideCategories,
-  guideCoverStyle,
+  guideCoverTone,
   guidePath,
   readingMinutes,
 } from "@/lib/guideSummaries";
@@ -26,7 +26,7 @@ const INTRO = "커피챗에서 취준생 자소서를 고쳐 주며 자주 본 �
 export default function GuideIndex() {
   const [category, setCategory] = useState(ALL);
   const categories = guideCategories(GUIDE_SUMMARIES);
-  const visible = GUIDE_SUMMARIES.map((guide, index) => ({ guide, cover: guideCoverStyle(index) })).filter(
+  const visible = GUIDE_SUMMARIES.map((guide, index) => ({ guide, cover: guideCoverTone(guide, index) })).filter(
     ({ guide }) => category === ALL || guide.category === category
   );
   const [featured, ...rest] = visible;
