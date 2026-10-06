@@ -69,7 +69,7 @@ describe("guide summaries (vite `?summary` loader)", () => {
   it("gives neighbouring guides different cover tones", () => {
     const styles = GUIDE_SUMMARIES.map((_, index) => guideCoverStyle(index));
     for (let index = 1; index < styles.length; index += 1) {
-      expect(styles[index].background).not.toBe(styles[index - 1].background);
+      expect(styles[index].accent).not.toBe(styles[index - 1].accent);
     }
     expect(readingMinutes(200)).toBe(1);
     expect(readingMinutes(2600)).toBe(5);

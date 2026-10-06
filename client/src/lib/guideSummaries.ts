@@ -28,8 +28,8 @@ export function readingMinutes(bodyChars: number): number {
 }
 
 /**
- * 글자 커버 색. 흰 바탕 페이지에 맞춘 옅은 판 + 진한 글씨(블로그 공채 커버 틀, 10-06 승인).
- * 이웃한 글이 같은 색을 갖지 않도록 slug 해시가 아니라 목록 인덱스로 돌려 쓴다.
+ * 글자 커버 색. 흰 바탕 페이지용 — 판은 모두 같은 연회색, 강조 줄 색만 글마다 다르다(10-06 B안, 토스식).
+ * 이웃한 글이 같은 강조색을 갖지 않도록 slug 해시가 아니라 목록 인덱스로 돌려 쓴다.
  */
 export type GuideCoverStyle = {
   /** 판 */
@@ -40,14 +40,18 @@ export type GuideCoverStyle = {
   accent: string;
   /** 작은 분류 줄 */
   label: string;
+  /** 가로선. 없으면 ink */
+  line?: string;
 };
 
+const PLATE = { background: "#f2f4f6", ink: "#191f28", label: "#6b7684", line: "#d1d6db" } as const;
+
 export const GUIDE_COVER_TONES: readonly GuideCoverStyle[] = [
-  { background: "#e8f3ff", ink: "#0b2c46", accent: "#0064ff", label: "#3a6ea5" },
-  { background: "#fff0e6", ink: "#4a1f0e", accent: "#e8590c", label: "#b4541f" },
-  { background: "#e6f6ec", ink: "#123b22", accent: "#1f9254", label: "#2f7346" },
-  { background: "#f1ecfb", ink: "#2a1d4a", accent: "#6b4bc4", label: "#5a43a0" },
-  { background: "#fff6d9", ink: "#3d2e06", accent: "#b7860b", label: "#8a6a0f" },
+  { ...PLATE, accent: "#3182f6" },
+  { ...PLATE, accent: "#00a86b" },
+  { ...PLATE, accent: "#7048e8" },
+  { ...PLATE, accent: "#f2665c" },
+  { ...PLATE, accent: "#0c8599" },
 ];
 
 export function guideCoverStyle(index: number): GuideCoverStyle {
