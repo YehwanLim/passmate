@@ -30,50 +30,50 @@ export default function DraftPreview({
   };
 
   return (
-    <div className="space-y-4 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+    <div className="space-y-4 rounded-2xl bg-fill-soft p-5">
       <div className="space-y-1.5">
-        <p className="text-[12px] text-zinc-500">{COPY.chosenLabel}</p>
+        <p className="text-[12.5px] font-semibold text-ink-4">{COPY.chosenLabel}</p>
         {draft.chosen.map((c) => (
-          <p key={c.experienceId} className="text-[13px] text-zinc-300">
-            <span className="font-semibold text-zinc-100">{c.title}</span>
-            <span className="text-zinc-500"> · </span>
+          <p key={c.experienceId} className="text-[14px] leading-relaxed text-ink-3">
+            <span className="font-bold text-ink">{c.title}</span>
+            <span className="text-ink-5"> · </span>
             <span>{c.reason}</span>
           </p>
         ))}
       </div>
 
-      <div className="space-y-2 text-[15px] leading-relaxed text-zinc-100">
+      <div className="space-y-2 text-[15px] leading-[1.75] text-ink">
         {draft.sentences.map((s, i) => {
           const sources = s.sourceIds.map((id) => titleOf.get(id)).filter(Boolean).join(", ");
           return (
             <p key={i}>
               {splitBlanks(s.text).map((part, j) =>
                 part.blank ? (
-                  <mark key={j} className="rounded bg-yellow-300/20 px-0.5 text-yellow-200">
+                  <mark key={j} className="rounded bg-blank-soft px-1 font-semibold text-blank">
                     {part.text}
                   </mark>
                 ) : (
                   <span key={j}>{part.text}</span>
                 )
               )}
-              {sources && <span className="ml-1.5 text-[11px] text-zinc-500">{COPY.sourceLabel(sources)}</span>}
-              {s.unsourced && <span className="mt-0.5 block text-[12px] text-zinc-500">{COPY.unsourced}</span>}
+              {sources && <span className="ml-1.5 text-[12px] text-ink-4">{COPY.sourceLabel(sources)}</span>}
+              {s.unsourced && <span className="mt-0.5 block text-[13px] text-blank">{COPY.unsourced}</span>}
             </p>
           );
         })}
       </div>
 
-      {hasBlank && <p className="text-[12px] text-yellow-200/80">{COPY.blankHint}</p>}
+      {hasBlank && <p className="text-[13px] text-blank">{COPY.blankHint}</p>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[12px] text-zinc-500">
+        <span className="text-[13px] text-ink-4">
           {draft.charCount}자 · {COPY.remaining(draft.remainingToday)}
         </span>
         <div className="ml-auto flex gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-lg px-3 text-[13px] text-zinc-400 hover:text-zinc-200"
+            className="h-10 rounded-[10px] px-3 text-[14px] font-semibold text-ink-4 hover:bg-fill hover:text-ink-2"
           >
             {COPY.close}
           </button>
@@ -81,14 +81,14 @@ export default function DraftPreview({
             type="button"
             onClick={onRetry}
             disabled={!canRetry}
-            className="h-9 rounded-lg border border-white/[0.12] px-3 text-[13px] text-zinc-200 disabled:opacity-50"
+            className="h-10 rounded-[10px] border border-line bg-surface px-3.5 text-[14px] font-semibold text-ink-2 transition-colors hover:bg-fill disabled:opacity-50"
           >
             {COPY.retry}
           </button>
           <button
             type="button"
             onClick={apply}
-            className="h-9 rounded-lg bg-white px-3 text-[13px] font-semibold text-black"
+            className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-bold text-white transition-colors hover:bg-brand-hover"
           >
             {COPY.apply}
           </button>

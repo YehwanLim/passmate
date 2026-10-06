@@ -11,7 +11,7 @@ import {
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 const COPY = WORKSPACE_COPY.experiences;
-const field = "w-full rounded-lg border border-white/[0.08] bg-transparent px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600";
+const field = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none";
 const EMPTY: ExperienceInput = { title: "", period: null, situation: "", action: "", result: "", tags: [] };
 
 // 서버 한도(태그 5개·태그당 20자)에 맞춰 보내야 400을 받지 않는다.
@@ -51,7 +51,7 @@ function ExperienceForm({
   };
 
   const text = (key: "situation" | "action" | "result") => (
-    <label className="block space-y-1 text-[13px] text-zinc-400">
+    <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
       <span>{COPY.fields[key]}</span>
       <textarea
         aria-label={COPY.fields[key]}
@@ -65,13 +65,13 @@ function ExperienceForm({
   );
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+    <form onSubmit={submit} className="space-y-3 rounded-2xl bg-fill-soft p-5">
       <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
-        <label className="block space-y-1 text-[13px] text-zinc-400">
+        <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
           <span>{COPY.fields.title}</span>
           <input aria-label={COPY.fields.title} placeholder={COPY.fields.titlePlaceholder} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} maxLength={100} className={field} />
         </label>
-        <label className="block space-y-1 text-[13px] text-zinc-400">
+        <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
           <span>{COPY.fields.period}</span>
           <input aria-label={COPY.fields.period} value={draft.period ?? ""} onChange={(e) => setDraft({ ...draft, period: e.target.value })} maxLength={50} className={field} />
         </label>
@@ -79,14 +79,14 @@ function ExperienceForm({
       {text("situation")}
       {text("action")}
       {text("result")}
-      <label className="block space-y-1 text-[13px] text-zinc-400">
+      <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{COPY.fields.tags}</span>
         <input aria-label={COPY.fields.tags} value={tagText} onChange={(e) => setTagText(e.target.value)} className={field} />
       </label>
-      {error && <p role="alert" className="text-[13px] text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="h-10 rounded-xl px-4 text-sm text-zinc-400">{COPY.cancel}</button>
-        <button type="submit" disabled={busy} className="h-10 rounded-xl bg-white px-4 text-sm font-semibold text-black disabled:opacity-50">{COPY.save}</button>
+        <button type="button" onClick={onCancel} className="h-10 rounded-[10px] px-4 text-[14px] font-semibold text-ink-3 hover:bg-fill">{COPY.cancel}</button>
+        <button type="submit" disabled={busy} className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-hover disabled:opacity-50">{COPY.save}</button>
       </div>
     </form>
   );
@@ -115,8 +115,8 @@ export default function ExperienceVault() {
     }
   };
 
-  if (loadError) return <p role="alert" className="py-10 text-center text-sm text-red-400">{loadError}</p>;
-  if (!items) return <div className="h-24 animate-pulse rounded-2xl bg-white/[0.04]" />;
+  if (loadError) return <p role="alert" className="py-10 text-center text-sm text-danger">{loadError}</p>;
+  if (!items) return <div className="h-24 animate-pulse rounded-2xl bg-fill" />;
 
   return (
     <div className="space-y-4">
@@ -132,15 +132,15 @@ export default function ExperienceVault() {
         />
       ) : (
         <div className="flex justify-end">
-          <button type="button" onClick={() => setEditing("new")} className="h-10 rounded-xl bg-white px-4 text-sm font-semibold text-black">
+          <button type="button" onClick={() => setEditing("new")} className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover">
             {COPY.add}
           </button>
         </div>
       )}
 
-      {deleteError && <p role="alert" className="text-[13px] text-red-400">{deleteError}</p>}
+      {deleteError && <p role="alert" className="text-[13px] text-danger">{deleteError}</p>}
 
-      {items.length === 0 && editing !== "new" && <p className="py-10 text-center text-[13px] text-zinc-500">{COPY.empty}</p>}
+      {items.length === 0 && editing !== "new" && <p className="py-12 text-center text-[14px] leading-relaxed text-ink-4">{COPY.empty}</p>}
 
       {items.map((item) =>
         editing === item.id ? (
@@ -155,23 +155,23 @@ export default function ExperienceVault() {
             }}
           />
         ) : (
-          <article key={item.id} className="space-y-2 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
+          <article key={item.id} className="space-y-2 rounded-2xl bg-fill-soft p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-[15px] font-semibold text-zinc-100">{item.title}</h3>
-                {item.period && <p className="text-[12px] text-zinc-500">{item.period}</p>}
+                <h3 className="text-[16px] font-bold text-ink">{item.title}</h3>
+                {item.period && <p className="mt-0.5 text-[13px] text-ink-4">{item.period}</p>}
               </div>
-              <div className="flex shrink-0 gap-2 text-[12px]">
-                <button type="button" aria-label={`${item.title} ${COPY.edit}`} onClick={() => setEditing(item.id)} className="text-zinc-400 hover:text-zinc-200">{COPY.edit}</button>
-                <button type="button" aria-label={`${item.title} ${COPY.remove}`} onClick={() => remove(item)} className="text-zinc-500 hover:text-zinc-300">
+              <div className="flex shrink-0 gap-1 text-[13px]">
+                <button type="button" aria-label={`${item.title} ${COPY.edit}`} onClick={() => setEditing(item.id)} className="rounded-lg px-2 py-1 font-semibold text-ink-3 hover:bg-fill">{COPY.edit}</button>
+                <button type="button" aria-label={`${item.title} ${COPY.remove}`} onClick={() => remove(item)} className="rounded-lg px-2 py-1 text-ink-4 hover:bg-fill hover:text-danger">
                   {COPY.remove}
                 </button>
               </div>
             </div>
-            {item.situation && <p className="text-[13px] text-zinc-400">{item.situation}</p>}
-            {item.action && <p className="text-[13px] text-zinc-300">{item.action}</p>}
-            {item.result && <p className="text-[13px] text-zinc-200">{item.result}</p>}
-            {item.tags.length > 0 && <p className="text-[12px] text-zinc-500">{item.tags.join(" · ")}</p>}
+            {item.situation && <p className="text-[14px] leading-relaxed text-ink-3">{item.situation}</p>}
+            {item.action && <p className="text-[14px] leading-relaxed text-ink-2">{item.action}</p>}
+            {item.result && <p className="text-[14px] leading-relaxed text-ink">{item.result}</p>}
+            {item.tags.length > 0 && <p className="text-[13px] text-ink-4">{item.tags.join(" · ")}</p>}
           </article>
         )
       )}

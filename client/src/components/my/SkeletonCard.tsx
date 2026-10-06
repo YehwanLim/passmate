@@ -6,7 +6,7 @@ interface SkeletonCardProps {
 function Bone({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`bg-white/[0.06] rounded-md animate-pulse ${className}`}
+      className={`bg-fill rounded-md animate-pulse ${className}`}
     />
   );
 }
@@ -16,7 +16,7 @@ export default function SkeletonCard({
 }: SkeletonCardProps) {
   if (variant === "analysis") {
     return (
-      <div className="border border-white/[0.08] bg-white/[0.02] rounded-2xl p-5 space-y-3">
+      <div className="bg-surface rounded-[20px] p-5 space-y-3">
         <Bone className="h-4 w-3/4" />
         <div className="flex items-center gap-3">
           <Bone className="h-5 w-16 rounded-full" />
@@ -27,7 +27,7 @@ export default function SkeletonCard({
   }
 
   return (
-    <div className="border border-white/[0.08] bg-white/[0.02] rounded-2xl p-6 space-y-4">
+    <div className="border-t border-line-soft px-2 py-5 space-y-3">
       <div className="flex items-center justify-between">
         <Bone className="h-5 w-32" />
         <Bone className="h-5 w-5 rounded-md" />

@@ -52,14 +52,14 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
     <div>
       {/* ── 분석 회차 헤더 ── */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <span className="text-[12px] text-zinc-500 font-light">
+        <span className="text-[13px] text-ink-4">
           {formatDate(analysis.created_at, "ymd-dot")} 작성 · 문항 {Math.max(visibleSections.length, 1)}개
         </span>
         <StatusBadge status={analysis.status} />
       </div>
 
       {detailError && (
-        <p role="alert" className="mb-3 px-1 text-[13px] text-red-400">
+        <p role="alert" className="mb-3 px-1 text-[13px] text-danger">
           {detailError}
         </p>
       )}
@@ -69,14 +69,14 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
         {visibleSections.map((section, idx) => (
           <div
             key={idx}
-            className="border border-zinc-800 bg-zinc-900/80 rounded-xl overflow-hidden"
+            className="bg-surface rounded-[20px] overflow-hidden"
           >
             {/* 질문 헤더 — 전문 표시, 자르지 않음 */}
-            <div className="flex items-start gap-3 px-5 py-4 bg-zinc-800/40 border-b border-zinc-800">
-              <span className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-400/25 text-[12px] font-bold text-blue-300">
+            <div className="flex items-start gap-3 px-5 py-4 border-b border-line-soft">
+              <span className="shrink-0 pt-0.5 text-[13px] font-bold text-brand-ink">
                 Q{idx + 1}
               </span>
-              <p className="text-[14px] text-zinc-100 font-semibold leading-relaxed pt-0.5">
+              <p className="text-[15px] text-ink font-semibold leading-relaxed">
                 {section.question || "문항"}
               </p>
             </div>
@@ -85,12 +85,12 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
             <div className="px-5 py-4">
               {sections === null && !detailError ? (
                 <div className="space-y-2">
-                  <div className="h-3.5 w-full bg-white/[0.05] rounded animate-pulse" />
-                  <div className="h-3.5 w-11/12 bg-white/[0.04] rounded animate-pulse" />
-                  <div className="h-3.5 w-4/5 bg-white/[0.04] rounded animate-pulse" />
+                  <div className="h-3.5 w-full bg-fill rounded animate-pulse" />
+                  <div className="h-3.5 w-11/12 bg-fill rounded animate-pulse" />
+                  <div className="h-3.5 w-4/5 bg-fill rounded animate-pulse" />
                 </div>
               ) : (
-                <div className="text-[13.5px] text-zinc-300 font-light leading-[1.9] whitespace-pre-wrap">
+                <div className="text-[14px] text-ink-2 leading-[1.85] whitespace-pre-wrap">
                   {section.answer || "작성된 내용이 없습니다."}
                 </div>
               )}

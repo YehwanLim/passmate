@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { ProjectSummary } from "@/types/my";
 import ProjectCard from "@/components/my/ProjectCard";
 import EmptyState from "@/components/my/EmptyState";
 import SkeletonCard from "@/components/my/SkeletonCard";
-import SubtleBackground from "@/components/SubtleBackground";
 import SiteHeader from "@/components/SiteHeader";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
@@ -81,118 +78,126 @@ export default function MyProjects() {
     }
   };
 
+  const projectList = isLoading ? (
+    <div className="grid gap-3 px-3 pb-2">
+      {[1, 2, 3].map((i) => (
+        <SkeletonCard key={i} variant="project" />
+      ))}
+    </div>
+  ) : loadError ? (
+    <p role="alert" className="py-10 text-center text-sm text-danger">
+      {loadError}
+    </p>
+  ) : projects.length === 0 ? (
+    <EmptyState
+      title="아직 분석한 지원서가 없어요"
+      description="자소서를 분석하면 여기에서 확인하고 다시 활용할 수 있습니다."
+      ctaLabel="자소서 분석하러 가기"
+    />
+  ) : (
+    <motion.div
+      className="divide-y divide-line-soft border-t border-line-soft"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, delay: 0.2 }}
+    >
+      {projects.map((project, idx) => (
+        <motion.div
+          key={project.id}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          // 줄마다 50ms 씩 밀리면 18줄은 마지막 줄이 1초 넘게 늦는다. 여섯 줄까지만 계단식.
+          transition={{ duration: 0.35, delay: 0.05 * Math.min(idx, 5) }}
+        >
+          <ProjectCard
+            project={project}
+            onViewQuestions={() => navigate(`/my/${project.id}`)}
+            onViewReport={() => {
+              if (project.latest_analysis_id) {
+                const query = `analysisId=${encodeURIComponent(project.latest_analysis_id)}`;
+                navigate(project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`);
+              } else {
+                // 진단 전 지원서는 리포트가 없다. 목록 전체 오류로 바꾸지 않고 작성 화면으로 보낸다.
+                navigate(`/my/${project.id}`);
+              }
+            }}
+            onDelete={() => handleDelete(project.id)}
+          />
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-28">
+    <div className="min-h-screen bg-stage pb-28">
       {/* ════════ GNB ════════ */}
-      <SiteHeader />
+      <SiteHeader variant="light" />
 
       {/* ════════ Page Header ════════ */}
-      <div className="container pt-10 pb-8">
+      <div className="container pt-10 pb-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.05 }}
         >
-          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink">
             {WORKSPACE_COPY.page.title}
           </h1>
-          <p className="text-[14px] text-zinc-500 font-light">
+          <p className="mt-1.5 text-[15px] text-ink-4">
             {WORKSPACE_COPY.page.subtitle}
           </p>
         </motion.div>
       </div>
 
-      {/* ════════ 대시보드: 왼쪽 이용권 칸 + 오른쪽 탭 ════════ */}
+      {/* ════════ 대시보드: 왼쪽 이용권 칸 + 오른쪽 흰 판(탭 + 목록) ════════ */}
       <div className="container">
-        <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <MyCreditsPanel email={user?.email ?? null} />
           </div>
-          <div className="min-w-0">
-            <div role="tablist" className="mb-6 flex gap-1 border-b border-white/[0.06]">
-              {(["applications", "experiences"] as const).map((key) => (
+          <div className="min-w-0 rounded-[20px] bg-surface p-2 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 pt-2 pb-3">
+              <div role="tablist" className="flex gap-1">
+                {(["applications", "experiences"] as const).map((key) => (
+                  <button
+                    key={key}
+                    role="tab"
+                    aria-selected={tab === key}
+                    type="button"
+                    onClick={() => {
+                      setTab(key);
+                      window.history.replaceState(null, "", key === "experiences" ? "#experiences" : window.location.pathname);
+                    }}
+                    className={`h-9 rounded-[10px] px-3.5 text-[15px] transition-colors ${
+                      tab === key ? "bg-ink font-bold text-white" : "font-semibold text-ink-4 hover:bg-fill hover:text-ink-2"
+                    }`}
+                  >
+                    {WORKSPACE_COPY.tabs[key]}
+                  </button>
+                ))}
+              </div>
+              {tab === "applications" && (
                 <button
-                  key={key}
-                  role="tab"
-                  aria-selected={tab === key}
                   type="button"
-                  onClick={() => {
-                    setTab(key);
-                    window.history.replaceState(null, "", key === "experiences" ? "#experiences" : window.location.pathname);
-                  }}
-                  className={`px-3 py-2 text-sm ${tab === key ? "border-b-2 border-white text-zinc-100" : "text-zinc-500 hover:text-zinc-300"}`}
+                  onClick={() => setCreating(true)}
+                  className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover"
                 >
-                  {WORKSPACE_COPY.tabs[key]}
+                  {WORKSPACE_COPY.newApplication}
                 </button>
-              ))}
+              )}
             </div>
             {tab === "experiences" ? (
-              <ExperienceVault />
+              <div className="px-3 pb-2">
+                <ExperienceVault />
+              </div>
             ) : (
               <>
-                <div className="mb-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setCreating(true)}
-                    className="h-10 rounded-xl bg-white px-4 text-sm font-semibold text-black"
-                  >
-                    {WORKSPACE_COPY.newApplication}
-                  </button>
-                </div>
                 {creating && (
-                  <div className="mb-4">
+                  <div className="px-3 pb-4">
                     <NewApplicationForm onCreated={(id) => navigate(`/my/${id}`)} onCancel={() => setCreating(false)} />
                   </div>
                 )}
-                {isLoading ? (
-                  <div className="grid gap-4">
-                    {[1, 2, 3].map((i) => (
-                    <SkeletonCard key={i} variant="project" />
-                  ))}
-                </div>
-                ) : loadError ? (
-                  <p role="alert" className="py-10 text-center text-sm text-red-400">
-                    {loadError}
-                  </p>
-                ) : projects.length === 0 ? (
-                  <EmptyState
-                    title="아직 분석한 지원서가 없어요"
-                    description="자소서를 분석하면 여기에서 확인하고 다시 활용할 수 있습니다."
-                    ctaLabel="자소서 분석하러 가기"
-                  />
-                ) : (
-                  <motion.div
-                    className="grid gap-3"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4, delay: 0.2 }}
-                  >
-                    {projects.map((project, idx) => (
-                      <motion.div
-                        key={project.id}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        // 카드마다 50ms 씩 밀리면 18장은 마지막 카드가 1초 넘게 늦는다. 여섯 장까지만 계단식.
-                        transition={{ duration: 0.35, delay: 0.05 * Math.min(idx, 5) }}
-                      >
-                        <ProjectCard
-                          project={project}
-                          onViewQuestions={() => navigate(`/my/${project.id}`)}
-                          onViewReport={() => {
-                            if (project.latest_analysis_id) {
-                              const query = `analysisId=${encodeURIComponent(project.latest_analysis_id)}`;
-                              navigate(project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`);
-                            } else {
-                              // 진단 전 지원서는 리포트가 없다. 목록 전체 오류로 바꾸지 않고 작성 화면으로 보낸다.
-                              navigate(`/my/${project.id}`);
-                            }
-                          }}
-                          onDelete={() => handleDelete(project.id)}
-                        />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
+                {projectList}
               </>
             )}
           </div>
@@ -206,7 +211,7 @@ export default function MyProjects() {
         <button
           id="my-account-deletion-link"
           onClick={() => navigate("/account/deletion")}
-          className="text-[11px] text-zinc-700 hover:text-zinc-500 transition-colors"
+          className="text-[12px] text-ink-5 hover:text-ink-3 transition-colors"
         >
           회원 탈퇴
         </button>

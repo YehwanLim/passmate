@@ -1,4 +1,3 @@
-import { Calendar, FileText, ClipboardCheck, Building2 } from "lucide-react";
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
 import { formatDate } from "@/lib/formatDate";
@@ -12,19 +11,26 @@ interface ProjectCardProps {
   onDelete?: () => void;
 }
 
-function formatChars(chars: number | null): string {
-  if (!chars) return "—";
-  return chars.toLocaleString();
-}
+type Deadline = { label: string; tone: "urgent" | "normal" | "muted" };
 
-function deadlineBadge(deadline: string | null | undefined): string | null {
+// 사흘 안 마감만 빨갛게. 그 밖은 회색 칸, 지났거나 없으면 글자만.
+function deadlineOf(deadline: string | null | undefined): Deadline {
   const days = daysUntil(deadline ?? null);
-  if (days === null) return null;
-  if (days < 0) return WORKSPACE_COPY.deadlinePassed;
-  if (days === 0) return WORKSPACE_COPY.deadlineToday;
-  return WORKSPACE_COPY.deadlineDays(days);
+  if (days === null) return { label: WORKSPACE_COPY.deadlineNone, tone: "muted" };
+  if (days < 0) return { label: WORKSPACE_COPY.deadlinePassed, tone: "muted" };
+  if (days === 0) return { label: WORKSPACE_COPY.deadlineToday, tone: "urgent" };
+  return { label: WORKSPACE_COPY.deadlineDays(days), tone: days <= 3 ? "urgent" : "normal" };
 }
 
+const DEADLINE_CLASS: Record<Deadline["tone"], string> = {
+  urgent: "h-7 rounded-lg bg-danger-soft px-2.5 text-[13px] font-bold text-danger",
+  normal: "h-7 rounded-lg bg-fill px-2.5 text-[13px] font-bold text-ink-2",
+  muted: "text-[13px] text-ink-5",
+};
+
+const BUTTON = "inline-flex h-10 items-center justify-center rounded-[10px] px-4 text-[14px] font-semibold transition-colors";
+
+/** 마이페이지 지원서 목록의 한 줄: 회사·직무 | 마감 | 진행(또는 한줄 요약) | 버튼. lg 미만에서는 위아래로 쌓는다. */
 export default function ProjectCard({
   project,
   onViewQuestions,
@@ -48,144 +54,105 @@ export default function ProjectCard({
       ? "분석에 실패했습니다. 다시 시도해 주세요."
       : "한줄 요약이 없는 리포트입니다.";
   const keywordFallback = isPending ? "분석 대기중" : isFailed ? "분석 실패" : null;
-  const badge = deadlineBadge(project.deadline);
+  const deadline = deadlineOf(project.deadline);
   const draftTotal = project.draft_question_count ?? 0;
+  const answered = project.answered_count ?? 0;
+  const questionCount = isDraftOnly ? draftTotal : project.question_count ?? project.analysis_count;
 
   return (
-    <div data-testid="application-card" className="relative border border-zinc-800 bg-zinc-900/80 rounded-xl p-4 lg:px-5 lg:py-4 transition-colors duration-200 hover:border-zinc-700 group">
-      {/* 모바일 대응: 케밥 메뉴를 우측 상단 절대위치로 뺌 */}
-      <div className="absolute top-3 right-3 lg:hidden z-10">
-        {kebabItems.length > 0 && <KebabMenu items={kebabItems} />}
+    <div
+      data-testid="application-card"
+      className="group relative grid grid-cols-1 gap-3 px-5 py-[18px] lg:grid-cols-[minmax(0,1fr)_88px_minmax(0,1.1fr)_288px] lg:items-center lg:gap-5"
+    >
+      {/* 회사·직무 — 직무는 색 칩 대신 제목 아래 부제로 둔다(긴 직무명도 안 잘림) */}
+      <div className="min-w-0 pr-10 lg:pr-0">
+        {(project.id === "mock-proj-1" || isCompany) && (
+          <p className="mb-0.5 text-[12px] font-semibold text-brand-ink">
+            {project.id === "mock-proj-1" ? "샘플" : "기업 분석"}
+          </p>
+        )}
+        <h3 className="truncate text-[17px] font-bold tracking-tight text-ink">
+          {project.company_name || project.title || "기업 미지정"}
+        </h3>
+        {project.job_role && <p className="mt-0.5 truncate text-[14px] text-ink-3">{project.job_role}</p>}
+        <p className="mt-1 flex flex-wrap gap-x-1.5 text-[12.5px] text-ink-4">
+          <span>{isCompany ? "기업 분석 리포트" : `${questionCount}개 문항`}</span>
+          <span aria-hidden="true">·</span>
+          <span>{formatDate(project.created_at, "ymd-dot")} 작성</span>
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6">
-        {/* ───────────────────────────────────────────────────────────── */}
-        {/* 1️⃣ [좌측] 상세 정보 영역 (col-span-3) */}
-        {/* ───────────────────────────────────────────────────────────── */}
-        <div className="lg:col-span-3 flex flex-col justify-center">
-          {/* 회사/직무 — 카드의 메인 타이틀. 직무는 색 칩 대신 제목 아래 부제로 둔다(긴 직무명도 안 잘림). */}
-          <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-            {project.id === "mock-proj-1" && (
-              <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 whitespace-nowrap">
-                샘플
-              </span>
+      <div className="flex items-center">
+        <span className={`inline-flex items-center ${DEADLINE_CLASS[deadline.tone]}`}>{deadline.label}</span>
+      </div>
+
+      {/* 진단 전: 몇 문항 썼는지 막대로. 진단 후: 한줄 요약과 키워드. */}
+      <div className="min-w-0">
+        {isDraftOnly ? (
+          <div className="space-y-1.5">
+            <p className="text-[13px] text-ink-3">{summaryFallback}</p>
+            {draftTotal > 0 && (
+              <>
+                <div className="h-1.5 rounded-full bg-fill" aria-hidden="true">
+                  <div className="h-1.5 rounded-full bg-brand" style={{ width: `${Math.round((answered / draftTotal) * 100)}%` }} />
+                </div>
+                <p className="text-[12px] text-ink-4">{WORKSPACE_COPY.progress(answered, draftTotal)}</p>
+              </>
             )}
-            {isCompany && (
-              <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-sky-500/15 text-sky-300 border border-sky-400/25 whitespace-nowrap">
-                기업 분석
-              </span>
-            )}
-            <h3 className="text-[16px] font-bold text-zinc-50 tracking-tight truncate">
-              {project.company_name || project.title || "기업 미지정"}
-            </h3>
           </div>
-          {project.job_role && (
-            <p className="mt-0.5 text-[12.5px] font-medium leading-snug text-zinc-400">
-              {project.job_role}
+        ) : (
+          <>
+            {/* 진단 전 지원서에는 요약이 없으니 "한줄 요약" 이름표는 진단 후에만 단다 */}
+            <p className="mb-0.5 text-[11.5px] font-semibold text-ink-4">한줄 요약</p>
+            <p className="line-clamp-2 text-[14px] leading-[1.5] text-ink-2 break-keep">
+              &ldquo;{project.summary || summaryFallback}&rdquo;
             </p>
-          )}
-          {(badge || draftTotal > 0) && (
-            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-              {badge && <span className="text-[12px] font-semibold text-zinc-200">{badge}</span>}
-              {draftTotal > 0 && (
-                <span className="text-[12px] text-zinc-500">
-                  {WORKSPACE_COPY.progress(project.answered_count ?? 0, draftTotal)}
-                </span>
-              )}
-            </div>
-          )}
+            {keywords.length > 0 ? (
+              // 키워드는 앞 3개만 — 다 늘어놓으면 줄이 늘어 칸이 커진다
+              <p className="mt-1 truncate text-[12px] text-ink-4">
+                {keywords.slice(0, 3).map((kw) => `#${kw}`).join(" ")}
+              </p>
+            ) : keywordFallback ? (
+              <p className="mt-1 text-[12px] font-semibold text-ink-4">{keywordFallback}</p>
+            ) : null}
+          </>
+        )}
+      </div>
 
-          {/* 아이콘 메타 정보 묶음 */}
-          {/* 메타는 한 줄로: 두 줄로 쌓으면 카드 높이만 커진다 */}
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-zinc-500 font-light">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3 h-3" />
-              <span>{formatDate(project.created_at, "ymd-dot")} 작성됨</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {isCompany ? <Building2 className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
-              <span>{isCompany
-                  ? "기업 분석 리포트"
-                  : `${isDraftOnly ? draftTotal : project.question_count ?? project.analysis_count}개 문항`}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ───────────────────────────────────────────────────────────── */}
-        {/* 2️⃣ [중앙] 피드백 대시보드 영역 (col-span-6) */}
-        {/* ───────────────────────────────────────────────────────────── */}
-        <div className="lg:col-span-6 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-3 lg:pt-0 lg:pl-6">
-          {/* 진단 전 지원서에는 요약이 없으니 "한줄 요약" 이름표를 달지 않는다 */}
-          {!isDraftOnly && (
-            <span className="text-[11px] font-semibold text-zinc-500 mb-1 tracking-wide">
-              한줄 요약
-            </span>
-          )}
-          <p className="line-clamp-2 text-[14px] text-zinc-100 font-semibold leading-[1.55] break-keep">
-            {isDraftOnly ? summaryFallback : `"${project.summary || summaryFallback}"`}
-          </p>
-
-          <div className="mt-1.5">
-            <div className="flex flex-wrap gap-x-2.5 gap-y-1">
-              {keywords.length > 0 ? (
-                // 키워드는 앞 4개만 — 다 늘어놓으면 줄이 늘어 카드가 커진다
-                keywords.slice(0, 4).map((kw, idx) => (
-                  <span key={idx} className="text-[12px] font-medium text-zinc-500">
-                    #{kw}
-                  </span>
-                ))
-              ) : keywordFallback ? (
-                <span className="text-[12px] font-medium text-zinc-500 bg-zinc-800/50 px-2.5 py-1 rounded-md border border-zinc-700/50">
-                  {keywordFallback}
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {/* ───────────────────────────────────────────────────────────── */}
-        {/* 3️⃣ [우측] 액션 그룹 (col-span-3) */}
-        {/* ───────────────────────────────────────────────────────────── */}
-        <div className="lg:col-span-3 flex flex-col border-t lg:border-t-0 lg:border-l border-zinc-800/50 pt-3 lg:pt-0 lg:pl-6">
-
-          {/* 데스크탑: 케밥 메뉴를 버튼 위 전용 줄에 배치(절대위치 제거 → 버튼과 안 겹침) */}
-          <div className="hidden lg:flex justify-end -mt-1 -mr-2">
-            {kebabItems.length > 0 && <KebabMenu items={kebabItems} />}
-          </div>
-
-          <div className="flex flex-row gap-2 my-auto lg:flex-col">
-            {isDraftOnly ? (
+      <div className="flex items-center gap-2 lg:justify-end">
+        {isDraftOnly ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
+            className={`${BUTTON} flex-1 bg-brand-soft text-brand-ink hover:bg-[#dceaff] lg:flex-none`}
+          >
+            {WORKSPACE_COPY.draftCard.open}
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onViewReport(); }}
+              className={`${BUTTON} flex-1 bg-ink text-white hover:bg-ink-2 lg:flex-none`}
+            >
+              리포트 보기
+            </button>
+            {!isCompany && (
               <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
-                className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-white text-[13px] font-semibold text-black hover:bg-zinc-200 transition-all duration-200"
+                className={`${BUTTON} flex-1 bg-fill text-ink-2 hover:bg-line lg:flex-none`}
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span>{WORKSPACE_COPY.draftCard.open}</span>
-              </button>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewReport();
-                }}
-                className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-white text-[13px] font-semibold text-black hover:bg-zinc-200 transition-all duration-200"
-              >
-                <ClipboardCheck className="w-3.5 h-3.5" />
-                <span>리포트 보기</span>
+                작성한 자소서 보기
               </button>
             )}
-            {isCompany || isDraftOnly ? null : (
-              <button
-                onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
-                className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-zinc-700 bg-zinc-800/40 text-[13px] font-medium text-zinc-300 hover:bg-zinc-700/60 hover:text-zinc-100 transition-all duration-200"
-              >
-                <FileText className="w-3.5 h-3.5 text-zinc-500" />
-                <span>작성한 자소서 보기</span>
-              </button>
-            )}
+          </>
+        )}
+        {kebabItems.length > 0 && (
+          <div className="absolute right-3 top-4 lg:static">
+            <KebabMenu items={kebabItems} />
           </div>
-
-        </div>
+        )}
       </div>
     </div>
   );

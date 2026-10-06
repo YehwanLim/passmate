@@ -16,7 +16,13 @@ export function loginPathFrom(currentPath: string): string {
   return currentPath === "/" ? "/login?redirect=%2Fanalyze" : "/login";
 }
 
-export default function AuthButton() {
+/** tone="light": 밝은 화면(마이페이지·작업실)의 흰 헤더용. 드롭다운도 흰 판으로 바꾼다. */
+export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" } = {}) {
+  const light = tone === "light";
+  const menuItem = light
+    ? "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-ink-2 hover:text-ink hover:bg-fill transition-colors duration-150"
+    : "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-300 hover:text-white hover:bg-white/10 transition-colors duration-150";
+  const menuIcon = light ? "w-4 h-4 text-ink-4" : "w-4 h-4 text-gray-500";
   const [location, navigate] = useLocation();
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -86,7 +92,7 @@ export default function AuthButton() {
         aria-expanded={dropdownOpen}
       >
         {/* 아바타 */}
-        <div className="w-6 h-6 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
+        <div className={`w-6 h-6 rounded-full overflow-hidden border flex-shrink-0 ${light ? "border-line" : "border-white/20"}`}>
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -95,8 +101,8 @@ export default function AuthButton() {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="w-full h-full bg-blue-500/30 flex items-center justify-center">
-              <User className="w-3.5 h-3.5 text-blue-300" />
+            <div className={`w-full h-full flex items-center justify-center ${light ? "bg-brand-soft" : "bg-blue-500/30"}`}>
+              <User className={`w-3.5 h-3.5 ${light ? "text-brand-ink" : "text-blue-300"}`} />
             </div>
           )}
         </div>
@@ -105,7 +111,7 @@ export default function AuthButton() {
           {displayName}
         </span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${
+          className={`w-3.5 h-3.5 ${light ? "text-ink-4" : "text-gray-500"} transition-transform duration-200 ${
             dropdownOpen ? "rotate-180" : ""
           }`}
         />
@@ -119,37 +125,38 @@ export default function AuthButton() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-1.5 w-52 rounded-xl border border-white/[0.08] bg-[#111111] backdrop-blur-xl overflow-hidden z-50"
+            className={`absolute right-0 top-full mt-1.5 w-52 rounded-xl border overflow-hidden z-50 ${light ? "border-line bg-surface" : "border-white/[0.08] bg-[#111111] backdrop-blur-xl"}`}
             style={{
-              boxShadow:
-                "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
+              boxShadow: light
+                ? "0 12px 32px rgba(18,32,90,0.12)"
+                : "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
             }}
           >
             {/* 사용자 정보 */}
-            <div className="px-4 py-3 border-b border-white/[0.06]">
-              <p className="text-[13px] font-medium text-white truncate">
+            <div className={`px-4 py-3 border-b ${light ? "border-line-soft" : "border-white/[0.06]"}`}>
+              <p className={`text-[13px] font-medium truncate ${light ? "text-ink" : "text-white"}`}>
                 {displayName}
               </p>
-              <p className="text-[11px] text-gray-500 truncate mt-0.5">
+              <p className={`text-[11px] truncate mt-0.5 ${light ? "text-ink-4" : "text-gray-500"}`}>
                 {user?.email}
               </p>
             </div>
 
-            <div className="p-1.5 border-b border-white/[0.06]">
+            <div className={`p-1.5 border-b ${light ? "border-line-soft" : "border-white/[0.06]"}`}>
               <button
                 id="header-my-projects-btn"
                 onClick={() => handleNavigate("/my")}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-300 hover:text-white hover:bg-white/10 transition-colors duration-150"
+                className={menuItem}
               >
-                <FileText className="w-4 h-4 text-gray-500" />
+                <FileText className={menuIcon} />
                 내 지원서
               </button>
               <button
                 id="header-entitlements-btn"
                 onClick={() => handleNavigate("/my/entitlements")}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-300 hover:text-white hover:bg-white/10 transition-colors duration-150"
+                className={menuItem}
               >
-                <Ticket className="w-4 h-4 text-gray-500" />
+                <Ticket className={menuIcon} />
                 내 이용권
               </button>
             </div>
@@ -160,12 +167,12 @@ export default function AuthButton() {
                 id="header-logout-btn"
                 onClick={handleSignOut}
                 disabled={isSigningOut}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-300 hover:text-white hover:bg-white/10 transition-colors duration-150 disabled:opacity-50"
+                className={`${menuItem} disabled:opacity-50`}
               >
                 {isSigningOut ? (
-                  <div className="w-4 h-4 border border-gray-500 border-t-gray-300 rounded-full animate-spin" />
+                  <div className={`w-4 h-4 border rounded-full animate-spin ${light ? "border-line border-t-ink-3" : "border-gray-500 border-t-gray-300"}`} />
                 ) : (
-                  <LogOut className="w-4 h-4 text-gray-500" />
+                  <LogOut className={menuIcon} />
                 )}
                 {isSigningOut ? "로그아웃 중..." : "로그아웃"}
               </button>

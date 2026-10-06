@@ -19,8 +19,59 @@ import FormSection from "./FormSection";
 
 type Mode = "url" | "text";
 
-const FETCH_BUTTON_CLASS =
-  "h-11 rounded-xl bg-white px-5 text-sm font-semibold text-black hover:bg-zinc-200 disabled:opacity-40";
+type Tone = "dark" | "light";
+
+// 분석 폼(어두운 화면)과 작업실(밝은 화면)이 같은 칸을 쓴다. 분석 폼까지 새 디자인으로 바뀌면 dark 를 지운다.
+const TONE = {
+  dark: {
+    intro: "text-sm text-zinc-500 leading-relaxed break-keep",
+    tabBar: "mt-4 flex items-center gap-4 border-b border-white/[0.08]",
+    tabOn: "border-white text-white",
+    tabOff: "border-transparent text-zinc-500 hover:text-zinc-300",
+    input:
+      "h-11 flex-1 rounded-xl border-white/[0.08] bg-white/[0.04] px-4 text-[15px] text-white placeholder:text-zinc-600 focus-visible:border-blue-500/40 focus-visible:ring-2 focus-visible:ring-blue-500/20",
+    textarea:
+      "min-h-[160px] border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20",
+    hint: "mt-2 text-xs text-zinc-600 break-keep",
+    tooShort: "text-xs text-zinc-500",
+    count: "text-xs text-zinc-600 tabular-nums",
+    error: "text-red-400",
+    loading: "text-zinc-500",
+    fetch: "h-11 rounded-xl bg-white px-5 text-sm font-semibold text-black hover:bg-zinc-200 disabled:opacity-40",
+    cardLabel: "text-[11px] uppercase tracking-wider text-zinc-500",
+    cardTitle: "mt-1 text-[15px] font-semibold text-white break-keep",
+    cardMeta: "mt-1 text-xs text-zinc-500",
+    replace: "shrink-0 text-[12.5px] text-zinc-400 underline-offset-4 transition-colors hover:text-white hover:underline",
+    keywords: "text-[12px] px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/[0.06] text-zinc-200",
+    listTitle: "text-xs font-medium uppercase tracking-wider text-zinc-500 mb-2.5",
+    listItem: "flex gap-2 text-[13.5px] leading-relaxed text-zinc-300 break-keep",
+    listDot: "text-zinc-600",
+  },
+  light: {
+    intro: "text-[14px] text-ink-4 leading-relaxed break-keep",
+    tabBar: "mt-4 flex items-center gap-5 border-b border-line-soft",
+    tabOn: "border-ink font-bold text-ink",
+    tabOff: "border-transparent text-ink-4 hover:text-ink-2",
+    input:
+      "h-11 flex-1 rounded-xl border-line bg-surface px-4 text-[15px] text-ink placeholder:text-ink-5 focus-visible:border-brand focus-visible:ring-0",
+    textarea:
+      "min-h-[160px] border-line bg-surface text-ink placeholder:text-ink-5 rounded-xl text-[15px] focus:border-brand focus:ring-0",
+    hint: "mt-2 text-[13px] text-ink-4 break-keep",
+    tooShort: "text-[13px] text-danger",
+    count: "text-[13px] text-ink-4 tabular-nums",
+    error: "text-danger",
+    loading: "text-ink-4",
+    fetch: "h-11 rounded-xl bg-ink px-5 text-[14px] font-semibold text-white hover:bg-ink-2 disabled:opacity-40",
+    cardLabel: "text-[12px] font-semibold text-ink-4",
+    cardTitle: "mt-1 text-[16px] font-bold text-ink break-keep",
+    cardMeta: "mt-1 text-[13px] text-ink-4",
+    replace: "shrink-0 text-[13px] font-semibold text-brand-ink underline-offset-4 hover:underline",
+    keywords: "text-[13px] text-ink-4",
+    listTitle: "text-[13px] font-semibold text-ink-3 mb-2",
+    listItem: "flex gap-2 text-[14px] leading-relaxed text-ink-2 break-keep",
+    listDot: "text-ink-5",
+  },
+} satisfies Record<Tone, Record<string, string>>;
 
 export function getJobPostingTitle(record: JobPostingRecord): string {
   const { title, company, role } = record.summary;
@@ -45,12 +96,15 @@ export default function JobPostingSection({
   onChange,
   isAuthenticated,
   onRequireLogin,
+  tone = "dark",
 }: {
   value: JobPostingRecord | null;
   onChange: (record: JobPostingRecord | null) => void;
   isAuthenticated: boolean;
   onRequireLogin: () => void;
+  tone?: Tone;
 }) {
+  const t = TONE[tone];
   const [mode, setMode] = useState<Mode>("url");
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
@@ -111,19 +165,19 @@ export default function JobPostingSection({
 
   if (value) {
     return (
-      <FormSection icon={FileText} title="채용공고" className="space-y-5">
-        <JobPostingCard record={value} onReplace={reset} />
+      <FormSection icon={FileText} title="채용공고" className="space-y-5" tone={tone}>
+        <JobPostingCard record={value} onReplace={reset} tone={tone} />
       </FormSection>
     );
   }
 
   return (
-    <FormSection icon={FileText} title="채용공고" className="space-y-5">
+    <FormSection icon={FileText} title="채용공고" className="space-y-5" tone={tone}>
       <div>
-        <p className="text-sm text-zinc-500 leading-relaxed break-keep">
+        <p className={t.intro}>
           지원하려는 공고를 넣으면, 해당 공고를 기준으로 자소서를 분석해드려요.
         </p>
-        <div className="mt-4 flex items-center gap-4 border-b border-white/[0.08]" role="tablist">
+        <div className={t.tabBar} role="tablist">
           {(
             [
               ["url", "링크"],
@@ -138,9 +192,7 @@ export default function JobPostingSection({
               onClick={() => switchMode(key)}
               className={cn(
                 "-mb-px border-b-2 pb-2.5 text-[13px] font-medium transition-colors",
-                mode === key
-                  ? "border-white text-white"
-                  : "border-transparent text-zinc-500 hover:text-zinc-300"
+                mode === key ? t.tabOn : t.tabOff
               )}
             >
               {label}
@@ -173,11 +225,11 @@ export default function JobPostingSection({
               }}
               placeholder="https://"
               disabled={isLoading}
-              className="h-11 flex-1 rounded-xl border-white/[0.08] bg-white/[0.04] px-4 text-[15px] text-white placeholder:text-zinc-600 focus-visible:border-blue-500/40 focus-visible:ring-2 focus-visible:ring-blue-500/20"
+              className={t.input}
             />
-            <FetchButton isLoading={isLoading} disabled={!canFetch} onClick={handleFetch} />
+            <FetchButton isLoading={isLoading} disabled={!canFetch} onClick={handleFetch} className={t.fetch} />
           </div>
-          <p className="mt-2 text-xs text-zinc-600 break-keep">
+          <p className={t.hint}>
             링크로 열리지 않는 사이트(원티드 등)는 조금 번거롭더라도 본문을 복사해서 붙여주세요.
           </p>
         </div>
@@ -195,18 +247,18 @@ export default function JobPostingSection({
               setError(null);
             }}
             placeholder="담당 업무, 자격요건, 우대사항이 있는 부분을 그대로 붙여 주세요."
-            className="min-h-[160px] border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20"
+            className={t.textarea}
           />
           <div className="mt-2 flex items-center justify-between gap-3">
-            <span className="text-xs text-zinc-500">
+            <span className={t.tooShort}>
               {isTextTooShort ? `최소 ${MIN_POSTING_CHARS}자 이상 입력해 주세요` : ""}
             </span>
-            <span className="text-xs text-zinc-600 tabular-nums">
+            <span className={t.count}>
               {text.length.toLocaleString()} / {MAX_POSTING_CHARS.toLocaleString()}
             </span>
           </div>
           <div className="mt-3 flex justify-end">
-            <FetchButton isLoading={isLoading} disabled={!canFetch} onClick={handleFetch} />
+            <FetchButton isLoading={isLoading} disabled={!canFetch} onClick={handleFetch} className={t.fetch} />
           </div>
         </div>
       )}
@@ -215,7 +267,7 @@ export default function JobPostingSection({
         aria-live="polite"
         className={cn(
           "text-[13px]",
-          error ? "text-red-400" : isLoading ? "text-zinc-500" : "sr-only"
+          error ? t.error : isLoading ? t.loading : "sr-only"
         )}
       >
         {error ?? (isLoading ? "공고를 읽는 중입니다." : "")}
@@ -228,13 +280,15 @@ function FetchButton({
   isLoading,
   disabled,
   onClick,
+  className,
 }: {
   isLoading: boolean;
   disabled: boolean;
   onClick: () => void;
+  className: string;
 }) {
   return (
-    <Button type="button" onClick={onClick} disabled={disabled} className={FETCH_BUTTON_CLASS}>
+    <Button type="button" onClick={onClick} disabled={disabled} className={className}>
       {isLoading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
@@ -250,10 +304,13 @@ function FetchButton({
 function JobPostingCard({
   record,
   onReplace,
+  tone,
 }: {
   record: JobPostingRecord;
   onReplace: () => void;
+  tone: Tone;
 }) {
+  const t = TONE[tone];
   const { summary } = record;
   const host = hostnameOf(record.sourceUrl);
   const meta = [host, record.charCount ? `본문 ${record.charCount.toLocaleString()}자` : null].filter(
@@ -267,39 +324,39 @@ function JobPostingCard({
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-wider text-zinc-500">지원 공고</p>
-          <p className="mt-1 text-[15px] font-semibold text-white break-keep">
+          <p className={t.cardLabel}>지원 공고</p>
+          <p className={t.cardTitle}>
             {getJobPostingTitle(record)}
           </p>
           {meta.length > 0 && (
-            <p className="mt-1 text-xs text-zinc-500">{meta.join(" · ")}</p>
+            <p className={t.cardMeta}>{meta.join(" · ")}</p>
           )}
         </div>
         <button
           type="button"
           onClick={onReplace}
-          className="shrink-0 text-[12.5px] text-zinc-400 underline-offset-4 transition-colors hover:text-white hover:underline"
+          className={t.replace}
         >
           다른 공고 넣기
         </button>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        {hasRequirements && <BulletList title="자격요건" items={summary.requirements} />}
-        {hasPreferred && <BulletList title="우대사항" items={summary.preferred} />}
+        {hasRequirements && <BulletList title="자격요건" items={summary.requirements} tone={tone} />}
+        {hasPreferred && <BulletList title="우대사항" items={summary.preferred} tone={tone} />}
         {showResponsibilities && summary.responsibilities.length > 0 && (
-          <BulletList title="담당 업무" items={summary.responsibilities} />
+          <BulletList title="담당 업무" items={summary.responsibilities} tone={tone} />
         )}
       </div>
 
       {summary.keywords.length > 0 && (
-        <ul className="flex flex-wrap gap-2" aria-label="공고 키워드">
+        <ul className={tone === "light" ? "flex flex-wrap gap-x-2.5 gap-y-1" : "flex flex-wrap gap-2"} aria-label="공고 키워드">
           {summary.keywords.map(keyword => (
             <li
               key={keyword}
-              className="text-[12px] px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/[0.06] text-zinc-200"
+              className={t.keywords}
             >
-              {keyword}
+              {tone === "light" ? `#${keyword}` : keyword}
             </li>
           ))}
         </ul>
@@ -308,14 +365,15 @@ function JobPostingCard({
   );
 }
 
-export function BulletList({ title, items }: { title: string; items: string[] }) {
+export function BulletList({ title, items, tone = "dark" }: { title: string; items: string[]; tone?: Tone }) {
+  const t = TONE[tone];
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 mb-2.5">{title}</p>
+      <p className={t.listTitle}>{title}</p>
       <ul className="space-y-1.5">
         {items.map(item => (
-          <li key={item} className="flex gap-2 text-[13.5px] leading-relaxed text-zinc-300 break-keep">
-            <span aria-hidden="true" className="text-zinc-600">
+          <li key={item} className={t.listItem}>
+            <span aria-hidden="true" className={t.listDot}>
               ·
             </span>
             <span>{item}</span>

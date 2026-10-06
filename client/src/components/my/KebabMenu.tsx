@@ -37,16 +37,16 @@ export default function KebabMenu({ items }: KebabMenuProps) {
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="p-1.5 rounded-lg hover:bg-white/[0.08] transition-colors duration-150"
+        className="p-2 rounded-lg hover:bg-fill transition-colors duration-150"
         aria-label="More actions"
       >
-        <MoreVertical className="w-4 h-4 text-zinc-500" />
+        <MoreVertical className="w-4 h-4 text-ink-4" />
       </button>
 
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 w-44 bg-[#1A1A1A] border border-white/[0.1] rounded-xl shadow-2xl shadow-black/40 py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+          className="absolute right-0 top-full mt-1 w-44 bg-surface border border-line rounded-xl shadow-[0_12px_32px_rgba(18,32,90,0.12)] py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
         >
           {items.map((item, idx) => {
             const Icon = item.icon;
@@ -62,8 +62,8 @@ export default function KebabMenu({ items }: KebabMenuProps) {
                 className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-[13px] font-medium transition-colors duration-100
                   ${
                     isDanger
-                      ? "text-red-400 hover:bg-red-500/10"
-                      : "text-zinc-300 hover:bg-white/[0.06]"
+                      ? "text-danger hover:bg-danger-soft"
+                      : "text-ink-2 hover:bg-fill"
                   }`}
               >
                 <Icon className="w-3.5 h-3.5" />

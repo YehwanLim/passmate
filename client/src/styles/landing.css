@@ -494,6 +494,70 @@
   }
 }
 
+/* 밝은 헤더(SiteHeader variant="light"). 떠오르기·빛 번짐 없이 회색 바탕만 깐다. */
+.site-header-light .landing-nav-link,
+.site-header-light .header-action-link {
+  color: #4e5968;
+  opacity: 1;
+}
+
+.site-header-light .landing-nav-link:hover,
+.site-header-light .landing-nav-link:focus-visible,
+.site-header-light .header-action-link:hover,
+.site-header-light .header-action-link:focus-visible,
+.site-header-light .header-action-link[aria-expanded="true"] {
+  color: #191f28;
+  background-color: #f2f4f6;
+  filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.site-header-light .landing-nav-link:focus-visible,
+.site-header-light .header-action-link:focus-visible,
+.site-header-light .mobile-nav-toggle:focus-visible,
+.site-header-light .mobile-nav-link:focus-visible {
+  outline: 2px solid #0064ff;
+  outline-offset: 2px;
+}
+
+.site-header-light .landing-nav-link[aria-current="page"],
+.site-header-light .mobile-nav-link[aria-current="page"] {
+  color: #191f28;
+  background-color: #f2f4f6;
+  font-weight: 600;
+}
+
+.site-header-light .mobile-nav-toggle {
+  color: #333d4b;
+  background: #f2f4f6;
+  box-shadow: none;
+}
+
+.site-header-light .mobile-nav-toggle:hover,
+.site-header-light .mobile-nav-toggle[aria-expanded="true"] {
+  color: #191f28;
+  background: #e5e8eb;
+  box-shadow: none;
+}
+
+.site-header-light .mobile-nav-panel {
+  background: #ffffff;
+  border: 1px solid #e5e8eb;
+  box-shadow: 0 12px 32px rgba(18, 32, 90, 0.12);
+  backdrop-filter: none;
+}
+
+.site-header-light .mobile-nav-link {
+  color: #333d4b;
+}
+
+.site-header-light .mobile-nav-link:hover {
+  color: #191f28;
+  background: #f2f4f6;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-nav-link,
   .header-action-link,

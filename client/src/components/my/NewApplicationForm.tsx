@@ -3,7 +3,7 @@ import { createApplication, WorkspaceApiError } from "@/lib/workspace";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 const COPY = WORKSPACE_COPY.newApplicationForm;
-const field = "w-full rounded-lg border border-white/[0.08] bg-transparent px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600";
+const field = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none";
 
 export default function NewApplicationForm({ onCreated, onCancel }: { onCreated: (id: string) => void; onCancel: () => void }) {
   const [company, setCompany] = useState("");
@@ -38,21 +38,21 @@ export default function NewApplicationForm({ onCreated, onCancel }: { onCreated:
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-      <label className="block space-y-1 text-[13px] text-zinc-400">
+    <form onSubmit={submit} className="space-y-3 rounded-2xl bg-fill-soft p-5">
+      <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{COPY.company}</span>
         <input aria-label={COPY.company} value={company} onChange={(e) => setCompany(e.target.value)} maxLength={100} className={field} />
       </label>
-      <label className="block space-y-1 text-[13px] text-zinc-400">
+      <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{COPY.job}</span>
         <input aria-label={COPY.job} value={jobKeyword} onChange={(e) => setJobKeyword(e.target.value)} maxLength={100} className={field} />
       </label>
-      <label className="block space-y-1 text-[13px] text-zinc-400">
+      <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{COPY.deadline}</span>
         <input aria-label={COPY.deadline} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={field} />
       </label>
       {prompts.map((prompt, index) => (
-        <label key={index} className="block space-y-1 text-[13px] text-zinc-400">
+        <label key={index} className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
           <span>{WORKSPACE_COPY.questionLabel(index + 1)}</span>
           <input
             aria-label={WORKSPACE_COPY.questionLabel(index + 1)}
@@ -65,14 +65,14 @@ export default function NewApplicationForm({ onCreated, onCancel }: { onCreated:
         </label>
       ))}
       {prompts.length < 5 && (
-        <button type="button" onClick={() => setPrompts((c) => [...c, ""])} className="text-[13px] text-zinc-400 hover:text-zinc-200">
+        <button type="button" onClick={() => setPrompts((c) => [...c, ""])} className="text-[13px] font-semibold text-brand-ink hover:text-brand">
           + {WORKSPACE_COPY.editor.addQuestion}
         </button>
       )}
-      {error && <p role="alert" className="text-[13px] text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="h-10 rounded-xl px-4 text-sm text-zinc-400">{COPY.cancel}</button>
-        <button type="submit" disabled={busy} className="h-10 rounded-xl bg-white px-4 text-sm font-semibold text-black disabled:opacity-50">{COPY.submit}</button>
+        <button type="button" onClick={onCancel} className="h-10 rounded-[10px] px-4 text-[14px] font-semibold text-ink-3 hover:bg-fill">{COPY.cancel}</button>
+        <button type="submit" disabled={busy} className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-hover disabled:opacity-50">{COPY.submit}</button>
       </div>
     </form>
   );

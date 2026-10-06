@@ -12,6 +12,7 @@ export default function FormSection({
   title,
   required = false,
   className,
+  tone = "dark",
   children,
 }: {
   icon: LucideIcon;
@@ -20,8 +21,19 @@ export default function FormSection({
   title: string;
   required?: boolean;
   className?: string;
+  /** light: 10월 새 디자인으로 바꾼 밝은 화면(작업실) 안에 넣을 때. 칩·배지 없이 제목만. */
+  tone?: "dark" | "light";
   children: ReactNode;
 }) {
+  if (tone === "light") {
+    return (
+      <div className={cn("space-y-5", className)}>
+        <h2 className="text-[16px] font-bold text-ink">{title}</h2>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <motion.div
       variants={ANALYZE_ITEM_VARIANTS}
