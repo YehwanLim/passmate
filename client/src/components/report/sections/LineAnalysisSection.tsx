@@ -270,29 +270,23 @@ export function LineAnalysisSection({
       return;
     }
     setFocusedCardIndex(cardIdx);
-    setExpandedCards((prev) => {
-      const next = new Set(prev);
-      next.add(cardIdx);
-      return next;
-    });
-    // Use setTimeout to allow the accordion to expand before scrolling.
-    // 코멘트 패널 내부만 스크롤해서 페이지 전체가 딸려 내려가지 않게 한다.
-    setTimeout(() => {
+    // 누른 문장의 코멘트만 펼친다. 앞에서 펼쳐 둔 카드가 쌓이면 지금 카드가 칸 아래로 밀려 안 보인다.
+    setExpandedCards(new Set([cardIdx]));
+    // 코멘트 칸 안에서만 스크롤해, 그 코멘트가 칸 맨 위(살짝 아래)에 오게 한다. 페이지는 따라 내려가지 않는다.
+    // 다른 카드가 접히는 동안(0.32s) 자리가 움직이므로 바로 한 번, 접힌 뒤 한 번 더 맞춘다.
+    const alignCommentary = () => {
       const el = document.getElementById(`commentary-item-${cardIdx}`);
-      if (!el) return;
-
       const container = commentaryScrollRef.current;
-      if (container && container.scrollHeight > container.clientHeight) {
-        const elRect = el.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const target = container.scrollTop
-          + (elRect.top - containerRect.top)
-          - (container.clientHeight - Math.min(el.clientHeight, container.clientHeight)) / 2;
+      if (!el || !container) return;
+      if (container.scrollHeight > container.clientHeight) {
+        const target = container.scrollTop + (el.getBoundingClientRect().top - container.getBoundingClientRect().top) - 12;
         container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
       } else {
         el.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
-    }, 50);
+    };
+    setTimeout(alignCommentary, 50);
+    setTimeout(alignCommentary, 380);
   }, [dismissCoach, isCompactLayout, openSheet]);
 
   const highlights = currentTab.feedbackCards.map((c) => c.original);
@@ -423,8 +417,8 @@ export function LineAnalysisSection({
             </div>
           </div>
 
-          {/* Scrolling Content Area */}
-          <div ref={commentaryScrollRef} className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10">
+          {/* Scrolling Content Area — 아래 여백(lg:pb-[50vh])이 있어야 끝쪽 문장의 코멘트도 칸 맨 위로 올릴 수 있다 */}
+          <div ref={commentaryScrollRef} className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10 lg:pb-[50vh] print:pb-0">
 
             {/* Overview — 항상 펼쳐진 고정 섹션 (여닫이가 아래 헤더 위치를 흔들지 않게) */}
             <div className="border-t border-line-soft py-5">

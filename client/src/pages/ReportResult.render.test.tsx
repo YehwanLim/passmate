@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -26,9 +26,11 @@ vi.mock("@/lib/supabase", () => ({ supabase: { auth: { getSession: async () => (
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
 import PassMateReport from "./ReportResult";
 
-/** "더 자세히" 칸에 접혀 있는 줄의 제목(숫자 포함). */
-function detailTitles() {
-  return Array.from(document.querySelectorAll("#section-details h3 button > span > span:first-child")).map((title) => title.textContent);
+/** 왼쪽 목차 항목(번호 + 이름). */
+function navTexts() {
+  return within(screen.getByRole("navigation", { name: "리포트 목차" }))
+    .getAllByRole("link")
+    .map((link) => link.textContent);
 }
 
 describe("ReportResult public sample", () => {
@@ -61,7 +63,7 @@ describe("ReportResult public sample", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("puts the summary first and folds posting fit into the details when the sample carries a job posting", async () => {
+  it("puts the summary first and shows posting fit as its own block when the sample carries a job posting", async () => {
     window.history.replaceState({}, "", "/report-new?sample=1");
 
     render(<PassMateReport />);
@@ -71,17 +73,24 @@ describe("ReportResult public sample", () => {
     expect(screen.getByRole("heading", { name: "고칠 점 3" })).toBeTruthy();
     // 요약에는 항목마다 ** 로 고른 핵심 문장만 싣는다.
     expect(screen.getByText("문제를 데이터로 좁히는 순서가 몸에 밴 지원자로 읽힙니다.")).toBeTruthy();
-    expect(detailTitles()).toEqual(["예상 면접 질문5", "공고 적합도", "합격 기준", "다음 단계4", "실무자 코멘트"]);
+    expect(navTexts()).toEqual([
+      "01.요약",
+      "02.문장별 코멘트",
+      "03.예상 질문",
+      "04.공고 적합도",
+      "05.합격 기준",
+      "06.다음 단계",
+      "07.실무자 코멘트",
+    ]);
 
-    // 공고 적합도는 접혀 있다가 누르면 열린다.
-    expect(screen.queryByText("현대자동차 · 서비스 기획 채용공고 기준")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /공고 적합도/ }));
+    // 아래 섹션은 접지 않고 블록째 펼쳐 둔다.
+    expect(screen.getByRole("heading", { name: "공고에서 찾는 것, 자소서에 있는 것" })).toBeTruthy();
     expect(screen.getByText("현대자동차 · 서비스 기획 채용공고 기준")).toBeTruthy();
     expect(screen.getByText("커넥티드카·모빌리티 서비스에 대한 이해")).toBeTruthy();
     expect(screen.getByText("없음")).toBeTruthy();
   });
 
-  it("leaves posting fit out of the details for a stored report without it", async () => {
+  it("leaves posting fit out for a stored report without it", async () => {
     window.history.replaceState({}, "", "/report-new?analysisId=analysis-1");
     mocks.useAuth.mockReturnValue({ user: { name: "지원자" }, isLoading: false, isAuthenticated: true });
     mocks.getAuthorizationHeader.mockResolvedValue({});
@@ -103,7 +112,15 @@ describe("ReportResult public sample", () => {
     expect(await screen.findByText("채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
     expect(screen.getByText("지원자님 · 문항 2개")).toBeTruthy();
     expect(screen.getByRole("button", { name: "내 지원서" })).toBeTruthy();
-    expect(detailTitles()).toEqual(["예상 면접 질문5", "합격 기준", "다음 단계4", "실무자 코멘트"]);
+    expect(screen.queryByRole("heading", { name: "공고에서 찾는 것, 자소서에 있는 것" })).toBeNull();
+    expect(navTexts()).toEqual([
+      "01.요약",
+      "02.문장별 코멘트",
+      "03.예상 질문",
+      "04.합격 기준",
+      "05.다음 단계",
+      "06.실무자 코멘트",
+    ]);
   });
 
   it("still keeps a real report id behind login", async () => {

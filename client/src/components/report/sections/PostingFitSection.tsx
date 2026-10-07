@@ -29,7 +29,7 @@ function getHostname(url: string | null | undefined): string | null {
   }
 }
 
-/** 공고 적합도: 공고 요건별 적합/미흡/없음, 공고에만 있는 내용, 문항별로 넣을 것. 공고를 붙인 리포트에만, "더 자세히" 칸 안에 그린다. */
+/** 공고 적합도: 공고 요건별 적합/미흡/없음, 공고에만 있는 내용, 문항별로 넣을 것. 공고를 붙인 리포트에만, ReportBlock 안에 그린다. */
 export function PostingFitSection({
   postingFit,
   jobPosting,
@@ -43,7 +43,7 @@ export function PostingFitSection({
   const questionAdvice = (postingFit.questionAdvice ?? []).filter((item) => item?.advice?.trim());
 
   return (
-    <div id="section-posting-fit" className="report-section-anchor">
+    <div>
       {(identity || hostname) && (
         <p className="mb-4 text-[14px] text-ink-4">
           {identity ? UI_LABELS.POSTING_FIT_BASIS(identity) : null}

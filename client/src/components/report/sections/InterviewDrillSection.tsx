@@ -1,50 +1,43 @@
-import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { UI_LABELS } from "@/constants/labels";
 import type { InterviewQA } from "@/types/report";
-import { AccordionQuestionRow } from "../AccordionQuestionRow";
 import { renderEmphasizedText, renderRichText } from "../richText";
 
-/** 예상 질문: 질문·꼬리 질문·모범 답변 아코디언. "더 자세히" 칸 안에 들어가고, 인쇄 중에는 전부 펼친다. */
-export function InterviewDrillSection({ items, isPrinting }: { items: InterviewQA[]; isPrinting: boolean }) {
-  const [openQuestionIndex, setOpenQuestionIndex] = useState<number | null>(0);
-
+/** 예상 질문: 질문마다 꼬리 질문·모범 답변을 펼친 채로 보여 준다(접지 않는다). */
+export function InterviewDrillSection({ items }: { items: InterviewQA[] }) {
   return (
-    <div id="section-interview-drill" className="report-section-anchor">
-      <p className="mb-2 text-[15px] leading-[1.7] text-ink-3">{UI_LABELS.INTERVIEW_DRILL_DESC}</p>
+    <div>
+      <p className="text-[15px] leading-[1.7] text-ink-3">{UI_LABELS.INTERVIEW_DRILL_DESC}</p>
 
-      <div>
+      <ol className="mt-4">
         {items.map((item, index) => (
-          <AccordionQuestionRow
-            key={index}
-            tone="light"
-            index={index}
-            question={renderRichText(item.question)}
-            open={openQuestionIndex === index || isPrinting}
-            onToggle={() => setOpenQuestionIndex(openQuestionIndex === index ? null : index)}
-          >
-            <div className="mb-5 space-y-4 rounded-2xl bg-fill-soft px-5 py-4 sm:ml-[64px]">
-              {item.followUps && item.followUps.length > 0 && (
+          <li key={index} className="grid gap-3 border-t border-line-soft py-5 sm:grid-cols-[44px_minmax(0,1fr)] sm:gap-0">
+            <span className="text-[15px] font-semibold tabular-nums text-ink-5">Q{index + 1}</span>
+            <div className="min-w-0">
+              <p className="text-[16px] font-bold leading-[1.55] text-ink">{renderRichText(item.question)}</p>
+              <div className="mt-3 space-y-4 rounded-2xl bg-fill-soft px-5 py-4">
+                {item.followUps && item.followUps.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-[13px] font-bold text-blank">{UI_LABELS.FOLLOW_UP_QUESTIONS}</p>
+                    <ul className="space-y-1.5">
+                      {item.followUps.map((fu, fi) => (
+                        <li key={fi} className="flex items-start gap-2 text-[15px] leading-[1.65] text-ink-3">
+                          <ArrowRight className="mt-[5px] size-3.5 shrink-0 text-ink-5" />{renderRichText(fu)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div>
-                  <p className="mb-2 text-[13px] font-bold text-blank">{UI_LABELS.FOLLOW_UP_QUESTIONS}</p>
-                  <ul className="space-y-1.5">
-                    {item.followUps.map((fu, fi) => (
-                      <li key={fi} className="flex items-start gap-2 text-[15px] leading-[1.65] text-ink-3">
-                        <ArrowRight className="mt-[5px] size-3.5 shrink-0 text-ink-5" />{renderRichText(fu)}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="mb-2 text-[13px] font-bold text-ink-4">{UI_LABELS.MODEL_ANSWER}</p>
+                  <p className="text-[15px] leading-[1.75] text-ink-3">{renderEmphasizedText(item.modelAnswer)}</p>
                 </div>
-              )}
-              <div>
-                <p className="mb-2 text-[13px] font-bold text-ink-4">{UI_LABELS.MODEL_ANSWER}</p>
-                <p className="text-[15px] leading-[1.75] text-ink-3">{renderEmphasizedText(item.modelAnswer)}</p>
               </div>
             </div>
-          </AccordionQuestionRow>
+          </li>
         ))}
-      </div>
+      </ol>
     </div>
   );
 }

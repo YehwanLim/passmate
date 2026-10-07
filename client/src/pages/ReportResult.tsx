@@ -5,6 +5,7 @@ import { useLocation, useSearch } from "wouter";
 import FeedbackRewardBanner from "@/components/FeedbackRewardBanner";
 import FeedbackSection from "@/components/FeedbackSection";
 import SiteHeader from "@/components/SiteHeader";
+import { MiniNavigator } from "@/components/report/MiniNavigator";
 import { ReportAccessGate } from "@/components/report/ReportAccessGate";
 import { ReportAuthGate } from "@/components/report/ReportAuthGate";
 import { ActionPlanSection } from "@/components/report/sections/ActionPlanSection";
@@ -14,13 +15,14 @@ import { LineAnalysisSection } from "@/components/report/sections/LineAnalysisSe
 import { MentorCommentSection } from "@/components/report/sections/MentorCommentSection";
 import { PostingFitSection } from "@/components/report/sections/PostingFitSection";
 import { ReportClosing } from "@/components/report/sections/ReportClosing";
-import { ReportDetailsSection, type ReportDetailItem } from "@/components/report/sections/ReportDetailsSection";
+import { ReportBlock } from "@/components/report/sections/ReportBlock";
 import { ReportSummarySection } from "@/components/report/sections/ReportSummarySection";
 import { UI_LABELS } from "@/constants/labels";
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnalysisReport } from "@/hooks/useAnalysisReport";
 import { useFeedbackRewardAvailable } from "@/hooks/useFeedbackRewardAvailable";
+import { useScrollSpy } from "@/hooks/useScrollSpy";
 import type { JobPostingRecord } from "@/types/jobPosting";
 import type { ReportData } from "@/types/report";
 import { isReportSectionLocked } from "@/utils/reportAccess";
@@ -31,6 +33,7 @@ import {
   splitMentorComment,
   splitPersonaForHeroLines,
 } from "./reportFirstImpression";
+import { buildReportNavSections } from "./reportNavigation";
 import { isPostingFitRenderable } from "./reportPostingFit";
 
 function getFallbackDisplayName(user: { name?: string | null; email?: string | null } | null) {
@@ -130,6 +133,8 @@ function ReportContent({
   const { isAuthenticated } = useAuth();
   const feedbackRewardAvailable = useFeedbackRewardAvailable();
   const hasPostingFit = isPostingFitRenderable(reportData.postingFit);
+  const navSections = useMemo(() => buildReportNavSections({ hasPostingFit }), [hasPostingFit]);
+  const activeSection = useScrollSpy(navSections);
   const [isPrinting, setIsPrinting] = useState(false);
 
   // 접힌 항목을 모두 펼쳐 렌더한 다음 프레임에 브라우저 인쇄(→ PDF 저장)를 연다.
@@ -168,50 +173,6 @@ function ReportContent({
   const gapEntries = useMemo(() => normalizeDiagnosisEntries(reportData.gaps), [reportData.gaps]);
   const mentorCommentBlocks = useMemo(() => splitMentorComment(reportData.pmComment), [reportData.pmComment]);
 
-  const detailItems: ReportDetailItem[] = [
-    {
-      key: "interview",
-      title: UI_LABELS.DETAILS_INTERVIEW,
-      count: reportData.interviewQA.length,
-      preview: UI_LABELS.INTERVIEW_DRILL_TITLE,
-      content: <InterviewDrillSection items={reportData.interviewQA} isPrinting={isPrinting} />,
-    },
-    ...(hasPostingFit
-      ? [{
-          key: "posting-fit",
-          title: UI_LABELS.DETAILS_POSTING_FIT,
-          preview: UI_LABELS.POSTING_FIT_TITLE,
-          content: (
-            <PostingFitSection
-              postingFit={reportData.postingFit as NonNullable<ReportData["postingFit"]>}
-              jobPosting={jobPosting}
-            />
-          ),
-        }]
-      : []),
-    {
-      key: "hiring-criteria",
-      title: UI_LABELS.DETAILS_HIRING_CRITERIA,
-      preview: UI_LABELS.HIRING_CRITERIA(targetCompany),
-      content: <CompanyInsightSection companyInsight={reportData.companyInsight} />,
-    },
-    {
-      key: "action-plan",
-      title: UI_LABELS.DETAILS_ACTION_PLAN,
-      count: reportData.actionPlan.length,
-      preview: UI_LABELS.ACTION_PLAN_TITLE,
-      content: <ActionPlanSection tasks={reportData.actionPlan} />,
-    },
-    ...(mentorCommentBlocks.length > 0
-      ? [{
-          key: "pm-comment",
-          title: UI_LABELS.DETAILS_PM_COMMENT,
-          preview: UI_LABELS.PM_VERDICT_TITLE,
-          content: <MentorCommentSection blocks={mentorCommentBlocks} />,
-        }]
-      : []),
-  ];
-
   const questionCount = reportData.questionTabs.length;
   const reportMeta = [
     `${displayName}님`,
@@ -225,6 +186,7 @@ function ReportContent({
       <div className="print:hidden">
         <SiteHeader variant="light" />
       </div>
+      <MiniNavigator sections={navSections} activeSection={activeSection} tone="light" />
 
       <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-6 px-4 pb-24 pt-10 sm:px-6 lg:px-0">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -283,7 +245,42 @@ function ReportContent({
         </ReportAccessGate>
 
         <ReportAccessGate isLocked={isLockedFromSection(3)} onLogin={handleLoginToUnlock} showOverlay={false}>
-          <ReportDetailsSection items={detailItems} isPrinting={isPrinting} />
+          <ReportBlock
+            id="section-interview-drill"
+            label={UI_LABELS.DETAILS_INTERVIEW}
+            count={reportData.interviewQA.length}
+            title={UI_LABELS.INTERVIEW_DRILL_TITLE}
+          >
+            <InterviewDrillSection items={reportData.interviewQA} />
+          </ReportBlock>
+
+          {hasPostingFit ? (
+            <ReportBlock id="section-posting-fit" label={UI_LABELS.DETAILS_POSTING_FIT} title={UI_LABELS.POSTING_FIT_TITLE}>
+              <PostingFitSection
+                postingFit={reportData.postingFit as NonNullable<ReportData["postingFit"]>}
+                jobPosting={jobPosting}
+              />
+            </ReportBlock>
+          ) : null}
+
+          <ReportBlock id="section-company-insight" label={UI_LABELS.DETAILS_HIRING_CRITERIA} title={UI_LABELS.HIRING_CRITERIA(targetCompany)}>
+            <CompanyInsightSection companyInsight={reportData.companyInsight} />
+          </ReportBlock>
+
+          <ReportBlock
+            id="section-action-plan"
+            label={UI_LABELS.DETAILS_ACTION_PLAN}
+            count={reportData.actionPlan.length}
+            title={UI_LABELS.ACTION_PLAN_TITLE}
+          >
+            <ActionPlanSection tasks={reportData.actionPlan} />
+          </ReportBlock>
+
+          {mentorCommentBlocks.length > 0 ? (
+            <ReportBlock id="section-pm-comment" label={UI_LABELS.DETAILS_PM_COMMENT} title={UI_LABELS.PM_VERDICT_TITLE}>
+              <MentorCommentSection blocks={mentorCommentBlocks} />
+            </ReportBlock>
+          ) : null}
 
           {sample ? (
             <section className="rounded-3xl bg-surface px-6 py-10 text-center print:hidden md:px-10">

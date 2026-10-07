@@ -4,10 +4,10 @@ import { UI_LABELS } from "@/constants/labels";
 import type { CompanyInsight } from "@/types/report";
 import { renderRichText } from "../richText";
 
-/** 합격 기준: 회사 요약, 인재상, 합격 기준, 탈락 요인, 조직 문화. "더 자세히" 칸 안에 들어간다. */
+/** 합격 기준: 회사 요약, 인재상, 합격 기준, 탈락 요인, 조직 문화. ReportBlock 안에 들어간다. */
 export function CompanyInsightSection({ companyInsight }: { companyInsight: CompanyInsight }) {
   return (
-    <div id="section-company-insight" className="report-section-anchor">
+    <div>
       <p className="max-w-3xl text-[16px] leading-[1.75] text-ink-3">{renderRichText(companyInsight.summary)}</p>
 
       <div className="mt-7 grid grid-cols-1 gap-x-10 gap-y-7 md:grid-cols-2">

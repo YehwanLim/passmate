@@ -5,7 +5,7 @@ import { UI_LABELS } from "@/constants/labels";
 import type { ActionItem } from "@/types/report";
 import { renderRichText } from "../richText";
 
-/** 다음 단계: 체크 가능한 할 일과 진행률. "더 자세히" 칸 안에 들어간다. 체크 상태는 화면에만 남는다. */
+/** 다음 단계: 체크 가능한 할 일과 진행률. ReportBlock 안에 들어간다. 체크 상태는 화면에만 남는다. */
 export function ActionPlanSection({ tasks }: { tasks: ActionItem[] }) {
   const [completedTasks, setCompletedTasks] = useState<number[]>([]);
 
@@ -16,7 +16,7 @@ export function ActionPlanSection({ tasks }: { tasks: ActionItem[] }) {
   const taskProgress = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
 
   return (
-    <div id="section-action-plan" className="report-section-anchor">
+    <div>
       <div className="mb-2 flex items-center gap-4">
         <div className="h-1 flex-1 overflow-hidden rounded-full bg-fill">
           <div className="h-full bg-ok transition-all duration-500" style={{ width: `${taskProgress}%` }} />

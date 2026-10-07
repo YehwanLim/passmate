@@ -2,10 +2,10 @@ import { UI_LABELS } from "@/constants/labels";
 import type { MentorCommentBlock } from "@/pages/reportFirstImpression";
 import { renderEmphasizedText } from "../richText";
 
-/** 실무자 코멘트를 이름 달린 글처럼 보여 준다. "더 자세히" 칸 안에 들어간다. */
+/** 실무자 코멘트를 이름 달린 글처럼 보여 준다. ReportBlock 안에 들어간다. */
 export function MentorCommentSection({ blocks }: { blocks: MentorCommentBlock[] }) {
   return (
-    <div id="section-pm-comment" className="report-section-anchor space-y-6">
+    <div className="space-y-6">
       {blocks.map((block) => (
         <article key={block.title} className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-4">
           <div className="flex size-10 items-center justify-center rounded-full bg-[#EEF1F6]">

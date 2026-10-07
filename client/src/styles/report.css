@@ -57,6 +57,24 @@ html {
   transform: translateX(2px);
 }
 
+/* 밝은 자소서 리포트용 목차. 본문 1040px 옆에 132px 목차가 겹치지 않는 폭부터 보인다. */
+.report-nav-light .report-nav-item {
+  font-size: 13px;
+  color: #b0b8c1;
+}
+.report-nav-light .report-nav-item:hover {
+  color: #4e5968;
+}
+.report-nav-light .report-nav-item.active {
+  color: #191f28;
+  font-weight: 700;
+}
+@media (max-width: 1399px) {
+  .report-nav.report-nav-light {
+    display: none !important;
+  }
+}
+
 /* ── Report: 공용 섹션 앵커 여백 — 기업 분석 리포트처럼 id 가 다른 리포트도 같은 값을 쓴다 ── */
 .report-section-anchor {
   scroll-margin-top: 112px;
