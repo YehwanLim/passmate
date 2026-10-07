@@ -1,12 +1,15 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
+import { Link } from "wouter";
+
+import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
 
 import { REPORT_PREVIEW_SCENES } from "./reportShowcaseSampleData";
-import { DiagnosisPreview } from "./scenes/DiagnosisPreview";
-import { FirstImpressionPreview } from "./scenes/FirstImpressionPreview";
-import { InterviewAndActionPreview } from "./scenes/InterviewAndActionPreview";
-import { LineAnalysisPreview } from "./scenes/LineAnalysisPreview";
+
+// 실제 리포트 섹션 + 예시 데이터(약 100KB)는 첫 화면 아래라 랜딩 본 번들과 따로 받는다.
+// 프리렌더(entry-server)는 lazy 가 준비될 때까지 다시 그리므로 HTML 에는 그대로 구워진다.
+const LiveReportPreview = lazy(() => import("./LiveReportPreview"));
 
 function MiniReportNavigator({
   activeIndex,
@@ -17,21 +20,24 @@ function MiniReportNavigator({
 }) {
   return (
     <nav
-      className="hidden xl:block w-[132px] flex-shrink-0 pt-5"
+      className="hidden w-[164px] flex-shrink-0 border-r border-line-soft py-6 pl-[18px] pr-3.5 xl:block"
       aria-label="리포트 미리보기 목차"
     >
-      <div className="report-nav-list sticky top-24">
+      <div className="flex flex-col gap-1">
         {REPORT_PREVIEW_SCENES.map((scene, index) => {
           const active = index === activeIndex;
           return (
             <button
               key={scene.id}
               type="button"
-              className={`report-nav-item w-full text-left ${active ? "active" : ""}`}
+              className={`flex h-10 w-full items-center rounded-[10px] px-3 text-left text-[14px] transition-colors ${
+                active
+                  ? "bg-brand-soft font-bold text-brand-ink"
+                  : "font-semibold text-ink-4 hover:bg-fill hover:text-ink-2"
+              }`}
               onClick={() => onSelectScene(index)}
             >
-              <span className="report-nav-index">{scene.indexLabel}.</span>
-              <span>{scene.tab}</span>
+              {scene.indexLabel}. {scene.tab}
             </button>
           );
         })}
@@ -70,12 +76,11 @@ function ActiveReportScene({ activeIndex }: { activeIndex: number }) {
         animate="center"
         exit="exit"
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="pb-16 lg:h-full lg:pb-0"
+        className="lg:h-full"
       >
-        {activeScene.id === "impression" && <FirstImpressionPreview />}
-        {activeScene.id === "diagnosis" && <DiagnosisPreview />}
-        {activeScene.id === "line" && <LineAnalysisPreview />}
-        {activeScene.id === "interview" && <InterviewAndActionPreview />}
+        <Suspense fallback={<div className="h-[36rem] rounded-3xl bg-fill-soft" />}>
+          <LiveReportPreview sceneId={activeScene.id} />
+        </Suspense>
       </motion.div>
     </AnimatePresence>
   );
@@ -97,100 +102,105 @@ export function ReportPreviewFrame({
   const isLastScene = activeIndex === REPORT_PREVIEW_SCENES.length - 1;
 
   return (
-    <div className="relative mx-auto w-full min-w-0 max-w-7xl lg:h-[min(44rem,calc(100svh-10.5rem))]">
-      <div className="flex w-full gap-8 lg:h-full">
-        <MiniReportNavigator
-          activeIndex={activeIndex}
-          onSelectScene={onSelectScene}
-        />
+    <div className="relative mx-auto w-full min-w-0 max-w-7xl lg:h-[min(44rem,calc(100svh-11.5rem))]">
+      {/* 화살표는 흰 카드 양 끝에 붙도록 이 래퍼를 기준으로 띄운다 */}
+      <button
+        type="button"
+        aria-label="이전 리포트 미리보기"
+        className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-surface text-ink shadow-[0_4px_16px_rgba(25,31,40,0.12)] transition-[background-color,opacity] hover:bg-fill disabled:pointer-events-none disabled:opacity-0 lg:flex"
+        disabled={isFirstScene}
+        onClick={goToPreviousScene}
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </button>
 
-        {/* 화살표는 목차 컬럼이 아니라 프레임 양 끝에 붙도록 이 래퍼를 기준으로 띄운다 */}
-        <div className="relative min-w-0 flex-1 lg:h-full">
-          <button
-            type="button"
-            aria-label="이전 리포트 미리보기"
-            className="left-0 -translate-x-1/2 absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.16] bg-[#111]/95 text-zinc-200 shadow-xl shadow-black/30 backdrop-blur transition-[background-color,color,opacity] hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-0 lg:flex"
-            disabled={isFirstScene}
-            onClick={goToPreviousScene}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+      <button
+        type="button"
+        aria-label="다음 리포트 미리보기"
+        className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full bg-surface text-ink shadow-[0_4px_16px_rgba(25,31,40,0.12)] transition-[background-color,opacity] hover:bg-fill disabled:pointer-events-none disabled:opacity-0 lg:flex"
+        disabled={isLastScene}
+        onClick={goToNextScene}
+      >
+        <ArrowRight className="h-5 w-5" />
+      </button>
 
-          <button
-            type="button"
-            aria-label="다음 리포트 미리보기"
-            className="right-0 translate-x-1/2 absolute top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/[0.16] bg-[#111]/95 text-zinc-200 shadow-xl shadow-black/30 backdrop-blur transition-[background-color,color,opacity] hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-0 lg:flex"
-            disabled={isLastScene}
-            onClick={goToNextScene}
-          >
-            <ArrowRight className="h-5 w-5" />
-          </button>
+      <div className="relative flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-surface shadow-[0_8px_32px_rgba(25,31,40,0.06)] md:rounded-[32px] lg:h-full">
+        <div className="flex flex-col gap-3 border-b border-line-soft px-5 py-4 md:px-8 md:py-[18px] lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
+            <p className="text-[16px] font-bold tracking-[-0.02em] text-ink">
+              이런 리포트를 받게 됩니다
+            </p>
+            <span className="inline-flex h-7 items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-semibold text-ink-2">
+              현대자동차 · 서비스 기획
+            </span>
+            <span className="text-[13px] text-ink-4">예시</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 xl:hidden">
+            {REPORT_PREVIEW_SCENES.map((scene, index) => (
+              <button
+                key={scene.id}
+                type="button"
+                className={`h-8 rounded-[8px] px-3 text-[13px] transition-colors ${
+                  index === activeIndex
+                    ? "bg-brand-soft font-bold text-brand-ink"
+                    : "bg-fill font-semibold text-ink-4 hover:text-ink-2"
+                }`}
+                onClick={() => onSelectScene(index)}
+              >
+                {scene.indexLabel}. {scene.tab}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          <div className="relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-white/[0.1] bg-[#070707] p-4 shadow-2xl shadow-black/40 md:p-5 lg:h-full">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
-            <div className="mb-4 flex flex-col gap-3 border-b border-white/[0.07] pb-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <p className="text-[17px] md:text-[19px] font-semibold tracking-tight text-white">
-                    이런 리포트를 받게 됩니다
-                  </p>
-                  <span className="inline-flex items-baseline gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.05] px-3 py-1 text-[12px] font-semibold text-zinc-200">
-                    현대자동차 · 서비스 기획
-                    <span className="font-normal text-zinc-500">예시</span>
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 xl:hidden">
-                {REPORT_PREVIEW_SCENES.map((scene, index) => (
-                  <button
-                    key={scene.id}
-                    type="button"
-                    className={`h-8 rounded-md border px-3 text-[12px] font-medium transition-colors ${
-                      index === activeIndex
-                        ? "border-blue-500/[0.28] bg-blue-500/[0.12] text-blue-200"
-                        : "border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200"
-                    }`}
-                    onClick={() => onSelectScene(index)}
-                  >
-                    {scene.indexLabel}. {scene.tab}
-                  </button>
-                ))}
-              </div>
+        <div className="flex min-w-0 lg:min-h-0 lg:flex-1">
+          <MiniReportNavigator
+            activeIndex={activeIndex}
+            onSelectScene={onSelectScene}
+          />
+          {/* 실제 리포트 섹션은 이 칸보다 길다. 아래를 흐리게 잘라 "미리보기"로 두고, 끝까지는 예시 리포트에서 본다.
+              모바일은 칸 높이를 고정하지 않아 max-h 로 같은 효과를 낸다. */}
+          <div className="relative min-w-0 flex-1 overflow-hidden max-lg:max-h-[34rem] lg:min-h-0">
+            <ActiveReportScene activeIndex={activeIndex} />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-surface to-transparent" />
+            <div className="absolute inset-x-0 bottom-4 flex justify-center">
+              <Link
+                href={RESUME_REPORT_SAMPLE_PATH}
+                data-funnel-cta="sample"
+                className="inline-flex h-10 items-center gap-1.5 rounded-[10px] bg-surface px-4 text-[14px] font-bold text-ink-2 shadow-[0_4px_16px_rgba(25,31,40,0.12)] transition-colors hover:bg-fill"
+              >
+                예시 리포트 전체 보기
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
             </div>
+          </div>
+        </div>
 
-            <div className="relative overflow-hidden lg:min-h-0 lg:flex-1">
-              <ActiveReportScene activeIndex={activeIndex} />
-            </div>
+        <div className="flex shrink-0 items-center justify-between gap-4 border-t border-line-soft px-5 py-3.5 md:px-8">
+          <span className="text-[13px] font-semibold tabular-nums text-ink-4">
+            {String(activeIndex + 1).padStart(2, "0")} /{" "}
+            {String(REPORT_PREVIEW_SCENES.length).padStart(2, "0")}
+          </span>
 
-            <div className="mt-3 flex shrink-0 items-center justify-between gap-4 border-t border-white/[0.07] pt-3">
-              <div className="flex min-w-0 items-center gap-2 text-[11px] text-zinc-500">
-                <span className="font-medium tabular-nums text-zinc-400">
-                  {String(activeIndex + 1).padStart(2, "0")} /{" "}
-                  {String(REPORT_PREVIEW_SCENES.length).padStart(2, "0")}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 lg:hidden">
-                <button
-                  type="button"
-                  aria-label="이전 리포트 미리보기"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-30"
-                  disabled={isFirstScene}
-                  onClick={goToPreviousScene}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="다음 리포트 미리보기"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#090909]/90 text-zinc-400 transition-colors hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-30"
-                  disabled={isLastScene}
-                  onClick={goToNextScene}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 lg:hidden">
+            <button
+              type="button"
+              aria-label="이전 리포트 미리보기"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-fill text-ink-2 transition-colors hover:bg-line disabled:pointer-events-none disabled:opacity-30"
+              disabled={isFirstScene}
+              onClick={goToPreviousScene}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="다음 리포트 미리보기"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-fill text-ink-2 transition-colors hover:bg-line disabled:pointer-events-none disabled:opacity-30"
+              disabled={isLastScene}
+              onClick={goToNextScene}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>

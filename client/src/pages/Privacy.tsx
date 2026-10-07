@@ -1,5 +1,4 @@
 import SiteHeader from "@/components/SiteHeader";
-import MoodShiftBackground from "@/components/MoodShiftBackground";
 
 const privacySections = [
   {
@@ -166,19 +165,18 @@ const privacySections = [
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
-      <MoodShiftBackground />
-      <SiteHeader variant="transparent" />
+    <div className="min-h-screen bg-stage text-ink">
+      <SiteHeader variant="light" />
 
       <main className="relative z-10 mx-auto w-full max-w-4xl px-5 py-12 sm:py-16">
         <div className="mb-10">
-          <p className="mb-3 text-[13px] font-medium text-blue-300">
+          <p className="mb-3 text-[13px] font-semibold text-brand-ink">
             최종 업데이트: 2026년 8월 29일
           </p>
-          <h1 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink sm:text-4xl">
             개인정보처리방침
           </h1>
-          <div className="mt-6 space-y-3 text-[15px] leading-7 text-gray-300">
+          <div className="mt-6 space-y-3 text-[15px] leading-7 text-ink-3">
             <p>
               Pre:View(이하 "회사")는 「개인정보 보호법」 등 관련 법령을
               준수하며, 이용자의 개인정보를 안전하게 보호하기 위해 최선을
@@ -192,14 +190,14 @@ export default function Privacy() {
           </div>
         </div>
 
-        <div className="space-y-8 rounded-lg border border-white/[0.08] bg-white/[0.03] p-6 shadow-2xl shadow-black/30 sm:p-8">
+        <div className="space-y-8 rounded-[20px] bg-surface p-6 sm:p-8">
           {privacySections.map(section => (
             <section key={section.title} className="space-y-3">
-              <h2 className="text-lg font-semibold tracking-normal text-white">
+              <h2 className="text-lg font-bold tracking-[-0.02em] text-ink">
                 {section.title}
               </h2>
               {section.body && (
-                <div className="space-y-2 text-[15px] leading-7 text-gray-300">
+                <div className="space-y-2 text-[15px] leading-7 text-ink-3">
                   {section.body.map(paragraph => (
                     <p key={paragraph}>{paragraph}</p>
                   ))}
@@ -207,42 +205,42 @@ export default function Privacy() {
               )}
               {section.groups?.map(group => (
                 <div key={group.title} className="space-y-2 pt-1">
-                  <h3 className="text-[15px] font-semibold text-gray-100">
+                  <h3 className="text-[15px] font-semibold text-ink-2">
                     {group.title}
                   </h3>
                   {group.body?.map(paragraph => (
                     <p
                       key={paragraph}
-                      className="text-[15px] leading-7 text-gray-300"
+                      className="text-[15px] leading-7 text-ink-3"
                     >
                       {paragraph}
                     </p>
                   ))}
                   {group.items && (
-                    <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-7 text-gray-300">
+                    <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-7 text-ink-3">
                       {group.items.map(item => (
                         <li key={item}>{item}</li>
                       ))}
                     </ul>
                   )}
                   {group.note && (
-                    <p className="text-[14px] leading-6 text-gray-400">
+                    <p className="text-[14px] leading-6 text-ink-4">
                       {group.note}
                     </p>
                   )}
                 </div>
               ))}
               {section.items && (
-                <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-7 text-gray-300">
+                <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-7 text-ink-3">
                   {section.items.map(item => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
               )}
               {section.table && (
-                <div className="overflow-hidden rounded-lg border border-white/[0.08]">
-                  <table className="w-full border-collapse text-left text-[14px] text-gray-300">
-                    <thead className="bg-white/[0.05] text-gray-100">
+                <div className="overflow-hidden rounded-[12px] border border-line">
+                  <table className="w-full border-collapse text-left text-[14px] text-ink-3">
+                    <thead className="bg-fill text-ink-2">
                       <tr>
                         {section.table.headers.map(header => (
                           <th key={header} className="px-4 py-3 font-semibold">
@@ -253,7 +251,7 @@ export default function Privacy() {
                     </thead>
                     <tbody>
                       {section.table.rows.map(row => (
-                        <tr key={row.join("-")} className="border-t border-white/[0.06]">
+                        <tr key={row.join("-")} className="border-t border-line">
                           {row.map(cell => (
                             <td key={cell} className="px-4 py-3 align-top">
                               {cell}
@@ -266,7 +264,7 @@ export default function Privacy() {
                 </div>
               )}
               {section.footer && (
-                <p className="text-[15px] leading-7 text-gray-300">
+                <p className="text-[15px] leading-7 text-ink-3">
                   {section.footer}
                 </p>
               )}

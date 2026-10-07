@@ -27,96 +27,35 @@
   }
 }
 
-@keyframes cta-light-sweep {
-  0% {
-    opacity: 0;
-    transform: translate3d(-135%, 0, 0) skewX(-18deg);
-  }
-  18% {
-    opacity: 0.54;
-  }
-  72% {
-    opacity: 0.3;
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(145%, 0, 0) skewX(-18deg);
-  }
-}
-
-/* 이용권 카드 호버: 테두리가 밝아지고 빛이 한 번 스친다(landing-primary-cta 와 같은 sweep). */
+/* 이용권 카드 호버: 살짝 떠오르기만 한다(10월 밝은 디자인 — 빛 번짐·스윕 없음). */
 .plan-card {
   position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  transition: border-color 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 220ms ease-out, box-shadow 220ms ease-out, transform 220ms ease-out;
 }
 
-.plan-card::after {
-  content: "";
-  position: absolute;
-  top: -30%;
-  bottom: -30%;
-  left: -45%;
-  z-index: 0;
-  width: 34%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
-  filter: blur(2px);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate3d(-135%, 0, 0) skewX(-18deg);
-}
-
-.plan-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-/*
- * 추천 배지 — 카드 우측 상단 모서리에 얹는 반짝이는 하늘색 캡슐.
- * 위 `.plan-card > *` 가 모든 직계 자식을 relative 로 고정하므로, 같은 특이도인 이 규칙을
- * 반드시 그 뒤에 둬서 absolute 가 이기게 한다.
- */
+/* 추천 배지 — 카드 우측 상단의 작은 이름표. 떠 있는 알약 대신 모서리 8px 사각 라벨. */
 .plan-badge {
   position: absolute;
-  top: 0.875rem;
-  right: 0.875rem;
+  top: 1.25rem;
+  right: 1.25rem;
   z-index: 2;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 1.75rem;
+  padding: 0 0.625rem;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  color: #082f49;
-  /* 광택은 위쪽 하이라이트 한 줄로만. 그라데이션·글로우를 세게 주면 배지가 카드를 잡아먹는다. */
-  background: #38bdf8;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  line-height: 1;
+  color: #004ec7;
+  background: #ebf3ff;
   pointer-events: none;
 }
 
 @media (hover: hover) {
   .plan-card:hover {
-    border-color: rgba(226, 232, 240, 0.32);
     transform: translate3d(0, -2px, 0);
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
-  }
-
-  .plan-card--recommended:hover {
-    border-color: rgba(255, 255, 255, 0.55);
-    box-shadow:
-      0 14px 32px rgba(0, 0, 0, 0.28),
-      0 0 34px rgba(255, 255, 255, 0.12);
-  }
-
-  .plan-card:hover::after {
-    animation: cta-light-sweep 900ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+    box-shadow: 0 12px 32px rgba(18, 32, 90, 0.08);
   }
 }
 
@@ -301,123 +240,64 @@
   opacity: 1;
 }
 
+/* 랜딩·멘토링·이용권의 주 버튼. 파랑 한 색 + 흰 글씨(10월 밝은 디자인). 글로우·그라데이션·빛 스윕은 뺐다. */
 .landing-primary-cta {
-  position: relative;
-  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   min-height: 3.25rem;
-  padding: 0 1.65rem 0 1.8rem;
-  overflow: hidden;
-  border: 1px solid rgba(226, 232, 240, 0.16);
-  border-radius: 1rem;
-  color: rgba(248, 250, 252, 0.98);
-  font-size: 14.5px;
-  font-weight: 660;
+  padding: 0 1.5rem;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: 0;
-  background:
-    linear-gradient(135deg, rgba(96, 165, 250, 0.16) 0%, rgba(59, 130, 246, 0.09) 46%, rgba(59, 130, 246, 0.2) 100%),
-    rgba(8, 12, 22, 0.26);
-  background-size: 140% 140%;
-  background-position: 0% 50%;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(15, 23, 42, 0.1),
-    0 10px 24px rgba(0, 0, 0, 0.18),
-    0 0 26px rgba(59, 130, 246, 0.2);
-  backdrop-filter: blur(18px);
-  transform: translate3d(0, 0, 0);
-  will-change: transform, filter;
-  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    filter 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    background-position 300ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: #0064ff;
+  transition: background-color 180ms ease-out, transform 180ms ease-out;
 }
 
-.landing-primary-cta::before {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  z-index: -1;
-  border-radius: calc(1rem - 1px);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 46%),
-    radial-gradient(ellipse 82% 90% at 48% 0%, rgba(147, 197, 253, 0.09), transparent 70%);
-  opacity: 0.48;
-  transition: opacity 260ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.landing-primary-cta::after {
-  content: "";
-  position: absolute;
-  top: -28%;
-  bottom: -28%;
-  left: -42%;
-  z-index: 0;
-  width: 38%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
-  filter: blur(1px);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate3d(-135%, 0, 0) skewX(-18deg);
-  will-change: transform, opacity;
-}
-
-.landing-primary-cta > span,
-.landing-primary-cta > svg {
-  position: relative;
-  z-index: 1;
-}
-
-/* 히어로 카드 하단 버튼은 span 이라 카드(a)의 호버·포커스를 받아 같은 효과를 낸다. */
 .landing-primary-cta:hover,
-.landing-primary-cta:focus-visible,
-.hero-report-card:hover .landing-primary-cta,
-.hero-report-card:focus-visible .landing-primary-cta {
-  border-color: rgba(226, 232, 240, 0.26);
-  background-position: 72% 50%;
-  filter: brightness(1.035) saturate(0.98);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -1px 0 rgba(15, 23, 42, 0.12),
-    0 14px 32px rgba(0, 0, 0, 0.22),
-    0 0 38px rgba(59, 130, 246, 0.3);
-  transform: translate3d(0, -2px, 0);
-}
-
-.landing-primary-cta:hover::before,
-.landing-primary-cta:focus-visible::before,
-.hero-report-card:hover .landing-primary-cta::before,
-.hero-report-card:focus-visible .landing-primary-cta::before {
-  opacity: 0.62;
-}
-
-.landing-primary-cta:hover::after,
-.landing-primary-cta:focus-visible::after,
-.hero-report-card:hover .landing-primary-cta::after,
-.hero-report-card:focus-visible .landing-primary-cta::after {
-  animation: cta-light-sweep 840ms cubic-bezier(0.16, 1, 0.3, 1) 1;
+.landing-primary-cta:focus-visible {
+  background: #0054d6;
 }
 
 .landing-primary-cta:focus-visible {
-  outline: 1px solid rgba(226, 232, 240, 0.44);
+  outline: 2px solid #0064ff;
   outline-offset: 3px;
 }
 
 .landing-primary-cta:active {
-  filter: brightness(0.99) saturate(1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(15, 23, 42, 0.1),
-    0 7px 16px rgba(0, 0, 0, 0.18),
-    0 2px 8px rgba(59, 130, 246, 0.05);
-  transform: translate3d(0, 0, 0) scale(0.98);
+  transform: scale(0.98);
 }
+
+/* 보조 버튼: 옅은 파랑 바탕 + 진한 파랑 글씨. */
+.landing-secondary-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 0 1.375rem;
+  border-radius: 12px;
+  color: #004ec7;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  background: #ebf3ff;
+  transition: background-color 180ms ease-out;
+}
+
+.landing-secondary-cta:hover,
+.landing-secondary-cta:focus-visible {
+  background: #dbe9ff;
+}
+
+.landing-secondary-cta:focus-visible {
+  outline: 2px solid #0064ff;
+  outline-offset: 3px;
+}
+
 .mobile-nav-toggle {
   display: inline-flex;
   align-items: center;
@@ -562,14 +442,11 @@
   .landing-nav-link,
   .header-action-link,
   .landing-primary-cta,
-  .landing-primary-cta::before,
-  .landing-primary-cta::after,
   .mobile-nav-toggle,
   .mobile-nav-link,
   .social-proof-marquee-track,
   .social-proof-logo,
-  .plan-card,
-  .plan-card::after {
+  .plan-card {
     animation: none;
     transition-duration: 1ms;
   }
@@ -621,10 +498,55 @@
 }
 
 /* ── 랜딩 문서 배경 ──
-   body 는 라이트 테마(흰색)라 iOS 오버스크롤(당겼다 놓을 때)과 아직 안 그려진 타일에 흰색이 비친다.
+   iOS 오버스크롤(당겼다 놓을 때)과 아직 안 그려진 타일에 비치는 색을 랜딩 히어로 바탕(#f9fafb)에 맞춘다.
    랜딩은 Home.tsx 가 <html> 에 이 클래스를 붙이고(프리렌더 HTML 은 scripts/prerender-landing.mjs 가
-   미리 붙여 하이드레이션 전에도 검다), 떠날 때 뗀다. */
+   미리 붙여 하이드레이션 전에도 같은 색이다), 떠날 때 뗀다. */
 html.landing-canvas,
 html.landing-canvas body {
-  background-color: #050505;
+  background-color: #f9fafb;
+}
+
+/* ── 랜딩 히어로 작업실 시연(components/HeroWorkflowDemo.tsx) ──
+   장면 전환·말풍선 등장·깜빡이는 글자 커서·가짜 마우스 커서·클릭 물결. 모두 transform/opacity 만 움직인다. */
+@keyframes hero-scene-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes hero-msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hero-caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes hero-cursor-in {
+  from { opacity: 0; transform: translate(64px, 46px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hero-ripple {
+  from { opacity: 0.55; transform: scale(0.3); }
+  to { opacity: 0; transform: scale(1.5); }
+}
+.hero-scene-in { animation: hero-scene-fade 300ms ease-out; }
+.hero-msg-in { animation: hero-msg-in 260ms ease-out both; }
+.hero-caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: -0.15em;
+  background: #0064ff;
+  animation: hero-caret 1s infinite;
+}
+.hero-cursor { animation: hero-cursor-in 500ms ease-out both; }
+.hero-ripple { animation: hero-ripple 420ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-scene-in,
+  .hero-msg-in,
+  .hero-cursor,
+  .hero-ripple,
+  .hero-caret {
+    animation: none;
+  }
 }

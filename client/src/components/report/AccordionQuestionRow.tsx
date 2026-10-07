@@ -16,11 +16,11 @@ export function AccordionQuestionRow({
   children: ReactNode;
 }) {
   return (
-    <div className="border-b border-white/[0.04] last:border-0">
-      <button onClick={onToggle} aria-expanded={open} className="w-full py-6 flex items-start gap-5 text-left group">
-        <span className="text-xs uppercase tracking-[0.12em] text-zinc-500 mt-1 min-w-[50px] font-medium">Q{index + 1}</span>
-        <span className="flex-1 text-[17px] text-zinc-300 group-hover:text-white transition-colors leading-[1.6]">{question}</span>
-        <ChevronDown aria-hidden="true" className={`w-5 h-5 text-zinc-600 transition-transform mt-0.5 ${open ? "rotate-180" : ""}`} />
+    <div className="border-t border-line-soft first:border-t-0">
+      <button onClick={onToggle} aria-expanded={open} className="w-full py-5 flex items-start gap-4 text-left group">
+        <span className="w-8 shrink-0 pt-px text-[15px] font-semibold tabular-nums text-ink-5">Q{index + 1}</span>
+        <span className="min-w-0 flex-1 text-[16px] font-bold text-ink-2 group-hover:text-ink transition-colors leading-[1.55]">{question}</span>
+        <ChevronDown aria-hidden="true" className={`size-5 shrink-0 text-ink-5 transition-transform duration-200 mt-0.5 ${open ? "rotate-180" : ""}`} />
       </button>
       {open ? children : null}
     </div>

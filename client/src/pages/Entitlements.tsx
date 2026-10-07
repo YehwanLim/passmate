@@ -125,9 +125,9 @@ export default function Entitlements() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-28 text-white">
+    <div className="min-h-screen bg-stage pb-28 text-ink">
       {/* 등장 모션은 transform 만: initial 의 opacity:0 은 빌드 프리렌더 HTML 에 구워져 하이드레이션 전까지 투명해진다(랜딩에서 겪은 문제). */}
-      <SiteHeader />
+      <SiteHeader variant="light" />
 
       <main className="container max-w-5xl pt-10 pb-8">
         <motion.div
@@ -135,10 +135,10 @@ export default function Entitlements() {
           animate={{ y: 0 }}
           transition={{ duration: 0.4, delay: 0.08 }}
         >
-          <h1 className="text-2xl font-bold text-white tracking-tight mb-1">
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink">
             이용권
           </h1>
-          <p className="text-[14px] text-zinc-400 font-light">
+          <p className="mt-1.5 text-[15px] text-ink-4">
             필요한 만큼만 사세요. 어떤 이용권이든 자소서 리포트는 같습니다.
             {isAuthenticated && (
               <>
@@ -146,7 +146,7 @@ export default function Entitlements() {
                 <button
                   type="button"
                   onClick={() => navigate("/my/entitlements")}
-                  className="text-zinc-300 underline underline-offset-4 transition-colors hover:text-white"
+                  className="font-semibold text-ink-2 underline underline-offset-4 transition-colors hover:text-ink"
                 >
                   내 이용권 현황 보기
                 </button>
@@ -158,12 +158,12 @@ export default function Entitlements() {
         <section className="mt-8 space-y-10" aria-live="polite">
           {/* 보유 현황은 /my/entitlements로 분리 — 여기서는 구매 게이트 복구용 에러만 보여준다. */}
           {isAuthenticated && !isLoading && error && (
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-red-400/[0.18] bg-red-400/[0.06] px-4 py-3">
-              <p className="text-sm text-red-100">{error}</p>
+            <div className="flex items-center justify-between gap-4 rounded-[16px] bg-danger-soft px-4 py-3">
+              <p className="text-sm text-danger">{error}</p>
               <button
                 type="button"
                 onClick={() => void loadEntitlements()}
-                className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-white underline underline-offset-4"
+                className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-ink-2 underline underline-offset-4 hover:text-ink"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 다시 시도
@@ -174,16 +174,16 @@ export default function Entitlements() {
           {/* 가격 카드 — 로그인 여부와 상관없이 항상 보여준다. */}
           <div className="space-y-6">
             {/* 무료 체험은 파는 물건이 아니라 입구다 — 카드 열에서 빼서 한 줄로. */}
-            <div className="flex flex-col gap-3 rounded-xl border border-white/[0.12] bg-white/[0.035] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[14.5px] text-zinc-200">
-                <span className="font-semibold text-white">첫 분석 1회는 무료</span>
-                <span className="text-zinc-500"> · </span>
+            <div className="flex flex-col gap-3 rounded-[20px] bg-surface px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[15px] text-ink-3">
+                <span className="font-semibold text-ink">첫 분석 1회는 무료</span>
+                <span className="text-ink-5"> · </span>
                 가입만 하면 바로, 카드 등록 없이. 리포트는 유료와 똑같아요.
               </p>
               <button
                 type="button"
                 onClick={() => navigate("/analyze")}
-                className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-white underline underline-offset-4 transition-colors hover:text-sky-300"
+                className="inline-flex h-10 shrink-0 items-center gap-1.5 self-start rounded-[10px] bg-brand-soft px-4 text-[14px] font-semibold text-brand-ink transition-colors hover:bg-[#dceaff] sm:self-auto"
               >
                 무료로 분석하기
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -216,53 +216,53 @@ export default function Entitlements() {
             </div>
 
             {/* 리포트 구성 — 카드처럼 보이지 않게 상자 대신 구분선으로. */}
-            <div className="grid gap-8 border-t border-white/[0.1] pt-8 md:grid-cols-2 md:gap-10">
+            <div className="grid gap-8 border-t border-line pt-8 md:grid-cols-2 md:gap-10">
               <div>
-                <p className="text-[12.5px] font-semibold text-sky-300">
+                <p className="text-[13px] font-semibold text-brand-ink">
                   자소서 진단 리포트
                 </p>
-                <p className="mt-1.5 text-[14px] font-semibold text-white">
+                <p className="mt-1.5 text-[16px] font-bold text-ink">
                   어떤 이용권을 선택하든, 이 모든 게 담깁니다
                 </p>
                 <ul className="mt-4 space-y-2.5">
                   {REPORT_INCLUDED_FEATURES.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2.5 text-[14px] text-zinc-200">
-                      <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" aria-hidden="true" />
+                    <li key={feature} className="flex items-center gap-2.5 text-[15px] text-ink-2">
+                      <Check className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
                       {feature}
                     </li>
                   ))}
                 </ul>
               </div>
               <div>
-                <p className="text-[12.5px] font-semibold text-sky-300">
+                <p className="text-[13px] font-semibold text-brand-ink">
                   기업 분석 리포트
                 </p>
-                <p className="mt-1.5 text-[14px] font-semibold text-white">
+                <p className="mt-1.5 text-[16px] font-bold text-ink">
                   스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요
                 </p>
                 <ul className="mt-4 space-y-2.5">
                   {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2.5 text-[14px] text-zinc-200">
-                      <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" aria-hidden="true" />
+                    <li key={feature} className="flex items-center gap-2.5 text-[15px] text-ink-2">
+                      <Check className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
                       {feature}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-4 text-[12.5px] text-zinc-400">
+                <p className="mt-4 text-[13px] text-ink-4">
                   세 곳을 준비하면 프리미엄이 따로 살 때보다 {formatKrw(savingsFor(PRICING.premium))} 저렴합니다.
                 </p>
               </div>
             </div>
 
             {purchaseStarted && (
-              <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-                <p className="text-xs text-zinc-400">
+              <div className="flex items-center justify-between gap-4 rounded-[16px] bg-surface px-5 py-4">
+                <p className="text-[13px] text-ink-3">
                   새 탭에서 결제를 진행해 주세요. 결제를 완료하면 이용권이 곧 반영돼요.
                 </p>
                 <button
                   type="button"
                   onClick={() => navigate("/my/entitlements")}
-                  className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-white underline underline-offset-4"
+                  className="inline-flex shrink-0 items-center gap-1.5 text-[13px] font-semibold text-brand-ink hover:text-brand"
                 >
                   내 이용권 확인
                 </button>
@@ -270,17 +270,17 @@ export default function Entitlements() {
             )}
 
             {!isAuthenticated && (
-              <p className="text-center text-xs text-zinc-500">
+              <p className="text-center text-[13px] text-ink-4">
                 로그인하면 보유한 이용권을 확인하고 바로 구매할 수 있어요.
               </p>
             )}
 
             {isAuthenticated && (
-              <p className="text-right text-[12px] text-zinc-500">
+              <p className="text-right text-[13px] text-ink-4">
                 결제에 문제가 있나요?{" "}
                 <a
                   href={PAYMENT_INQUIRY_MAILTO}
-                  className="underline underline-offset-2 hover:text-zinc-300"
+                  className="underline underline-offset-2 hover:text-ink-2"
                 >
                   이메일로 문의하기
                 </a>

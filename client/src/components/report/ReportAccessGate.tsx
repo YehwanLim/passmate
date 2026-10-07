@@ -69,11 +69,11 @@ export function ReportAccessGate({
         </div>
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-40 h-[76%] bg-gradient-to-b from-transparent via-[#09090B]/28 via-[52%] to-[#09090B]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-40 h-[76%] bg-gradient-to-b from-transparent via-stage/30 via-[52%] to-stage"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-50 h-[22%] bg-[#09090B]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-50 h-[22%] bg-stage"
         />
       </div>
 
@@ -83,19 +83,19 @@ export function ReportAccessGate({
         transition={{ duration: 0.5, delay: 0.08, ease: [0.21, 0.47, 0.32, 0.98] }}
         className="relative z-[100] -mt-2 px-4 pb-24 sm:-mt-4"
       >
-        <div className="report-lock-card mx-auto w-full max-w-3xl rounded-[1.35rem] p-5 text-white backdrop-blur-2xl sm:grid sm:grid-cols-[1fr_auto] sm:items-center sm:gap-6 sm:p-6">
+        <div className="mx-auto w-full max-w-3xl rounded-3xl bg-surface p-5 text-ink shadow-[0_8px_24px_rgba(18,32,90,0.06)] sm:grid sm:grid-cols-[1fr_auto] sm:items-center sm:gap-6 sm:p-6">
           <div className="flex items-start gap-4 text-left">
-            <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.14] bg-white/[0.07] text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-fill text-ink-3">
               <LockKeyhole className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
+              <p className="text-[13px] font-semibold text-ink-4">
                 Continue Report
               </p>
-              <h3 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-zinc-50">
+              <h3 className="mt-1.5 text-xl font-bold leading-snug tracking-[-0.03em] text-ink">
                 로그인하고 리포트 전체 확인하기
               </h3>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-300">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-ink-3">
                 Google 계정으로 1초 만에 이어볼 수 있어요. 첫 분석은 무료입니다.
               </p>
             </div>
@@ -105,7 +105,7 @@ export function ReportAccessGate({
             <button
               type="button"
               onClick={onLogin}
-              className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/[0.18] bg-white/[0.92] px-4 py-3 text-sm font-semibold text-zinc-950 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_12px_40px_-24px_rgba(255,255,255,0.9)] active:translate-y-0 sm:w-auto"
+              className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-[12px] border border-line bg-surface px-4 text-[15px] font-semibold text-ink-2 transition-colors hover:bg-fill-soft sm:w-auto"
             >
               <GoogleIcon className="h-4 w-4" />
               Google로 1초 만에 확인하기

@@ -24,8 +24,8 @@ import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
 /** 자소서에서 인용한 대목. 형광펜처럼 글자에만 얹는다(줄이 넘어가도 이어지도록 clone). */
 function Quote({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-2.5 text-pretty break-keep text-[14px] font-medium leading-[1.7] text-zinc-100">
-      <span className="rounded-[3px] bg-sky-300/[0.16] px-1.5 py-0.5 [-webkit-box-decoration-break:clone] [box-decoration-break:clone]">
+    <p className="mb-2.5 text-pretty break-keep text-[15px] font-semibold leading-[1.7] text-ink">
+      <span className="rounded-[4px] bg-brand-soft px-1 py-0.5 [-webkit-box-decoration-break:clone] [box-decoration-break:clone]">
         {children}
       </span>
     </p>
@@ -35,7 +35,7 @@ function Quote({ children }: { children: ReactNode }) {
 /** ChatGPT 답에서 발을 빼는 표현. 오른쪽 파란 강조와 반대로 회색으로 물러나게 둔다. */
 function Hedge({ children }: { children: ReactNode }) {
   return (
-    <span className="rounded-[3px] bg-white/[0.05] px-1 py-px text-zinc-500">
+    <span className="rounded-[6px] bg-[#333D4B] px-1.5 py-px text-[#E5E8EB]">
       {children}
     </span>
   );
@@ -43,7 +43,7 @@ function Hedge({ children }: { children: ReactNode }) {
 
 function Say({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-3.5 text-pretty break-keep text-[14.5px] leading-[1.9] text-zinc-400 [&_b]:font-semibold [&_b]:text-sky-300">
+    <p className="mb-3.5 text-pretty break-keep text-[15px] leading-[1.75] text-ink-2 [&_b]:font-bold [&_b]:text-brand-ink">
       {children}
     </p>
   );
@@ -278,27 +278,19 @@ export default function ChatGptComparisonSection() {
   const active = CASES[activeIndex];
 
   return (
-    <section className="relative overflow-hidden border-t border-white/[0.04] py-24 md:py-32">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[860px] -translate-x-1/2 -translate-y-1/2"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 40% at 50% 50%, rgba(99,102,241,0.05) 0%, transparent 70%)",
-        }}
-      />
-
-      <div className="relative mx-auto max-w-5xl px-6 lg:px-10">
+    <section className="relative overflow-hidden bg-ink py-24 text-white md:py-[120px]">
+      {/* 10월 밝은 디자인에서 유일하게 남긴 어두운 띠. 회색 무대 사이에서 "다른 도구와의 비교"를 끊어 보여준다. */}
+      <div className="relative mx-auto max-w-6xl px-6 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-[1.75rem] font-bold leading-[1.25] tracking-[-0.02em] md:text-[2.25rem]">
+          <h2 className="text-[30px] font-extrabold leading-[1.3] tracking-[-0.035em] text-white md:text-[46px]">
             ChatGPT와 뭐가 다를까요?
           </h2>
-          <p className="mt-6 text-pretty break-keep text-[15px] font-light leading-[1.85] text-gray-400 md:text-[17px]">
+          <p className="mt-3.5 text-pretty break-keep text-[16px] leading-[1.6] text-[#B0B8C1] md:text-[18px]">
             같은 자소서 문장을 두 곳에 넣고, 똑같이 물어봤습니다.
           </p>
         </div>
 
-        <p className="mx-auto mt-12 max-w-[680px] text-pretty break-keep text-center text-[17px] leading-[1.7] text-zinc-200 md:text-[18px]">
+        <p className="mx-auto mt-10 max-w-[680px] text-pretty break-keep text-center text-[18px] font-semibold leading-[1.6] tracking-[-0.02em] text-white md:text-[22px]">
           “팀원 4명과 사용자 설문을 진행했고, 그 결과 앱 만족도를 20% 높일 수
           있었습니다.”
         </p>
@@ -307,7 +299,7 @@ export default function ChatGptComparisonSection() {
         <div
           role="tablist"
           aria-label="같은 자소서에 던진 질문"
-          className="mt-7 flex flex-wrap justify-center gap-2"
+          className="mt-8 flex flex-wrap justify-center gap-2"
         >
           {CASES.map((item, index) => (
             <button
@@ -316,10 +308,10 @@ export default function ChatGptComparisonSection() {
               role="tab"
               aria-selected={index === activeIndex}
               onClick={() => setActiveIndex(index)}
-              className={`rounded-full border px-[18px] py-2.5 text-[14px] transition-colors duration-200 ${
+              className={`h-[42px] rounded-[10px] px-[18px] text-[15px] transition-colors duration-200 ${
                 index === activeIndex
-                  ? "border-zinc-50 bg-zinc-50 font-semibold text-zinc-900"
-                  : "border-white/10 font-medium text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                  ? "bg-white font-bold text-ink"
+                  : "bg-[#262C36] font-semibold text-[#B0B8C1] hover:text-white"
               }`}
             >
               {item.question}
@@ -327,27 +319,27 @@ export default function ChatGptComparisonSection() {
           ))}
         </div>
 
-        <div className="mt-9 grid items-stretch gap-8 md:grid-cols-[0.78fr_1.22fr] md:gap-10">
+        <div className="mt-10 grid items-stretch gap-8 md:grid-cols-[0.78fr_1.22fr] md:gap-10">
           {/* ── 왼쪽: 화면(채팅) ── */}
           <div className="flex flex-col">
-            <p className="mb-3 flex min-h-5 items-center text-[13px] text-zinc-500">
+            <p className="mb-3 flex min-h-5 items-center text-[14px] font-bold text-ink-5">
               ChatGPT에 물어보면
             </p>
 
-            <div className="flex flex-1 flex-col rounded-[18px] border border-white/[0.07] bg-[#0e0e10] p-[18px] pt-1.5">
+            <div className="flex flex-1 flex-col rounded-[28px] bg-[#262C36] p-5 pt-1.5 md:p-6 md:pt-2">
               <div className="flex-1 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,rgba(0,0,0,0.25)_26px,#000_92px)] [mask-image:linear-gradient(to_bottom,transparent_0,rgba(0,0,0,0.25)_26px,#000_92px)]">
                 {[...CHAT_LEAD, ...active.chat].map((turn, index) =>
                   turn.who === "me" ? (
                     <div
                       key={index}
-                      className="mb-2.5 ml-auto max-w-[76%] rounded-[15px_15px_4px_15px] bg-[#2c2c30] px-3.5 py-2.5 text-[13px] leading-[1.6] text-zinc-300"
+                      className="mb-2.5 ml-auto max-w-[76%] rounded-[16px_16px_4px_16px] bg-ink-2 px-3.5 py-2.5 text-[14px] leading-[1.6] text-[#E5E8EB]"
                     >
                       {turn.text}
                     </div>
                   ) : (
                     <div
                       key={index}
-                      className="mb-2.5 max-w-[92%] text-pretty break-keep rounded-[15px_15px_15px_4px] border border-white/[0.06] bg-[#151517] px-3.5 py-2.5 text-[13px] leading-[1.7] text-[#8a8a92]"
+                      className="mb-2.5 max-w-[92%] text-pretty break-keep rounded-[16px_16px_16px_4px] border border-ink-2 bg-ink px-3.5 py-2.5 text-[14px] leading-[1.6] text-[#B0B8C1]"
                     >
                       {turn.text}
                     </div>
@@ -355,11 +347,11 @@ export default function ChatGptComparisonSection() {
                 )}
               </div>
 
-              <div className="mt-3.5 flex items-center justify-between rounded-full border border-white/[0.09] bg-[#151517] py-2.5 pl-[18px] pr-3 text-[13px] text-zinc-600">
+              <div className="mt-3.5 flex h-[46px] items-center justify-between rounded-full border border-ink-2 bg-ink pl-[18px] pr-1.5 text-[14px] text-ink-5">
                 무엇이든 물어보세요
                 <span
                   aria-hidden="true"
-                  className="grid size-[26px] place-items-center rounded-full bg-zinc-700 text-[13px] text-zinc-400"
+                  className="grid size-[34px] place-items-center rounded-full bg-ink-3 text-[15px] text-white"
                 >
                   ↑
                 </span>
@@ -367,7 +359,7 @@ export default function ChatGptComparisonSection() {
             </div>
 
             <div className="mt-[18px] flex min-h-[46px] items-center">
-              <p className="text-pretty break-keep text-[13px] leading-[1.7] text-zinc-600">
+              <p className="text-pretty break-keep text-[14px] leading-[1.5] text-ink-5">
                 {active.verdict}
               </p>
             </div>
@@ -375,12 +367,12 @@ export default function ChatGptComparisonSection() {
 
           {/* ── 오른쪽: 화면이 아니라 말 ── */}
           <div className="flex flex-col">
-            <p className="mb-3 flex min-h-5 items-center gap-1.5 text-[13px] text-zinc-300">
+            <p className="mb-3 flex min-h-5 items-center gap-1.5 text-[14px] font-bold text-white">
               <BrandName className="h-[1.15em]" /> 는 이렇게 답합니다
             </p>
 
-            <div className="flex-1 rounded-[18px] border border-white/[0.12] bg-white/[0.05] px-7 pb-1.5 pt-[26px]">
-              <p className="mb-5 text-pretty break-keep text-[18px] font-semibold leading-[1.6] tracking-[-0.015em] text-white md:text-[22px] [&_b]:font-semibold [&_b]:text-sky-300">
+            <div className="flex-1 rounded-[28px] bg-surface px-6 pb-2 pt-7 text-ink md:px-10 md:pt-10">
+              <p className="mb-5 text-pretty break-keep text-[20px] font-extrabold leading-[1.45] tracking-[-0.03em] text-ink md:text-[24px] [&_b]:font-extrabold [&_b]:text-brand-ink">
                 {active.headline}
               </p>
 
@@ -389,7 +381,7 @@ export default function ChatGptComparisonSection() {
                   {active.chips.missing.map(chip => (
                     <span
                       key={chip}
-                      className="rounded-full border border-sky-300/45 px-[11px] py-[5px] text-[12.5px] font-semibold text-sky-300"
+                      className="inline-flex h-7 items-center rounded-[8px] bg-brand-soft px-2.5 text-[13px] font-bold text-brand-ink"
                     >
                       {chip}
                     </span>
@@ -398,7 +390,7 @@ export default function ChatGptComparisonSection() {
                   {active.chips.present.map(chip => (
                     <span
                       key={chip}
-                      className="rounded-full border border-white/[0.09] px-[11px] py-[5px] text-[12.5px] text-zinc-600"
+                      className="inline-flex h-7 items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-semibold text-ink-4"
                     >
                       {chip}
                     </span>
@@ -410,7 +402,7 @@ export default function ChatGptComparisonSection() {
                 <div
                   key={index}
                   className={`pb-0.5 pt-4 ${
-                    index > 0 ? "border-t border-white/[0.08]" : ""
+                    index > 0 ? "border-t border-line-soft" : ""
                   }`}
                 >
                   {block.quote ? <Quote>{block.quote}</Quote> : null}
@@ -418,8 +410,8 @@ export default function ChatGptComparisonSection() {
                 </div>
               ))}
 
-              <div className="mb-[22px] mt-[18px] text-pretty break-keep rounded-xl bg-white/[0.055] px-[17px] py-[15px] text-[13.5px] leading-[1.8] text-zinc-200">
-                <span className="mb-1.5 block text-[12px] text-zinc-500">
+              <div className="mb-6 mt-[18px] text-pretty break-keep rounded-[18px] bg-fill px-[22px] py-5 text-[15px] leading-[1.75] text-ink md:mb-10">
+                <span className="mb-2 block text-[13px] font-bold text-ink-3">
                   {active.fix.label}
                 </span>
                 {active.fix.text}
@@ -429,12 +421,12 @@ export default function ChatGptComparisonSection() {
             <div className="mt-[18px] flex min-h-[46px] items-center">
               <Link
                 href={RESUME_REPORT_SAMPLE_PATH}
-                className="group inline-flex items-center gap-[7px] bg-[linear-gradient(currentColor,currentColor)] bg-[length:0%_1px] bg-[position:left_100%] bg-no-repeat pb-[3px] text-[13.5px] font-semibold text-zinc-50 transition-[background-size] duration-300 hover:bg-[length:100%_1px]"
+                className="group inline-flex items-center gap-[7px] text-[15px] font-bold text-white underline underline-offset-4"
               >
                 예시 리포트 전체 보기
                 <span
                   aria-hidden="true"
-                  className="text-[13px] transition-transform duration-200 group-hover:translate-x-0.5"
+                  className="text-[15px] transition-transform duration-200 group-hover:translate-x-0.5"
                 >
                   →
                 </span>

@@ -38,20 +38,20 @@ export default function InAppBrowserNotice({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[336px] rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4 text-left">
+    <div className="mx-auto w-full max-w-[336px] rounded-[12px] bg-blank-soft p-4 text-left">
       <div className="flex items-start gap-2.5">
-        <Smartphone aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
+        <Smartphone aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-blank" />
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-medium leading-snug text-amber-200">
+          <p className="text-[13.5px] font-semibold leading-snug text-blank">
             지금은 {inAppBrowserLabel(kind)} 안의 브라우저예요
           </p>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-zinc-400">
+          <p className="mt-1 text-[12.5px] leading-relaxed text-ink-3">
             여기서는 Google 로그인이 막혀 있어요. 아래 카카오로 로그인하거나, 외부 브라우저에서 열어 주세요.
           </p>
           {action.type === "open" ? (
             <a
               href={action.href}
-              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[13px] font-medium text-white transition-colors hover:bg-white/[0.08]"
+              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-surface px-3 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-fill"
             >
               <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
               외부 브라우저로 열기
@@ -61,11 +61,11 @@ export default function InAppBrowserNotice({
               <button
                 type="button"
                 onClick={copyLink}
-                className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[13px] font-medium text-white transition-colors hover:bg-white/[0.08]"
+                className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-surface px-3 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-fill"
               >
                 {copied ? (
                   <>
-                    <Check aria-hidden="true" className="h-3.5 w-3.5 text-emerald-400" />
+                    <Check aria-hidden="true" className="h-3.5 w-3.5 text-ok" />
                     복사했어요
                   </>
                 ) : (
@@ -75,7 +75,7 @@ export default function InAppBrowserNotice({
                   </>
                 )}
               </button>
-              <p className="mt-2 text-[12px] leading-relaxed text-zinc-500">
+              <p className="mt-2 text-[12px] leading-relaxed text-ink-4">
                 오른쪽 위 ··· 메뉴의 &lsquo;브라우저에서 열기&rsquo;를 눌러도 돼요.
               </p>
             </>

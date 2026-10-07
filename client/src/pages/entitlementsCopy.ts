@@ -36,29 +36,25 @@ export const TIER_COPY: Record<TierKey, { when: string; what: Partial<Record<Pur
   },
 };
 
-/** 티어별 강조 글자색 — 할인 문구가 그 카드의 버튼 색과 같은 계열로 읽히게 한다. */
+/** 티어별 강조 글자색 — 밝은 디자인은 강조색이 파랑 하나라 모든 티어가 같다. */
 export const PLAN_ACCENT_TEXT: Record<PurchaseProductKey, string> = {
-  single: "text-sky-300",
-  company: "text-sky-300",
-  standard: "text-sky-300",
-  premium: "text-violet-300",
-  triple: "text-sky-300",
+  single: "text-brand-ink",
+  company: "text-brand-ink",
+  standard: "text-brand-ink",
+  premium: "text-brand-ink",
+  triple: "text-brand-ink",
 };
 
 /**
- * 티어별 구매 버튼 — 랜딩 이용권 섹션(PricingSection)에서 쓰는 버튼 디자인 그대로다.
- * 베이직은 그 섹션의 일반 버튼, 스탠다드·프리미엄은 강조 버튼의 그라데이션에 색만 바꿨다.
+ * 티어별 구매 버튼 — 추천 티어(스탠다드)만 주 버튼(파랑), 나머지는 옅은 파랑 보조 버튼.
  * 상품 키 기준이라 베이직은 자소서·기업 어느 쪽을 골라도 같은 모양이다.
  */
-const PLAN_BUTTON_BASIC =
-  "border border-white/[0.12] bg-white/[0.05] text-zinc-200 hover:bg-white/[0.1]";
+const PLAN_BUTTON_BASIC = "bg-brand-soft text-brand-ink hover:bg-[#dceaff]";
 export const PLAN_BUTTON_CLASS: Record<PurchaseProductKey, string> = {
   single: PLAN_BUTTON_BASIC,
   company: PLAN_BUTTON_BASIC,
-  standard:
-    "bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-lg shadow-blue-500/20 hover:from-blue-400 hover:to-cyan-300",
-  premium:
-    "bg-gradient-to-r from-violet-300 to-purple-200 text-[#2E1065] shadow-lg shadow-violet-400/20 hover:from-violet-200 hover:to-purple-100",
+  standard: "bg-brand text-white hover:bg-brand-hover",
+  premium: PLAN_BUTTON_BASIC,
   triple: PLAN_BUTTON_BASIC,
 };
 

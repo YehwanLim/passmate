@@ -77,46 +77,42 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
 
   return (
     <div
-      className={`flex h-full flex-col rounded-2xl border bg-white/[0.02] p-8 backdrop-blur-sm transition-all duration-300 ${
-        highlighted
-          ? "border-blue-500/[0.25] hover:border-blue-400/[0.35]"
-          : "border-white/[0.06] hover:border-white/[0.1]"
+      className={`plan-card flex h-full flex-col rounded-[28px] border-2 bg-surface px-8 py-9 ${
+        highlighted ? "border-brand" : "border-surface"
       }`}
     >
       <h3
-        className={`text-lg font-bold tracking-tight ${
-          highlighted ? "text-blue-400" : "text-zinc-200"
+        className={`text-[17px] tracking-[-0.02em] ${
+          highlighted ? "font-extrabold text-brand-ink" : "font-bold text-ink-2"
         }`}
       >
         {tier.label}
       </h3>
-      <p className="mt-4 text-[2.6rem] md:text-[2.9rem] font-bold leading-none tracking-tight text-white">
+      <p className="mt-4 text-[34px] md:text-[36px] font-extrabold leading-none tracking-[-0.03em] text-ink">
         {formatKrw(plan.salePrice)}
-        <span className="ml-1.5 text-base font-medium text-zinc-500">
+        <span className="ml-1.5 text-base font-medium tracking-normal text-ink-4">
           / {totalUses}회
         </span>
       </p>
       {plan.listPrice > plan.salePrice ? (
         <>
-          <p className="mt-3 text-base font-light text-zinc-400 line-through decoration-zinc-300/60 decoration-[1.5px]">
+          <p className="mt-3 text-[14px] text-ink-4 line-through">
             {listPricePrefix} {formatKrw(plan.listPrice)}
           </p>
-          <p className="mt-0.5 text-lg md:text-xl font-extrabold tracking-tight text-sky-300">
+          <p className="mt-1 text-[15px] font-extrabold text-brand-ink">
             {plan.discountLabel}
           </p>
         </>
       ) : null}
       <p
-        className={`mt-1 text-xs font-light ${
-          highlighted ? "text-zinc-300" : "text-zinc-500"
-        }`}
+        className="mt-1 text-[13px] text-ink-3"
       >
         {intro.perUseNote}
       </p>
-      <p className="mt-6 text-[14.5px] font-medium leading-relaxed text-zinc-200">
+      <p className="mt-4 border-t border-line-soft pt-4 text-[16px] font-bold leading-relaxed text-ink">
         {intro.lead}
       </p>
-      <p className="mb-7 mt-2 flex-1 text-[13px] font-light leading-[1.8] text-zinc-500">
+      <p className="mb-6 mt-2 flex-1 text-[15px] leading-[1.7] text-ink-3">
         {intro.body}
       </p>
       {/* 실제 결제·로그인 처리는 이용권 페이지에서 이어진다 */}
@@ -125,8 +121,8 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
         onClick={() => navigate("/entitlements")}
         className={
           highlighted
-            ? "h-11 w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:from-blue-400 hover:to-cyan-300"
-            : "h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-semibold text-zinc-200 transition-colors hover:bg-white/[0.1]"
+            ? "h-12 w-full rounded-[10px] bg-brand text-[16px] font-bold text-white transition-colors hover:bg-brand-hover"
+            : "h-12 w-full rounded-[10px] bg-brand-soft text-[16px] font-bold text-brand-ink transition-colors hover:bg-[#dbe9ff]"
         }
       >
         {tier.label} 구매하기
@@ -139,25 +135,25 @@ export default function PricingSection() {
   const [, navigate] = useLocation();
 
   return (
-    <section id="pricing" className="py-28 md:py-36 border-t border-white/[0.04]">
+    <section id="pricing" className="bg-fill py-24 md:py-[120px]">
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
         {/* Heading */}
         <div
           className="text-center mb-14"
         >
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-snug">
+          <h2 className="text-[30px] font-extrabold leading-[1.3] tracking-[-0.035em] text-ink md:text-[46px]">
             합격에 가까워지는 비용,
             <br />
-            <span className="text-sky-300">커피 한 잔</span>이면 충분합니다
+            <span className="text-brand">커피 한 잔</span>이면 충분합니다
           </h2>
-          <p className="mt-4 text-gray-500 font-light text-[15px] leading-[1.8] max-w-lg mx-auto">
+          <p className="mt-4 mx-auto max-w-lg text-[16px] leading-[1.7] text-ink-3 md:text-[17px]">
             복잡한 구독 없이, 필요한 만큼만 담으세요.
           </p>
         </div>
 
         {/* 가격 카드 — 티어 순서는 pricing.ts TIERS 를 따른다 */}
         <div
-          className="grid gap-6 md:grid-cols-3"
+          className="grid gap-5 md:grid-cols-3"
         >
           {TIERS.map(tier => (
             <TierCard key={tier.key} tier={tier} />
@@ -166,27 +162,27 @@ export default function PricingSection() {
 
         {/* 리포트 구성 — 자소서·기업 두 리포트를 나란히. 이용권 페이지와 같은 문구 */}
         <div
-          className="mt-10 max-w-5xl mx-auto grid gap-8 rounded-2xl border border-white/[0.06] bg-white/[0.015] px-7 py-6 md:grid-cols-2 md:gap-10"
+          className="mt-5 max-w-5xl mx-auto grid gap-8 rounded-[28px] bg-surface px-7 py-8 md:grid-cols-2 md:gap-10 md:px-12 md:py-11"
         >
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-wider text-sky-300">자소서 진단 리포트</p>
-            <p className="mt-1.5 text-[14px] font-semibold text-zinc-200">어떤 이용권을 선택하든, 이 모든 게 담깁니다</p>
+            <p className="inline-flex h-[26px] items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-bold text-ink-3">자소서 진단 리포트</p>
+            <p className="mt-3 text-[18px] font-extrabold tracking-[-0.02em] text-ink">어떤 이용권을 선택하든, 이 모든 게 담깁니다</p>
             <ul className="mt-4 space-y-2.5">
               {REPORT_INCLUDED_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400">
-                  <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                <li key={feature} className="flex items-center gap-2.5 text-[15px] text-ink-2">
+                  <Check className="h-4 w-4 shrink-0 text-brand" strokeWidth={2.6} />
                   {feature}
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-wider text-sky-300">기업 분석 리포트</p>
-            <p className="mt-1.5 text-[14px] font-semibold text-zinc-200">스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요</p>
+            <p className="inline-flex h-[26px] items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-bold text-ink-3">기업 분석 리포트</p>
+            <p className="mt-3 text-[18px] font-extrabold tracking-[-0.02em] text-ink">스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요</p>
             <ul className="mt-4 space-y-2.5">
               {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-2.5 text-[13.5px] font-light text-zinc-400">
-                  <Check className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                <li key={feature} className="flex items-center gap-2.5 text-[15px] text-ink-2">
+                  <Check className="h-4 w-4 shrink-0 text-brand" strokeWidth={2.6} />
                   {feature}
                 </li>
               ))}
@@ -196,21 +192,21 @@ export default function PricingSection() {
 
         {/* 무료 체험 안내 — 결제 전 부담을 없애는 문장이라 크게 둔다 */}
         <div
-          className="mt-12 text-center"
+          className="mt-16 text-center md:mt-20"
         >
-          <p className="text-2xl md:text-[1.75rem] font-bold tracking-tight text-white">
-            가입하면 <span className="text-sky-300">첫 분석 1회는 무료</span>입니다
+          <p className="text-[24px] font-extrabold tracking-[-0.03em] text-ink md:text-[30px]">
+            가입하면 <span className="text-brand">첫 분석 1회는 무료</span>입니다
           </p>
-          <p className="mt-2.5 text-[15px] font-light text-zinc-400">
+          <p className="mt-3 text-[16px] text-ink-3">
             카드 등록 없이, 유료와 똑같은 리포트 전체를 받아볼 수 있어요.
           </p>
         </div>
 
         {/* 시세 비교 — 세로 막대로 가격 차이를 한눈에 보여준다 */}
         <div
-          className="mt-20 max-w-3xl mx-auto"
+          className="mx-auto mt-16 max-w-3xl rounded-[28px] bg-surface px-6 py-12 md:mt-20 md:rounded-[32px] md:px-12 md:py-[52px]"
         >
-          <p className="text-center text-xl md:text-2xl font-bold tracking-tight text-white">
+          <p className="text-center text-[20px] font-extrabold tracking-[-0.03em] text-ink md:text-[24px]">
             자소서 첨삭, 보통 얼마가 들까요?
           </p>
 
@@ -225,39 +221,39 @@ export default function PricingSection() {
                   <p
                     className={`mb-2.5 whitespace-nowrap font-bold tracking-tight ${
                       column.isPreview
-                        ? "text-2xl text-sky-300"
-                        : "text-[17px] text-zinc-300"
+                        ? "text-[26px] font-extrabold text-brand-ink"
+                        : "text-[18px] font-extrabold text-ink-3"
                     }`}
                   >
                     {column.value}
                   </p>
                   <div
-                    className={`w-full shrink-0 origin-bottom rounded-t-lg ${
+                    className={`w-full shrink-0 origin-bottom rounded-t-[12px] ${
                       column.isPreview
-                        ? "bg-gradient-to-t from-blue-500 to-cyan-400 shadow-[0_0_24px_rgba(59,130,246,0.45)]"
-                        : "bg-gradient-to-t from-zinc-500/[0.28] to-zinc-500/[0.1]"
+                        ? "bg-brand"
+                        : "bg-[#D1D6DB]"
                     }`}
                     style={{ height: column.barHeight }}
                   />
                 </div>
-                <div className="mt-3.5 text-center">
+                <div className="w-full border-t border-line pt-3 text-center">
                   <p
                     className={`whitespace-nowrap text-[12.5px] sm:text-[15px] leading-tight ${
                       column.isPreview
-                        ? "font-semibold text-white"
-                        : "font-normal text-zinc-400"
+                        ? "font-bold text-ink"
+                        : "font-bold text-ink-2"
                     }`}
                   >
                     {column.isPreview ? (
                       <>
-                        <BrandName className="mr-1" />
+                        <BrandName className="mr-1" variant="default" />
                         {column.label}
                       </>
                     ) : (
                       column.label
                     )}
                   </p>
-                  <p className="mt-1 whitespace-nowrap text-[11px] sm:text-[12.5px] font-light text-zinc-500">
+                  <p className="mt-1 whitespace-nowrap text-[11px] sm:text-[13px] text-ink-4">
                     {column.note}
                   </p>
                 </div>
@@ -265,10 +261,10 @@ export default function PricingSection() {
             ))}
           </div>
 
-          <p className="mt-10 text-center text-xl md:text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-10 text-center text-[20px] font-extrabold tracking-[-0.03em] text-ink md:text-[24px]">
             ☕ 커피 한 잔 값으로, 자소서를 완성하세요
           </p>
-          <p className="mt-6 text-center text-[12.5px] font-light text-zinc-500">
+          <p className="mt-2 text-center text-[13px] text-ink-4">
             * 사설 첨삭 비용은 일반적인 시세 범위로, 업체·범위에 따라 달라질 수
             있습니다.
           </p>
@@ -286,7 +282,7 @@ export default function PricingSection() {
             이용권 자세히 보기
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </button>
-          <p className="mt-4 text-[12.5px] font-light text-zinc-500">
+          <p className="mt-3.5 text-[14px] text-ink-3">
             결제 전, 무료 분석으로 리포트를 먼저 경험해 보세요.
           </p>
         </div>

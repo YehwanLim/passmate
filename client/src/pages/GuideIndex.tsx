@@ -35,13 +35,13 @@ export default function GuideIndex() {
     <GuideLayout>
       <div className="mb-12 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
         <div className="flex max-w-2xl flex-col gap-3">
-          <p className="text-[13px] font-medium text-blue-300">취업 가이드</p>
-          <h1 className="text-[32px] font-bold leading-[1.15] tracking-[-0.03em] md:text-[44px]">
+          <p className="text-[14px] font-semibold text-brand-ink">취업 가이드</p>
+          <h1 className="text-[32px] font-extrabold leading-[1.2] tracking-[-0.035em] text-ink md:text-[44px]">
             자소서·면접, 어디서부터 손댈지 모를 때
           </h1>
-          <p className="text-[15px] leading-7 text-gray-400 md:text-[16px]">{INTRO}</p>
+          <p className="text-[15px] leading-7 text-ink-3 md:text-[16px]">{INTRO}</p>
         </div>
-        <div className="-mx-6 flex gap-5 overflow-x-auto px-6 pb-1 lg:mx-0 lg:px-0" role="tablist" aria-label="가이드 분류">
+        <div className="-mx-6 flex gap-1 overflow-x-auto px-6 pb-1 lg:mx-0 lg:px-0" role="tablist" aria-label="가이드 분류">
           {[ALL, ...categories].map(tab => (
             <button
               key={tab}
@@ -50,8 +50,8 @@ export default function GuideIndex() {
               aria-selected={category === tab}
               onClick={() => setCategory(tab)}
               className={cn(
-                "whitespace-nowrap border-b py-1.5 text-[13px] font-medium transition-colors",
-                category === tab ? "border-white text-white" : "border-transparent text-zinc-400 hover:text-zinc-200"
+                "h-9 whitespace-nowrap rounded-[10px] px-3.5 text-[15px] transition-colors",
+                category === tab ? "bg-ink font-bold text-white" : "font-semibold text-ink-4 hover:bg-fill hover:text-ink-2"
               )}
             >
               {tab}
@@ -61,22 +61,22 @@ export default function GuideIndex() {
       </div>
 
       {featured && (
-        <section className="grid grid-cols-1 gap-6 border-b border-white/[0.08] pb-12 lg:grid-cols-12 lg:gap-10 lg:pb-14">
+        <section className="grid grid-cols-1 gap-6 rounded-[28px] bg-surface p-4 md:p-6 lg:grid-cols-12 lg:gap-10">
           <Link href={guidePath(featured.guide)} className="block lg:col-span-6">
             <GuideCover tone={featured.cover} text={featured.guide.coverText} image={featured.guide.cover} />
           </Link>
-          <div className="flex flex-col justify-end gap-4 lg:col-span-6 lg:py-2">
+          <div className="flex flex-col justify-end gap-4 px-2 pb-2 lg:col-span-6 lg:px-0 lg:py-2">
             <Link href={guidePath(featured.guide)}>
-              <h2 className="text-[24px] font-bold leading-[1.3] tracking-[-0.02em] text-balance [word-break:keep-all] md:text-[30px]">
+              <h2 className="text-[24px] font-bold leading-[1.3] tracking-[-0.02em] text-balance text-ink [word-break:keep-all] md:text-[30px]">
                 {featured.guide.title}
               </h2>
             </Link>
-            <span className="text-[12px] text-zinc-500">
+            <span className="text-[13px] text-ink-4">
               {formatDate(featured.guide.date, "ymd-dot")} · {readingMinutes(featured.guide.bodyChars)}분 읽기
             </span>
             <Link
               href={guidePath(featured.guide)}
-              className="inline-flex items-center gap-2 text-[14px] font-semibold text-white transition-colors hover:text-zinc-300"
+              className="inline-flex items-center gap-2 text-[15px] font-semibold text-brand-ink transition-colors hover:text-brand"
             >
               글 읽기
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -86,19 +86,19 @@ export default function GuideIndex() {
       )}
 
       {rest.length > 0 && (
-        <section className="grid grid-cols-1 gap-x-6 gap-y-9 pt-12 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {rest.map(({ guide, cover }) => (
-            <Link key={guide.slug} href={guidePath(guide)} className="group flex flex-col gap-3.5">
+            <Link key={guide.slug} href={guidePath(guide)} className="group flex flex-col gap-3.5 rounded-[28px] bg-surface p-4 pb-5">
               <GuideCover
                 tone={cover}
                 text={guide.coverText}
                 image={guide.cover}
                 className="transition-transform duration-200 group-hover:-translate-y-1"
               />
-              <h3 className="text-[15px] font-semibold leading-[1.45] text-balance text-white [word-break:keep-all] md:text-[16px]">
+              <h3 className="px-1 text-[15px] font-semibold leading-[1.45] text-balance text-ink [word-break:keep-all] md:text-[16px]">
                 {guide.title}
               </h3>
-              <span className="text-[12px] text-zinc-500">
+              <span className="px-1 text-[13px] text-ink-4">
                 {formatDate(guide.date, "ymd-dot")} · {readingMinutes(guide.bodyChars)}분 읽기
               </span>
             </Link>
@@ -106,7 +106,7 @@ export default function GuideIndex() {
         </section>
       )}
 
-      {visible.length === 0 && <p className="py-16 text-center text-[15px] text-zinc-500">이 분류의 글은 아직 없습니다.</p>}
+      {visible.length === 0 && <p className="py-16 text-center text-[15px] text-ink-4">이 분류의 글은 아직 없습니다.</p>}
 
       <GuideCtaCard
         className="mt-20 md:mt-24"

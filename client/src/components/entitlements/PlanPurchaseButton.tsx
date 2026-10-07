@@ -26,7 +26,7 @@ export function PlanPurchaseButton({
   onLogin: () => void;
 }) {
   const plan = PRICING[product];
-  const buttonClassName = `h-11 w-full rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${PLAN_BUTTON_CLASS[product]}`;
+  const buttonClassName = `h-12 w-full rounded-[10px] text-[15px] font-bold transition-colors disabled:opacity-50 ${PLAN_BUTTON_CLASS[product]}`;
 
   // 아직 결제 URL을 모르는 동안은 "판매 준비 중"이 아니라 비활성 버튼을 보여준다 —
   // 로딩과 판매 중단은 다른 상태고, 섞으면 로그인한 사용자에게 틀린 안내가 깜빡인다.
@@ -40,7 +40,7 @@ export function PlanPurchaseButton({
 
   if (!isAuthenticated && availability && !availability.purchasable[product]) {
     return (
-      <p className="flex h-11 items-center justify-center text-xs text-zinc-500">
+      <p className="flex h-12 items-center justify-center text-[13px] text-ink-4">
         현재 추가 이용권 판매를 준비하고 있어요.
       </p>
     );
@@ -56,7 +56,7 @@ export function PlanPurchaseButton({
 
   if (!canPurchase) {
     return (
-      <p className="flex h-11 items-center justify-center text-xs text-zinc-500">
+      <p className="flex h-12 items-center justify-center text-[13px] text-ink-4">
         현재 추가 이용권 판매를 준비하고 있어요.
       </p>
     );

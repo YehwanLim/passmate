@@ -10,10 +10,11 @@ import {
 } from "@/lib/entitlements";
 import { supabase } from "@/lib/supabase";
 
-// 랜딩의 CTA 쌍과 같은 버튼: 주 버튼은 landing-primary-cta(빛 스침·호버 상승), 보조 버튼은 높이·모서리를 맞춘 유리 표면.
-const PRIMARY_ACTION_CLASS = "landing-primary-cta group w-full";
+// 주 버튼은 파랑(bg-brand), 보조 버튼은 높이·모서리를 맞춘 흰 표면.
+const PRIMARY_ACTION_CLASS =
+  "group inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-[12px] bg-brand px-5 text-[15px] font-bold text-white transition-colors hover:bg-brand-hover";
 const SECONDARY_ACTION_CLASS =
-  "inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-2xl border border-white/[0.12] bg-white/[0.05] px-5 text-[13.5px] font-semibold tracking-[-0.01em] text-zinc-200 transition-colors hover:bg-white/[0.1]";
+  "inline-flex h-12 w-full items-center justify-center rounded-[12px] bg-surface px-5 text-[15px] font-semibold text-ink-2 transition-colors hover:bg-fill";
 
 function ActionButton({
   primary,
@@ -32,7 +33,7 @@ function ActionButton({
     >
       {primary ? (
         <>
-          <span className="relative z-10">{children}</span>
+          <span>{children}</span>
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </>
       ) : (
@@ -49,7 +50,7 @@ function CreditSkeleton() {
         <div
           key={height}
           style={{ height }}
-          className="rounded-2xl border border-white/[0.08] bg-white/[0.02] animate-pulse"
+          className="rounded-[20px] bg-surface animate-pulse"
         />
       ))}
     </div>
@@ -66,14 +67,14 @@ function RemainingStat({ remaining }: { remaining: number }) {
   return (
     <p
       className={`shrink-0 whitespace-nowrap pt-0.5 text-right leading-none ${
-        isEmpty ? "text-zinc-600" : "text-white"
+        isEmpty ? "text-ink-4" : "text-ink"
       }`}
     >
-      <span className="text-3xl font-bold tracking-tight tabular-nums">
+      <span className="text-[28px] font-extrabold tracking-[-0.03em] tabular-nums">
         {remaining}
       </span>
       <span
-        className={`ml-0.5 text-sm font-medium ${isEmpty ? "text-zinc-600" : "text-zinc-300"}`}
+        className={`ml-0.5 text-sm font-medium ${isEmpty ? "text-ink-4" : "text-ink-3"}`}
       >
         회 남음
       </span>
@@ -99,22 +100,22 @@ function CreditGroupCard({
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5">
+    <section className="rounded-[20px] bg-surface p-[22px]">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.05] text-zinc-300">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-fill text-ink-3">
             {icon}
           </span>
           <div>
-            <p className="text-sm font-semibold text-zinc-100">{title}</p>
-            <p className="mt-1 text-xs text-zinc-500">{description}</p>
+            <p className="text-[16px] font-bold text-ink">{title}</p>
+            <p className="mt-1 text-[13px] leading-[1.6] text-ink-4">{description}</p>
           </div>
         </div>
         <RemainingStat remaining={remaining} />
       </div>
 
       {children ? (
-        <div className="mt-4 divide-y divide-white/[0.06] border-t border-white/[0.06] sm:ml-12">
+        <div className="mt-4 divide-y divide-line-soft border-t border-line-soft sm:ml-12">
           {children}
         </div>
       ) : null}
@@ -138,20 +139,20 @@ function CreditSummaryRow({
     <div className="flex items-center justify-between gap-4 py-4">
       <div>
         <p
-          className={`text-sm font-medium ${isEmpty ? "text-zinc-500" : "text-zinc-200"}`}
+          className={`text-[15px] ${isEmpty ? "font-medium text-ink-4" : "font-semibold text-ink-2"}`}
         >
           {title}
         </p>
-        <p className="mt-0.5 text-xs text-zinc-600">{description}</p>
+        <p className="mt-0.5 text-[13px] text-ink-4">{description}</p>
       </div>
       <p
         className={`shrink-0 text-right text-base tabular-nums ${
-          isEmpty ? "font-medium text-zinc-600" : "font-semibold text-white"
+          isEmpty ? "font-medium text-ink-4" : "font-bold text-ink"
         }`}
       >
         {remaining}
         <span
-          className={`ml-0.5 text-xs font-normal ${isEmpty ? "text-zinc-600" : "text-zinc-400"}`}
+          className="ml-0.5 text-xs font-normal text-ink-4"
         >
           회
         </span>
@@ -211,33 +212,33 @@ export default function MyEntitlements() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-28 text-white">
-      <SiteHeader />
+    <div className="min-h-screen bg-stage pb-28 text-ink">
+      <SiteHeader variant="light" />
 
-      <main className="container max-w-2xl pt-10 pb-8">
+      <main className="container pt-10 pb-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.08 }}
         >
-          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink">
             내 이용권
           </h1>
-          <p className="text-[14px] text-zinc-500 font-light">
+          <p className="mt-1.5 text-[15px] text-ink-4">
             보유한 분석 이용권을 확인할 수 있어요.
           </p>
         </motion.div>
 
-        <section className="mt-8 space-y-6" aria-live="polite">
+        <section className="mt-8 max-w-2xl space-y-6" aria-live="polite">
           {authLoading || isLoading ? (
             <CreditSkeleton />
           ) : error ? (
-            <div className="rounded-xl border border-red-400/[0.18] bg-red-400/[0.06] px-6 py-6 text-center">
-              <p className="text-sm text-red-100">{error}</p>
+            <div className="rounded-[20px] bg-surface px-6 py-6 text-center">
+              <p className="text-sm text-danger">{error}</p>
               <button
                 type="button"
                 onClick={() => void loadEntitlements()}
-                className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 text-sm font-medium text-white transition-colors hover:bg-white/[0.12]"
+                className="mt-5 inline-flex h-10 items-center gap-2 rounded-[10px] bg-fill px-4 text-sm font-semibold text-ink-2 transition-colors hover:bg-line"
               >
                 <RefreshCw className="h-4 w-4" />
                 다시 시도

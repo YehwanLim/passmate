@@ -6,7 +6,6 @@ import GoogleSignInButton from "@/components/GoogleSignInButton";
 import InAppBrowserNotice from "@/components/InAppBrowserNotice";
 import KakaoSignInButton from "@/components/KakaoSignInButton";
 import Logo from "@/components/Logo";
-import MoodShiftBackground from "@/components/MoodShiftBackground";
 import { detectInAppBrowser, type InAppBrowserKind } from "@/lib/inAppBrowser";
 import { ArrowLeft, Lock, Shield } from "lucide-react";
 
@@ -38,12 +37,9 @@ export default function Login({
 
   return (
     <div
-      className="min-h-screen bg-[#050505] text-white flex flex-col"
+      className="min-h-screen bg-stage text-ink flex flex-col"
       style={{ overflowX: "clip" }}
     >
-      {/* 배경 */}
-      <MoodShiftBackground />
-
       {/* 상단 로고 영역 */}
       <motion.header
         className="relative z-10 flex items-center justify-center pt-10 pb-4"
@@ -54,13 +50,13 @@ export default function Login({
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:left-6"
+          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-lg p-2 text-ink-4 transition-colors hover:bg-fill hover:text-ink-2 sm:left-6"
           aria-label="홈으로 돌아가기"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="cursor-pointer" onClick={() => navigate("/")}>
-          <Logo className="h-6 w-auto" />
+          <Logo className="h-6 w-auto" variant="default" />
         </div>
       </motion.header>
 
@@ -73,18 +69,12 @@ export default function Login({
           transition={{ duration: 0.7, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
         >
           {/* 카드 */}
-          <div
-            className="relative rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl px-8 py-10"
-            style={{
-              boxShadow:
-                "0 0 0 1px rgba(255,255,255,0.05), 0 24px 64px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)",
-            }}
-          >
+          <div className="relative rounded-[20px] bg-surface px-8 py-10">
             {/* 타이틀 */}
-            <h1 className="text-2xl font-bold text-center tracking-tight mb-2">
+            <h1 className="text-[28px] font-bold text-center tracking-[-0.03em] text-ink mb-2">
               시작하기
             </h1>
-            <p className="text-[14px] text-gray-400 text-center mb-6 leading-relaxed">
+            <p className="text-[14px] text-ink-3 text-center mb-6 leading-relaxed">
               Google 또는 카카오 계정으로 간편하게 로그인하고
               <br />
               로그인만 하면 무료로 자소서 분석을 시작할 수 있어요.
@@ -100,31 +90,31 @@ export default function Login({
             </div>
 
             {/* 구분선 + 보안 안내 */}
-            <div className="mt-6 pt-6 border-t border-white/[0.06] space-y-2">
-              <div className="flex items-center justify-center gap-1.5 text-[12px] text-gray-500">
-                <Shield className="w-3.5 h-3.5 text-gray-600" />
+            <div className="mt-6 pt-6 border-t border-line-soft space-y-2">
+              <div className="flex items-center justify-center gap-1.5 text-[12px] text-ink-4">
+                <Shield className="w-3.5 h-3.5 text-ink-5" />
                 <span>계정 비밀번호는 Pre:View에 저장되지 않습니다.</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5 text-[12px] text-gray-500">
-                <Lock className="w-3.5 h-3.5 text-gray-600" />
+              <div className="flex items-center justify-center gap-1.5 text-[12px] text-ink-4">
+                <Lock className="w-3.5 h-3.5 text-ink-5" />
                 <span>자소서는 분석에만 쓰이고, AI 학습에 사용되지 않습니다.</span>
               </div>
             </div>
           </div>
 
           {/* 하단 안내 */}
-          <p className="text-center text-[12px] text-gray-500 mt-5 leading-relaxed">
+          <p className="text-center text-[12px] text-ink-4 mt-5 leading-relaxed">
             로그인 시{" "}
             <Link
               href="/terms"
-              className="text-gray-400 underline underline-offset-2 transition-colors hover:text-white"
+              className="text-ink-3 underline underline-offset-2 transition-colors hover:text-ink"
             >
               이용약관
             </Link>{" "}
             및{" "}
             <Link
               href="/privacy"
-              className="text-gray-400 underline underline-offset-2 transition-colors hover:text-white"
+              className="text-ink-3 underline underline-offset-2 transition-colors hover:text-ink"
             >
               개인정보 처리방침
             </Link>

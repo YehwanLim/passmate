@@ -46,7 +46,7 @@ describe("ReportShowcase", () => {
     expect(action(0, 100, 0)).toBe("flip");
     expect(action(0, 100, 1, true)).toBe("hold");
     // 마지막 장면에서 내리거나 첫 장면에서 올리면 평소 스크롤로 돌아간다.
-    expect(action(0, 100, 3)).toBe("pass");
+    expect(action(0, 100, 5)).toBe("pass");
     expect(action(0, -100, 0)).toBe("pass");
     // 아래에서 올라오며 지나칠 때도 넘길 장면이 남아 있으면 세운다.
     expect(action(-60, -100, 3)).toBe("pin");
@@ -119,8 +119,8 @@ describe("ReportShowcase", () => {
     const block = document.querySelector("[data-report-preview-block]");
     if (!block) throw new Error("Report preview block was not found");
 
-    // 블록 높이 0(jsdom) → 제자리 = 사이트 헤더 57px + 남는 높이의 절반.
-    const pinnedTop = 57 + (window.innerHeight - 57) / 2;
+    // 블록 높이 0(jsdom) → 제자리 = 사이트 헤더 76px(떠 있는 바) + 남는 높이의 절반.
+    const pinnedTop = 76 + (window.innerHeight - 76) / 2;
     vi.spyOn(block, "getBoundingClientRect").mockReturnValue({
       bottom: pinnedTop,
       height: 0,
@@ -138,8 +138,9 @@ describe("ReportShowcase", () => {
       window.dispatchEvent(event);
       expect(event.defaultPrevented).toBe(true);
     });
+    // 장면은 실제 예시 리포트 섹션(지연 로드)이라 섹션 id 로 확인한다.
     await waitFor(() =>
-      expect(screen.getByText("우선 보완 순서")).toBeTruthy()
+      expect(document.getElementById("section-company-insight")).toBeTruthy()
     );
     expect(window.scrollTo).not.toHaveBeenCalled();
     // 휠 preventDefault 만으로는 트랙패드 관성을 못 막으므로 페이지 스크롤 자체를 잠근다.
@@ -149,13 +150,13 @@ describe("ReportShowcase", () => {
     // 실제 시계보다 앞선 시각으로 흉내 낸다(전체 실행에선 performance.now() 가 이미 수십 초를 넘는다).
     const startedAt = performance.now();
     const nowSpy = vi.spyOn(performance, "now");
-    [10_000, 20_000, 30_000].forEach((offset, index) => {
+    [10_000, 20_000, 30_000, 40_000, 50_000].forEach((offset, index) => {
       nowSpy.mockReturnValue(startedAt + offset);
       const event = new WheelEvent("wheel", { cancelable: true, deltaY: 100 });
       window.dispatchEvent(event);
       expect(event.defaultPrevented).toBe(true);
-      // 풀어 주는 휠(세 번째)은 잠긴 채 도착해 헛돌지 않도록 그만큼 직접 내려 준다.
-      expect(window.scrollTo).toHaveBeenCalledTimes(index === 2 ? 1 : 0);
+      // 풀어 주는 휠(다섯 번째)은 잠긴 채 도착해 헛돌지 않도록 그만큼 직접 내려 준다.
+      expect(window.scrollTo).toHaveBeenCalledTimes(index === 4 ? 1 : 0);
     });
     expect(document.documentElement.style.overflow).toBe("");
   });
@@ -174,7 +175,7 @@ describe("ReportShowcase", () => {
     const block = document.querySelector("[data-report-preview-block]");
     if (!block) throw new Error("Report preview block was not found");
 
-    const pinnedTop = 57 + (window.innerHeight - 57) / 2;
+    const pinnedTop = 76 + (window.innerHeight - 76) / 2;
     let top = pinnedTop + 40;
     vi.spyOn(block, "getBoundingClientRect").mockImplementation(
       () => ({ top }) as DOMRect
@@ -209,37 +210,26 @@ describe("ReportShowcase", () => {
     }));
 
     render(<ReportShowcase />);
-    expect(screen.getByText("지원자 프로필")).toBeTruthy();
-    expect(
-      screen.getByText(
-        "지원자는 데이터로 고객의 이탈 원인을 좁히고, 실험 결과를 다음 개선안에 반영하는 방식에 익숙합니다."
-      )
-    ).toBeTruthy();
-    expect(screen.getByText("현직자 코멘트")).toBeTruthy();
+    // 장면마다 실제 예시 리포트의 섹션 하나가 뜬다(LiveReportPreview). 순서는 예시 리포트 목차와 같다.
+    await waitFor(() =>
+      expect(document.getElementById("section-first-impression")).toBeTruthy()
+    );
 
     const next = () =>
       fireEvent.click(
         screen.getAllByRole("button", { name: "다음 리포트 미리보기" })[0]
       );
 
-    next();
-    await waitFor(() =>
-      expect(screen.getByText("우선 보완 순서")).toBeTruthy()
-    );
-    next();
-    await waitFor(() =>
-      expect(
-        screen.getByText("고객군을 나눈 기준을 문장 안에 넣어야 합니다.")
-      ).toBeTruthy()
-    );
-    expect(
-      screen.getByText(
-        "분석 기준이 보이면, 성과가 재현 가능한 판단으로 읽힙니다."
-      )
-    ).toBeTruthy();
-    next();
-    await waitFor(() =>
-      expect(screen.getAllByText("답변에서 설명할 근거")).toHaveLength(3)
-    );
+    for (const sectionId of [
+      "section-company-insight",
+      "section-posting-fit",
+      "section-core-diagnosis",
+      "section-line-analysis",
+      "section-interview-drill",
+    ]) {
+      next();
+      await waitFor(() => expect(document.getElementById(sectionId)).toBeTruthy());
+    }
+    expect(screen.getAllByRole("link", { name: /예시 리포트 전체 보기/ }).length).toBeGreaterThan(0);
   });
 });

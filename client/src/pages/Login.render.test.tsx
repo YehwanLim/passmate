@@ -10,7 +10,6 @@ vi.mock("wouter", () => ({
 }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: mocks.useAuth }));
 vi.mock("@/components/Logo", () => ({ default: () => null }));
-vi.mock("@/components/MoodShiftBackground", () => ({ default: () => null }));
 vi.mock("@/components/GoogleSignInButton", () => ({
   default: () => <button type="button">Google로 계속하기</button>,
 }));

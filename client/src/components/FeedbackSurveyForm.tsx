@@ -82,16 +82,16 @@ export default function FeedbackSurveyForm({
   // ═══════════════════════════════════════════════════════════
   if (state === "submitted") {
     return (
-      <div className="bg-zinc-900/40 border border-white/[0.06] rounded-2xl px-6 sm:px-8 py-10 text-center">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
-          <Check className="w-5 h-5 text-emerald-400" />
+      <div className="bg-surface rounded-[20px] px-6 sm:px-8 py-10 text-center">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-ok-soft mb-4">
+          <Check className="w-5 h-5 text-ok" />
         </div>
-        <p className="text-sm text-white font-medium mb-1">
+        <p className="text-[15px] text-ink font-semibold mb-1">
           {creditGranted
             ? UI_LABELS.FEEDBACK_REWARD_GRANTED_TITLE
             : UI_LABELS.FEEDBACK_THANKS_TITLE}
         </p>
-        <p className="text-xs text-zinc-500">
+        <p className="text-[13px] text-ink-4">
           {creditGranted
             ? UI_LABELS.FEEDBACK_REWARD_GRANTED_DESC
             : UI_LABELS.FEEDBACK_ALREADY_REWARDED}
@@ -107,15 +107,15 @@ export default function FeedbackSurveyForm({
   const isBusy = state === "submitting"
 
   return (
-    <div className="bg-zinc-900/40 border border-white/[0.06] rounded-2xl px-6 sm:px-8 py-8">
+    <div className="bg-surface rounded-[20px] px-6 sm:px-8 py-8">
       {/* 점수 문항 */}
       <div className="space-y-6">
         {QUESTIONS.map((item, index) => {
           const selected = scores[item.key]
           return (
             <div key={item.key}>
-              <p className="text-sm text-zinc-200 mb-3">
-                <span className="text-zinc-600 tabular-nums mr-2">
+              <p className="text-[15px] font-medium text-ink-2 mb-3">
+                <span className="text-ink-4 tabular-nums mr-2">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 {item.question}
@@ -140,12 +140,12 @@ export default function FeedbackSurveyForm({
                         setScores(prev => ({ ...prev, [item.key]: score }))
                       }
                       className={`
-                        flex-1 h-9 rounded-lg text-xs font-medium tabular-nums
-                        border transition-all duration-150
+                        flex-1 h-10 rounded-[10px] text-[13px] font-semibold tabular-nums
+                        border transition-colors duration-150
                         ${
                           active
-                            ? "bg-white text-black border-white"
-                            : "bg-zinc-800/40 text-zinc-500 border-white/[0.06] hover:text-zinc-200 hover:border-white/20"
+                            ? "bg-brand-soft text-brand-ink border-brand"
+                            : "bg-surface text-ink-3 border-line hover:bg-fill-soft hover:text-ink-2"
                         }
                         disabled:opacity-50 disabled:cursor-not-allowed
                       `}
@@ -156,7 +156,7 @@ export default function FeedbackSurveyForm({
                 })}
               </div>
 
-              <div className="flex justify-between mt-1.5 text-[11px] text-zinc-600">
+              <div className="flex justify-between mt-1.5 text-[12px] text-ink-4">
                 <span>{UI_LABELS.FEEDBACK_SCORE_LOW_HINT}</span>
                 <span>{UI_LABELS.FEEDBACK_SCORE_HIGH_HINT}</span>
               </div>
@@ -166,9 +166,9 @@ export default function FeedbackSurveyForm({
       </div>
 
       {/* 주관식 */}
-      <div className="mt-8 pt-8 border-t border-white/[0.06]">
-        <p className="text-sm text-zinc-200 mb-3">
-          <span className="text-zinc-600 tabular-nums mr-2">
+      <div className="mt-8 pt-8 border-t border-line">
+        <p className="text-[15px] font-medium text-ink-2 mb-3">
+          <span className="text-ink-4 tabular-nums mr-2">
             {String(QUESTIONS.length + 1).padStart(2, "0")}
           </span>
           {UI_LABELS.FEEDBACK_COMMENT_TITLE}
@@ -181,12 +181,12 @@ export default function FeedbackSurveyForm({
           rows={6}
           maxLength={MAX_COMMENT_LENGTH}
           placeholder={UI_LABELS.FEEDBACK_COMMENT_PLACEHOLDER}
-          className="w-full resize-none rounded-xl bg-zinc-800/40 border border-white/[0.08] px-4 py-3 text-sm text-white leading-6 placeholder:text-zinc-600 focus:outline-none focus:border-white/20 disabled:opacity-50"
+          className="w-full resize-none rounded-[12px] bg-surface border border-line px-4 py-3 text-[15px] text-ink leading-6 placeholder:text-ink-5 focus:outline-none focus:border-brand disabled:opacity-50"
         />
 
         <p
           className={`mt-2 text-xs tabular-nums ${
-            written >= MIN_COMMENT_LENGTH ? "text-emerald-400" : "text-zinc-600"
+            written >= MIN_COMMENT_LENGTH ? "text-ok" : "text-ink-4"
           }`}
         >
           {written}/{MIN_COMMENT_LENGTH}자
@@ -194,8 +194,8 @@ export default function FeedbackSurveyForm({
       </div>
 
       {/* 제출 */}
-      <div className="mt-6 pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center gap-3">
-        <span className="text-xs text-zinc-600">
+      <div className="mt-6 pt-6 border-t border-line flex flex-col sm:flex-row sm:items-center gap-3">
+        <span className="text-[13px] text-ink-4">
           {UI_LABELS.FEEDBACK_PROGRESS_HINT.replace("{answered}", String(answered))}
         </span>
 
@@ -204,11 +204,11 @@ export default function FeedbackSurveyForm({
           disabled={!canSubmit}
           className={`
             sm:ml-auto inline-flex items-center justify-center gap-2
-            px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+            h-11 px-5 rounded-[10px] text-sm font-semibold transition-colors duration-200
             ${
               canSubmit
-                ? "bg-white text-black hover:bg-gray-200"
-                : "bg-zinc-800/40 text-zinc-600 border border-white/[0.04] cursor-not-allowed"
+                ? "bg-brand text-white hover:bg-brand-hover"
+                : "bg-fill text-ink-4 cursor-not-allowed"
             }
           `}
         >
@@ -220,7 +220,7 @@ export default function FeedbackSurveyForm({
       </div>
 
       {errorMessage && (
-        <p className="text-xs text-red-400 mt-3 animate-fade-in">{errorMessage}</p>
+        <p className="text-[13px] text-danger mt-3 animate-fade-in">{errorMessage}</p>
       )}
     </div>
   )

@@ -1,5 +1,4 @@
 import SiteHeader from "@/components/SiteHeader";
-import MoodShiftBackground from "@/components/MoodShiftBackground";
 
 const terms = [
   {
@@ -149,33 +148,32 @@ const terms = [
 
 export default function Terms() {
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
-      <MoodShiftBackground />
-      <SiteHeader variant="transparent" />
+    <div className="min-h-screen bg-stage text-ink">
+      <SiteHeader variant="light" />
 
       <main className="relative z-10 mx-auto w-full max-w-4xl px-5 py-12 sm:py-16">
         <div className="mb-10">
-          <p className="mb-3 text-[13px] font-medium text-blue-300">
+          <p className="mb-3 text-[13px] font-semibold text-brand-ink">
             최종 업데이트: 2026.09.01
           </p>
-          <h1 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink sm:text-4xl">
             Pre:View 이용약관
           </h1>
         </div>
 
-        <div className="space-y-8 rounded-lg border border-white/[0.08] bg-white/[0.03] p-6 shadow-2xl shadow-black/30 sm:p-8">
+        <div className="space-y-8 rounded-[20px] bg-surface p-6 sm:p-8">
           {terms.map(section => (
             <section key={section.title} className="space-y-3">
-              <h2 className="text-lg font-semibold tracking-normal text-white">
+              <h2 className="text-lg font-bold tracking-[-0.02em] text-ink">
                 {section.title}
               </h2>
-              <div className="space-y-2 text-[15px] leading-7 text-gray-300">
+              <div className="space-y-2 text-[15px] leading-7 text-ink-3">
                 {section.body.map(paragraph => (
                   <p key={paragraph}>{paragraph}</p>
                 ))}
               </div>
               {section.items && (
-                <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-7 text-gray-300">
+                <ul className="list-disc space-y-1.5 pl-5 text-[15px] leading-7 text-ink-3">
                   {section.items.map(item => (
                     <li key={item}>{item}</li>
                   ))}
