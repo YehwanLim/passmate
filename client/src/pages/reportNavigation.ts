@@ -10,10 +10,10 @@ const POSTING_FIT_SECTION = { id: 'section-posting-fit', label: '공고 적합�
 export function buildReportNavSections({ hasPostingFit }: { hasPostingFit: boolean }): ReportNavSection[] {
     const sections: Array<Omit<ReportNavSection, 'indexLabel'>> = [
         { id: 'section-first-impression', label: '첫인상' },
-        { id: 'section-core-diagnosis', label: '핵심 진단' },
-        { id: 'section-line-analysis', label: '문장별 코멘트' },
         { id: 'section-company-insight', label: '합격 기준' },
         ...(hasPostingFit ? [POSTING_FIT_SECTION] : []),
+        { id: 'section-core-diagnosis', label: '핵심 진단' },
+        { id: 'section-line-analysis', label: '문장별 코멘트' },
         { id: 'section-interview-drill', label: '예상 질문' },
         { id: 'section-action-plan', label: '다음 단계' },
         { id: 'section-pm-comment', label: '실무자 코멘트' },

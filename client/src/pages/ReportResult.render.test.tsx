@@ -79,10 +79,10 @@ describe("ReportResult public sample", () => {
     expect(screen.getByText("지금 가장 아쉬운 부분")).toBeTruthy();
     expect(navTexts()).toEqual([
       "01.첫인상",
-      "02.핵심 진단",
-      "03.문장별 코멘트",
-      "04.합격 기준",
-      "05.공고 적합도",
+      "02.합격 기준",
+      "03.공고 적합도",
+      "04.핵심 진단",
+      "05.문장별 코멘트",
       "06.예상 질문",
       "07.다음 단계",
       "08.실무자 코멘트",
@@ -120,9 +120,9 @@ describe("ReportResult public sample", () => {
     expect(screen.queryByRole("heading", { name: "공고가 원하는 것을 자소서가 얼마나 채웠는지 봤어요" })).toBeNull();
     expect(navTexts()).toEqual([
       "01.첫인상",
-      "02.핵심 진단",
-      "03.문장별 코멘트",
-      "04.합격 기준",
+      "02.합격 기준",
+      "03.핵심 진단",
+      "04.문장별 코멘트",
       "05.예상 질문",
       "06.다음 단계",
       "07.실무자 코멘트",

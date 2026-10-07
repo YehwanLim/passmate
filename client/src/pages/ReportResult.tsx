@@ -264,7 +264,30 @@ function ReportContent({
           profileNote={reportData.firstImpression.profileNote}
         />
 
+        <ReportBlock
+          id="section-company-insight"
+          index={indexOf("section-company-insight")}
+          label={UI_LABELS.DETAILS_HIRING_CRITERIA}
+          title={UI_LABELS.HIRING_CRITERIA(targetCompany)}
+        >
+          <CompanyInsightSection companyInsight={reportData.companyInsight} />
+        </ReportBlock>
+
         <ReportAccessGate isLocked={isLockedFromSection(2)} onLogin={handleLoginToUnlock}>
+          {hasPostingFit ? (
+            <ReportBlock
+              id="section-posting-fit"
+              index={indexOf("section-posting-fit")}
+              label={UI_LABELS.DETAILS_POSTING_FIT}
+              title={UI_LABELS.POSTING_FIT_TITLE}
+            >
+              <PostingFitSection
+                postingFit={reportData.postingFit as NonNullable<ReportData["postingFit"]>}
+                jobPosting={jobPosting}
+              />
+            </ReportBlock>
+          ) : null}
+
           <ReportBlock
             id="section-core-diagnosis"
             index={indexOf("section-core-diagnosis")}
@@ -280,6 +303,9 @@ function ReportContent({
             />
           </ReportBlock>
 
+        </ReportAccessGate>
+
+        <ReportAccessGate isLocked={isLockedFromSection(3)} onLogin={handleLoginToUnlock} showOverlay={false}>
           <LineAnalysisSection
             index={indexOf("section-line-analysis")}
             questionTabs={reportData.questionTabs}
@@ -289,30 +315,7 @@ function ReportContent({
           />
         </ReportAccessGate>
 
-        <ReportAccessGate isLocked={isLockedFromSection(3)} onLogin={handleLoginToUnlock} showOverlay={false}>
-          <ReportBlock
-            id="section-company-insight"
-            index={indexOf("section-company-insight")}
-            label={UI_LABELS.DETAILS_HIRING_CRITERIA}
-            title={UI_LABELS.HIRING_CRITERIA(targetCompany)}
-          >
-            <CompanyInsightSection companyInsight={reportData.companyInsight} />
-          </ReportBlock>
-
-          {hasPostingFit ? (
-            <ReportBlock
-              id="section-posting-fit"
-              index={indexOf("section-posting-fit")}
-              label={UI_LABELS.DETAILS_POSTING_FIT}
-              title={UI_LABELS.POSTING_FIT_TITLE}
-            >
-              <PostingFitSection
-                postingFit={reportData.postingFit as NonNullable<ReportData["postingFit"]>}
-                jobPosting={jobPosting}
-              />
-            </ReportBlock>
-          ) : null}
-
+        <ReportAccessGate isLocked={isLockedFromSection(4)} onLogin={handleLoginToUnlock} showOverlay={false}>
           <ReportBlock
             id="section-interview-drill"
             index={indexOf("section-interview-drill")}
