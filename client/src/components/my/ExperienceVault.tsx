@@ -8,17 +8,13 @@ import {
   type Experience,
   type ExperienceInput,
 } from "@/lib/workspace";
+import { parseTags } from "@/lib/experienceImport";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import ExperienceImportDialog from "./ExperienceImportDialog";
 
 const COPY = WORKSPACE_COPY.experiences;
 const field = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none";
 const EMPTY: ExperienceInput = { title: "", period: null, situation: "", action: "", result: "", tags: [] };
-
-// 서버 한도(태그 5개·태그당 20자)에 맞춰 보내야 400을 받지 않는다.
-function parseTags(raw: string): string[] {
-  const tags = raw.split(",").map((t) => t.trim().slice(0, 20)).filter(Boolean);
-  return Array.from(new Set(tags)).slice(0, 5);
-}
 
 function ExperienceForm({
   initial,
@@ -97,6 +93,7 @@ export default function ExperienceVault() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<"new" | string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     listExperiences()
@@ -131,7 +128,14 @@ export default function ExperienceVault() {
           }}
         />
       ) : (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setImporting(true)}
+            className="h-10 rounded-[10px] border border-line bg-surface px-4 text-[14px] font-semibold text-ink-2 transition-colors hover:bg-fill-soft"
+          >
+            {COPY.import.open}
+          </button>
           <button type="button" onClick={() => setEditing("new")} className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover">
             {COPY.add}
           </button>
@@ -140,7 +144,18 @@ export default function ExperienceVault() {
 
       {deleteError && <p role="alert" className="text-[13px] text-danger">{deleteError}</p>}
 
-      {items.length === 0 && editing !== "new" && <p className="py-12 text-center text-[14px] leading-relaxed text-ink-4">{COPY.empty}</p>}
+      {items.length === 0 && editing !== "new" && (
+        <div className="py-12 text-center">
+          <p className="text-[14px] leading-relaxed text-ink-4">{COPY.empty}</p>
+          <button
+            type="button"
+            onClick={() => setImporting(true)}
+            className="mt-5 h-12 rounded-xl bg-brand px-6 text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover"
+          >
+            {COPY.import.open}
+          </button>
+        </div>
+      )}
 
       {items.map((item) =>
         editing === item.id ? (
@@ -175,6 +190,13 @@ export default function ExperienceVault() {
           </article>
         )
       )}
+      <ExperienceImportDialog
+        open={importing}
+        onClose={() => setImporting(false)}
+        existingTitles={items.map((item) => item.title)}
+        ownedCount={items.length}
+        onSaved={(created) => setItems((current) => [...created, ...(current ?? [])])}
+      />
     </div>
   );
 }

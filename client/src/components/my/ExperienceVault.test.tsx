@@ -7,10 +7,16 @@ const mocks = vi.hoisted(() => ({
   createExperience: vi.fn(),
   updateExperience: vi.fn(),
   deleteExperience: vi.fn(),
+  createExperiences: vi.fn(),
 }));
 vi.mock("@/lib/workspace", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/workspace")>()),
   ...mocks,
+}));
+const importMocks = vi.hoisted(() => ({ requestExperienceCandidates: vi.fn() }));
+vi.mock("@/lib/experienceImport", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/experienceImport")>()),
+  requestExperienceCandidates: importMocks.requestExperienceCandidates,
 }));
 
 import { WorkspaceApiError } from "@/lib/workspace";
@@ -25,6 +31,33 @@ beforeEach(() => mocks.listExperiences.mockResolvedValue([EXP]));
 afterEach(() => { cleanup(); vi.clearAllMocks(); vi.restoreAllMocks(); });
 
 describe("내 경험", () => {
+  it("빈 금고에서는 가져오기 버튼을 크게 보여 주고, 누르면 창이 열린다", async () => {
+    mocks.listExperiences.mockResolvedValue([]);
+    render(<ExperienceVault />);
+    await screen.findByText(/아직 적어 둔 경험이 없어요/);
+    const buttons = screen.getAllByRole("button", { name: "예전 자소서에서 경험 가져오기" });
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[1]);
+    expect(screen.getByRole("dialog", { name: "예전 자소서에서 경험 가져오기" })).toBeTruthy();
+  });
+
+  it("가져와 저장한 경험이 목록 맨 위에 붙는다", async () => {
+    importMocks.requestExperienceCandidates.mockResolvedValue({
+      kind: "ok", remainingToday: 2,
+      candidates: [{ title: "로그로 찾은 이탈 원인", period: "", situation: "s", action: "a", result: "r", tags: [], quotes: ["원문 문장입니다 여기"] }],
+    });
+    mocks.createExperiences.mockImplementation(async (inputs: object[]) => inputs.map((x, i) => ({ ...x, id: `n${i}`, updatedAt: "" })));
+    render(<ExperienceVault />);
+    await screen.findByText("카페 발주 개선");
+    fireEvent.click(screen.getByRole("button", { name: "예전 자소서에서 경험 가져오기" }));
+    fireEvent.change(screen.getByLabelText("자소서 붙여넣기"), { target: { value: "가".repeat(220) } });
+    fireEvent.click(screen.getByRole("button", { name: "경험 뽑기" }));
+    fireEvent.click(await screen.findByRole("button", { name: "선택한 1개 저장" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    const titles = screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent);
+    expect(titles).toEqual(["로그로 찾은 이탈 원인", "카페 발주 개선"]);
+  });
+
   it("적어 둔 경험을 보여 준다", async () => {
     render(<ExperienceVault />);
     expect(await screen.findByText("카페 발주 개선")).toBeTruthy();
