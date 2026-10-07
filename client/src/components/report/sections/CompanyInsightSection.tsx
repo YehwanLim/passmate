@@ -13,7 +13,11 @@ export function CompanyInsightSection({ companyInsight }: { companyInsight: Comp
       <div className="mt-7 grid grid-cols-1 gap-x-10 gap-y-7 md:grid-cols-2">
         <div>
           <p className="mb-3 text-[14px] font-bold text-ink-4">{UI_LABELS.TALENT_PROFILE}</p>
-          <p className="text-[16px] font-bold leading-[1.6] text-ink">{companyInsight.talentKeywords.join(" · ")}</p>
+          <div className="flex flex-wrap gap-2">
+            {companyInsight.talentKeywords.map((kw) => (
+              <span key={kw} className="rounded-xl border border-line bg-fill-soft px-3.5 py-2 text-[14px] font-semibold text-ink-2">{kw}</span>
+            ))}
+          </div>
         </div>
 
         <div>
