@@ -339,7 +339,7 @@ export default function PassMateReport() {
   }
 
   return (
-    <ReportAuthGate loginRedirect="/report-new" message="로그인 후 분석 리포트를 확인할 수 있어요.">
+    <ReportAuthGate loginRedirect="/report-new" message="로그인 후 분석 리포트를 확인할 수 있어요." tone="light">
       <AuthenticatedReport />
     </ReportAuthGate>
   );

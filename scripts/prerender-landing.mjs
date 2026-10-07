@@ -221,13 +221,15 @@ export function buildRss(items, { origin = "https://pre-view.me" } = {}) {
 export const SAMPLE_REPORT_FILE = "sample-report.html";
 export const SAMPLE_REPORT_ROUTE_KEY = "/report-new?sample=1";
 // 리포트 페이지 <main> 배경. 랜딩 클래스는 붙이지 않는다(landing-canvas 는 랜딩 전용 규칙을 켠다).
-export const SAMPLE_REPORT_CANVAS_STYLE = "background-color:#09090B";
+// 자소서 리포트는 10월 밝은 디자인(bg-stage), 기업 분석 리포트는 아직 어두운 화면이다.
+export const SAMPLE_REPORT_CANVAS_STYLE = "background-color:#F6F7F9";
+export const SAMPLE_COMPANY_REPORT_CANVAS_STYLE = "background-color:#09090B";
 
 // 프리렌더 경로(lib/seo.ts PRERENDER_ROUTES)별 첫 화면 배경. 목록에 없는 페이지(404, 라이트 테마)는 그대로 둔다.
 export const CANVAS_BY_ROUTE = {
   "/": { className: LANDING_CANVAS_CLASS, style: LANDING_CANVAS_STYLE },
   [SAMPLE_REPORT_ROUTE_KEY]: { style: SAMPLE_REPORT_CANVAS_STYLE },
-  "/company-report?sample=1": { style: SAMPLE_REPORT_CANVAS_STYLE },
+  "/company-report?sample=1": { style: SAMPLE_COMPANY_REPORT_CANVAS_STYLE },
   "/terms": { style: LANDING_CANVAS_STYLE },
   "/privacy": { style: LANDING_CANVAS_STYLE },
   "/mentoring": { style: LANDING_CANVAS_STYLE },

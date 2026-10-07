@@ -75,7 +75,7 @@ describe("markLandingCanvas", () => {
     });
     expect(result).toContain(`<html lang="ko" style="${SAMPLE_REPORT_CANVAS_STYLE}">`);
     expect(result).not.toContain("class=");
-    expect(SAMPLE_REPORT_CANVAS_STYLE).toContain("#09090B");
+    expect(SAMPLE_REPORT_CANVAS_STYLE).toContain("#F6F7F9");
   });
 
   it("uses the same class name as styles/landing.css and Home.tsx", () => {
