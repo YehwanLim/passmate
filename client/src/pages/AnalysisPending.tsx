@@ -128,15 +128,15 @@ export default function AnalysisPending() {
     : ["완료되는 즉시 리포트를 자동으로 열어 드릴게요.", "화면을 닫아도 분석은 계속됩니다."];
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] px-4 text-white">
+    <main className="min-h-screen bg-stage px-4 text-ink">
       <section className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center text-center">
-        <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+        <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface">
           {view === "checking" ? (
-            <Loader2 className="h-7 w-7 animate-spin text-cyan-300" aria-hidden="true" />
+            <Loader2 className="h-7 w-7 animate-spin text-brand-ink" aria-hidden="true" />
           ) : view === "failed" ? (
-            <AlertTriangle className="h-7 w-7 text-amber-300" aria-hidden="true" />
+            <AlertTriangle className="h-7 w-7 text-blank" aria-hidden="true" />
           ) : (
-            <FileSearch className="h-7 w-7 text-cyan-300" aria-hidden="true" />
+            <FileSearch className="h-7 w-7 text-brand-ink" aria-hidden="true" />
           )}
         </div>
 
@@ -146,7 +146,7 @@ export default function AnalysisPending() {
               {checkingTitle}
             </h1>
             {/* 문장 단위 줄바꿈: PC에서는 한 문장이 한 줄, 모바일에서는 이어서 흐른다. */}
-            <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400 text-pretty">
+            <p className="mt-3 max-w-sm text-sm leading-6 text-ink-3 text-pretty">
               {checkingLines.map((line, index) => (
                 <span key={`${index}-${line}`} className="sm:block">
                   {line}
@@ -159,21 +159,21 @@ export default function AnalysisPending() {
         {view === "unavailable" && (
           <>
             <h1 className="text-2xl font-semibold tracking-tight">결과를 계속 확인하고 있어요</h1>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400">
+            <p className="mt-3 max-w-sm text-sm leading-6 text-ink-3">
               잠시 후 다시 확인해 주세요. 이미 시작된 분석은 중복 실행하지 않습니다.
             </p>
-            <Button className="mt-7" onClick={retryStatusCheck}>다시 확인</Button>
+            <Button className="mt-7 h-11 rounded-xl bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-hover" onClick={retryStatusCheck}>다시 확인</Button>
           </>
         )}
         {view === "timeout" && (
           <>
             <h1 className="text-2xl font-semibold tracking-tight">분석이 평소보다 오래 걸리고 있어요</h1>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400">
+            <p className="mt-3 max-w-sm text-sm leading-6 text-ink-3">
               완료된 리포트는 내 지원서에서도 확인할 수 있어요. 잠시 후 다시 확인해 주세요.
             </p>
             <div className="mt-7 flex gap-3">
-              <Button onClick={retryStatusCheck}>다시 확인</Button>
-              <Button variant="outline" onClick={() => navigate("/my")}>내 지원서에서 확인</Button>
+              <Button className="h-11 rounded-xl bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-hover" onClick={retryStatusCheck}>다시 확인</Button>
+              <Button variant="outline" className="h-11 rounded-xl border-line bg-surface px-5 text-[15px] font-semibold text-ink-2 hover:bg-fill-soft" onClick={() => navigate("/my")}>내 지원서에서 확인</Button>
             </div>
           </>
         )}
@@ -184,7 +184,7 @@ export default function AnalysisPending() {
                 ? (isCompany ? "확인할 수 있는 기업이 아니에요" : "자소서 내용을 확인해 주세요")
                 : "분석을 완료하지 못했어요"}
             </h1>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400">
+            <p className="mt-3 max-w-sm text-sm leading-6 text-ink-3">
               {isContextIrrelevant
                 ? (isCompany
                     ? "입력한 회사명을 공개 자료에서 찾지 못했어요. 정확한 회사명으로 다시 시도해 주세요."
@@ -192,14 +192,14 @@ export default function AnalysisPending() {
                 : "입력 내용은 브라우저에 저장하지 않았습니다. 새 분석을 시작해 주세요."}{" "}
               이번 분석의 이용권은 차감되지 않았어요.
             </p>
-            <Button className="mt-7" onClick={() => navigate(kind === "COMPANY" ? "/company-analysis" : "/analyze")}>
+            <Button className="mt-7 h-11 rounded-xl bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-hover" onClick={() => navigate(kind === "COMPANY" ? "/company-analysis" : "/analyze")}>
               {isCompany ? "새 기업 분석 시작" : "새 분석 시작"}
             </Button>
-            <p className="mt-5 text-xs leading-5 text-zinc-500">
+            <p className="mt-5 text-xs leading-5 text-ink-4">
               문제가 반복되면{" "}
               <a
                 href="mailto:hansitoring@gmail.com"
-                className="text-zinc-300 underline underline-offset-2 transition-colors hover:text-white"
+                className="text-ink-2 underline underline-offset-2 transition-colors hover:text-ink"
               >
                 hansitoring@gmail.com
               </a>

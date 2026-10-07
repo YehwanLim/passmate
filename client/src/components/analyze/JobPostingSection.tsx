@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,41 +19,16 @@ import FormSection from "./FormSection";
 
 type Mode = "url" | "text";
 
-type Tone = "dark" | "light";
+type Tone = "card" | "light";
 
-// 분석 폼(어두운 화면)과 작업실(밝은 화면)이 같은 칸을 쓴다. 분석 폼까지 새 디자인으로 바뀌면 dark 를 지운다.
-const TONE = {
-  dark: {
-    intro: "text-sm text-zinc-500 leading-relaxed break-keep",
-    tabBar: "mt-4 flex items-center gap-4 border-b border-white/[0.08]",
-    tabOn: "border-white text-white",
-    tabOff: "border-transparent text-zinc-500 hover:text-zinc-300",
-    input:
-      "h-11 flex-1 rounded-xl border-white/[0.08] bg-white/[0.04] px-4 text-[15px] text-white placeholder:text-zinc-600 focus-visible:border-blue-500/40 focus-visible:ring-2 focus-visible:ring-blue-500/20",
-    textarea:
-      "min-h-[160px] border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20",
-    hint: "mt-2 text-xs text-zinc-600 break-keep",
-    tooShort: "text-xs text-zinc-500",
-    count: "text-xs text-zinc-600 tabular-nums",
-    error: "text-red-400",
-    loading: "text-zinc-500",
-    fetch: "h-11 rounded-xl bg-white px-5 text-sm font-semibold text-black hover:bg-zinc-200 disabled:opacity-40",
-    cardLabel: "text-[11px] uppercase tracking-wider text-zinc-500",
-    cardTitle: "mt-1 text-[15px] font-semibold text-white break-keep",
-    cardMeta: "mt-1 text-xs text-zinc-500",
-    replace: "shrink-0 text-[12.5px] text-zinc-400 underline-offset-4 transition-colors hover:text-white hover:underline",
-    keywords: "text-[12px] px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/[0.06] text-zinc-200",
-    listTitle: "text-xs font-medium uppercase tracking-wider text-zinc-500 mb-2.5",
-    listItem: "flex gap-2 text-[13.5px] leading-relaxed text-zinc-300 break-keep",
-    listDot: "text-zinc-600",
-  },
-  light: {
+// 분석 폼(흰 카드 한 장)과 작업실(이미 흰 카드 안)이 같은 칸을 쓴다. tone 은 바깥 틀만 바꾼다.
+const STYLE = {
     intro: "text-[14px] text-ink-4 leading-relaxed break-keep",
     tabBar: "mt-4 flex items-center gap-5 border-b border-line-soft",
     tabOn: "border-ink font-bold text-ink",
     tabOff: "border-transparent text-ink-4 hover:text-ink-2",
     input:
-      "h-11 flex-1 rounded-xl border-line bg-surface px-4 text-[15px] text-ink placeholder:text-ink-5 focus-visible:border-brand focus-visible:ring-0",
+      "h-11 shrink-0 rounded-xl border-line bg-surface px-4 sm:flex-1 text-[15px] text-ink placeholder:text-ink-5 focus-visible:border-brand focus-visible:ring-0",
     textarea:
       "min-h-[160px] border-line bg-surface text-ink placeholder:text-ink-5 rounded-xl text-[15px] focus:border-brand focus:ring-0",
     hint: "mt-2 text-[13px] text-ink-4 break-keep",
@@ -70,8 +45,7 @@ const TONE = {
     listTitle: "text-[13px] font-semibold text-ink-3 mb-2",
     listItem: "flex gap-2 text-[14px] leading-relaxed text-ink-2 break-keep",
     listDot: "text-ink-5",
-  },
-} satisfies Record<Tone, Record<string, string>>;
+};
 
 export function getJobPostingTitle(record: JobPostingRecord): string {
   const { title, company, role } = record.summary;
@@ -96,7 +70,7 @@ export default function JobPostingSection({
   onChange,
   isAuthenticated,
   onRequireLogin,
-  tone = "dark",
+  tone = "card",
 }: {
   value: JobPostingRecord | null;
   onChange: (record: JobPostingRecord | null) => void;
@@ -104,7 +78,7 @@ export default function JobPostingSection({
   onRequireLogin: () => void;
   tone?: Tone;
 }) {
-  const t = TONE[tone];
+  const t = STYLE;
   const [mode, setMode] = useState<Mode>("url");
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
@@ -165,14 +139,14 @@ export default function JobPostingSection({
 
   if (value) {
     return (
-      <FormSection icon={FileText} title="채용공고" className="space-y-5" tone={tone}>
-        <JobPostingCard record={value} onReplace={reset} tone={tone} />
+      <FormSection title="채용공고" className="space-y-5" tone={tone}>
+        <JobPostingCard record={value} onReplace={reset} />
       </FormSection>
     );
   }
 
   return (
-    <FormSection icon={FileText} title="채용공고" className="space-y-5" tone={tone}>
+    <FormSection title="채용공고" className="space-y-5" tone={tone}>
       <div>
         <p className={t.intro}>
           지원하려는 공고를 넣으면, 해당 공고를 기준으로 자소서를 분석해드려요.
@@ -304,13 +278,11 @@ function FetchButton({
 function JobPostingCard({
   record,
   onReplace,
-  tone,
 }: {
   record: JobPostingRecord;
   onReplace: () => void;
-  tone: Tone;
 }) {
-  const t = TONE[tone];
+  const t = STYLE;
   const { summary } = record;
   const host = hostnameOf(record.sourceUrl);
   const meta = [host, record.charCount ? `본문 ${record.charCount.toLocaleString()}자` : null].filter(
@@ -342,21 +314,21 @@ function JobPostingCard({
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        {hasRequirements && <BulletList title="자격요건" items={summary.requirements} tone={tone} />}
-        {hasPreferred && <BulletList title="우대사항" items={summary.preferred} tone={tone} />}
+        {hasRequirements && <BulletList title="자격요건" items={summary.requirements} />}
+        {hasPreferred && <BulletList title="우대사항" items={summary.preferred} />}
         {showResponsibilities && summary.responsibilities.length > 0 && (
-          <BulletList title="담당 업무" items={summary.responsibilities} tone={tone} />
+          <BulletList title="담당 업무" items={summary.responsibilities} />
         )}
       </div>
 
       {summary.keywords.length > 0 && (
-        <ul className={tone === "light" ? "flex flex-wrap gap-x-2.5 gap-y-1" : "flex flex-wrap gap-2"} aria-label="공고 키워드">
+        <ul className="flex flex-wrap gap-x-2.5 gap-y-1" aria-label="공고 키워드">
           {summary.keywords.map(keyword => (
             <li
               key={keyword}
               className={t.keywords}
             >
-              {tone === "light" ? `#${keyword}` : keyword}
+              #{keyword}
             </li>
           ))}
         </ul>
@@ -365,8 +337,8 @@ function JobPostingCard({
   );
 }
 
-export function BulletList({ title, items, tone = "dark" }: { title: string; items: string[]; tone?: Tone }) {
-  const t = TONE[tone];
+export function BulletList({ title, items }: { title: string; items: string[] }) {
+  const t = STYLE;
   return (
     <div>
       <p className={t.listTitle}>{title}</p>

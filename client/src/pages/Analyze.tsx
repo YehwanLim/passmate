@@ -10,7 +10,6 @@ import {
   Loader2,
   BarChart3,
   Info,
-  Building2,
   AlertTriangle,
   History,
   FileUp,
@@ -505,8 +504,8 @@ export default function Analyze() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-28">
-      <SiteHeader />
+    <div className="min-h-screen bg-stage pb-28">
+      <SiteHeader variant="light" />
 
       {/* ════════ MAIN FORM ════════ */}
       {/* initial={false}: 첫 화면은 등장 애니메이션 없이 바로 보인다. 폰 첫 로드에서 청크를 받은 뒤에도
@@ -520,10 +519,10 @@ export default function Analyze() {
         <div className="container max-w-3xl mx-auto px-4">
           {/* ── Title ── */}
           <motion.div className="text-center mb-12" variants={ANALYZE_ITEM_VARIANTS}>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-ink mb-3 tracking-tight">
               자소서 분석
             </h1>
-            <p className="text-zinc-500 text-base md:text-lg leading-relaxed max-w-xl mx-auto break-keep">
+            <p className="text-ink-4 text-base md:text-lg leading-relaxed max-w-xl mx-auto break-keep">
               제출 버튼을 누르기 전에,
               <br className="hidden md:block" /> 채용 담당자의 눈으로 내
               자소서의 <span className="whitespace-nowrap">현재 위치</span>를
@@ -535,7 +534,7 @@ export default function Analyze() {
                   type="button"
                   variant="outline"
                   onClick={openPreviousResumePicker}
-                  className="h-10 border-white/[0.1] bg-white/[0.02] px-4 text-sm font-medium text-zinc-300 hover:border-cyan-400/30 hover:bg-cyan-400/[0.06] hover:text-cyan-200"
+                  className="h-10 border-line bg-surface px-4 text-sm font-medium text-ink-2 hover:border-brand/40 hover:bg-brand-hover/[0.06] hover:text-brand-ink"
                 >
                   <History className="mr-2 h-4 w-4" />
                   이전 지원서 불러오기
@@ -546,11 +545,11 @@ export default function Analyze() {
                 variant="outline"
                 disabled={Boolean(fileImportStage)}
                 onClick={() => fileInputRef.current?.click()}
-                className="h-10 border-white/[0.1] bg-white/[0.02] px-4 text-sm font-medium text-zinc-300 hover:border-cyan-400/30 hover:bg-cyan-400/[0.06] hover:text-cyan-200 disabled:cursor-wait"
+                className="h-10 border-line bg-surface px-4 text-sm font-medium text-ink-2 hover:border-brand/40 hover:bg-brand-hover/[0.06] hover:text-brand-ink disabled:cursor-wait"
               >
                 {fileImportStage ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-cyan-400" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-brand" />
                     {fileImportStage === "extracting"
                       ? "파일 읽는 중..."
                       : "문항 나누는 중..."}
@@ -571,25 +570,25 @@ export default function Analyze() {
                 aria-label="자소서 PDF 또는 Word 파일 선택"
               />
             </div>
-            <p className="mt-2.5 text-xs text-zinc-600">
+            <p className="mt-2.5 text-xs text-ink-5">
               PDF·Word(.docx) 파일만 올릴 수 있어요
             </p>
             {freeRemaining !== null && freeRemaining > 0 && (
-              <p className="mt-4 text-sm text-zinc-300">
+              <p className="mt-4 text-sm text-ink-2">
                 무료 분석 {freeRemaining}회가 남아 있어요
               </p>
             )}
             {/* 붙여넣을 초안이 지금 손에 없는 방문자용 출구. 폰이면 주소를 복사해 PC 에서 이어 하게 한다. */}
-            <p className="mt-3 text-[12.5px] text-zinc-500">
+            <p className="mt-3 text-[12.5px] text-ink-4">
               아직 자소서가 없다면{" "}
               <Link
                 href={RESUME_REPORT_SAMPLE_PATH}
-                className="text-zinc-300 underline underline-offset-4 hover:text-white"
+                className="text-ink-2 underline underline-offset-4 hover:text-ink"
               >
                 예시 리포트 먼저 보기
               </Link>
               {" · "}
-              <Link href="/my" className="text-zinc-300 underline underline-offset-4 hover:text-white">
+              <Link href="/my" className="text-ink-2 underline underline-offset-4 hover:text-ink">
                 내 경험으로 초안 쓰기
               </Link>
               {isPhone && (
@@ -598,7 +597,7 @@ export default function Analyze() {
                   <button
                     type="button"
                     onClick={copyAnalyzeLink}
-                    className="text-zinc-300 underline underline-offset-4 hover:text-white"
+                    className="text-ink-2 underline underline-offset-4 hover:text-ink"
                   >
                     {linkCopied ? "주소를 복사했어요" : "PC에서 이어 하게 주소 복사"}
                   </button>
@@ -608,10 +607,10 @@ export default function Analyze() {
           </motion.div>
 
           {/* ── 목표 회사 및 직무 정보 ── */}
-          <FormSection icon={Building2} accent title="목표 회사 및 직무 정보">
+          <FormSection title="목표 회사 및 직무 정보">
             {/* 지원 회사 */}
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-2.5 uppercase tracking-wider">
+              <label className="block text-[13px] font-semibold text-ink-3 mb-2.5">
                 지원 회사
               </label>
               <CompanyCombobox value={company} onChange={setCompany} />
@@ -631,7 +630,7 @@ export default function Analyze() {
                       navigate(path);
                     }
                   }}
-                  className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] text-zinc-500 transition-colors hover:text-sky-300"
+                  className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] text-ink-4 transition-colors hover:text-brand"
                 >
                   {company.trim()} 기업 분석 리포트 먼저 받기
                   <ArrowRight className="h-3 w-3" aria-hidden="true" />
@@ -641,7 +640,7 @@ export default function Analyze() {
 
             {/* 지원 직무 */}
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wider">
+              <label className="block text-[13px] font-semibold text-ink-3 mb-3">
                 지원 직무
               </label>
               <JobRoleCombobox value={jobRole} onChange={setJobRole} />
@@ -663,10 +662,10 @@ export default function Analyze() {
           <motion.div variants={ANALYZE_ITEM_VARIANTS}>
             {jobPosting && <JobPostingStickyBar record={jobPosting} />}
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="text-base font-semibold text-ink">
                 자소서 문항
               </h2>
-              <span className="text-xs text-zinc-600 tabular-nums">
+              <span className="text-xs text-ink-5 tabular-nums">
                 {questions.length} / {MAX_QUESTIONS}
               </span>
             </div>
@@ -696,7 +695,7 @@ export default function Analyze() {
                     <Button
                       disabled
                       variant="outline"
-                      className="w-full border-white/[0.08] bg-white/[0.02] text-zinc-600 rounded-xl h-12 text-sm font-medium cursor-not-allowed"
+                      className="w-full border-line bg-surface text-ink-5 rounded-xl h-12 text-sm font-medium cursor-not-allowed"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       문항 추가하기
@@ -705,10 +704,10 @@ export default function Analyze() {
                 </TooltipTrigger>
                 <TooltipContent
                   side="top"
-                  className="bg-zinc-800 text-zinc-200 border-zinc-700"
+                  className="bg-fill text-ink-2 border-line"
                 >
                   <div className="flex items-center gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-amber-400" />
+                    <Info className="w-3.5 h-3.5 text-blank" />
                     <span>최대 {MAX_QUESTIONS}개 문항까지 분석 가능합니다</span>
                   </div>
                 </TooltipContent>
@@ -717,7 +716,7 @@ export default function Analyze() {
               <Button
                 onClick={handleAddQuestion}
                 variant="outline"
-                className="w-full border-white/[0.08] border-dashed bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/[0.06] hover:border-white/[0.16] rounded-xl h-12 text-sm font-medium transition-all"
+                className="w-full border-line border-dashed bg-surface text-ink-3 hover:text-ink hover:bg-fill hover:border-ink-5 rounded-xl h-12 text-sm font-medium transition-all"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 문항 추가하기
@@ -732,16 +731,16 @@ export default function Analyze() {
         {/* 글자 수 경고 메시지 */}
         {isOverLimit && (
           <div className="flex items-center gap-2 pt-2.5 pb-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-            <span className="text-xs text-red-400">
+            <AlertTriangle className="w-3.5 h-3.5 text-danger flex-shrink-0" />
+            <span className="text-xs text-danger">
               {UI_LABELS.CHAR_OVER_LIMIT}
             </span>
           </div>
         )}
         {isBelowMinimum && hasContent && !isOverLimit && (
           <div className="flex items-center gap-2 pt-2.5 pb-1">
-            <Info className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
-            <span className="text-xs text-zinc-500">
+            <Info className="w-3.5 h-3.5 text-ink-4 flex-shrink-0" />
+            <span className="text-xs text-ink-4">
               최소 {MIN_TOTAL_CHARS}자 이상 입력해 주세요
             </span>
           </div>
@@ -752,18 +751,18 @@ export default function Analyze() {
           <div className="flex items-center gap-2.5 min-w-0">
             <BarChart3
               className={`w-4 h-4 flex-shrink-0 ${
-                isOverLimit ? "text-red-400" : "text-zinc-500"
+                isOverLimit ? "text-danger" : "text-ink-4"
               }`}
             />
             <span
               className={`text-sm font-medium tabular-nums whitespace-nowrap ${
-                isOverLimit ? "text-red-400" : "text-zinc-400"
+                isOverLimit ? "text-danger" : "text-ink-3"
               }`}
             >
               총 글자 수:{" "}
               <span
                 className={`font-semibold ${
-                  isOverLimit ? "text-red-400" : "text-white"
+                  isOverLimit ? "text-danger" : "text-ink"
                 }`}
               >
                 {totalChars.toLocaleString()}
@@ -831,41 +830,41 @@ export default function Analyze() {
       <AnimatePresence>
         {confirmModal && (
           <motion.div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-ink/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setConfirmModal(null)}
           >
             <motion.div
-              className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+              className="bg-surface border border-line rounded-2xl w-full max-w-md p-6 shadow-[0_12px_32px_rgba(25,31,40,0.12)]"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                  <Info className="w-5 h-5 text-amber-400" />
+                <div className="w-10 h-10 rounded-xl bg-blank-soft flex items-center justify-center flex-shrink-0">
+                  <Info className="w-5 h-5 text-blank" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-ink">
                   내용이 적어요
                 </h3>
               </div>
-              <p className="text-sm text-zinc-400 leading-relaxed mb-6">
+              <p className="text-sm text-ink-3 leading-relaxed mb-6">
                 {confirmModal.message}
               </p>
               <div className="flex gap-3">
                 <Button
                   onClick={() => setConfirmModal(null)}
                   variant="outline"
-                  className="flex-1 border-white/[0.1] bg-transparent text-zinc-300 hover:bg-white/[0.05] rounded-xl h-11 text-sm font-medium"
+                  className="flex-1 border-line bg-transparent text-ink-2 hover:bg-fill-soft rounded-xl h-11 text-sm font-medium"
                 >
                   돌아가기
                 </Button>
                 <Button
                   onClick={confirmModal.onConfirm}
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-400 hover:to-cyan-300 text-white rounded-xl h-11 text-sm font-medium"
+                  className="flex-1 bg-brand hover:bg-brand-hover text-white rounded-xl h-11 text-sm font-medium"
                 >
                   그래도 진행하기
                 </Button>
@@ -884,7 +883,7 @@ export default function Analyze() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
           >
-            <div className="px-5 py-3 rounded-xl border border-cyan-500/20 bg-zinc-900/95 backdrop-blur-xl shadow-2xl shadow-black/40 text-sm font-medium text-cyan-400">
+            <div className="px-5 py-3 rounded-xl border border-line bg-surface shadow-[0_12px_32px_rgba(25,31,40,0.12)] text-sm font-medium text-brand">
               이전 지원서를 불러왔어요.
             </div>
           </motion.div>

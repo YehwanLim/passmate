@@ -1,28 +1,22 @@
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ANALYZE_ITEM_VARIANTS } from "./AnalyzeShell";
 
-/** 분석 폼의 카드 한 장: 아이콘 칩 + 제목 + 필수/선택 배지 + 입력 영역. */
+/** 분석 폼의 칸 한 장: 제목 + 필수/선택 + 입력 영역. */
 export default function FormSection({
-  icon: Icon,
-  accent = false,
   title,
   required = false,
   className,
-  tone = "dark",
+  tone = "card",
   children,
 }: {
-  icon: LucideIcon;
-  /** 파란 그라데이션 칩(핵심 입력). 기본은 무채색 칩. */
-  accent?: boolean;
   title: string;
   required?: boolean;
   className?: string;
-  /** light: 10월 새 디자인으로 바꾼 밝은 화면(작업실) 안에 넣을 때. 칩·배지 없이 제목만. */
-  tone?: "dark" | "light";
+  /** card: 분석 폼의 흰 카드 한 장. light: 이미 흰 카드인 화면(작업실) 안에 넣을 때 — 제목만. */
+  tone?: "card" | "light";
   children: ReactNode;
 }) {
   if (tone === "light") {
@@ -37,32 +31,13 @@ export default function FormSection({
   return (
     <motion.div
       variants={ANALYZE_ITEM_VARIANTS}
-      className={cn(
-        "mb-10 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-7",
-        className
-      )}
+      className={cn("mb-5 space-y-6 rounded-3xl bg-surface px-5 py-6 sm:px-8 sm:py-7", className)}
     >
-      <div className="flex items-center gap-2.5 mb-1">
-        <div
-          className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center",
-            accent
-              ? "bg-gradient-to-br from-blue-500/20 to-cyan-400/20"
-              : "bg-white/[0.06]"
-          )}
-        >
-          <Icon className={cn("w-3.5 h-3.5", accent ? "text-cyan-400" : "text-zinc-300")} />
-        </div>
-        <h2 className="text-base font-semibold text-white">{title}</h2>
-        {required ? (
-          <span className="text-[11px] text-cyan-300 bg-cyan-400/[0.08] px-2 py-0.5 rounded-full">
-            필수
-          </span>
-        ) : (
-          <span className="text-[11px] text-zinc-600 bg-white/[0.06] px-2 py-0.5 rounded-full">
-            선택
-          </span>
-        )}
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-[17px] font-bold text-ink">{title}</h2>
+        <span className={cn("text-[13px] font-semibold", required ? "text-brand-ink" : "text-ink-5")}>
+          {required ? "필수" : "선택"}
+        </span>
       </div>
       {children}
     </motion.div>
