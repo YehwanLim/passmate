@@ -28,3 +28,15 @@ describe("refundUserRateLimit", () => {
     });
   });
 });
+
+describe("experienceExtract 정책", () => {
+  it("하루 3번, 초안과 다른 버킷이고 KST 09:00(UTC 자정)에 초기화된다", async () => {
+    const policy = USER_RATE_LIMITS.experienceExtract;
+    expect(policy).toEqual({ route: "experience-extract", limit: 3, windowMs: 24 * 60 * 60 * 1000 });
+    expect(policy.route).not.toBe(USER_RATE_LIMITS.experienceDraft.route);
+    const db = { apiRateLimitBucket: { upsert: vi.fn(async () => ({ requestCount: 1 })) } };
+    const rate = await consumeUserRateLimit(db, { userId: "u1", policy, now: new Date("2026-10-08T23:59:00.000Z") });
+    expect(rate.resetAt.toISOString()).toBe("2026-10-09T00:00:00.000Z");
+    expect(rate.remaining).toBe(2);
+  });
+});
