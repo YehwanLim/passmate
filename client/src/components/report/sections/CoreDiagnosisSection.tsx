@@ -4,7 +4,38 @@ import { ArrowRight, Check } from "lucide-react";
 import { UI_LABELS } from "@/constants/labels";
 import type { DiagnosisDisplayItem, HighlightedTextSegment } from "@/pages/reportFirstImpression";
 import type { Positioning } from "@/types/report";
-import { renderRichText, renderTextSegments } from "../richText";
+import { MARKER_CLASS, renderRichText, renderTextSegments } from "../richText";
+
+/**
+ * 꺼내 쓰기 + 형광펜: 핵심 문장(모델이 ** 로 고른 한 문장)을 소제목 아래로 꺼내 크게 칠하고,
+ * 나머지 설명은 작게 둔다. 핵심 문장이 없으면 소제목 + 문단으로 그린다.
+ */
+function DiagnosisBody({ headline, segments, tone }: { headline: string | null; segments: HighlightedTextSegment[]; tone: "ok" | "fix" }) {
+  const key = segments.find((segment) => segment.kind === "bold")?.text.trim();
+  if (!key) {
+    return (
+      <div className="min-w-0">
+        {headline ? <p className="mb-1.5 text-[16px] font-bold leading-[1.45] text-ink">{headline}</p> : null}
+        <p className="text-[15px] leading-[1.75] text-ink-3">{renderTextSegments(segments)}</p>
+      </div>
+    );
+  }
+  const rest = segments
+    .filter((segment) => segment.kind !== "bold")
+    .map((segment) => segment.text)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return (
+    <div className="min-w-0">
+      {headline ? <p className={`mb-1.5 text-[13px] font-bold leading-[1.4] ${tone === "ok" ? "text-ok" : "text-blank"}`}>{headline}</p> : null}
+      <p className="text-[17px] leading-[1.6] tracking-[-0.01em]">
+        <strong className={`font-bold text-ink ${MARKER_CLASS[tone]}`}>{key}</strong>
+      </p>
+      {rest ? <p className="mt-2 text-[14px] leading-[1.7] text-ink-4">{rest}</p> : null}
+    </div>
+  );
+}
 
 function DiagnosisColumn({
   title,
@@ -28,10 +59,7 @@ function DiagnosisColumn({
         {entries.map((entry, i) => (
           <li key={i} className="flex gap-3 border-t border-line-soft px-5 py-5 first:border-t-0">
             {marker(i)}
-            <div className="min-w-0">
-              {entry.headline ? <p className="mb-1.5 text-[16px] font-bold leading-[1.45] text-ink">{entry.headline}</p> : null}
-              <p className="text-[15px] leading-[1.75] text-ink-3">{renderTextSegments(highlights[i] ?? [])}</p>
-            </div>
+            <DiagnosisBody headline={entry.headline} segments={highlights[i] ?? []} tone={tone} />
           </li>
         ))}
       </ul>
@@ -41,7 +69,7 @@ function DiagnosisColumn({
 
 /**
  * 02 핵심 진단: 잘 읽히는 점·고칠 점을 표 한 칸의 두 열로, 그 아래 합격까지의 거리(지금 → 기대, 아쉬운 부분, 좁히는 법).
- * 항목마다 모델이 고른 핵심 문장 하나만 굵게 둔다(limitSectionHighlights).
+ * 항목마다 모델이 고른 핵심 문장 하나만 꺼내 형광펜으로 둔다(limitSectionHighlights).
  */
 export function CoreDiagnosisSection({
   strengthEntries,

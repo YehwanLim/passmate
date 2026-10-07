@@ -47,6 +47,7 @@ export const UI_LABELS = {
   REPORT_NAV_CORE_DIAGNOSIS: "핵심 진단",
   REPORT_NAV_LINE_ANALYSIS: "문장별 코멘트",
   HIRING_MEMORY: "채용담당자가 기억할 모습",
+  HIRING_MEMORY_SHORT: "기억에 남는 것",
   SUMMARY_STRENGTHS: "잘 읽히는 점",
   SUMMARY_GAPS: "고칠 점",
   DETAILS_INTERVIEW: "예상 면접 질문",

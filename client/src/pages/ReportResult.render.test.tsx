@@ -68,10 +68,11 @@ describe("ReportResult public sample", () => {
 
     render(<PassMateReport />);
 
-    // 01 첫인상: 페르소나와 함께 채용담당자 기억·지원자 프로필이 있다.
+    // 01 첫인상: 이름표(페르소나·지원자 프로필) 아래 읽는 순서 3초·10초(기억할 모습 ✓)·30초(남는 질문 △).
     expect(await screen.findByText("김민지님은 채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
-    expect(screen.getByText("채용담당자가 기억할 모습")).toBeTruthy();
-    expect(screen.getByText("로그 3,000건을 직접 모은 동아리 기획자")).toBeTruthy();
+    expect(screen.getByText("채용 담당자가 읽는 순서대로")).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "채용담당자가 기억할 모습" })).getByText("로그 3,000건을 직접 모은 동아리 기획자")).toBeTruthy();
+    expect(screen.getByText("다 읽고 남는 질문")).toBeTruthy();
     expect(screen.getByText("지원자 프로필")).toBeTruthy();
     // 02 핵심 진단: 강점·보완점 전문과 합격까지의 거리(아쉬운 부분까지).
     expect(screen.getByRole("heading", { name: "이 자소서는 이렇게 읽히고 있어요" })).toBeTruthy();
