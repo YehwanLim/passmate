@@ -10,13 +10,14 @@ import { ReportAccessGate } from "@/components/report/ReportAccessGate";
 import { ReportAuthGate } from "@/components/report/ReportAuthGate";
 import { ActionPlanSection } from "@/components/report/sections/ActionPlanSection";
 import { CompanyInsightSection } from "@/components/report/sections/CompanyInsightSection";
+import { CoreDiagnosisSection } from "@/components/report/sections/CoreDiagnosisSection";
+import { FirstImpressionSection } from "@/components/report/sections/FirstImpressionSection";
 import { InterviewDrillSection } from "@/components/report/sections/InterviewDrillSection";
 import { LineAnalysisSection } from "@/components/report/sections/LineAnalysisSection";
 import { MentorCommentSection } from "@/components/report/sections/MentorCommentSection";
 import { PostingFitSection } from "@/components/report/sections/PostingFitSection";
 import { ReportClosing } from "@/components/report/sections/ReportClosing";
 import { ReportBlock } from "@/components/report/sections/ReportBlock";
-import { ReportSummarySection } from "@/components/report/sections/ReportSummarySection";
 import { UI_LABELS } from "@/constants/labels";
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,9 +28,12 @@ import type { JobPostingRecord } from "@/types/jobPosting";
 import type { ReportData } from "@/types/report";
 import { isReportSectionLocked } from "@/utils/reportAccess";
 import {
+  buildEditorialKeywords,
   getHeroIdentity,
   getHeroSummary,
+  limitSectionHighlights,
   normalizeDiagnosisEntries,
+  resolveHiringMemoryItems,
   splitMentorComment,
   splitPersonaForHeroLines,
 } from "./reportFirstImpression";
@@ -169,9 +173,31 @@ function ReportContent({
     () => getHeroSummary(reportData.firstImpression.summaryOneLiner),
     [reportData.firstImpression.summaryOneLiner],
   );
+  const editorialKeywords = useMemo(
+    () => buildEditorialKeywords({
+      hashtags: reportData.firstImpression.hashtags,
+      talentKeywords: reportData.companyInsight.talentKeywords,
+    }),
+    [reportData.companyInsight.talentKeywords, reportData.firstImpression.hashtags],
+  );
+  const hiringMemoryItems = useMemo(
+    () => resolveHiringMemoryItems({
+      hiringMemory: reportData.firstImpression.hiringMemory,
+      strengths: reportData.strengths,
+      gaps: reportData.gaps,
+    }),
+    [reportData.firstImpression.hiringMemory, reportData.gaps, reportData.strengths],
+  );
   const strengthEntries = useMemo(() => normalizeDiagnosisEntries(reportData.strengths), [reportData.strengths]);
   const gapEntries = useMemo(() => normalizeDiagnosisEntries(reportData.gaps), [reportData.gaps]);
+  const strengthHighlights = useMemo(
+    () => limitSectionHighlights(strengthEntries.map((entry) => entry.text)),
+    [strengthEntries],
+  );
+  const gapHighlights = useMemo(() => limitSectionHighlights(gapEntries.map((entry) => entry.text)), [gapEntries]);
   const mentorCommentBlocks = useMemo(() => splitMentorComment(reportData.pmComment), [reportData.pmComment]);
+  // 섹션 번호는 목차에서만 읽는다. 공고 적합도가 끼면 뒤 번호가 밀린다.
+  const indexOf = (id: string) => navSections.find((section) => section.id === id)?.indexLabel ?? "";
 
   const questionCount = reportData.questionTabs.length;
   const reportMeta = [
@@ -227,16 +253,35 @@ function ReportContent({
           />
         )}
 
-        <ReportSummarySection
+        <FirstImpressionSection
+          index={indexOf("section-first-impression")}
+          displayName={displayName}
+          heroPersona={heroPersona}
           heroPersonaLines={heroPersonaLines}
           heroSummary={heroSummary}
-          strengthEntries={strengthEntries}
-          gapEntries={gapEntries}
-          positioning={reportData.positioning}
+          keywords={editorialKeywords}
+          hiringMemoryItems={hiringMemoryItems}
+          profileNote={reportData.firstImpression.profileNote}
         />
 
         <ReportAccessGate isLocked={isLockedFromSection(2)} onLogin={handleLoginToUnlock}>
+          <ReportBlock
+            id="section-core-diagnosis"
+            index={indexOf("section-core-diagnosis")}
+            label={UI_LABELS.REPORT_NAV_CORE_DIAGNOSIS}
+            title={UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}
+          >
+            <CoreDiagnosisSection
+              strengthEntries={strengthEntries}
+              gapEntries={gapEntries}
+              strengthHighlights={strengthHighlights}
+              gapHighlights={gapHighlights}
+              positioning={reportData.positioning}
+            />
+          </ReportBlock>
+
           <LineAnalysisSection
+            index={indexOf("section-line-analysis")}
             questionTabs={reportData.questionTabs}
             targetCompany={targetCompany}
             displayName={displayName}
@@ -246,16 +291,21 @@ function ReportContent({
 
         <ReportAccessGate isLocked={isLockedFromSection(3)} onLogin={handleLoginToUnlock} showOverlay={false}>
           <ReportBlock
-            id="section-interview-drill"
-            label={UI_LABELS.DETAILS_INTERVIEW}
-            count={reportData.interviewQA.length}
-            title={UI_LABELS.INTERVIEW_DRILL_TITLE}
+            id="section-company-insight"
+            index={indexOf("section-company-insight")}
+            label={UI_LABELS.DETAILS_HIRING_CRITERIA}
+            title={UI_LABELS.HIRING_CRITERIA(targetCompany)}
           >
-            <InterviewDrillSection items={reportData.interviewQA} />
+            <CompanyInsightSection companyInsight={reportData.companyInsight} />
           </ReportBlock>
 
           {hasPostingFit ? (
-            <ReportBlock id="section-posting-fit" label={UI_LABELS.DETAILS_POSTING_FIT} title={UI_LABELS.POSTING_FIT_TITLE}>
+            <ReportBlock
+              id="section-posting-fit"
+              index={indexOf("section-posting-fit")}
+              label={UI_LABELS.DETAILS_POSTING_FIT}
+              title={UI_LABELS.POSTING_FIT_TITLE}
+            >
               <PostingFitSection
                 postingFit={reportData.postingFit as NonNullable<ReportData["postingFit"]>}
                 jobPosting={jobPosting}
@@ -263,12 +313,20 @@ function ReportContent({
             </ReportBlock>
           ) : null}
 
-          <ReportBlock id="section-company-insight" label={UI_LABELS.DETAILS_HIRING_CRITERIA} title={UI_LABELS.HIRING_CRITERIA(targetCompany)}>
-            <CompanyInsightSection companyInsight={reportData.companyInsight} />
+          <ReportBlock
+            id="section-interview-drill"
+            index={indexOf("section-interview-drill")}
+            label={UI_LABELS.DETAILS_INTERVIEW}
+            count={reportData.interviewQA.length}
+            title={UI_LABELS.INTERVIEW_DRILL_TITLE}
+            description={UI_LABELS.INTERVIEW_DRILL_DESC}
+          >
+            <InterviewDrillSection items={reportData.interviewQA} isPrinting={isPrinting} />
           </ReportBlock>
 
           <ReportBlock
             id="section-action-plan"
+            index={indexOf("section-action-plan")}
             label={UI_LABELS.DETAILS_ACTION_PLAN}
             count={reportData.actionPlan.length}
             title={UI_LABELS.ACTION_PLAN_TITLE}
@@ -277,7 +335,12 @@ function ReportContent({
           </ReportBlock>
 
           {mentorCommentBlocks.length > 0 ? (
-            <ReportBlock id="section-pm-comment" label={UI_LABELS.DETAILS_PM_COMMENT} title={UI_LABELS.PM_VERDICT_TITLE}>
+            <ReportBlock
+              id="section-pm-comment"
+              index={indexOf("section-pm-comment")}
+              label={UI_LABELS.DETAILS_PM_COMMENT}
+              title={UI_LABELS.PM_VERDICT_TITLE}
+            >
               <MentorCommentSection blocks={mentorCommentBlocks} />
             </ReportBlock>
           ) : null}

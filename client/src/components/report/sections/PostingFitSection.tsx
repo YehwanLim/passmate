@@ -6,9 +6,9 @@ import { renderRichText } from "../richText";
 // 모델 출력값(드러남/약함/언급 없음)은 프롬프트 계약이라 그대로 두고, 화면에는 짧은 말로 바꿔 보여 준다.
 // 강조는 색 톤으로만 하고 카드·배지 장식은 두지 않는다.
 const STATUS_DISPLAY: Record<string, { label: string; tone: string }> = {
-  드러남: { label: "적합", tone: "text-ok bg-ok-soft" },
-  약함: { label: "미흡", tone: "text-blank bg-blank-soft" },
-  "언급 없음": { label: "없음", tone: "text-danger bg-danger-soft" },
+  드러남: { label: "채웠어요", tone: "text-ok bg-ok-soft" },
+  약함: { label: "약해요", tone: "text-blank bg-blank-soft" },
+  "언급 없음": { label: "안 보여요", tone: "text-danger bg-danger-soft" },
 };
 const NEUTRAL_STATUS_TONE = "text-ink-3 bg-fill";
 
@@ -29,7 +29,7 @@ function getHostname(url: string | null | undefined): string | null {
   }
 }
 
-/** 공고 적합도: 공고 요건별 적합/미흡/없음, 공고에만 있는 내용, 문항별로 넣을 것. 공고를 붙인 리포트에만, ReportBlock 안에 그린다. */
+/** 공고 적합도: 공고 요건별 채웠어요/약해요/안 보여요, 공고에만 있는 내용, 문항별로 넣을 것. 공고를 붙인 리포트에만, ReportBlock 안에 그린다. */
 export function PostingFitSection({
   postingFit,
   jobPosting,
@@ -66,7 +66,7 @@ export function PostingFitSection({
             const evidence = match.evidence?.trim();
             const advice = match.advice?.trim();
             return (
-              <li key={i} className="py-4 sm:grid sm:grid-cols-[76px_1fr] sm:gap-4">
+              <li key={i} className="py-4 sm:grid sm:grid-cols-[84px_1fr] sm:gap-4">
                 <div className="mb-2.5 sm:mb-0 sm:pt-0.5">
                   <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[13px] font-bold whitespace-nowrap ${tone}`}>{statusLabel}</span>
                 </div>

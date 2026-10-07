@@ -57,7 +57,11 @@ html {
   transform: translateX(2px);
 }
 
-/* 밝은 자소서 리포트용 목차. 본문 1040px 옆에 132px 목차가 겹치지 않는 폭부터 보인다. */
+/* 밝은 자소서 리포트용 목차. 화면 폭과 상관없이 본문(1040px) 왼쪽 28px 옆에 붙인다.
+   본문 옆에 132px 목차가 들어갈 자리가 생기는 폭(1400px)부터 보인다. */
+.report-nav.report-nav-light {
+  left: calc((100vw - 1040px) / 2 - 132px - 28px);
+}
 .report-nav-light .report-nav-item {
   font-size: 13px;
   color: #b0b8c1;
@@ -354,7 +358,8 @@ html {
   margin: 0 -12px;
 }
 .commentary-item.focused { background: #f2f4f6; }
-.commentary-item.focused .commentary-preview { color: #191f28; font-weight: 600; }
+/* 굵기를 바꾸면 줄바꿈이 달라져 칸이 출렁이므로 색만 바꾼다 */
+.commentary-item.focused .commentary-preview { color: #191f28; }
 
 .commentary-trigger {
   display: flex;

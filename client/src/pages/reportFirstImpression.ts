@@ -376,12 +376,3 @@ function trimRangeWhitespace(text: string, range: { start: number; end: number }
   return { start, end }
 }
 
-// 요약 카드에는 항목마다 한 문장만 싣는다. 모델이 ** 로 고른 핵심 문장을 쓰고, 없으면 첫 문장을 쓴다.
-export function pickKeySentence(text: string): string {
-  const segments = parseHighlightedText(text)
-  const bold = segments.find((segment) => segment.kind === "bold")?.text.trim()
-  if (bold) return bold
-  const plain = segments.map((segment) => segment.text).join("").trim()
-  const firstSentence = plain.match(/^.+?[.!?。](?=\s|$)/)?.[0]
-  return (firstSentence ?? plain).trim()
-}

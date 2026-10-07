@@ -63,31 +63,36 @@ describe("ReportResult public sample", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("puts the summary first and shows posting fit as its own block when the sample carries a job posting", async () => {
+  it("renders every section of the sample in report order, posting fit included", async () => {
     window.history.replaceState({}, "", "/report-new?sample=1");
 
     render(<PassMateReport />);
 
-    expect(await screen.findByText("채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "잘 읽히는 점 3" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "고칠 점 3" })).toBeTruthy();
-    // 요약에는 항목마다 ** 로 고른 핵심 문장만 싣는다.
-    expect(screen.getByText("문제를 데이터로 좁히는 순서가 몸에 밴 지원자로 읽힙니다.")).toBeTruthy();
+    // 01 첫인상: 페르소나와 함께 채용담당자 기억·지원자 프로필이 있다.
+    expect(await screen.findByText("김민지님은 채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
+    expect(screen.getByText("채용담당자가 기억할 모습")).toBeTruthy();
+    expect(screen.getByText("로그 3,000건을 직접 모은 동아리 기획자")).toBeTruthy();
+    expect(screen.getByText("지원자 프로필")).toBeTruthy();
+    // 02 핵심 진단: 강점·보완점 전문과 합격까지의 거리(아쉬운 부분까지).
+    expect(screen.getByRole("heading", { name: "이 자소서는 이렇게 읽히고 있어요" })).toBeTruthy();
+    expect(screen.getByText("문제를 데이터로 좁히는 순서가 몸에 밴 지원자로 읽힙니다.").tagName).toBe("STRONG");
+    expect(screen.getByText("지금 가장 아쉬운 부분")).toBeTruthy();
     expect(navTexts()).toEqual([
-      "01.요약",
-      "02.문장별 코멘트",
-      "03.예상 질문",
-      "04.공고 적합도",
-      "05.합격 기준",
-      "06.다음 단계",
-      "07.실무자 코멘트",
+      "01.첫인상",
+      "02.핵심 진단",
+      "03.문장별 코멘트",
+      "04.합격 기준",
+      "05.공고 적합도",
+      "06.예상 질문",
+      "07.다음 단계",
+      "08.실무자 코멘트",
     ]);
 
-    // 아래 섹션은 접지 않고 블록째 펼쳐 둔다.
-    expect(screen.getByRole("heading", { name: "공고에서 찾는 것, 자소서에 있는 것" })).toBeTruthy();
+    // 공고 적합도는 블록째 펼쳐 둔다.
+    expect(screen.getByRole("heading", { name: "공고가 원하는 것을 자소서가 얼마나 채웠는지 봤어요" })).toBeTruthy();
     expect(screen.getByText("현대자동차 · 서비스 기획 채용공고 기준")).toBeTruthy();
     expect(screen.getByText("커넥티드카·모빌리티 서비스에 대한 이해")).toBeTruthy();
-    expect(screen.getByText("없음")).toBeTruthy();
+    expect(screen.getByText("안 보여요")).toBeTruthy();
   });
 
   it("leaves posting fit out for a stored report without it", async () => {
@@ -109,17 +114,18 @@ describe("ReportResult public sample", () => {
 
     render(<PassMateReport />);
 
-    expect(await screen.findByText("채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
+    expect(await screen.findByText("지원자님은 채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
     expect(screen.getByText("지원자님 · 문항 2개")).toBeTruthy();
     expect(screen.getByRole("button", { name: "내 지원서" })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "공고에서 찾는 것, 자소서에 있는 것" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "공고가 원하는 것을 자소서가 얼마나 채웠는지 봤어요" })).toBeNull();
     expect(navTexts()).toEqual([
-      "01.요약",
-      "02.문장별 코멘트",
-      "03.예상 질문",
+      "01.첫인상",
+      "02.핵심 진단",
+      "03.문장별 코멘트",
       "04.합격 기준",
-      "05.다음 단계",
-      "06.실무자 코멘트",
+      "05.예상 질문",
+      "06.다음 단계",
+      "07.실무자 코멘트",
     ]);
   });
 

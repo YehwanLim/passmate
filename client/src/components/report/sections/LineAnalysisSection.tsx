@@ -51,11 +51,14 @@ export function LineAnalysisSection({
   targetCompany,
   displayName,
   isPrinting,
+  index,
 }: {
   questionTabs: QuestionTab[];
   targetCompany: string;
   displayName: string;
   isPrinting: boolean;
+  /** 목차 번호(01, 02…). */
+  index: string;
 }) {
   const [activeTab, setActiveTab] = useState(0);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
@@ -269,24 +272,31 @@ export function LineAnalysisSection({
       openSheet(cardIdx);
       return;
     }
+    // 코멘트 칸 안에서만 한 번 부드럽게 스크롤해, 그 코멘트가 칸 맨 위(살짝 아래)에 오게 한다. 페이지는 따라 내려가지 않는다.
+    // 위쪽에서 펼쳐져 있던 카드는 곧 접히므로, 접힌 뒤의 자리를 미리 계산해 한 번에 간다(두 번 맞추면 튕겨 보인다).
+    const el = document.getElementById(`commentary-item-${cardIdx}`);
+    const container = commentaryScrollRef.current;
+    if (el && container && container.scrollHeight > container.clientHeight) {
+      const containerTop = container.getBoundingClientRect().top;
+      const elTop = el.getBoundingClientRect().top;
+      let target = container.scrollTop + (elTop - containerTop) - 12;
+      container.querySelectorAll<HTMLElement>(".commentary-item.expanded").forEach((item) => {
+        if (item === el || item.getBoundingClientRect().top >= elTop) return;
+        // 접히면 본문이 사라지고, 미리보기 글도 두 줄로 다시 줄어든다(.commentary-preview line-clamp).
+        target -= item.querySelector<HTMLElement>(".commentary-body")?.getBoundingClientRect().height ?? 0;
+        const preview = item.querySelector<HTMLElement>(".commentary-preview");
+        if (preview) {
+          const lineHeight = parseFloat(getComputedStyle(preview).lineHeight) || 24;
+          target -= Math.max(0, preview.getBoundingClientRect().height - lineHeight * 2);
+        }
+      });
+      container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+    } else if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
+    }
     setFocusedCardIndex(cardIdx);
     // 누른 문장의 코멘트만 펼친다. 앞에서 펼쳐 둔 카드가 쌓이면 지금 카드가 칸 아래로 밀려 안 보인다.
     setExpandedCards(new Set([cardIdx]));
-    // 코멘트 칸 안에서만 스크롤해, 그 코멘트가 칸 맨 위(살짝 아래)에 오게 한다. 페이지는 따라 내려가지 않는다.
-    // 다른 카드가 접히는 동안(0.32s) 자리가 움직이므로 바로 한 번, 접힌 뒤 한 번 더 맞춘다.
-    const alignCommentary = () => {
-      const el = document.getElementById(`commentary-item-${cardIdx}`);
-      const container = commentaryScrollRef.current;
-      if (!el || !container) return;
-      if (container.scrollHeight > container.clientHeight) {
-        const target = container.scrollTop + (el.getBoundingClientRect().top - container.getBoundingClientRect().top) - 12;
-        container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
-      } else {
-        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    };
-    setTimeout(alignCommentary, 50);
-    setTimeout(alignCommentary, 380);
   }, [dismissCoach, isCompactLayout, openSheet]);
 
   const highlights = currentTab.feedbackCards.map((c) => c.original);
@@ -333,7 +343,8 @@ export function LineAnalysisSection({
         setFocusedCardIndex(null);
         setExpandedCards(new Set());
       }}>
-      <h2 className="mb-7 text-[22px] font-bold tracking-[-0.02em] text-ink sm:text-[24px]">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h2>
+      <p className="text-[14px] font-bold text-ink-4"><span className="mr-2 tabular-nums text-ink-5">{index}</span>{UI_LABELS.REPORT_NAV_LINE_ANALYSIS}</p>
+      <h2 className="mb-7 mt-1.5 text-[22px] font-bold tracking-[-0.02em] text-ink sm:text-[24px]">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h2>
 
       {/* Split View: Source (Left) + Commentary (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-0 lg:items-start">
