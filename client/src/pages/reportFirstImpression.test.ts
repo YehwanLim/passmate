@@ -282,3 +282,4 @@ describe("report first impression editorial helpers", () => {
     expect(segments.map((segment) => segment.text).join("")).not.toContain("<span")
   })
 })
+

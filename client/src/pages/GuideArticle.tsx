@@ -7,7 +7,7 @@ import { GuideLayout } from "@/components/guide/GuideLayout";
 import { formatDate } from "@/lib/formatDate";
 import { hasGuideBody, readGuideHtml } from "@/lib/guideBodies";
 import { guideMeta } from "@/lib/guideMeta";
-import { GUIDE_SUMMARIES, guideCoverStyle, guideIndexOf, guidePath, readingMinutes } from "@/lib/guideSummaries";
+import { GUIDE_SUMMARIES, guideCoverTone, guideIndexOf, guidePath, readingMinutes } from "@/lib/guideSummaries";
 import { applyDocumentMeta, GUIDE_INDEX_PATH, SEO_ROUTES } from "@/lib/seo";
 import NotFound from "./NotFound";
 
@@ -38,9 +38,9 @@ export default function GuideArticle() {
   if (!guide) return <NotFound />;
 
   const index = guideIndexOf(guide.slug);
-  const cover = guideCoverStyle(index);
+  const cover = guideCoverTone(guide, index);
   // 이어서 읽기: 같은 분류를 먼저, 모자라면 최신순으로 채운다. 분류별로 내부 링크가 묶여야 검색엔진이 주제 묶음으로 읽는다.
-  const others = GUIDE_SUMMARIES.map((summary, summaryIndex) => ({ summary, cover: guideCoverStyle(summaryIndex) })).filter(
+  const others = GUIDE_SUMMARIES.map((summary, summaryIndex) => ({ summary, cover: guideCoverTone(summary, summaryIndex) })).filter(
     ({ summary }) => summary.slug !== guide.slug
   );
   const related = [
@@ -61,14 +61,13 @@ export default function GuideArticle() {
             취업 가이드
           </Link>
 
-          <GuideCover size="band" hue={cover.hue} number={cover.number} className="mt-7">
-            <span className="relative z-10 text-[13px] text-white/70">{metaLine}</span>
-          </GuideCover>
+          <GuideCover tone={cover} text={guide.coverText} image={guide.cover} className="mt-7 w-full max-w-[400px]" />
 
           <header className="mt-9">
             <h1 className="text-[30px] font-bold leading-[1.2] tracking-[-0.03em] text-balance [word-break:keep-all] md:text-[40px]">
               {guide.title}
             </h1>
+            <p className="mt-3 text-[13px] text-zinc-500">{metaLine}</p>
             <p className="mt-4 text-[16px] leading-[1.7] text-gray-400 md:text-[18px]">{guide.description}</p>
           </header>
 
@@ -78,8 +77,8 @@ export default function GuideArticle() {
 
           <GuideCtaCard
             className="mt-12"
-            title="이 기준으로 내 자소서를 읽어 보면 어떨까요"
-            body="기업·직무와 문항을 넣으면 1분 안에 채용 담당자 시선의 리포트가 도착합니다. 첫 분석은 무료입니다."
+            title="다 쓴 자소서, 내기 전에 한 번 읽혀 보세요"
+            body="지원 회사와 문항을 넣으면 채용 담당자가 읽는 순서대로 첫인상과 고칠 곳을 짚어 드려요. 첫 분석은 무료예요."
             withSample
           />
         </article>
@@ -93,7 +92,7 @@ export default function GuideArticle() {
                 href={guidePath(summary)}
                 className="flex items-center gap-4 rounded-[10px] border border-white/[0.08] bg-white/[0.03] p-3.5 transition-colors hover:border-white/[0.18] hover:bg-white/[0.05]"
               >
-                <GuideCover size="mini" hue={relatedCover.hue} number={relatedCover.number} />
+                <GuideCover tone={relatedCover} image={summary.cover} mini className="w-16 flex-none" />
                 <span className="text-[14px] font-semibold leading-[1.45] text-balance text-white [word-break:keep-all]">{summary.title}</span>
               </Link>
             ))}

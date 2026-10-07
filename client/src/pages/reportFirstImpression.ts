@@ -375,3 +375,4 @@ function trimRangeWhitespace(text: string, range: { start: number; end: number }
 
   return { start, end }
 }
+

@@ -12,7 +12,6 @@ import {
   tokenizeAnswerParagraph,
 } from "@/pages/reportLineAnalysis";
 import type { FeedbackCard, QuestionTab } from "@/types/report";
-import { SectionNumber } from "../SectionNumber";
 import { renderRichText } from "../richText";
 
 const COACH_SEEN_KEY = "preview:report-tap-coach-seen-v2";
@@ -26,7 +25,7 @@ function FeedbackCardBody({ card }: { card: FeedbackCard }) {
       {card.interviewLink && (
         <>
           <p className="commentary-label">예상 면접 질문</p>
-          <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-sky-300/80">Q.</span>{renderRichText(card.interviewLink.question)}</p>
+          <p className="commentary-headline mb-1.5"><span className="mr-1 font-bold text-brand">Q.</span>{renderRichText(card.interviewLink.question)}</p>
           <p className="commentary-meta mt-1 mb-4">{UI_LABELS.QUESTION_INTENT}: {renderRichText(card.interviewLink.intent)}</p>
         </>
       )}
@@ -44,7 +43,7 @@ function FeedbackCardBody({ card }: { card: FeedbackCard }) {
 type SortedCard = FeedbackCard & { _origIdx: number };
 
 /**
- * ACT 3 — 문장 분석 작업대. 왼쪽 원문(하이라이트) + 오른쪽 코멘트(집중/목록), lg 미만은 하단 시트.
+ * 문장 분석 작업대(요약 바로 아래 흰 카드). 왼쪽 원문(하이라이트) + 오른쪽 코멘트(집중/목록), lg 미만은 하단 시트.
  * 탭·선택·펼침·시트·안내 말풍선 상태는 전부 이 섹션 안에서만 쓰인다.
  */
 export function LineAnalysisSection({
@@ -52,13 +51,14 @@ export function LineAnalysisSection({
   targetCompany,
   displayName,
   isPrinting,
-  indexLabel = "04",
+  index,
 }: {
   questionTabs: QuestionTab[];
   targetCompany: string;
   displayName: string;
   isPrinting: boolean;
-  indexLabel?: string;
+  /** 목차 번호(01, 02…). */
+  index: string;
 }) {
   const [activeTab, setActiveTab] = useState(0);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
@@ -272,30 +272,31 @@ export function LineAnalysisSection({
       openSheet(cardIdx);
       return;
     }
+    // 코멘트 칸 안에서만 한 번 부드럽게 스크롤해, 그 코멘트가 칸 맨 위(살짝 아래)에 오게 한다. 페이지는 따라 내려가지 않는다.
+    // 위쪽에서 펼쳐져 있던 카드는 곧 접히므로, 접힌 뒤의 자리를 미리 계산해 한 번에 간다(두 번 맞추면 튕겨 보인다).
+    const el = document.getElementById(`commentary-item-${cardIdx}`);
+    const container = commentaryScrollRef.current;
+    if (el && container && container.scrollHeight > container.clientHeight) {
+      const containerTop = container.getBoundingClientRect().top;
+      const elTop = el.getBoundingClientRect().top;
+      let target = container.scrollTop + (elTop - containerTop) - 12;
+      container.querySelectorAll<HTMLElement>(".commentary-item.expanded").forEach((item) => {
+        if (item === el || item.getBoundingClientRect().top >= elTop) return;
+        // 접히면 본문이 사라지고, 미리보기 글도 두 줄로 다시 줄어든다(.commentary-preview line-clamp).
+        target -= item.querySelector<HTMLElement>(".commentary-body")?.getBoundingClientRect().height ?? 0;
+        const preview = item.querySelector<HTMLElement>(".commentary-preview");
+        if (preview) {
+          const lineHeight = parseFloat(getComputedStyle(preview).lineHeight) || 24;
+          target -= Math.max(0, preview.getBoundingClientRect().height - lineHeight * 2);
+        }
+      });
+      container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
+    } else if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
+    }
     setFocusedCardIndex(cardIdx);
-    setExpandedCards((prev) => {
-      const next = new Set(prev);
-      next.add(cardIdx);
-      return next;
-    });
-    // Use setTimeout to allow the accordion to expand before scrolling.
-    // 코멘트 패널 내부만 스크롤해서 페이지 전체가 딸려 내려가지 않게 한다.
-    setTimeout(() => {
-      const el = document.getElementById(`commentary-item-${cardIdx}`);
-      if (!el) return;
-
-      const container = commentaryScrollRef.current;
-      if (container && container.scrollHeight > container.clientHeight) {
-        const elRect = el.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const target = container.scrollTop
-          + (elRect.top - containerRect.top)
-          - (container.clientHeight - Math.min(el.clientHeight, container.clientHeight)) / 2;
-        container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
-      } else {
-        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    }, 50);
+    // 누른 문장의 코멘트만 펼친다. 앞에서 펼쳐 둔 카드가 쌓이면 지금 카드가 칸 아래로 밀려 안 보인다.
+    setExpandedCards(new Set([cardIdx]));
   }, [dismissCoach, isCompactLayout, openSheet]);
 
   const highlights = currentTab.feedbackCards.map((c) => c.original);
@@ -335,20 +336,21 @@ export function LineAnalysisSection({
   const sheetRank = sheetCardIndex !== null ? sortedOrder.indexOf(sheetCardIndex) : -1;
 
   return (
-    <section id="section-line-analysis" className="py-24 section-divider max-w-[1440px] mx-auto px-6 md:px-10 report-section-anchor"
+    <section id="section-line-analysis" className="report-section-anchor rounded-3xl bg-surface px-5 py-7 sm:px-10 sm:py-9"
       onClick={(e) => {
         // Click-outside: reset highlight if clicking empty area
         if ((e.target as HTMLElement).closest(".annotation-hl") || (e.target as HTMLElement).closest(".subtitle-hl") || (e.target as HTMLElement).closest(".commentary-trigger") || (e.target as HTMLElement).closest(".commentary-body") || (e.target as HTMLElement).closest(".view-mode-toggle") || (e.target as HTMLElement).closest(".report-coach")) return;
         setFocusedCardIndex(null);
         setExpandedCards(new Set());
       }}>
-      <h3 className="text-xl sm:text-2xl font-semibold text-white mb-10 tracking-tight"><SectionNumber value={indexLabel} />{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h3>
+      <p className="text-[14px] font-bold text-ink-4"><span className="mr-2 tabular-nums text-ink-5">{index}</span>{UI_LABELS.REPORT_NAV_LINE_ANALYSIS}</p>
+      <h2 className="mb-7 mt-1.5 text-[22px] font-bold tracking-[-0.02em] text-ink sm:text-[24px]">{UI_LABELS.LINE_BY_LINE_ANALYSIS}</h2>
 
       {/* Split View: Source (Left) + Commentary (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-0 lg:items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-0 lg:items-start">
 
         {/* ═══ LEFT PANEL: Source Text ═══ */}
-        <div ref={sourceTextRef} className="lg:pr-10 lg:sticky lg:top-[10vh] lg:self-start lg:max-h-[85vh] lg:overflow-y-auto hide-scrollbar">
+        <div ref={sourceTextRef} className="lg:pr-9 lg:sticky lg:top-[10vh] lg:self-start lg:max-h-[85vh] lg:overflow-y-auto hide-scrollbar">
           {/* Document Header */}
           <div className="doc-header mb-6">
             <span>{targetCompany}</span>
@@ -357,7 +359,7 @@ export function LineAnalysisSection({
           </div>
 
           {/* Section Navigator Tabs */}
-          <div ref={tabBarRef} className="flex items-center border-b border-white/[0.06] mb-8 overflow-x-auto hide-scrollbar -mx-1 px-1">
+          <div ref={tabBarRef} className="flex items-center border-b border-line-soft mb-7 overflow-x-auto hide-scrollbar -mx-1 px-1">
             {questionTabs.map((tab, index) => (
               <button key={tab.id} data-tab-index={index} onClick={() => handleTabChange(index)}
                 className={`section-tab ${activeTab === index ? "active" : ""}`}>
@@ -369,12 +371,12 @@ export function LineAnalysisSection({
 
           {/* Question Prompt */}
           <div className="mb-8">
-            <p className="mb-2.5 text-xs font-bold tracking-[0.02em] text-zinc-500">{UI_LABELS.QUESTION} {String(activeTab + 1).padStart(2, "0")}</p>
-            <p className="border-b border-white/[0.05] pb-6 text-[15.5px] font-medium leading-[1.65] text-zinc-300">{currentTab.prompt}</p>
+            <p className="mb-2 text-[13px] font-bold text-ink-5">{UI_LABELS.QUESTION} {String(activeTab + 1).padStart(2, "0")}</p>
+            <p className="border-b border-line-soft pb-6 text-[16px] font-bold leading-[1.6] text-ink">{currentTab.prompt}</p>
           </div>
 
           {/* 컴팩트 레이아웃 상시 안내. 말풍선이 사라진 뒤에도 남는다. */}
-          <p className="mb-4 flex items-center gap-2 text-[12.5px] text-zinc-500 lg:hidden print:hidden">
+          <p className="mb-4 flex items-center gap-2 text-[13px] text-ink-4 lg:hidden print:hidden">
             <Pointer className="h-3.5 w-3.5 shrink-0" />
             {UI_LABELS.TAP_HIGHLIGHT_GUIDE}
           </p>
@@ -404,16 +406,16 @@ export function LineAnalysisSection({
           </div>
 
           {/* Character Count */}
-          <div className="mt-10 pt-6 border-t border-white/[0.04]">
+          <div className="mt-8 pt-5 border-t border-line-soft">
             <span className="char-count">{charCount.toLocaleString()}자</span>
           </div>
         </div>
 
         {/* ═══ RIGHT PANEL: AI Commentary ═══ */}
-        <div ref={commentaryRef} className="lg:sticky lg:top-[10vh] lg:self-start lg:h-[85vh] flex flex-col lg:border-l border-white/[0.06] lg:pl-8 mt-10 lg:mt-0">
+        <div ref={commentaryRef} className="lg:sticky lg:top-[10vh] lg:self-start lg:h-[85vh] flex flex-col lg:border-l border-line-soft lg:pl-8 mt-10 lg:mt-0">
           {/* Panel Header + View Mode Toggle */}
           <div className="flex items-center justify-between mb-6 shrink-0">
-            <p className="text-[15.5px] font-semibold tracking-[-0.01em] text-zinc-50">{UI_LABELS.AI_COMMENTARY}</p>
+            <p className="text-[16px] font-bold tracking-[-0.01em] text-ink">{UI_LABELS.AI_COMMENTARY}</p>
             <div className="view-mode-toggle print:hidden">
               <button onClick={() => setViewMode("list")}
                 className={`view-mode-btn ${viewMode === "list" ? "active" : ""}`}>
@@ -426,25 +428,25 @@ export function LineAnalysisSection({
             </div>
           </div>
 
-          {/* Scrolling Content Area */}
-          <div ref={commentaryScrollRef} className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10">
+          {/* Scrolling Content Area — 아래 여백(lg:pb-[50vh])이 있어야 끝쪽 문장의 코멘트도 칸 맨 위로 올릴 수 있다 */}
+          <div ref={commentaryScrollRef} className="flex-1 overflow-y-auto commentary-scroll pr-2 pb-10 lg:pb-[50vh] print:pb-0">
 
             {/* Overview — 항상 펼쳐진 고정 섹션 (여닫이가 아래 헤더 위치를 흔들지 않게) */}
-            <div className="border-t border-white/[0.06] py-5">
+            <div className="border-t border-line-soft py-5">
               <div className="flex items-baseline gap-3">
-                <span className="text-[11px] font-bold tabular-nums tracking-[0.08em] text-zinc-600">01</span>
-                <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.OVERVIEW}</span>
+                <span className="text-[12px] font-bold tabular-nums tracking-[0.06em] text-ink-5">01</span>
+                <span className="flex-1 text-[16px] font-bold text-ink">{UI_LABELS.OVERVIEW}</span>
               </div>
               <div className="pt-4">
-                <p className="text-[14px] text-zinc-300 leading-[1.85]">{renderRichText(currentTab.overview)}</p>
+                <p className="text-[15px] text-ink-3 leading-[1.75]">{renderRichText(currentTab.overview)}</p>
               </div>
             </div>
 
             {/* Subtitle Diagnosis — 항상 펼쳐진 고정 섹션 */}
-            <div className="border-t border-white/[0.06] py-5">
+            <div className="border-t border-line-soft py-5">
               <div className="flex items-baseline gap-3">
-                <span className="text-[11px] font-bold tabular-nums tracking-[0.08em] text-zinc-600">02</span>
-                <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
+                <span className="text-[12px] font-bold tabular-nums tracking-[0.06em] text-ink-5">02</span>
+                <span className="flex-1 text-[16px] font-bold text-ink">{UI_LABELS.SUBTITLE_DIAGNOSIS}</span>
               </div>
               <div className="pt-4">
                 <p className="commentary-body-text mb-1">{renderRichText(currentTab.subtitleDiagnosis.feedback)}</p>
@@ -455,10 +457,10 @@ export function LineAnalysisSection({
             </div>
 
             {/* Section Header: 문장 진단 */}
-            <div className="border-t border-white/[0.06] py-5">
+            <div className="border-t border-line-soft py-5">
               <div className="flex items-baseline gap-3 mb-4">
-                <span className="text-[11px] font-bold tabular-nums tracking-[0.08em] text-zinc-600">03</span>
-                <span className="flex-1 text-[15.5px] font-semibold text-zinc-50">{UI_LABELS.SENTENCE_DIAGNOSIS}</span>
+                <span className="text-[12px] font-bold tabular-nums tracking-[0.06em] text-ink-5">03</span>
+                <span className="flex-1 text-[16px] font-bold text-ink">{UI_LABELS.SENTENCE_DIAGNOSIS}</span>
               </div>
 
               {/* ── Focus Mode: Full content for focused card ── */}
@@ -472,10 +474,10 @@ export function LineAnalysisSection({
                       <div className="focus-card">
                         {/* Number + Original */}
                         <div className="flex items-start gap-3 mb-5">
-                          <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${card.type === "praise" ? "bg-[#4ADE80] text-[#111]" : "bg-[#FBBF24] text-[#111]"}`}>
+                          <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${card.type === "praise" ? "bg-ok text-white" : "bg-[#B97800] text-white"}`}>
                             {displayNum}
                           </span>
-                          <p className="text-[14px] text-zinc-300 leading-[1.7] italic flex-1">"{card.original}"</p>
+                          <p className="text-[15px] text-ink-3 leading-[1.7] flex-1">"{card.original}"</p>
                         </div>
 
                         <FeedbackCardBody card={card} />
@@ -483,7 +485,7 @@ export function LineAnalysisSection({
                     );
                   })() : (
                     <div className="py-12 text-center">
-                      <p className="text-sm text-zinc-600 leading-relaxed">{UI_LABELS.CLICK_HIGHLIGHT_GUIDE}</p>
+                      <p className="text-sm text-ink-4 leading-relaxed">{UI_LABELS.CLICK_HIGHLIGHT_GUIDE}</p>
                     </div>
                   )}
                 </div>
@@ -508,7 +510,7 @@ export function LineAnalysisSection({
                         <button className="commentary-trigger" onClick={() => handleAccordionToggle(realIdx)}>
                           <span className="commentary-num">{displayNum}</span>
                           <span className="flex-1 min-w-0">
-                            <span className={`mb-1 block text-[11px] font-semibold tracking-[0.02em] ${card.type === "praise" ? "text-emerald-300/85" : "text-amber-300/75"}`}>
+                            <span className={`mb-1 block text-[11px] font-semibold tracking-[0.02em] ${card.type === "praise" ? "text-ok" : "text-blank"}`}>
                               {card.type === "praise" ? UI_LABELS.FEEDBACK_TYPE_PRAISE : UI_LABELS.FEEDBACK_TYPE_IMPROVEMENT}
                             </span>
                             <span className="commentary-preview">{renderRichText(previewText ?? "")}</span>
@@ -549,18 +551,18 @@ export function LineAnalysisSection({
           )}
           <Drawer open={isSheetOpen} onOpenChange={(open) => { if (!open) closeSheet(); }} modal={false} noBodyStyles>
             <DrawerContent
-              className={`report-sheet z-[70] max-h-[78vh] border-white/[0.08] bg-[#0E0E11] text-zinc-100 ${sheetPhase !== "idle" ? "report-sheet-stepping" : ""}`}
+              className={`report-sheet z-[70] max-h-[78vh] border-line bg-white text-ink ${sheetPhase !== "idle" ? "report-sheet-stepping" : ""}`}
               onClick={(e) => e.stopPropagation()}
             >
               <DrawerTitle className="sr-only">{UI_LABELS.AI_COMMENTARY}</DrawerTitle>
               {sheetCard && sheetCardIndex !== null && (
                 <>
-                  <div className={`report-sheet-head ${sheetCard.type} flex items-center gap-2.5 border-b border-white/[0.06] px-[18px] pb-3 pt-1`}>
+                  <div className={`report-sheet-head ${sheetCard.type} flex items-center gap-2.5 border-b border-line-soft px-[18px] pb-3 pt-1`}>
                     <span className="commentary-num report-sheet-meta">{cardDisplayNumbers[sheetCardIndex] ?? (sheetCardIndex + 1)}</span>
-                    <span className={`report-sheet-meta text-[12px] font-semibold tracking-[0.02em] ${sheetCard.type === "praise" ? "text-emerald-300/85" : "text-amber-300/75"}`}>
+                    <span className={`report-sheet-meta text-[12px] font-semibold tracking-[0.02em] ${sheetCard.type === "praise" ? "text-ok" : "text-blank"}`}>
                       {sheetCard.type === "praise" ? UI_LABELS.FEEDBACK_TYPE_PRAISE : UI_LABELS.FEEDBACK_TYPE_IMPROVEMENT}
                     </span>
-                    <span className="report-sheet-meta ml-auto text-[12px] tabular-nums text-zinc-500">{sheetRank + 1} / {sortedOrder.length}</span>
+                    <span className="report-sheet-meta ml-auto text-[12px] tabular-nums text-ink-4">{sheetRank + 1} / {sortedOrder.length}</span>
                     <button type="button" className="report-sheet-nav" aria-label="이전 문장" disabled={sheetRank <= 0} onClick={() => stepSheet(-1)}>
                       <ArrowLeft className="h-[15px] w-[15px]" />
                     </button>

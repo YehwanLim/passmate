@@ -1,7 +1,11 @@
 ---
 title: AI로 쓴 자소서 티 나는 표현 12가지와 고치는 법
 description: ChatGPT로 다듬은 자소서는 특정 표현에서 바로 드러납니다. 채용 담당자가 AI 문장을 알아보는 기준, 자주 나오는 표현 12가지와 내 문장으로 되돌리는 법을 정리합니다.
-category: AI 활용
+category: 자소서
+coverStyle: chat
+coverLabel: 자소서 점검
+coverQuestion: ChatGPT로 다듬은 자소서,\n다 비슷해 보이는 이유
+coverAnswer: 티 나는 표현 12가지와\n내 문장으로 되돌리는 순서
 date: 2026-09-16
 updated: 2026-09-16
 keywords: AI 자소서 티, ChatGPT 자소서 티 안 나게, AI 자소서 수정, 자소서 AI 표현, 자소서 첨삭 AI

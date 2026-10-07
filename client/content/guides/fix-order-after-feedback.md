@@ -1,7 +1,11 @@
 ---
 title: 자소서 피드백을 받은 뒤, 고치는 순서
 description: 피드백을 다 반영하려다 마감을 놓치는 일이 흔합니다. 서류 결과에 영향이 큰 순서대로 고치는 네 단계와, 마감 하루 전이라면 무엇만 손댈지 정리합니다.
-category: 수정하기
+category: 자소서
+coverStyle: chat
+coverLabel: 수정하기
+coverQuestion: 피드백 받은 뒤\n고치는 순서
+coverAnswer: 영향 큰 순서대로 고치는 4단계,\n마감 하루 전이라면
 date: 2026-09-15
 updated: 2026-09-15
 keywords: 자소서 피드백, 자소서 수정, 자소서 첨삭 반영, 자소서 고치는 법, 자소서 마감

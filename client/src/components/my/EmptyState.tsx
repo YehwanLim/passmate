@@ -24,22 +24,22 @@ export default function EmptyState({
   const [, navigate] = useLocation();
 
   return (
-    <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
+    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
       {/* Icon */}
-      <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-6">
-        {icon ?? <FileText className="w-7 h-7 text-zinc-500" />}
+      <div className="w-14 h-14 rounded-2xl bg-fill flex items-center justify-center mb-5">
+        {icon ?? <FileText className="w-6 h-6 text-ink-4" />}
       </div>
 
       {/* Text */}
-      <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
-      <p className="text-[14px] text-zinc-500 font-light leading-relaxed max-w-sm mb-8">
+      <h3 className="text-[18px] font-bold text-ink mb-2">{title}</h3>
+      <p className="text-[14px] text-ink-4 leading-relaxed max-w-sm mb-7">
         {description}
       </p>
 
       {/* CTA */}
       <button
         onClick={() => navigate(ctaHref)}
-        className="group inline-flex items-center gap-2 bg-white text-black h-10 px-5 rounded-lg text-[13px] font-medium transition-all duration-200 hover:bg-zinc-200 active:scale-[0.97]"
+        className="group inline-flex items-center gap-2 bg-brand text-white h-11 px-5 rounded-xl text-[14px] font-semibold transition-colors duration-200 hover:bg-brand-hover"
       >
         {ctaLabel}
         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />

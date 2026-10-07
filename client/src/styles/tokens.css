@@ -41,6 +41,36 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * 10월 밝은 서비스형 디자인(회색 무대 + 흰 둥근 카드 + 파랑 하나). 새로 바꾼 화면은 이 색만 쓴다.
+ * 예: bg-stage(페이지) · bg-surface(카드) · text-ink(본문 진한 글씨) · text-ink-4(보조 글씨) · bg-brand(주 버튼).
+ * ink-5 는 흰 바탕 대비 3:1 이라 placeholder·장식에만 쓴다.
+ */
+@theme {
+  --color-stage: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-fill: #f2f4f6;
+  --color-fill-soft: #f9fafb;
+  --color-line: #e5e8eb;
+  --color-line-soft: #f2f4f6;
+  --color-ink: #191f28;
+  --color-ink-2: #333d4b;
+  --color-ink-3: #4e5968;
+  --color-ink-4: #6b7684;
+  --color-ink-5: #8b95a1;
+  --color-navy: #12205a;
+  --color-brand: #0064ff;
+  --color-brand-hover: #0054d6;
+  --color-brand-ink: #004ec7;
+  --color-brand-soft: #ebf3ff;
+  --color-danger: #c2331a;
+  --color-danger-soft: #ffedea;
+  --color-ok: #0a7b55;
+  --color-ok-soft: #e6f6ee;
+  --color-blank: #8a5a00;
+  --color-blank-soft: #fff1c2;
+}
+
 :root {
   --primary: var(--color-blue-600);
   --primary-foreground: var(--color-blue-50);

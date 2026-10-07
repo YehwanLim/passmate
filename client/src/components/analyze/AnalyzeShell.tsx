@@ -25,11 +25,11 @@ export const ANALYZE_ITEM_VARIANTS = {
 };
 
 export const ANALYZE_SUBMIT_BUTTON_CLASS =
-  "bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-400 hover:to-cyan-300 text-white px-6 py-3 text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-cyan-500/25 transition-all disabled:opacity-40 disabled:shadow-none whitespace-nowrap flex-shrink-0";
+  "bg-brand hover:bg-brand-hover text-white px-6 py-3 text-[15px] font-semibold rounded-xl transition-colors disabled:opacity-40 whitespace-nowrap flex-shrink-0";
 
 export function AnalyzeBottomBar({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/[0.08] bg-[#0A0A0A]/90 backdrop-blur-xl">
+    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/95 backdrop-blur">
       <div className="container max-w-3xl mx-auto px-4 flex flex-col">
         {children}
       </div>
@@ -57,28 +57,28 @@ export function AnalyzeErrorModal({
     <AnimatePresence>
       {error && (
         <motion.div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-ink/40"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
           <motion.div
-            className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+            className="bg-surface border border-line rounded-2xl w-full max-w-md p-6 shadow-[0_12px_32px_rgba(25,31,40,0.12)]"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
+              <div className="w-10 h-10 rounded-xl bg-danger-soft flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-danger" />
               </div>
-              <h3 className="text-lg font-semibold text-white">
+              <h3 className="text-lg font-semibold text-ink">
                 {error.title}
               </h3>
             </div>
-            <p className="text-sm text-zinc-400 leading-relaxed mb-6">
+            <p className="text-sm text-ink-3 leading-relaxed mb-6">
               {error.message}
             </p>
             {error.actionHref && error.actionLabel && (
@@ -88,14 +88,14 @@ export function AnalyzeErrorModal({
                   onClose();
                   if (href) navigate(href);
                 }}
-                className="w-full mb-2 bg-white hover:bg-zinc-200 text-black rounded-xl h-11 text-sm font-semibold transition-colors"
+                className="w-full mb-2 bg-brand hover:bg-brand-hover text-white rounded-xl h-11 text-sm font-semibold transition-colors"
               >
                 {error.actionLabel}
               </Button>
             )}
             <Button
               onClick={onClose}
-              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl h-11 text-sm font-medium transition-colors"
+              className="w-full bg-fill hover:bg-line text-ink-2 rounded-xl h-11 text-sm font-medium transition-colors"
             >
               확인
             </Button>

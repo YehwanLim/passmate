@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Building2, FileText, Link2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import CompanyCombobox from "@/components/analyze/CompanyCombobox";
 import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
@@ -133,80 +133,80 @@ export default function CompanyAnalyze() {
   };
 
   if (authLoading || !isAuthenticated) {
-    return <main className="min-h-screen bg-[#0A0A0A]" aria-busy="true" />;
+    return <main className="min-h-screen bg-stage" aria-busy="true" />;
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-28">
-      <SiteHeader />
+    <div className="min-h-screen bg-stage pb-28">
+      <SiteHeader variant="light" />
 
       {/* ════════ MAIN FORM ════════ */}
       <motion.section className="py-12 md:py-20" variants={ANALYZE_CONTAINER_VARIANTS} initial="hidden" animate="visible">
         <div className="container max-w-3xl mx-auto px-4">
           <motion.div className="text-center mb-12" variants={ANALYZE_ITEM_VARIANTS}>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">기업 분석 리포트</h1>
-            <p className="text-zinc-500 text-base md:text-lg leading-relaxed max-w-xl mx-auto break-keep">
+            <h1 className="text-3xl md:text-4xl font-bold text-ink mb-3 tracking-tight">기업 분석 리포트</h1>
+            <p className="text-ink-4 text-base md:text-lg leading-relaxed max-w-xl mx-auto break-keep">
               회사와 직무를 고르면, 돈 버는 구조부터 맡고 싶은 사업 후보까지 지원자의 시선으로 정리해 드려요.
             </p>
           </motion.div>
 
           {summary && (
-            <motion.div variants={ANALYZE_ITEM_VARIANTS} className="mb-6 flex flex-wrap items-center justify-center gap-2 text-[13px]">
-              <span className="rounded-full border border-white/[0.1] bg-white/[0.04] px-3 py-1 text-zinc-300">
+            <motion.div variants={ANALYZE_ITEM_VARIANTS} className="mb-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[14px]">
+              <span className="font-semibold text-ink-2">
                 기업 분석 이용권 {summary.companyRemaining}회
               </span>
               {!summary.companyAnalysisEnabled && (
-                <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1 text-amber-200">
+                <span className="font-semibold text-blank">
                   준비 중인 기능이에요. 관리자 확인 후 열립니다.
                 </span>
               )}
               {summary.companyAnalysisEnabled && summary.companyRemaining === 0 && (
-                <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1 text-amber-200">
+                <span className="font-semibold text-blank">
                   보유한 기업 분석 이용권이 없어요.
                 </span>
               )}
             </motion.div>
           )}
 
-          <FormSection icon={Building2} accent required title="회사와 직무">
+          <FormSection required title="회사와 직무">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-2.5 uppercase tracking-wider">회사</label>
+              <label className="block text-[13px] font-semibold text-ink-3 mb-2.5">회사</label>
               <CompanyCombobox value={company} onChange={setCompany} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wider">직무</label>
+              <label className="block text-[13px] font-semibold text-ink-3 mb-3">직무</label>
               <JobRoleCombobox value={jobKeyword} onChange={setJobKeyword} />
             </div>
           </FormSection>
 
-          <FormSection icon={FileText} title="채용공고 붙여넣기">
+          <FormSection title="채용공고 붙여넣기">
             <div>
               <Textarea
                 value={postingText}
                 onChange={event => setPostingText(event.target.value.slice(0, MAX_POSTING_CHARS))}
                 placeholder="수행직무·자격요건을 붙여 넣으면 '이 직무의 자리' 섹션이 채용공고 문장을 해석해 드려요."
-                className="min-h-[160px] border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20"
+                className="min-h-[160px] border-line bg-surface text-ink placeholder:text-ink-5 rounded-xl text-[15px] focus:border-brand focus:ring-2 focus:ring-brand/15"
               />
-              <p className="mt-2 text-right text-xs text-zinc-600 tabular-nums">{postingText.length.toLocaleString()} / {MAX_POSTING_CHARS.toLocaleString()}</p>
+              <p className="mt-2 text-right text-xs text-ink-5 tabular-nums">{postingText.length.toLocaleString()} / {MAX_POSTING_CHARS.toLocaleString()}</p>
             </div>
           </FormSection>
 
           {previousResumes.length > 0 && (
-            <FormSection icon={Link2} title="내 자소서 분석과 연결" className="space-y-5">
+            <FormSection title="내 자소서 분석과 연결" className="space-y-5">
               <select
                 value={resumeAnalysisId}
                 onChange={event => setResumeAnalysisId(event.target.value)}
-                className="h-12 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 text-[15px] text-white focus:border-blue-500/40 focus:outline-none"
+                className="h-12 w-full rounded-xl border border-line bg-surface px-4 text-[15px] text-ink focus:border-brand focus:outline-none"
                 aria-label="연결할 자소서 분석"
               >
-                <option value="" className="bg-[#141414]">연결하지 않기</option>
+                <option value="" className="bg-surface">연결하지 않기</option>
                 {previousResumes.map(project => (
-                  <option key={project.id} value={project.latest_analysis_id ?? ""} className="bg-[#141414]">
+                  <option key={project.id} value={project.latest_analysis_id ?? ""} className="bg-surface">
                     {(project.company_name || project.title) + (project.job_role ? ` · ${project.job_role}` : "")}
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-zinc-600">연결하면 리포트 안에서 자소서 분석으로 바로 이동할 수 있어요.</p>
+              <p className="text-xs text-ink-5">연결하면 리포트 안에서 자소서 분석으로 바로 이동할 수 있어요.</p>
             </FormSection>
           )}
         </div>
@@ -215,7 +215,7 @@ export default function CompanyAnalyze() {
       {/* ════════ BOTTOM BAR ════════ */}
       <AnalyzeBottomBar>
         <div className="h-[72px] flex items-center justify-between gap-4">
-          <p className="text-xs text-zinc-500 break-keep">검색과 정리에 1분 정도 걸려요. 실패하면 이용권은 차감되지 않아요.</p>
+          <p className="text-xs text-ink-4 break-keep">검색과 정리에 1분 정도 걸려요. 실패하면 이용권은 차감되지 않아요.</p>
           <Button
             onClick={() => void handleSubmit()}
             disabled={!canSubmit}

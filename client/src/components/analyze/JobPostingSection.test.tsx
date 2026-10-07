@@ -161,7 +161,7 @@ describe("JobPostingSection", () => {
     expect(screen.getByText("careers.example.com · 본문 1,830자")).toBeTruthy();
     expect(screen.getByText("Node.js 3년 이상")).toBeTruthy();
     expect(screen.getByText("Vercel 배포 경험")).toBeTruthy();
-    expect(screen.getByText("PostgreSQL")).toBeTruthy();
+    expect(screen.getByText("#PostgreSQL")).toBeTruthy();
     expect(screen.queryByText("담당 업무")).toBeNull();
   });
 

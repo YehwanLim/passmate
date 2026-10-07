@@ -9,19 +9,19 @@ const LOADING_STEPS = {
     icon: FileSearch,
     title: "자소서를 한 줄씩 읽고 있어요",
     label: UI_LABELS.LOADING_STEP_1,
-    accent: "text-sky-400",
+    accent: "text-brand",
   },
   2: {
     icon: BarChart3,
     title: "합격 신호를 찾는 중이에요",
     label: UI_LABELS.LOADING_STEP_2,
-    accent: "text-cyan-400",
+    accent: "text-brand",
   },
   3: {
     icon: FileText,
     title: "인사이트 리포트를 정리하고 있어요",
     label: UI_LABELS.LOADING_STEP_3,
-    accent: "text-emerald-400",
+    accent: "text-ok",
   },
 } as const;
 
@@ -51,13 +51,13 @@ export default function AnalyzeLoadingOverlay({ isLoading }: { isLoading: boolea
     <AnimatePresence>
       {isLoading && (
         <motion.div
-          className="fixed inset-0 z-[100] bg-[#0A0A0A] flex flex-col items-center justify-center"
+          className="fixed inset-0 z-[100] bg-stage flex flex-col items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {/* Pulsing gradient ring */}
+          {/* 도는 고리 */}
           <div className="relative mb-10">
             <svg
               className="w-24 h-24 animate-spin"
@@ -69,7 +69,7 @@ export default function AnalyzeLoadingOverlay({ isLoading }: { isLoading: boolea
                 cy="50"
                 r="42"
                 fill="none"
-                stroke="rgba(255,255,255,0.05)"
+                stroke="#E5E8EB"
                 strokeWidth="4"
               />
               <circle
@@ -77,23 +77,11 @@ export default function AnalyzeLoadingOverlay({ isLoading }: { isLoading: boolea
                 cy="50"
                 r="42"
                 fill="none"
-                stroke="url(#loadGrad)"
+                stroke="#0064FF"
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray="80 200"
               />
-              <defs>
-                <linearGradient
-                  id="loadGrad"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="100%"
-                >
-                  <stop offset="0%" stopColor="#3B82F6" />
-                  <stop offset="100%" stopColor="#22D3EE" />
-                </linearGradient>
-              </defs>
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <AnimatePresence mode="wait">
@@ -114,7 +102,7 @@ export default function AnalyzeLoadingOverlay({ isLoading }: { isLoading: boolea
 
           <motion.p
             key={`loading-title-${loadingStep}`}
-            className="text-xl font-semibold text-white mb-6 tracking-tight"
+            className="text-xl font-semibold text-ink mb-6 tracking-tight"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -129,8 +117,8 @@ export default function AnalyzeLoadingOverlay({ isLoading }: { isLoading: boolea
                 key={step}
                 className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
                   loadingStep >= step
-                    ? "bg-cyan-400 scale-110 shadow-sm shadow-cyan-400/40"
-                    : "bg-zinc-700"
+                    ? "bg-brand scale-110"
+                    : "bg-line"
                 }`}
               />
             ))}
@@ -144,7 +132,7 @@ export default function AnalyzeLoadingOverlay({ isLoading }: { isLoading: boolea
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.4 }}
-              className="text-sm text-zinc-500 mb-10"
+              className="text-sm text-ink-4 mb-10"
             >
               {currentLoadingStep.label}
             </motion.p>

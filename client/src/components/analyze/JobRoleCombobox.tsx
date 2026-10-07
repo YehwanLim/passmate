@@ -79,7 +79,7 @@ export default function JobRoleCombobox({
       onKeyDown={onKeyDown}
     >
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4 pointer-events-none" />
         <Input
           value={value}
           onChange={e => onChange(e.target.value)}
@@ -88,7 +88,7 @@ export default function JobRoleCombobox({
           onClick={() => setIsFocused(true)}
           maxLength={100}
           placeholder="직무를 검색하거나 직접 입력하세요"
-          className="border-white/[0.08] bg-white/[0.04] text-white placeholder:text-zinc-600 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/20 transition-all"
+          className="border-line bg-surface text-ink placeholder:text-ink-5 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all"
         />
         {value && (
           <button
@@ -96,7 +96,7 @@ export default function JobRoleCombobox({
             // Tab 한 번에 다음 칸으로 넘어가도록 탭 순서에서 뺀다. 키보드는 방향키·Enter 로 고른다
             tabIndex={-1}
             onClick={() => onChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/10 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-ink-5 hover:text-ink-2 hover:bg-fill transition-colors"
             aria-label="입력 초기화"
           >
             <X className="w-3.5 h-3.5" />
@@ -113,12 +113,12 @@ export default function JobRoleCombobox({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18 }}
-            className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-white/[0.1] bg-[#141414] backdrop-blur-xl shadow-2xl shadow-black/40 py-1.5"
+            className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-line bg-surface shadow-[0_12px_32px_rgba(25,31,40,0.12)] py-1.5"
           >
             {filtered.length > 0 ? (
               filtered.map(category => (
                 <div key={category.name}>
-                  <p className="px-4 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-zinc-600">
+                  <p className="px-4 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-ink-5">
                     {category.name}
                   </p>
                   <ul>
@@ -137,13 +137,13 @@ export default function JobRoleCombobox({
                             }}
                             className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
                               value === role
-                                ? "text-cyan-400 bg-cyan-400/[0.08]"
+                                ? "text-brand bg-brand-soft"
                                 : highlight === index
-                                  ? "text-white bg-white/[0.06]"
-                                  : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                                  ? "text-ink bg-fill"
+                                  : "text-ink-2 hover:bg-fill hover:text-ink"
                             }`}
                           >
-                            <BriefcaseBusiness className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                            <BriefcaseBusiness className="w-4 h-4 text-ink-5 flex-shrink-0" />
                             {role}
                           </button>
                         </li>
@@ -159,11 +159,11 @@ export default function JobRoleCombobox({
                 data-highlighted={highlight === 0}
                 onMouseDown={e => e.preventDefault()}
                 onClick={() => setIsFocused(false)}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-cyan-400 hover:bg-white/[0.06] ${
-                  highlight === 0 ? "bg-white/[0.06]" : ""
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-brand hover:bg-fill ${
+                  highlight === 0 ? "bg-fill" : ""
                 }`}
               >
-                <Plus className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                <Plus className="w-4 h-4 text-brand flex-shrink-0" />
                 <span className="font-medium">"{value}"</span> 직접 입력하기
               </button>
             )}

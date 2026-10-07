@@ -14,16 +14,18 @@ import { cn } from "@/lib/utils";
  *
  * - transparent: 랜딩·문서 페이지(#050505). 배경이 거의 비치고 블러만 준다.
  * - solid: 앱 화면(#0A0A0A). 스크롤되는 폼 위에서 글자가 겹치지 않게 불투명하게.
+ * - light: 10월 새 디자인으로 바꾼 밝은 화면(마이페이지·작업실). 흰 헤더 + 검은 워드마크. 글자색은 landing.css 의 .site-header-light.
  * 항목은 실제 <a> 라 지연 하이드레이션 전에도 동작하고 크롤러가 따라간다. 현재 페이지는 aria-current 로 표시한다.
  * 640px 미만에서는 햄버거 메뉴로 바꾼다(landing.css 의 미디어쿼리도 같은 기준).
  */
 type SiteHeaderProps = {
-  variant?: "transparent" | "solid";
+  variant?: "transparent" | "solid" | "light";
 };
 
 const SURFACE_CLASS: Record<NonNullable<SiteHeaderProps["variant"]>, string> = {
   transparent: "bg-[#050505]/10 backdrop-blur-2xl border-white/[0.045]",
   solid: "bg-[#0A0A0A]/80 backdrop-blur-lg border-white/5",
+  light: "site-header-light bg-white/90 backdrop-blur-lg border-line-soft",
 };
 
 export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
@@ -49,7 +51,7 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
     <nav className={cn("sticky top-0 z-50 border-b", SURFACE_CLASS[variant])}>
       <div className="max-w-7xl mx-auto flex items-center justify-between h-14 px-6 lg:px-10">
         <Link href="/" className="flex items-center" aria-label="Pre:View 홈">
-          <Logo className="h-5 w-auto" />
+          <Logo className="h-5 w-auto" variant={variant === "light" ? "default" : "inverse"} />
         </Link>
 
         <div className="hidden sm:flex items-center gap-4 lg:gap-7">
@@ -57,7 +59,7 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <AuthButton />
+          <AuthButton tone={variant === "light" ? "light" : "dark"} />
           <button
             type="button"
             className="mobile-nav-toggle sm:hidden"

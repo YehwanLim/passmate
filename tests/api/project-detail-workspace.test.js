@@ -7,6 +7,10 @@ const PROJECT_ID = "22222222-2222-4222-8222-222222222222";
 const activeUser = async () => ({ applicationUser: { id: USER_ID, role: "user" } });
 const T1 = new Date("2026-10-03T01:00:00.000Z");
 const T2 = new Date("2026-10-03T02:00:00.000Z");
+const EXP_OWN = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const EXP_OTHER = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const POSTING_OWN = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const POSTING_OTHER = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 
 function projectRecord(overrides = {}) {
   return {
@@ -30,6 +34,12 @@ function createDb(project = projectRecord()) {
       aggregate: vi.fn(async () => ({ _max: { updatedAt: T1 } })),
       deleteMany: vi.fn(async () => ({ count: 0 })),
       createMany: vi.fn(async () => ({ count: 1 })),
+    },
+    experience: {
+      findMany: vi.fn(async ({ where }) => (where.userId === USER_ID ? where.id.in.filter((id) => id === EXP_OWN).map((id) => ({ id })) : [])),
+    },
+    jobPosting: {
+      findFirst: vi.fn(async ({ where }) => (where.userId === USER_ID && where.id === POSTING_OWN ? { id: POSTING_OWN } : null)),
     },
   };
   db.$transaction = vi.fn(async (work) => work(db));
@@ -95,7 +105,7 @@ describe("PUT /api/projects/:id (문항 저장)", () => {
     expect(res.statusCode).toBe(200);
     expect(db.applicationQuestion.deleteMany).toHaveBeenCalledWith({ where: { projectId: PROJECT_ID } });
     expect(db.applicationQuestion.createMany).toHaveBeenCalledWith({
-      data: [{ projectId: PROJECT_ID, position: 1, prompt: "지원 동기", charLimit: null, answer: "초안" }],
+      data: [{ projectId: PROJECT_ID, position: 1, prompt: "지원 동기", charLimit: null, answer: "초안", draftExperienceIds: [] }],
     });
     // 목록의 "최근 수정" 정렬이 projects.updated_at 이라, 저장할 때 지원서 행도 건드린다.
     expect(db.project.update).toHaveBeenCalledWith({
@@ -124,5 +134,65 @@ describe("PUT /api/projects/:id (문항 저장)", () => {
     })(req({ method: "PUT", body }), res);
     expect(res.statusCode).toBe(404);
     expect(db.applicationQuestion.createMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("경험 초안 연결", () => {
+  it("PUT: 남의 경험 id 는 저장하지 않는다", async () => {
+    const db = createDb();
+    db.applicationQuestion.aggregate
+      .mockResolvedValueOnce({ _max: { updatedAt: T1 } })
+      .mockResolvedValueOnce({ _max: { updatedAt: T2 } });
+    const res = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({
+      method: "PUT",
+      body: { questions: [{ prompt: "q", answer: "a", draftExperienceIds: [EXP_OWN, EXP_OTHER] }], baseUpdatedAt: T1.toISOString() },
+    }), res);
+    expect(res.statusCode).toBe(200);
+    expect(db.experience.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: USER_ID, id: { in: [EXP_OWN, EXP_OTHER] } } }));
+    expect(db.applicationQuestion.createMany.mock.calls[0][0].data[0].draftExperienceIds).toEqual([EXP_OWN]);
+  });
+
+  it("PUT: 초안 경험이 없으면 경험을 조회하지 않는다", async () => {
+    const db = createDb();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({
+      method: "PUT",
+      body: { questions: [{ prompt: "q", answer: "a" }], baseUpdatedAt: T1.toISOString() },
+    }), createResponse());
+    expect(db.experience.findMany).not.toHaveBeenCalled();
+  });
+
+  it("PATCH: 본인 공고만 붙이고, 남의 공고는 400, null 은 떼기", async () => {
+    const db = createDb();
+    const ok = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({ method: "PATCH", body: { jobPostingId: POSTING_OWN } }), ok);
+    expect(ok.statusCode).toBe(200);
+    expect(ok.body.job_posting_id).toBe(POSTING_OWN);
+
+    const bad = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({ method: "PATCH", body: { jobPostingId: POSTING_OTHER } }), bad);
+    expect(bad.statusCode).toBe(400);
+
+    const detach = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({ method: "PATCH", body: { jobPostingId: null } }), detach);
+    expect(detach.statusCode).toBe(200);
+    expect(detach.body.job_posting_id).toBeNull();
+  });
+
+  it("GET: 붙인 공고와 문항별 초안 경험을 내려준다", async () => {
+    const db = createDb(projectRecord({
+      jobPosting: { id: POSTING_OWN, sourceUrl: null, summaryJson: { title: "공고" } },
+      questions: [{ position: 1, prompt: "q", charLimit: null, answer: "", draftExperienceIds: [EXP_OWN], updatedAt: T1 }],
+    }));
+    const res = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({ method: "GET" }), res);
+    expect(res.body.job_posting).toEqual({ job_posting_id: POSTING_OWN, source_url: null, summary: { title: "공고" } });
+    expect(res.body.questions[0].draft_experience_ids).toEqual([EXP_OWN]);
+  });
+
+  it("GET: 공고가 없으면 job_posting 은 null", async () => {
+    const res = createResponse();
+    await createProjectDetailHandler({ db: createDb(), requireUser: activeUser })(req({ method: "GET" }), res);
+    expect(res.body.job_posting).toBeNull();
   });
 });

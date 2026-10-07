@@ -41,7 +41,7 @@ export default function AnalyzeLoginModal({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-ink/40"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -51,21 +51,21 @@ export default function AnalyzeLoginModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="analyze-login-title"
-            className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+            className="bg-surface border border-line rounded-2xl w-full max-w-md p-6 shadow-[0_12px_32px_rgba(25,31,40,0.12)]"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center flex-shrink-0">
-                <LogIn className="w-5 h-5 text-zinc-300" />
+              <div className="w-10 h-10 rounded-xl bg-fill border border-line flex items-center justify-center flex-shrink-0">
+                <LogIn className="w-5 h-5 text-ink-2" />
               </div>
-              <h3 id="analyze-login-title" className="text-lg font-semibold text-white">
+              <h3 id="analyze-login-title" className="text-lg font-semibold text-ink">
                 로그인이 필요해요
               </h3>
             </div>
-            <p className="text-sm text-zinc-400 leading-relaxed mb-6">{description}</p>
+            <p className="text-sm text-ink-3 leading-relaxed mb-6">{description}</p>
 
             <div className="space-y-3">
               {inApp ? (
@@ -75,7 +75,7 @@ export default function AnalyzeLoginModal({
                   redirectPath={redirectPath}
                   onBeforeRedirect={onBeforeRedirect}
                   fallbackNotice={
-                    <p className="text-[12px] leading-relaxed text-zinc-500">
+                    <p className="text-[12px] leading-relaxed text-ink-4">
                       브라우저 설정에 따라 로그인 페이지를 거치며, 그 경우 내용을 다시
                       입력해야 할 수 있어요.
                     </p>
@@ -85,13 +85,13 @@ export default function AnalyzeLoginModal({
               <KakaoSignInButton redirectPath={redirectPath} onBeforeRedirect={onBeforeRedirect} />
             </div>
 
-            <p className="mt-4 text-center text-[12px] leading-relaxed text-zinc-500">
+            <p className="mt-4 text-center text-[12px] leading-relaxed text-ink-4">
               로그인 시{" "}
-              <Link href="/terms" className="text-zinc-400 underline underline-offset-2 hover:text-white">
+              <Link href="/terms" className="text-ink-3 underline underline-offset-2 hover:text-ink">
                 이용약관
               </Link>{" "}
               및{" "}
-              <Link href="/privacy" className="text-zinc-400 underline underline-offset-2 hover:text-white">
+              <Link href="/privacy" className="text-ink-3 underline underline-offset-2 hover:text-ink">
                 개인정보 처리방침
               </Link>
               에 동의하는 것으로 간주합니다.
@@ -99,7 +99,7 @@ export default function AnalyzeLoginModal({
 
             <Button
               onClick={onClose}
-              className="mt-4 w-full bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl h-11 text-sm font-medium transition-colors"
+              className="mt-4 w-full bg-fill hover:bg-line text-ink-2 rounded-xl h-11 text-sm font-medium transition-colors"
             >
               닫기
             </Button>

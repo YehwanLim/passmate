@@ -4,8 +4,8 @@ import { useLocation, useSearch } from "wouter";
 
 import FeedbackRewardBanner from "@/components/FeedbackRewardBanner";
 import FeedbackSection from "@/components/FeedbackSection";
+import SiteHeader from "@/components/SiteHeader";
 import { MiniNavigator } from "@/components/report/MiniNavigator";
-import { REPORT_NAV_ACTION_CLASS, ReportTopNav } from "@/components/report/ReportTopNav";
 import { ReportAccessGate } from "@/components/report/ReportAccessGate";
 import { ReportAuthGate } from "@/components/report/ReportAuthGate";
 import { ActionPlanSection } from "@/components/report/sections/ActionPlanSection";
@@ -17,6 +17,7 @@ import { LineAnalysisSection } from "@/components/report/sections/LineAnalysisSe
 import { MentorCommentSection } from "@/components/report/sections/MentorCommentSection";
 import { PostingFitSection } from "@/components/report/sections/PostingFitSection";
 import { ReportClosing } from "@/components/report/sections/ReportClosing";
+import { ReportBlock } from "@/components/report/sections/ReportBlock";
 import { UI_LABELS } from "@/constants/labels";
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
 import { useAuth } from "@/contexts/AuthContext";
@@ -106,7 +107,7 @@ function AuthenticatedReport() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-zinc-400">
+      <main className="flex min-h-screen items-center justify-center bg-stage px-6 text-center text-sm text-ink-4">
         분석 리포트를 불러오는 중이에요.
       </main>
     );
@@ -114,7 +115,7 @@ function AuthenticatedReport() {
 
   if (error || !data || !data.activeAnalysisId) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-sm text-red-400">
+      <main className="flex min-h-screen items-center justify-center bg-stage px-6 text-center text-sm text-danger">
         {error ?? FAILED_MESSAGE}
       </main>
     );
@@ -135,10 +136,8 @@ function ReportContent({
   const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
   const feedbackRewardAvailable = useFeedbackRewardAvailable();
-  // 공고 적합도가 있으면 목차에 한 칸 끼어들고 뒤 섹션 번호가 밀린다. 섹션 번호는 목차에서만 읽는다.
   const hasPostingFit = isPostingFitRenderable(reportData.postingFit);
   const navSections = useMemo(() => buildReportNavSections({ hasPostingFit }), [hasPostingFit]);
-  const indexLabelOf = (id: string) => navSections.find((section) => section.id === id)?.indexLabel ?? "";
   const activeSection = useScrollSpy(navSections);
   const [isPrinting, setIsPrinting] = useState(false);
 
@@ -152,7 +151,8 @@ function ReportContent({
     return () => cancelAnimationFrame(raf);
   }, [isPrinting]);
 
-  // 예시 리포트는 전체를 보여 준다. 비로그인에게 03 이후를 잠그는 건 실제 리포트용 규칙이다.
+  // 예시 리포트는 전체를 보여 준다. 비로그인에게 요약 아래를 잠그는 건 실제 리포트용 규칙이다
+  // (잠글지는 로그인 여부로만 정해진다 — utils/reportAccess). 첫 잠금 칸에만 로그인 안내를 띄운다.
   const isLockedFromSection = (sectionIndex: number) =>
     !sample &&
     isReportSectionLocked({
@@ -194,39 +194,57 @@ function ReportContent({
     () => limitSectionHighlights(strengthEntries.map((entry) => entry.text)),
     [strengthEntries],
   );
-  const gapHighlights = useMemo(
-    () => limitSectionHighlights(gapEntries.map((entry) => entry.text)),
-    [gapEntries],
-  );
+  const gapHighlights = useMemo(() => limitSectionHighlights(gapEntries.map((entry) => entry.text)), [gapEntries]);
   const mentorCommentBlocks = useMemo(() => splitMentorComment(reportData.pmComment), [reportData.pmComment]);
+  // 섹션 번호는 목차에서만 읽는다. 공고 적합도가 끼면 뒤 번호가 밀린다.
+  const indexOf = (id: string) => navSections.find((section) => section.id === id)?.indexLabel ?? "";
+
+  const questionCount = reportData.questionTabs.length;
+  const reportMeta = [
+    `${displayName}님`,
+    questionCount > 0 ? `문항 ${questionCount}개` : null,
+    hasPostingFit ? "채용공고 포함" : null,
+  ].filter(Boolean).join(" · ");
+  const actionButtonClass = "inline-flex h-11 items-center justify-center rounded-xl px-[18px] text-[15px] font-semibold transition-colors";
 
   return (
-    <main className="min-h-screen bg-[#09090B] text-zinc-100 font-sans selection:bg-indigo-500/20">
-      <MiniNavigator sections={navSections} activeSection={activeSection} />
+    <main className="min-h-screen bg-stage font-sans text-ink">
+      <div className="print:hidden">
+        <SiteHeader variant="light" />
+      </div>
+      <MiniNavigator sections={navSections} activeSection={activeSection} tone="light" />
 
-      <ReportTopNav
-        className="print:hidden"
-        sections={navSections}
-        activeSection={activeSection}
-        backLabel={UI_LABELS.BACK}
-        actions={
-          sample ? (
-            <button className={REPORT_NAV_ACTION_CLASS} onClick={() => navigate("/analyze")}>
-              내 자소서 분석하기
-            </button>
-          ) : (
-            <button className={REPORT_NAV_ACTION_CLASS} onClick={() => navigate("/my")}>
-              내 지원서
-            </button>
-          )
-        }
-      />
+      <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-6 px-4 pb-24 pt-10 sm:px-6 lg:px-0">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[14px] font-semibold text-ink-4">{UI_LABELS.REPORT_EYEBROW}</p>
+            <p className="mt-1.5 text-[26px] font-bold leading-[1.3] tracking-[-0.02em] text-ink sm:text-[28px]">
+              {[targetCompany, targetJobRole].filter(Boolean).join(" · ")}
+            </p>
+            <p className="mt-1.5 text-[14px] text-ink-4">{reportMeta}</p>
+          </div>
+          <div className="flex shrink-0 gap-2 print:hidden">
+            {sample ? (
+              <button className={`${actionButtonClass} bg-brand text-white hover:bg-brand-hover`} onClick={() => navigate("/analyze")}>
+                내 자소서 분석하기
+              </button>
+            ) : (
+              <>
+                <button className={`${actionButtonClass} bg-fill text-ink-2 hover:bg-line`} onClick={() => navigate("/my")}>
+                  내 지원서
+                </button>
+                <button className={`${actionButtonClass} border border-line bg-surface text-ink-2 hover:bg-fill-soft`} onClick={() => setIsPrinting(true)}>
+                  {UI_LABELS.SAVE_REPORT}
+                </button>
+              </>
+            )}
+          </div>
+        </header>
 
-      <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10 pt-4">
         {sample ? (
-          <div role="note" className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[13px] text-zinc-300">
-            <span className="font-semibold text-white">예시 리포트 · {targetCompany} {targetJobRole}</span>
-            <span className="text-zinc-400 text-pretty">가상의 지원자 {displayName}님의 자소서를 읽은 결과예요. 내 자소서를 넣으면 같은 구성으로 새로 만들어져요.</span>
+          <div role="note" className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-2xl bg-surface px-5 py-3.5 text-[14px] print:hidden">
+            <span className="font-bold text-ink">예시 리포트 · {targetCompany} {targetJobRole}</span>
+            <span className="text-ink-3 text-pretty">가상의 지원자 {displayName}님의 자소서를 읽은 결과예요. 내 자소서를 넣으면 같은 구성으로 새로 만들어져요.</span>
           </div>
         ) : (
           <FeedbackRewardBanner
@@ -236,64 +254,109 @@ function ReportContent({
         )}
 
         <FirstImpressionSection
+          index={indexOf("section-first-impression")}
           displayName={displayName}
-          targetCompany={targetCompany}
           heroPersona={heroPersona}
           heroPersonaLines={heroPersonaLines}
           heroSummary={heroSummary}
-          editorialKeywords={editorialKeywords}
+          keywords={editorialKeywords}
           hiringMemoryItems={hiringMemoryItems}
           profileNote={reportData.firstImpression.profileNote}
-          mentorCommentBlocks={mentorCommentBlocks}
         />
 
-        <CompanyInsightSection targetCompany={targetCompany} companyInsight={reportData.companyInsight} />
+        <ReportBlock
+          id="section-company-insight"
+          index={indexOf("section-company-insight")}
+          label={UI_LABELS.DETAILS_HIRING_CRITERIA}
+          title={UI_LABELS.HIRING_CRITERIA(targetCompany)}
+        >
+          <CompanyInsightSection companyInsight={reportData.companyInsight} />
+        </ReportBlock>
 
         <ReportAccessGate isLocked={isLockedFromSection(2)} onLogin={handleLoginToUnlock}>
           {hasPostingFit ? (
-            <PostingFitSection
-              postingFit={reportData.postingFit as NonNullable<ReportData["postingFit"]>}
-              jobPosting={jobPosting}
-              indexLabel={indexLabelOf("section-posting-fit")}
-            />
+            <ReportBlock
+              id="section-posting-fit"
+              index={indexOf("section-posting-fit")}
+              label={UI_LABELS.DETAILS_POSTING_FIT}
+              title={UI_LABELS.POSTING_FIT_TITLE}
+            >
+              <PostingFitSection
+                postingFit={reportData.postingFit as NonNullable<ReportData["postingFit"]>}
+                jobPosting={jobPosting}
+              />
+            </ReportBlock>
           ) : null}
-          <CoreDiagnosisSection
+
+          <ReportBlock
+            id="section-core-diagnosis"
+            index={indexOf("section-core-diagnosis")}
+            label={UI_LABELS.REPORT_NAV_CORE_DIAGNOSIS}
+            title={UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}
+          >
+            <CoreDiagnosisSection
+              strengthEntries={strengthEntries}
+              gapEntries={gapEntries}
+              strengthHighlights={strengthHighlights}
+              gapHighlights={gapHighlights}
+              positioning={reportData.positioning}
+            />
+          </ReportBlock>
+
+        </ReportAccessGate>
+
+        <ReportAccessGate isLocked={isLockedFromSection(3)} onLogin={handleLoginToUnlock} showOverlay={false}>
+          <LineAnalysisSection
+            index={indexOf("section-line-analysis")}
+            questionTabs={reportData.questionTabs}
             targetCompany={targetCompany}
-            strengthEntries={strengthEntries}
-            gapEntries={gapEntries}
-            strengthHighlights={strengthHighlights}
-            gapHighlights={gapHighlights}
-            positioning={reportData.positioning}
-            indexLabel={indexLabelOf("section-core-diagnosis")}
+            displayName={displayName}
+            isPrinting={isPrinting}
           />
         </ReportAccessGate>
-      </article>
 
-      <ReportAccessGate isLocked={isLockedFromSection(3)} onLogin={handleLoginToUnlock} showOverlay={false}>
-        <LineAnalysisSection
-          questionTabs={reportData.questionTabs}
-          targetCompany={targetCompany}
-          displayName={displayName}
-          isPrinting={isPrinting}
-          indexLabel={indexLabelOf("section-line-analysis")}
-        />
-      </ReportAccessGate>
+        <ReportAccessGate isLocked={isLockedFromSection(4)} onLogin={handleLoginToUnlock} showOverlay={false}>
+          <ReportBlock
+            id="section-interview-drill"
+            index={indexOf("section-interview-drill")}
+            label={UI_LABELS.DETAILS_INTERVIEW}
+            count={reportData.interviewQA.length}
+            title={UI_LABELS.INTERVIEW_DRILL_TITLE}
+            description={UI_LABELS.INTERVIEW_DRILL_DESC}
+          >
+            <InterviewDrillSection items={reportData.interviewQA} isPrinting={isPrinting} />
+          </ReportBlock>
 
-      <ReportAccessGate isLocked={isLockedFromSection(4)} onLogin={handleLoginToUnlock} showOverlay={false}>
-        <article className="max-w-4xl mx-auto px-6 md:px-8 pb-10">
-          <InterviewDrillSection items={reportData.interviewQA} isPrinting={isPrinting} indexLabel={indexLabelOf("section-interview-drill")} />
-          <ActionPlanSection tasks={reportData.actionPlan} indexLabel={indexLabelOf("section-action-plan")} />
-          <MentorCommentSection blocks={mentorCommentBlocks} indexLabel={indexLabelOf("section-pm-comment")} />
+          <ReportBlock
+            id="section-action-plan"
+            index={indexOf("section-action-plan")}
+            label={UI_LABELS.DETAILS_ACTION_PLAN}
+            count={reportData.actionPlan.length}
+            title={UI_LABELS.ACTION_PLAN_TITLE}
+          >
+            <ActionPlanSection tasks={reportData.actionPlan} />
+          </ReportBlock>
+
+          {mentorCommentBlocks.length > 0 ? (
+            <ReportBlock
+              id="section-pm-comment"
+              index={indexOf("section-pm-comment")}
+              label={UI_LABELS.DETAILS_PM_COMMENT}
+              title={UI_LABELS.PM_VERDICT_TITLE}
+            >
+              <MentorCommentSection blocks={mentorCommentBlocks} />
+            </ReportBlock>
+          ) : null}
 
           {sample ? (
-            <section className="print:hidden mt-16 mb-10 rounded-xl border border-white/[0.06] bg-white/[0.02] px-6 py-10 text-center md:px-10">
-              <h3 className="text-xl font-medium text-white text-balance">내 자소서는 어떻게 읽힐까요?</h3>
-              <p className="mt-3 text-[15px] leading-relaxed text-zinc-400 text-pretty">
+            <section className="rounded-3xl bg-surface px-6 py-10 text-center print:hidden md:px-10">
+              <h3 className="text-[20px] font-bold text-ink text-balance">내 자소서는 어떻게 읽힐까요?</h3>
+              <p className="mt-3 text-[15px] leading-relaxed text-ink-3 text-pretty">
                 지원할 회사와 직무, 자소서를 넣으면 이 구성 그대로 1분 안에 리포트를 드려요. 첫 분석은 무료예요.
               </p>
               <button
                 onClick={() => navigate("/analyze")}
-                className="mx-auto mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-6 py-3.5 font-medium text-zinc-900 transition-colors hover:bg-zinc-200 sm:w-auto"
+                className="mx-auto mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3.5 font-bold text-white transition-colors hover:bg-brand-hover sm:w-auto"
               >
                 <span>내 자소서 분석하기</span>
                 <ArrowRight className="h-4 w-4" />
@@ -301,12 +364,10 @@ function ReportContent({
             </section>
           ) : (
             <>
-              <div className="print:hidden">
-                <FeedbackSection
-                  analysisId={activeAnalysisId}
-                  rewardAvailable={feedbackRewardAvailable}
-                />
-              </div>
+              <FeedbackSection
+                analysisId={activeAnalysisId}
+                rewardAvailable={feedbackRewardAvailable}
+              />
 
               <ReportClosing
                 targetCompany={targetCompany}
@@ -316,8 +377,8 @@ function ReportContent({
               />
             </>
           )}
-        </article>
-      </ReportAccessGate>
+        </ReportAccessGate>
+      </div>
     </main>
   );
 }
@@ -341,7 +402,7 @@ export default function PassMateReport() {
   }
 
   return (
-    <ReportAuthGate loginRedirect="/report-new" message="로그인 후 분석 리포트를 확인할 수 있어요.">
+    <ReportAuthGate loginRedirect="/report-new" message="로그인 후 분석 리포트를 확인할 수 있어요." tone="light">
       <AuthenticatedReport />
     </ReportAuthGate>
   );

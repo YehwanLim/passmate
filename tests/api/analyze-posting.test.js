@@ -54,7 +54,10 @@ describe("job posting API", () => {
   });
 
   it("selectAnalyzeHandler 는 posting 을 company 보다 먼저, split 보다 뒤에 고른다", () => {
-    const handlers = { company: () => {}, posting: () => {}, resume: () => {}, split: () => {} };
+    const handlers = { company: () => {}, draft: () => {}, posting: () => {}, resume: () => {}, split: () => {} };
+    expect(selectAnalyzeHandler({ draft: "1" }, handlers)).toBe(handlers.draft);
+    expect(selectAnalyzeHandler({ draft: "1", posting: "1" }, handlers)).toBe(handlers.posting);
+    expect(selectAnalyzeHandler({ draft: "1", kind: "company" }, handlers)).toBe(handlers.draft);
     expect(selectAnalyzeHandler({ posting: "1" }, handlers)).toBe(handlers.posting);
     expect(selectAnalyzeHandler({ posting: "1", kind: "company" }, handlers)).toBe(handlers.posting);
     expect(selectAnalyzeHandler({ posting: "1", split: "1" }, handlers)).toBe(handlers.split);

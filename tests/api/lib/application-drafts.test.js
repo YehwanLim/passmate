@@ -8,6 +8,10 @@ import {
   normalizeQuestionSave,
 } from "../../../lib/application-drafts.js";
 
+const EXP_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const EXP_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const EXP_C = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+
 describe("normalizeQuestionDrafts", () => {
   it("position 을 1부터 매기고 답변의 공백·줄바꿈은 그대로 둔다", () => {
     const drafts = normalizeQuestionDrafts([
@@ -15,8 +19,8 @@ describe("normalizeQuestionDrafts", () => {
       { prompt: "협업 경험" },
     ]);
     expect(drafts).toEqual([
-      { position: 1, prompt: "지원 동기", charLimit: 700, answer: "첫 줄\n\n둘째 줄  " },
-      { position: 2, prompt: "협업 경험", charLimit: null, answer: "" },
+      { position: 1, prompt: "지원 동기", charLimit: 700, answer: "첫 줄\n\n둘째 줄  ", draftExperienceIds: [] },
+      { position: 2, prompt: "협업 경험", charLimit: null, answer: "", draftExperienceIds: [] },
     ]);
   });
 
@@ -38,6 +42,14 @@ describe("normalizeQuestionDrafts", () => {
   it("답변의 널 문자는 지운다", () => {
     expect(normalizeQuestionDrafts([{ prompt: "q", answer: "a\0b" }])[0].answer).toBe("ab");
   });
+
+  it("draftExperienceIds 는 최대 2개의 uuid 배열(중복 제거), 없으면 []", () => {
+    expect(normalizeQuestionDrafts([{ prompt: "a", draftExperienceIds: [EXP_A, EXP_A] }])[0].draftExperienceIds).toEqual([EXP_A]);
+    expect(normalizeQuestionDrafts([{ prompt: "a" }])[0].draftExperienceIds).toEqual([]);
+    for (const bad of [[EXP_A, EXP_B, EXP_C], "e1", ["e1"]]) {
+      expect(() => normalizeQuestionDrafts([{ prompt: "a", draftExperienceIds: bad }])).toThrow(ApiError);
+    }
+  });
 });
 
 describe("normalizeProjectCreate", () => {
@@ -51,6 +63,11 @@ describe("normalizeProjectCreate", () => {
     });
     expect(() => normalizeProjectCreate({})).toThrow(ApiError);
     expect(() => normalizeProjectCreate({ company: "   " })).toThrow(ApiError);
+  });
+
+  it("새 지원서에는 초안 경험을 받지 않는다(소유 확인은 PUT 에서만)", () => {
+    const draft = normalizeProjectCreate({ company: "A", questions: [{ prompt: "q", draftExperienceIds: [EXP_A] }] });
+    expect(draft.questions).toEqual([{ position: 1, prompt: "q", charLimit: null, answer: "" }]);
   });
 
   it("마감은 ISO 문자열을 Date 로, 슬러그는 소문자·숫자·하이픈만 받는다", () => {
@@ -71,6 +88,13 @@ describe("normalizeProjectMeta", () => {
   it("보낸 키만 돌려주고, 마감 null 은 마감 지우기다", () => {
     expect(normalizeProjectMeta({ deadline: null })).toEqual({ deadline: null });
     expect(normalizeProjectMeta({ jobKeyword: "영업" })).toEqual({ jobKeyword: "영업" });
+  });
+
+  it("jobPostingId 는 uuid 또는 null(떼기)", () => {
+    expect(normalizeProjectMeta({ jobPostingId: EXP_A })).toEqual({ jobPostingId: EXP_A });
+    expect(normalizeProjectMeta({ jobPostingId: null })).toEqual({ jobPostingId: null });
+    expect(() => normalizeProjectMeta({ jobPostingId: 3 })).toThrow(ApiError);
+    expect(() => normalizeProjectMeta({ jobPostingId: "p1" })).toThrow(ApiError);
   });
 
   it("빈 본문, 빈 회사명, 모르는 키는 400", () => {

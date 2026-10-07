@@ -5,9 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   fetchApplication: vi.fn(),
+  listExperiences: vi.fn(),
   saveApplicationQuestions: vi.fn(),
   updateApplicationMeta: vi.fn(),
   submitAnalysisRequest: vi.fn(),
+  requestExperienceDraft: vi.fn(),
   fetchMock: vi.fn(),
 }));
 
@@ -22,8 +24,13 @@ vi.mock("@/lib/apiAuth", () => ({ getAuthorizationHeader: async () => ({}) }));
 vi.mock("@/lib/workspace", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/workspace")>()),
   fetchApplication: mocks.fetchApplication,
+  listExperiences: mocks.listExperiences,
   saveApplicationQuestions: mocks.saveApplicationQuestions,
   updateApplicationMeta: mocks.updateApplicationMeta,
+}));
+vi.mock("@/lib/experienceDraft", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/experienceDraft")>()),
+  requestExperienceDraft: mocks.requestExperienceDraft,
 }));
 vi.mock("@/lib/analysisSubmit", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/analysisSubmit")>()),
@@ -56,6 +63,7 @@ function memoryStorage(): Storage {
 beforeEach(() => {
   vi.stubGlobal("localStorage", memoryStorage());
   mocks.fetchApplication.mockResolvedValue(DETAIL);
+  mocks.listExperiences.mockResolvedValue([]);
   mocks.saveApplicationQuestions.mockResolvedValue({ questions_updated_at: "2026-10-03T02:00:00.000Z" });
   mocks.fetchMock.mockResolvedValue(new Response("[]", { status: 200, headers: { "content-type": "application/json" } }));
   vi.stubGlobal("fetch", mocks.fetchMock);
@@ -300,5 +308,99 @@ describe("작업 화면", () => {
       expect(screen.getByLabelText("직무")).toBeTruthy();
       expect(screen.queryByText("해외영업")).toBeNull();
     });
+  });
+});
+
+describe("내 경험으로 초안 쓰기", () => {
+  const EXP_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const OK = {
+    kind: "ok" as const,
+    chosen: [{ experienceId: EXP_ID, title: "카페 발주 개선", reason: "문제를 숫자로 본 경험" }],
+    sentences: [{ text: "폐기를 [실제 수치] 줄였습니다.", kind: "experience" as const, sourceIds: [EXP_ID], unsourced: false }],
+    draftText: "폐기를 [실제 수치] 줄였습니다.",
+    charCount: 17,
+    replacedNumbers: 1,
+    remainingToday: 1,
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", memoryStorage());
+    mocks.fetchApplication.mockResolvedValue(DETAIL);
+    mocks.listExperiences.mockResolvedValue([{ id: EXP_ID, title: "카페 발주 개선" }]);
+    mocks.saveApplicationQuestions.mockResolvedValue({ questions_updated_at: "2026-10-03T02:00:00.000Z" });
+    mocks.fetchMock.mockResolvedValue(new Response("[]", { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", mocks.fetchMock);
+  });
+
+  it("초안을 받아 미리보기 후 채우면 답과 고른 경험을 함께 저장한다", async () => {
+    mocks.requestExperienceDraft.mockResolvedValue(OK);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<MyAnalyses />);
+    fireEvent.click(await screen.findByRole("button", { name: "내 경험으로 초안 쓰기" }));
+    expect(mocks.requestExperienceDraft).toHaveBeenCalledWith({
+      projectId: "p1", prompt: "지원 동기", charLimit: 700, avoidExperienceIds: [],
+    });
+    expect(await screen.findByText("출처: 카페 발주 개선")).toBeTruthy();
+    // 채우기 전에는 답 칸이 그대로다.
+    expect(screen.getByDisplayValue("가".repeat(250))).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "이 초안으로 채우기" }));
+    expect(await screen.findByDisplayValue(OK.draftText)).toBeTruthy();
+    expect(screen.getByText(/초안에 쓴 경험: 카페 발주 개선/)).toBeTruthy();
+    await waitFor(() => expect(mocks.saveApplicationQuestions).toHaveBeenCalledWith(
+      "p1",
+      [{ prompt: "지원 동기", charLimit: 700, answer: OK.draftText, draftExperienceIds: [EXP_ID] }],
+      "2026-10-03T01:00:00.000Z"
+    ), { timeout: 3000 });
+  });
+
+  it("다른 경험으로 다시는 방금 고른 경험을 피한다", async () => {
+    mocks.requestExperienceDraft.mockResolvedValue(OK);
+    render(<MyAnalyses />);
+    fireEvent.click(await screen.findByRole("button", { name: "내 경험으로 초안 쓰기" }));
+    fireEvent.click(await screen.findByRole("button", { name: "다른 경험으로 다시" }));
+    await waitFor(() => expect(mocks.requestExperienceDraft).toHaveBeenLastCalledWith(
+      expect.objectContaining({ avoidExperienceIds: [EXP_ID] })
+    ));
+  });
+
+  it("한도 초과는 안내만 하고 답을 바꾸지 않는다", async () => {
+    mocks.requestExperienceDraft.mockResolvedValue({ kind: "rate_limited" });
+    render(<MyAnalyses />);
+    fireEvent.click(await screen.findByRole("button", { name: "내 경험으로 초안 쓰기" }));
+    expect(await screen.findByText(/오늘 무료 초안 2개를 다 썼어요/)).toBeTruthy();
+    expect(screen.getByDisplayValue("가".repeat(250))).toBeTruthy();
+  });
+
+  it("경험이 하나도 없으면 버튼 대신 경험 적으러 가기를 보여 준다", async () => {
+    mocks.listExperiences.mockResolvedValue([]);
+    render(<MyAnalyses />);
+    expect(await screen.findByText("내 경험 적으러 가기")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "내 경험으로 초안 쓰기" })).toBeNull();
+  });
+});
+
+describe("오늘 한도를 다 쓰면", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", memoryStorage());
+    mocks.fetchApplication.mockResolvedValue({
+      ...DETAIL,
+      questions: [...DETAIL.questions, { position: 2, prompt: "협업 경험", char_limit: null, answer: "" }],
+    });
+    mocks.listExperiences.mockResolvedValue([{ id: "e1", title: "경험" }]);
+    mocks.fetchMock.mockResolvedValue(new Response("[]", { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", mocks.fetchMock);
+  });
+
+  it("다른 문항으로 옮겨도 버튼을 막고 이유를 보여 준다", async () => {
+    mocks.requestExperienceDraft.mockResolvedValue({ kind: "rate_limited" });
+    render(<MyAnalyses />);
+    fireEvent.click(await screen.findByRole("button", { name: "내 경험으로 초안 쓰기" }));
+    await screen.findByText(/오늘 무료 초안 2개를 다 썼어요/);
+    expect((screen.getByRole("button", { name: "내 경험으로 초안 쓰기" }) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "문항 2" }));
+    expect((screen.getByRole("button", { name: "내 경험으로 초안 쓰기" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/오늘 무료 초안 2개를 다 썼어요/)).toBeTruthy();
   });
 });

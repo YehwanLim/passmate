@@ -30,17 +30,17 @@ export default function JobPostingStickyBar({ record }: { record: JobPostingReco
     <div
       role="region"
       aria-label="채용공고 요약"
-      className="sticky top-[64px] z-20 mb-5 rounded-xl border border-white/[0.1] bg-[#141416]/95 backdrop-blur"
+      className="sticky top-[64px] z-20 mb-5 rounded-xl border border-line bg-surface backdrop-blur"
     >
       <div className="flex items-center gap-3 px-4 py-2.5">
-        <Pin className="h-3.5 w-3.5 shrink-0 text-zinc-500" aria-hidden="true" />
-        <span className="shrink-0 text-xs font-medium text-zinc-400">공고 요구사항</span>
+        <Pin className="h-3.5 w-3.5 shrink-0 text-ink-4" aria-hidden="true" />
+        <span className="shrink-0 text-xs font-medium text-ink-3">공고 요구사항</span>
         {!expanded && (
           <ul className="flex min-w-0 flex-1 gap-1.5 overflow-hidden whitespace-nowrap" aria-label="공고 키워드">
             {chips.map(chip => (
               <li
                 key={chip}
-                className="shrink-0 rounded-md border border-white/[0.06] bg-white/[0.05] px-2 py-0.5 text-[11.5px] text-zinc-300"
+                className="shrink-0 rounded-md border border-line-soft bg-fill-soft px-2 py-0.5 text-[11.5px] text-ink-2"
               >
                 {chip}
               </li>
@@ -51,7 +51,7 @@ export default function JobPostingStickyBar({ record }: { record: JobPostingReco
           type="button"
           onClick={() => setExpanded(prev => !prev)}
           aria-expanded={expanded}
-          className="ml-auto inline-flex shrink-0 items-center gap-1 text-xs text-zinc-400 transition-colors hover:text-white"
+          className="ml-auto inline-flex shrink-0 items-center gap-1 text-xs text-ink-3 transition-colors hover:text-ink"
         >
           {expanded ? "접기" : "펼치기"}
           <ChevronDown
@@ -62,7 +62,7 @@ export default function JobPostingStickyBar({ record }: { record: JobPostingReco
       </div>
 
       {expanded && (
-        <div className="grid gap-5 border-t border-white/[0.06] px-4 py-4 md:grid-cols-2">
+        <div className="grid gap-5 border-t border-line-soft px-4 py-4 md:grid-cols-2">
           {requirements.length > 0 && <BulletList title="자격요건" items={requirements} />}
           {preferred.length > 0 && <BulletList title="우대사항" items={preferred} />}
           {!hasLists && responsibilities.length > 0 && (

@@ -3,7 +3,8 @@ import { useLocation, useParams } from "wouter";
 import { Building2, Briefcase } from "lucide-react";
 import type { AnalysisSummary } from "@/types/my";
 import AnalysisCard from "@/components/my/AnalysisCard";
-import ApplicationEditor from "@/components/my/ApplicationEditor";
+import JobPostingSection, { getJobPostingTitle } from "@/components/analyze/JobPostingSection";
+import ApplicationEditor, { type DraftUiState } from "@/components/my/ApplicationEditor";
 import SkeletonCard from "@/components/my/SkeletonCard";
 import SiteHeader from "@/components/SiteHeader";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -12,10 +13,12 @@ import { getAuthorizationHeader } from "@/lib/apiAuth";
 import { parseAnalysisSections } from "@/lib/analysisSections";
 import { analysisPendingPath } from "@/lib/analysisRequest";
 import { resolveIdempotencyKey, submitAnalysisRequest, type IdempotentRequest } from "@/lib/analysisSubmit";
+import { requestExperienceDraft } from "@/lib/experienceDraft";
 import {
   WorkspaceApiError,
   daysUntil,
   fetchApplication,
+  listExperiences,
   saveApplicationQuestions,
   updateApplicationMeta,
   type ApplicationDetail,
@@ -23,6 +26,7 @@ import {
   type ApplicationQuestionDraft,
 } from "@/lib/workspace";
 import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
+import type { JobPostingRecord } from "@/types/jobPosting";
 import { WORKSPACE_COPY } from "./workspaceCopy";
 
 const MAX_QUESTIONS = 5;
@@ -43,13 +47,27 @@ function isDraftList(value: unknown): value is ApplicationQuestionDraft[] {
   );
 }
 
+// 초안 경험은 있을 때만 싣는다. 초안을 안 쓴 문항은 저장·보관 모양이 예전과 같아 보관본 비교가 흔들리지 않는다.
+function withDraftExperiences(ids: unknown): { draftExperienceIds?: string[] } {
+  return Array.isArray(ids) && ids.length > 0 && ids.every((id) => typeof id === "string")
+    ? { draftExperienceIds: ids }
+    : {};
+}
+
 // 저장소는 사생활 보호 모드 등에서 없거나 예외를 던질 수 있다. 그때는 서버 자동 저장만 한다.
 function readBackup(key: string): ApplicationQuestionDraft[] | null {
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
-    return isDraftList(parsed) ? parsed.map(({ prompt, charLimit, answer }) => ({ prompt, charLimit, answer })) : null;
+    return isDraftList(parsed)
+      ? parsed.map(({ prompt, charLimit, answer, draftExperienceIds }) => ({
+          prompt,
+          charLimit,
+          answer,
+          ...withDraftExperiences(draftExperienceIds),
+        }))
+      : null;
   } catch {
     return null;
   }
@@ -88,7 +106,7 @@ function toKstDateInput(deadline: string | null): string {
   return Number.isNaN(time) ? "" : new Date(time + KST_OFFSET_MS).toISOString().slice(0, 10);
 }
 
-const metaField = "w-full rounded-lg border border-white/[0.08] bg-transparent px-3 py-2 text-sm text-zinc-100";
+const metaField = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink focus:border-brand focus:outline-none";
 
 function ApplicationMetaForm({
   projectId,
@@ -132,23 +150,23 @@ function ApplicationMetaForm({
   };
 
   return (
-    <form onSubmit={submit} className="grid gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:grid-cols-3">
-      <label className="block space-y-1 text-[13px] text-zinc-400">
+    <form onSubmit={submit} className="grid gap-3 rounded-[20px] bg-surface p-5 sm:grid-cols-3">
+      <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{labels.company}</span>
         <input aria-label={labels.company} value={company} onChange={(e) => setCompany(e.target.value)} maxLength={100} className={metaField} />
       </label>
-      <label className="block space-y-1 text-[13px] text-zinc-400">
+      <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{labels.job}</span>
         <input aria-label={labels.job} value={jobKeyword} onChange={(e) => setJobKeyword(e.target.value)} maxLength={100} className={metaField} />
       </label>
-      <label className="block space-y-1 text-[13px] text-zinc-400">
+      <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{labels.deadline}</span>
         <input aria-label={labels.deadline} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={metaField} />
       </label>
       <div className="flex items-center justify-end gap-2 sm:col-span-3">
-        {error && <p role="alert" className="mr-auto text-[13px] text-red-400">{error}</p>}
-        <button type="button" onClick={onCancel} className="h-9 rounded-lg px-3 text-sm text-zinc-400">{WORKSPACE_COPY.meta.cancel}</button>
-        <button type="submit" disabled={busy} className="h-9 rounded-lg bg-white px-4 text-sm font-semibold text-black disabled:opacity-50">
+        {error && <p role="alert" className="mr-auto text-[13px] text-danger">{error}</p>}
+        <button type="button" onClick={onCancel} className="h-10 rounded-[10px] px-4 text-[14px] font-semibold text-ink-3 hover:bg-fill">{WORKSPACE_COPY.meta.cancel}</button>
+        <button type="submit" disabled={busy} className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-hover disabled:opacity-50">
           {WORKSPACE_COPY.meta.save}
         </button>
       </div>
@@ -178,6 +196,13 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [backup, setBackup] = useState<ApplicationQuestionDraft[] | null>(null);
   const [editingMeta, setEditingMeta] = useState(false);
+  const [experienceTitles, setExperienceTitles] = useState<Map<string, string>>(new Map());
+  const [experienceCount, setExperienceCount] = useState<number | null>(null);
+  const [draft, setDraft] = useState<DraftUiState>(null);
+  const [draftLimitReached, setDraftLimitReached] = useState(false);
+  const [posting, setPosting] = useState<JobPostingRecord | null>(null);
+  const [postingError, setPostingError] = useState(false);
+  const draftSeq = useRef(0);
   const backupKey = `${BACKUP_PREFIX}${projectId}`;
   const baseUpdatedAt = useRef<string | null>(null);
   const analysisRequestRef = useRef<IdempotentRequest | null>(null);
@@ -201,10 +226,21 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
         }
         baseUpdatedAt.current = application.questions_updated_at;
 
+        setPosting(
+          application.job_posting
+            ? {
+                id: application.job_posting.job_posting_id,
+                sourceUrl: application.job_posting.source_url,
+                summary: application.job_posting.summary,
+              }
+            : null
+        );
+
         let drafts: ApplicationQuestionDraft[] = application.questions.map((q) => ({
           prompt: q.prompt,
           charLimit: q.char_limit,
           answer: q.answer,
+          ...withDraftExperiences(q.draft_experience_ids),
         }));
         let fromAnalysis = false;
         // 작업실 이전 지원서: 문항 초안이 없으면 최신 진단의 문항·답변으로 미리 채운다(저장 전까지 DB 에 쓰지 않음).
@@ -234,6 +270,24 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
       cancelled = true;
     };
   }, [authLoading, projectId, user?.id]);
+
+  // 초안 버튼용 경험 목록. 실패해도 작업실은 그대로 쓰고, 경험 유무는 서버(422)가 판단한다.
+  useEffect(() => {
+    if (authLoading || !user?.id) return;
+    let cancelled = false;
+    listExperiences()
+      .then((list) => {
+        if (cancelled) return;
+        setExperienceTitles(new Map(list.map((e) => [e.id, e.title])));
+        setExperienceCount(list.length);
+      })
+      .catch(() => {
+        if (!cancelled) setExperienceCount(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user?.id]);
 
   const save = useCallback(
     async (value: ApplicationQuestionDraft[]) => {
@@ -292,6 +346,48 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
     if (seeded) setSeeded(false);
   };
 
+  const requestDraft = async (index: number, opts?: { retry: boolean }) => {
+    const q = questions[index];
+    if (!q || q.prompt.trim().length === 0) return;
+    // "다른 경험으로 다시"는 방금 고른 경험을 피한다.
+    const previous =
+      opts?.retry && draft?.index === index && draft.status === "done" && draft.result.kind === "ok"
+        ? draft.result.chosen.map((c) => c.experienceId)
+        : [];
+    const seq = ++draftSeq.current;
+    setDraft({ index, status: "loading" });
+    const result = await requestExperienceDraft({
+      projectId,
+      prompt: q.prompt.trim(),
+      charLimit: q.charLimit,
+      avoidExperienceIds: previous,
+    });
+    if (result.kind === "rate_limited" || (result.kind === "ok" && result.remainingToday === 0)) {
+      setDraftLimitReached(true);
+    }
+    // 기다리는 동안 다른 문항에서 새로 요청했으면 늦게 온 결과는 버린다.
+    if (seq === draftSeq.current) setDraft({ index, status: "done", result });
+  };
+
+  const applyDraft = (index: number) => {
+    if (!draft || draft.index !== index || draft.status !== "done" || draft.result.kind !== "ok") return;
+    updateQuestion(index, {
+      answer: draft.result.draftText,
+      draftExperienceIds: draft.result.chosen.map((c) => c.experienceId),
+    });
+    setDraft(null);
+  };
+
+  const changePosting = (record: JobPostingRecord | null) => {
+    const before = posting;
+    setPosting(record);
+    setPostingError(false);
+    updateApplicationMeta(projectId, { jobPostingId: record?.id ?? null }).catch(() => {
+      setPosting(before);
+      setPostingError(true);
+    });
+  };
+
   const diagnose = async () => {
     if (!detail || submitting) return;
     setSubmitError(null);
@@ -326,19 +422,19 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-28">
-      <SiteHeader />
-      <div className="container space-y-6 pt-10">
+    <div className="min-h-screen bg-stage pb-28">
+      <SiteHeader variant="light" />
+      <div className="container max-w-5xl space-y-5 pt-10">
         {loadError ? (
-          <p role="alert" className="py-10 text-center text-sm text-red-400">
+          <p role="alert" className="py-10 text-center text-sm text-danger">
             {loadError}
           </p>
         ) : !detail || !loaded ? (
           <SkeletonCard variant="analysis" />
         ) : (
           <>
-            <header className="space-y-1">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-zinc-500">
+            <header className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-ink-4">
                 {detail.company_name && (
                   <span className="inline-flex items-center gap-1.5">
                     <Building2 className="h-3.5 w-3.5" />
@@ -351,14 +447,14 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                     {detail.job_role}
                   </span>
                 )}
-                <span className="text-zinc-400">{deadlineLabel(detail.deadline)}</span>
+                <span className="font-semibold text-ink-2">{deadlineLabel(detail.deadline)}</span>
                 {!editingMeta && (
-                  <button type="button" onClick={() => setEditingMeta(true)} className="text-zinc-400 underline underline-offset-4 hover:text-zinc-200">
+                  <button type="button" onClick={() => setEditingMeta(true)} className="font-semibold text-brand-ink underline-offset-4 hover:underline">
                     {WORKSPACE_COPY.meta.edit}
                   </button>
                 )}
               </div>
-              <h1 className="text-xl font-bold tracking-tight text-zinc-100">{detail.title}</h1>
+              <h1 className="text-[26px] font-bold tracking-[-0.03em] text-ink">{detail.title}</h1>
             </header>
 
             {editingMeta && (
@@ -377,16 +473,36 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
               />
             )}
 
-            {seeded && <p className="text-[13px] text-zinc-400">{WORKSPACE_COPY.seeded}</p>}
+            <details className="rounded-[20px] bg-surface px-5 py-4">
+              <summary className="cursor-pointer text-[14px] font-semibold text-ink-2">
+                {posting ? WORKSPACE_COPY.draft.postingAttached(getJobPostingTitle(posting)) : WORKSPACE_COPY.draft.attachPosting}
+              </summary>
+              <div className="pt-3">
+                <JobPostingSection
+                  value={posting}
+                  onChange={changePosting}
+                  isAuthenticated
+                  onRequireLogin={() => navigate("/login")}
+                  tone="light"
+                />
+                {postingError && (
+                  <p role="alert" className="pt-2 text-[13px] text-danger">
+                    {WORKSPACE_COPY.meta.failed}
+                  </p>
+                )}
+              </div>
+            </details>
+
+            {seeded && <p className="text-[14px] text-ink-3">{WORKSPACE_COPY.seeded}</p>}
 
             {backup && (
-              <div role="status" className="flex flex-wrap items-center gap-3 rounded-xl border border-white/[0.08] bg-white/5 px-4 py-3 text-[13px] text-zinc-300">
+              <div role="status" className="flex flex-wrap items-center gap-3 rounded-[20px] bg-blank-soft px-5 py-3.5 text-[14px] text-ink-2">
                 <span>{WORKSPACE_COPY.backup.notice}</span>
                 <div className="ml-auto flex gap-2">
-                  <button type="button" onClick={dismissBackup} className="h-9 rounded-lg px-3 text-[13px] text-zinc-400 hover:text-zinc-200">
+                  <button type="button" onClick={dismissBackup} className="h-9 rounded-[10px] px-3 text-[13px] font-semibold text-ink-3 hover:bg-white/60">
                     {WORKSPACE_COPY.backup.dismiss}
                   </button>
-                  <button type="button" onClick={restoreBackup} className="h-9 rounded-lg bg-white px-3 text-[13px] font-semibold text-black">
+                  <button type="button" onClick={restoreBackup} className="h-9 rounded-[10px] bg-ink px-3.5 text-[13px] font-semibold text-white hover:bg-ink-2">
                     {WORKSPACE_COPY.backup.restore}
                   </button>
                 </div>
@@ -406,13 +522,22 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
               onRemove={(index) => {
                 setQuestions((current) => current.filter((_, i) => i !== index));
                 setActiveIndex(0);
+                draftSeq.current += 1; // 문항 번호가 바뀌므로 진행 중인 초안 결과는 버린다
+                setDraft(null);
                 setSeeded(false);
               }}
               saveState={autosave.state}
+              draft={draft}
+              onRequestDraft={(index, opts) => void requestDraft(index, opts)}
+              onApplyDraft={applyDraft}
+              onCloseDraft={() => setDraft(null)}
+              experienceTitles={experienceTitles}
+              experienceCount={experienceCount}
+              draftLimitReached={draftLimitReached}
             />
             {autosave.state === "error" && (
               <div className="-mt-3 flex justify-end">
-                <button type="button" onClick={() => void autosave.flush()} className="text-[13px] font-medium text-zinc-300 underline underline-offset-4 hover:text-zinc-100">
+                <button type="button" onClick={() => void autosave.flush()} className="text-[13px] font-semibold text-brand-ink underline-offset-4 hover:underline">
                   {WORKSPACE_COPY.save.retry}
                 </button>
               </div>
@@ -423,23 +548,23 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                 type="button"
                 onClick={diagnose}
                 disabled={submitting}
-                className="h-11 rounded-xl bg-white px-5 text-sm font-semibold text-black transition-opacity disabled:opacity-50"
+                className="h-12 rounded-xl bg-brand px-6 text-[15px] font-bold text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
               >
                 {WORKSPACE_COPY.diagnose}
               </button>
               {submitError && (
-                <p role="alert" className="text-[13px] text-red-400">
+                <p role="alert" className="text-[13px] text-danger">
                   {submitError.title} · {submitError.message}
                 </p>
               )}
             </div>
 
-            <section className="space-y-3">
-              <h2 className="text-sm font-semibold text-zinc-300">{WORKSPACE_COPY.history}</h2>
+            <section className="space-y-3 pt-4">
+              <h2 className="text-[17px] font-bold text-ink">{WORKSPACE_COPY.history}</h2>
               {historyFailed ? (
-                <p role="alert" className="text-[13px] text-red-400">{WORKSPACE_COPY.historyError}</p>
+                <p role="alert" className="text-[13px] text-danger">{WORKSPACE_COPY.historyError}</p>
               ) : analyses.length === 0 ? (
-                <p className="text-[13px] text-zinc-500">{WORKSPACE_COPY.historyEmpty}</p>
+                <p className="text-[14px] text-ink-4">{WORKSPACE_COPY.historyEmpty}</p>
               ) : (
                 <div className="grid gap-3">
                   {analyses.map((analysis) => (

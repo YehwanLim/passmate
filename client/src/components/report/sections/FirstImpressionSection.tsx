@@ -1,105 +1,128 @@
+import type { ReactNode } from "react";
 import { AlertTriangle, Check } from "lucide-react";
 
 import { UI_LABELS } from "@/constants/labels";
-import type { HiringMemoryItem, MentorCommentBlock } from "@/pages/reportFirstImpression";
-import { MENTOR_COMMENT_STYLES } from "@/pages/reportStyles";
-import { ReportHeroFrame } from "../ReportHeroFrame";
+import type { HiringMemoryItem } from "@/pages/reportFirstImpression";
 import { renderCleanText } from "../richText";
 
-/** ACT 1 — 첫인상 표지: 페르소나, 한 줄 요약, 키워드, 채용담당자 기억, 프로필, 현직자 코멘트. */
+function ReadingStep({ time, label, tone, last, children }: { time: string; label: string; tone: "ok" | "fix"; last?: boolean; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3.5">
+      <div aria-hidden="true" className="hidden items-center md:flex">
+        <span
+          className={`size-3.5 shrink-0 rounded-full ${tone === "ok" ? "bg-ok shadow-[0_0_0_5px_var(--color-ok-soft)]" : "bg-[#B97800] shadow-[0_0_0_5px_var(--color-blank-soft)]"}`}
+        />
+        <span className={`ml-3 h-0.5 flex-1 ${last ? "bg-transparent" : "bg-line"}`} />
+      </div>
+      <p className="flex items-baseline gap-2">
+        <span className="text-[24px] font-extrabold leading-none tracking-[-0.02em] text-ink">{time}</span>
+        <span className="text-[14px] font-semibold text-ink-4">{label}</span>
+      </p>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * 01 첫인상(리포트 표지): 위는 이름표 띠(이니셜·읽히는 모습 | 지원자 프로필·키워드),
+ * 아래는 채용 담당자가 읽는 순서대로 3초(총평) · 10초(기억할 모습 ✓) · 30초(남는 질문 △) 세 칸.
+ */
 export function FirstImpressionSection({
+  index,
   displayName,
-  targetCompany,
   heroPersona,
   heroPersonaLines,
   heroSummary,
-  editorialKeywords,
+  keywords,
   hiringMemoryItems,
   profileNote,
-  mentorCommentBlocks,
 }: {
+  index: string;
   displayName: string;
-  targetCompany: string;
   heroPersona: string;
   heroPersonaLines: string[];
   heroSummary: string;
-  editorialKeywords: string[];
+  keywords: string[];
   hiringMemoryItems: HiringMemoryItem[];
   profileNote: string | undefined;
-  mentorCommentBlocks: MentorCommentBlock[];
 }) {
+  const remembered = hiringMemoryItems.filter((item) => item.mark === "✓");
+  const questions = hiringMemoryItems.filter((item) => item.mark !== "✓");
+
   return (
-    <header id="section-first-impression" className="pt-8 pb-[6.5rem] section-divider report-section-anchor">
-      <ReportHeroFrame eyebrow={<>First Read · {targetCompany}</>}>
-        <div className="relative min-w-0 py-12 text-center sm:py-14 md:py-[4.25rem]">
-          <p className="mb-5 text-[15px] sm:text-base text-zinc-300">{displayName}님은</p>
-          <h1 className="mx-auto max-w-3xl text-[2.08rem] sm:text-[3.15rem] md:text-[4.05rem] font-semibold leading-[1.04] tracking-tight text-white">
-            {heroPersonaLines.map((line) => (
-              <span key={line} className="block">
-                {line}
-              </span>
-            ))}
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-[16px] sm:text-[19px] leading-[1.8] text-zinc-300 text-balance">
-            {renderCleanText(heroSummary)}
+    <section id="section-first-impression" className="report-section-anchor rounded-3xl bg-surface px-5 py-7 sm:px-10 sm:py-10">
+      <p className="text-[14px] font-bold text-ink-4">
+        <span className="mr-2 tabular-nums text-ink-5">{index}</span>
+        {UI_LABELS.REPORT_NAV_FIRST_IMPRESSION}
+      </p>
+
+      <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_340px] md:items-center md:gap-8">
+        <div className="flex items-center gap-4 sm:gap-5">
+          <span
+            aria-hidden="true"
+            className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-navy text-[22px] font-extrabold text-white sm:size-[72px] sm:text-[28px]"
+          >
+            {displayName.trim().charAt(0) || "지"}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[15px] font-semibold text-ink-4">{displayName}님은 채용 담당자에게 이렇게 읽혀요</p>
+            <h1 className="mt-1.5 text-[26px] font-bold leading-[1.3] tracking-[-0.03em] text-navy sm:text-[34px]">
+              {heroPersonaLines.map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </h1>
+          </div>
+        </div>
+        <div>
+          <p className="text-[13px] font-bold text-ink-5">{UI_LABELS.APPLICANT_PROFILE}</p>
+          <p className="mt-1.5 text-[14px] leading-[1.7] text-ink-2">
+            {profileNote?.trim()
+              ? renderCleanText(profileNote)
+              : `${heroPersona}라는 인상이 먼저 남습니다. 경험의 흐름은 문제를 발견하고 근거를 모아 실행으로 옮기는 방향으로 읽힙니다.`}
           </p>
-        </div>
-
-        <div className="relative flex min-w-0 flex-wrap justify-center gap-2.5 pb-8">
-          {editorialKeywords.map((keyword) => (
-            <span key={keyword} className="max-w-full rounded-full border border-white/[0.12] bg-white/[0.045] px-3.5 py-2 text-xs font-semibold text-zinc-300 transition-colors duration-200 hover:border-cyan-300/25 hover:bg-cyan-300/[0.07] hover:text-zinc-100">
-              {keyword}
-            </span>
-          ))}
-        </div>
-
-        <div className="relative grid items-start gap-5 md:grid-cols-2">
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
-            <p className="mb-3 text-sm font-semibold text-white">채용담당자가 기억할 모습</p>
-            <ul className="space-y-3">
-              {hiringMemoryItems.map((item) => (
-                <li key={`${item.mark}-${item.text}`} className="grid grid-cols-[22px_1fr] gap-2.5 text-sm leading-[1.68] text-zinc-300">
-                  <span className={`mt-0.5 inline-flex size-[18px] items-center justify-center rounded-full border ${item.mark === "✓" ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-200" : "border-amber-300/30 bg-amber-400/10 text-amber-200"}`}>
-                    {item.mark === "✓" ? <Check className="size-3" /> : <AlertTriangle className="size-3" />}
-                  </span>
-                  <span className="pt-px">{item.text}</span>
+          {keywords.length > 0 ? (
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {keywords.map((keyword) => (
+                <li key={keyword} className="rounded-[10px] border border-line bg-fill-soft px-2.5 py-1.5 text-[12.5px] font-semibold text-ink-3">
+                  #{keyword.replace(/^#/, "")}
                 </li>
               ))}
             </ul>
-          </div>
-
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.028] p-5">
-            <p className="mb-3 text-sm font-semibold text-white">{UI_LABELS.APPLICANT_PROFILE}</p>
-            <p className="text-sm leading-[1.82] text-zinc-400">
-              {profileNote?.trim()
-                ? renderCleanText(profileNote)
-                : `${heroPersona}라는 인상이 먼저 남습니다. 경험의 흐름은 문제를 발견하고 근거를 모아 실행으로 옮기는 방향으로 읽힙니다.`}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 md:col-span-2">
-            <p className="mb-4 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">현직자 코멘트</p>
-            <div className="grid gap-5 md:grid-cols-3">
-              {mentorCommentBlocks.map((block, index) => {
-                const style = MENTOR_COMMENT_STYLES[index];
-                if (!style) return null;
-
-                return (
-                  <blockquote key={block.title} className="min-w-0">
-                    <div className="mb-4 flex items-center gap-3">
-                      <span className={`text-[32px] font-extrabold leading-none tracking-[0.08em] opacity-60 ${style.numberClassName}`}>{String(index + 1).padStart(2, "0")}</span>
-                      <p className="text-[15px] font-bold text-zinc-100">
-                        {style.title}
-                      </p>
-                    </div>
-                    <p className="text-sm leading-[1.82] text-zinc-300">{renderCleanText(block.text)}</p>
-                  </blockquote>
-                );
-              })}
-            </div>
-          </div>
+          ) : null}
         </div>
-      </ReportHeroFrame>
-    </header>
+      </div>
+
+      <div className="mt-8 border-t border-line-soft pt-7">
+        <p className="text-[16px] font-bold text-ink">채용 담당자가 읽는 순서대로</p>
+        <div className="mt-4 grid gap-6 md:grid-cols-3 md:gap-5">
+          <ReadingStep time="3초" label="처음 보이는 것" tone="ok">
+            <p className="rounded-2xl bg-fill-soft px-5 py-4 text-[16px] font-bold leading-[1.6] text-ink text-pretty">{renderCleanText(heroSummary)}</p>
+          </ReadingStep>
+          <ReadingStep time="10초" label={UI_LABELS.HIRING_MEMORY_SHORT} tone="ok">
+            <ul className="flex flex-col gap-2" aria-label={UI_LABELS.HIRING_MEMORY}>
+              {remembered.map((item) => (
+                <li key={item.text} className="flex items-center gap-3 rounded-[14px] bg-fill-soft px-3.5 py-3 text-[15px] font-bold leading-[1.45] text-ink">
+                  <span aria-hidden="true" className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-full bg-ok-soft text-ok">
+                    <Check className="size-3" strokeWidth={3.2} />
+                  </span>
+                  <span>{item.text}</span>
+                </li>
+              ))}
+            </ul>
+          </ReadingStep>
+          <ReadingStep time="30초" label="다 읽고 남는 질문" tone="fix" last>
+            {questions.map((item) => (
+              <div key={item.text} className="flex flex-col gap-2.5 rounded-2xl bg-blank-soft px-5 py-4">
+                <AlertTriangle aria-hidden="true" className="size-5 text-blank" strokeWidth={2.2} />
+                <p className="text-[17px] font-bold leading-[1.45] text-ink">{item.text}</p>
+                <p className="text-[14px] leading-[1.6] text-ink-3">면접에서 먼저 물어볼 수 있는 부분이에요. 아래 핵심 진단에서 채우는 법을 봐요.</p>
+              </div>
+            ))}
+          </ReadingStep>
+        </div>
+      </div>
+    </section>
   );
 }

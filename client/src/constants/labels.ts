@@ -23,12 +23,12 @@ export const UI_LABELS = {
   CULTURE_SIGNALS: "조직 문화 특징",
 
   // Act 2.5: 공고 적합도 (채용공고를 붙여 분석한 리포트에만 나온다)
-  POSTING_FIT_TITLE: "공고에서 찾는 것, 자소서에 있는 것",
-  POSTING_FIT_MATCHES: "요건별로 보면",
-  POSTING_FIT_MISSING: "공고에는 있지만 자소서에는 없는 내용",
-  POSTING_FIT_QUESTION_ADVICE: "문항마다 이렇게 붙이면",
-  POSTING_FIT_EVIDENCE: "자소서에서",
-  POSTING_FIT_ADVICE: "이렇게 고치면",
+  POSTING_FIT_TITLE: "공고가 원하는 것을 자소서가 얼마나 채웠는지 봤어요",
+  POSTING_FIT_MATCHES: "공고 요건 하나씩 보기",
+  POSTING_FIT_MISSING: "공고에 있는데 자소서엔 없는 단어",
+  POSTING_FIT_QUESTION_ADVICE: "문항별로 이렇게 넣어 보세요",
+  POSTING_FIT_EVIDENCE: "근거 문장",
+  POSTING_FIT_ADVICE: "이렇게 채워 보세요",
   POSTING_FIT_BASIS: (label: string) => `${label} 채용공고 기준`,
 
   // Act 2: Core Diagnosis
@@ -40,6 +40,21 @@ export const UI_LABELS = {
   POSITION_TARGET: "면접관이 기대하는 방향",
   POSITION_GAP: "지금 가장 아쉬운 부분",
   POSITION_STRATEGY: "이렇게 좁히세요",
+
+  // 리포트 섹션 이름(블록 위 작은 이름 = 왼쪽 목차와 같은 말)
+  REPORT_EYEBROW: "자소서 진단 리포트",
+  REPORT_NAV_FIRST_IMPRESSION: "첫인상",
+  REPORT_NAV_CORE_DIAGNOSIS: "핵심 진단",
+  REPORT_NAV_LINE_ANALYSIS: "문장별 코멘트",
+  HIRING_MEMORY: "채용담당자가 기억할 모습",
+  HIRING_MEMORY_SHORT: "기억에 남는 것",
+  SUMMARY_STRENGTHS: "잘 읽히는 점",
+  SUMMARY_GAPS: "고칠 점",
+  DETAILS_INTERVIEW: "예상 면접 질문",
+  DETAILS_POSTING_FIT: "공고 적합도",
+  DETAILS_HIRING_CRITERIA: "합격 기준",
+  DETAILS_ACTION_PLAN: "다음 단계",
+  DETAILS_PM_COMMENT: "실무자 코멘트",
 
   // Act 3: Line-by-line Analysis
   LINE_BY_LINE_ANALYSIS: "문장별로 더 다듬어볼 수 있어요",

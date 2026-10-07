@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -26,9 +26,11 @@ vi.mock("@/lib/supabase", () => ({ supabase: { auth: { getSession: async () => (
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
 import PassMateReport from "./ReportResult";
 
-/** 상단 sticky 칩 바의 칩들(data-section). 좌측 목차(MiniNavigator)는 data-section 이 없어 섞이지 않는다. */
-function chipTexts() {
-  return Array.from(document.querySelectorAll("[data-section]")).map((chip) => chip.textContent);
+/** 왼쪽 목차 항목(번호 + 이름). */
+function navTexts() {
+  return within(screen.getByRole("navigation", { name: "리포트 목차" }))
+    .getAllByRole("link")
+    .map((link) => link.textContent);
 }
 
 describe("ReportResult public sample", () => {
@@ -61,28 +63,40 @@ describe("ReportResult public sample", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("shows the posting-fit section as 03 and renumbers the rest when the sample carries a job posting", async () => {
+  it("renders every section of the sample in report order, posting fit included", async () => {
     window.history.replaceState({}, "", "/report-new?sample=1");
 
     render(<PassMateReport />);
 
-    expect(await screen.findByRole("heading", { name: /공고에서 찾는 것, 자소서에 있는 것/ })).toBeTruthy();
+    // 01 첫인상: 이름표(페르소나·지원자 프로필) 아래 읽는 순서 3초·10초(기억할 모습 ✓)·30초(남는 질문 △).
+    expect(await screen.findByText("김민지님은 채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
+    expect(screen.getByText("채용 담당자가 읽는 순서대로")).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "채용담당자가 기억할 모습" })).getByText("로그 3,000건을 직접 모은 동아리 기획자")).toBeTruthy();
+    expect(screen.getByText("다 읽고 남는 질문")).toBeTruthy();
+    expect(screen.getByText("지원자 프로필")).toBeTruthy();
+    // 02 핵심 진단: 강점·보완점 전문과 합격까지의 거리(아쉬운 부분까지).
+    expect(screen.getByRole("heading", { name: "이 자소서는 이렇게 읽히고 있어요" })).toBeTruthy();
+    expect(screen.getByText("문제를 데이터로 좁히는 순서가 몸에 밴 지원자로 읽힙니다.").tagName).toBe("STRONG");
+    expect(screen.getByText("지금 가장 아쉬운 부분")).toBeTruthy();
+    expect(navTexts()).toEqual([
+      "01.첫인상",
+      "02.합격 기준",
+      "03.공고 적합도",
+      "04.핵심 진단",
+      "05.문장별 코멘트",
+      "06.예상 질문",
+      "07.다음 단계",
+      "08.실무자 코멘트",
+    ]);
+
+    // 공고 적합도는 블록째 펼쳐 둔다.
+    expect(screen.getByRole("heading", { name: "공고가 원하는 것을 자소서가 얼마나 채웠는지 봤어요" })).toBeTruthy();
     expect(screen.getByText("현대자동차 · 서비스 기획 채용공고 기준")).toBeTruthy();
     expect(screen.getByText("커넥티드카·모빌리티 서비스에 대한 이해")).toBeTruthy();
-    expect(screen.getByText("없음")).toBeTruthy();
-    expect(chipTexts()).toEqual([
-      "01첫인상",
-      "02합격 기준",
-      "03공고 적합도",
-      "04핵심 진단",
-      "05문장 분석",
-      "06예상 질문",
-      "07다음 단계",
-      "08실무자 코멘트",
-    ]);
+    expect(screen.getByText("안 보여요")).toBeTruthy();
   });
 
-  it("keeps the 7-section layout for a stored report without posting fit", async () => {
+  it("leaves posting fit out for a stored report without it", async () => {
     window.history.replaceState({}, "", "/report-new?analysisId=analysis-1");
     mocks.useAuth.mockReturnValue({ user: { name: "지원자" }, isLoading: false, isAuthenticated: true });
     mocks.getAuthorizationHeader.mockResolvedValue({});
@@ -101,16 +115,18 @@ describe("ReportResult public sample", () => {
 
     render(<PassMateReport />);
 
-    expect(await screen.findByRole("heading", { name: /이 자소서는 이렇게 읽히고 있어요/ })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: /공고에서 찾는 것, 자소서에 있는 것/ })).toBeNull();
-    expect(chipTexts()).toEqual([
-      "01첫인상",
-      "02합격 기준",
-      "03핵심 진단",
-      "04문장 분석",
-      "05예상 질문",
-      "06다음 단계",
-      "07실무자 코멘트",
+    expect(await screen.findByText("지원자님은 채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
+    expect(screen.getByText("지원자님 · 문항 2개")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "내 지원서" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "공고가 원하는 것을 자소서가 얼마나 채웠는지 봤어요" })).toBeNull();
+    expect(navTexts()).toEqual([
+      "01.첫인상",
+      "02.합격 기준",
+      "03.핵심 진단",
+      "04.문장별 코멘트",
+      "05.예상 질문",
+      "06.다음 단계",
+      "07.실무자 코멘트",
     ]);
   });
 

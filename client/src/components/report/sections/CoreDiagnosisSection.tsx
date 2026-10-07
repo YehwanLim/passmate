@@ -1,97 +1,145 @@
+import type { ReactNode } from "react";
+import { ArrowRight, Check } from "lucide-react";
+
 import { UI_LABELS } from "@/constants/labels";
 import type { DiagnosisDisplayItem, HighlightedTextSegment } from "@/pages/reportFirstImpression";
 import type { Positioning } from "@/types/report";
-import { SectionNumber } from "../SectionNumber";
-import { renderRichText, renderTextSegments } from "../richText";
+import { MARKER_CLASS, renderRichText, renderTextSegments } from "../richText";
 
-/** ACT 2 — 핵심 진단: 강점, 보완점, 전략적 포지셔닝. */
+/**
+ * 꺼내 쓰기 + 형광펜: 핵심 문장(모델이 ** 로 고른 한 문장)을 소제목 아래로 꺼내 크게 칠하고,
+ * 나머지 설명은 작게 둔다. 핵심 문장이 없으면 소제목 + 문단으로 그린다.
+ */
+function DiagnosisBody({ headline, segments, tone }: { headline: string | null; segments: HighlightedTextSegment[]; tone: "ok" | "fix" }) {
+  const key = segments.find((segment) => segment.kind === "bold")?.text.trim();
+  if (!key) {
+    return (
+      <div className="min-w-0">
+        {headline ? <p className="mb-1.5 text-[16px] font-bold leading-[1.45] text-ink">{headline}</p> : null}
+        <p className="text-[15px] leading-[1.75] text-ink-3">{renderTextSegments(segments)}</p>
+      </div>
+    );
+  }
+  const rest = segments
+    .filter((segment) => segment.kind !== "bold")
+    .map((segment) => segment.text)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return (
+    <div className="min-w-0">
+      {headline ? <p className={`mb-1.5 text-[13px] font-bold leading-[1.4] ${tone === "ok" ? "text-ok" : "text-blank"}`}>{headline}</p> : null}
+      <p className="text-[17px] leading-[1.6] tracking-[-0.01em]">
+        <strong className={`font-bold text-ink ${MARKER_CLASS[tone]}`}>{key}</strong>
+      </p>
+      {rest ? <p className="mt-2 text-[14px] leading-[1.7] text-ink-4">{rest}</p> : null}
+    </div>
+  );
+}
+
+function DiagnosisColumn({
+  title,
+  tone,
+  entries,
+  highlights,
+  marker,
+}: {
+  title: string;
+  tone: "ok" | "fix";
+  entries: DiagnosisDisplayItem[];
+  highlights: HighlightedTextSegment[][];
+  marker: (index: number) => ReactNode;
+}) {
+  return (
+    <div>
+      <p className={`border-b border-line bg-fill-soft px-5 py-3 text-[14px] font-bold ${tone === "ok" ? "text-ok" : "text-blank"}`}>
+        {title} {entries.length}
+      </p>
+      <ul>
+        {entries.map((entry, i) => (
+          <li key={i} className="flex gap-3 border-t border-line-soft px-5 py-5 first:border-t-0">
+            {marker(i)}
+            <DiagnosisBody headline={entry.headline} segments={highlights[i] ?? []} tone={tone} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * 02 핵심 진단: 잘 읽히는 점·고칠 점을 표 한 칸의 두 열로, 그 아래 합격까지의 거리(지금 → 기대, 아쉬운 부분, 좁히는 법).
+ * 항목마다 모델이 고른 핵심 문장 하나만 꺼내 형광펜으로 둔다(limitSectionHighlights).
+ */
 export function CoreDiagnosisSection({
-  targetCompany,
   strengthEntries,
   gapEntries,
   strengthHighlights,
   gapHighlights,
   positioning,
-  indexLabel = "03",
 }: {
-  targetCompany: string;
   strengthEntries: DiagnosisDisplayItem[];
   gapEntries: DiagnosisDisplayItem[];
   strengthHighlights: HighlightedTextSegment[][];
   gapHighlights: HighlightedTextSegment[][];
   positioning: Positioning;
-  indexLabel?: string;
 }) {
   return (
-    <section id="section-core-diagnosis" className="py-24 section-divider report-section-anchor">
-      <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-14 tracking-tight"><SectionNumber value={indexLabel} />{UI_LABELS.STRENGTHS_AND_GAPS(targetCompany)}</h3>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-14 mb-16">
-        <div>
-          <p className="text-[15px] font-bold text-emerald-300/90 mb-6">{UI_LABELS.STRENGTHS}</p>
-          <div>
-            {strengthEntries.map((entry, i) => (
-              <div key={i} className={i > 0 ? "mt-7 border-t border-white/[0.05] pt-7" : ""}>
-                {entry.headline ? (
-                  <>
-                    <p className="mb-2.5 flex items-center gap-2.5 text-[17px] font-semibold leading-[1.45] tracking-[-0.01em] text-zinc-50">
-                      <span aria-hidden="true" className="mx-[3px] inline-block size-[7px] shrink-0 rounded-full bg-emerald-400/85 shadow-[0_0_8px_rgba(52,211,153,0.35)]" />
-                      {entry.headline}
-                    </p>
-                    <p className="pl-[23px] text-[15px] leading-[1.85] text-zinc-400">{renderTextSegments(strengthHighlights[i], "strength")}</p>
-                  </>
-                ) : (
-                  <p className="text-[16px] leading-[1.8] text-zinc-100">{renderTextSegments(strengthHighlights[i], "strength")}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="text-[15px] font-bold text-amber-300/80 mb-6">{UI_LABELS.GAPS}</p>
-          <div>
-            {gapEntries.map((entry, i) => (
-              <div key={i} className={i > 0 ? "mt-7 border-t border-white/[0.05] pt-7" : ""}>
-                {entry.headline ? (
-                  <>
-                    <p className="mb-2.5 flex items-baseline gap-2.5 text-[17px] font-semibold leading-[1.45] tracking-[-0.01em] text-zinc-50">
-                      <span aria-hidden="true" className="w-[13px] shrink-0 text-[13px] text-amber-300/70">△</span>
-                      {entry.headline}
-                    </p>
-                    <p className="pl-[23px] text-[15px] leading-[1.85] text-zinc-400">{renderTextSegments(gapHighlights[i], "gap")}</p>
-                  </>
-                ) : (
-                  <p className="text-[16px] leading-[1.8] text-zinc-300">{renderTextSegments(gapHighlights[i], "gap")}</p>
-                )}
-              </div>
-            ))}
-          </div>
+    <div className="space-y-4">
+      <div className="grid overflow-hidden rounded-2xl border border-line md:grid-cols-2">
+        <DiagnosisColumn
+          title={UI_LABELS.SUMMARY_STRENGTHS}
+          tone="ok"
+          entries={strengthEntries}
+          highlights={strengthHighlights}
+          marker={() => (
+            <span aria-hidden="true" className="mt-0.5 inline-flex size-[22px] shrink-0 items-center justify-center rounded-full bg-ok-soft">
+              <Check className="size-3 text-ok" strokeWidth={3.2} />
+            </span>
+          )}
+        />
+        <div className="border-t border-line md:border-l md:border-t-0">
+          <DiagnosisColumn
+            title={UI_LABELS.SUMMARY_GAPS}
+            tone="fix"
+            entries={gapEntries}
+            highlights={gapHighlights}
+            marker={(i) => (
+              <span aria-hidden="true" className="mt-0.5 inline-flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#B97800] text-[11.5px] font-extrabold text-white">
+                {i + 1}
+              </span>
+            )}
+          />
         </div>
       </div>
 
-      {/* Positioning */}
-      <div className="bg-white/[0.03] border border-white/[0.05] p-6 sm:p-9 rounded-xl">
-        <p className="text-[17px] font-semibold tracking-[-0.01em] text-zinc-50 mb-8">{UI_LABELS.STRATEGIC_POSITIONING}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_40px_1fr] gap-5 items-stretch mb-9">
-          <div>
-            <span className="inline-block rounded-md border border-white/[0.07] bg-white/[0.04] px-3 py-1.5 text-xs font-semibold tracking-[0.02em] text-zinc-400 mb-3.5">{UI_LABELS.POSITION_CURRENT}</span>
-            <p className="text-[15px] text-zinc-400 leading-[1.8]">{renderRichText(positioning.current)}</p>
+      <div className="overflow-hidden rounded-2xl border border-line">
+        <p className="border-b border-line bg-fill-soft px-5 py-3 text-[14px] font-bold text-ink-2">{UI_LABELS.STRATEGIC_POSITIONING}</p>
+        <div className="grid sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)]">
+          <div className="px-5 py-5">
+            <p className="text-[13px] font-bold text-ink-4">{UI_LABELS.POSITION_CURRENT}</p>
+            <p className="mt-1.5 text-[15px] leading-[1.7] text-ink-3">{renderRichText(positioning.current)}</p>
           </div>
-          <div aria-hidden="true" className="flex items-center justify-center text-xl text-zinc-700 rotate-90 sm:rotate-0 -my-1 sm:my-0">→</div>
-          <div>
-            <span className="inline-block rounded-md border border-sky-300/20 bg-sky-300/[0.08] px-3 py-1.5 text-xs font-semibold tracking-[0.02em] text-sky-300 mb-3.5">{UI_LABELS.POSITION_TARGET}</span>
-            <p className="text-[15px] text-zinc-100 leading-[1.8]">{renderRichText(positioning.target)}</p>
+          <span aria-hidden="true" className="flex items-center justify-center text-ink-5">
+            <ArrowRight className="size-[18px] rotate-90 sm:rotate-0" />
+          </span>
+          <div className="px-5 py-5">
+            <p className="text-[13px] font-bold text-navy">{UI_LABELS.POSITION_TARGET}</p>
+            <p className="mt-1.5 text-[15px] font-semibold leading-[1.7] text-ink">{renderRichText(positioning.target)}</p>
           </div>
         </div>
-        <div className="border-t border-white/[0.05] pt-7 mb-7">
-          <p className="text-sm font-semibold text-amber-300/80 mb-2.5">{UI_LABELS.POSITION_GAP}</p>
-          <p className="text-[15px] text-zinc-200 leading-[1.8] max-w-2xl">{renderRichText(positioning.gap)}</p>
-        </div>
-        <div className="border-t border-white/[0.05] pt-7">
-          <p className="text-sm font-semibold text-emerald-300/85 mb-2.5">{UI_LABELS.POSITION_STRATEGY}</p>
-          <p className="text-[15px] text-zinc-200 leading-[1.8] max-w-2xl">{renderRichText(positioning.strategy)}</p>
-        </div>
+        {[
+          { label: UI_LABELS.POSITION_GAP, text: positioning.gap, tone: "text-blank" },
+          { label: UI_LABELS.POSITION_STRATEGY, text: positioning.strategy, tone: "text-ok" },
+        ]
+          .filter((row) => row.text?.trim())
+          .map((row) => (
+            <div key={row.label} className="flex flex-col gap-1.5 border-t border-line-soft px-5 py-4 sm:flex-row sm:gap-6">
+              <p className={`shrink-0 text-[13px] font-bold sm:w-[120px] sm:pt-0.5 ${row.tone}`}>{row.label}</p>
+              <p className="text-[15px] leading-[1.7] text-ink-2">{renderRichText(row.text)}</p>
+            </div>
+          ))}
       </div>
-    </section>
+    </div>
   );
 }
