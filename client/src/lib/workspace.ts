@@ -121,6 +121,15 @@ export async function createExperience(input: ExperienceInput): Promise<Experien
   return experience;
 }
 
+/** 경험 자동 채우기에서 고른 후보를 한꺼번에(1~8개). 전부 저장되거나 하나도 안 된다. */
+export async function createExperiences(inputs: ExperienceInput[]): Promise<Experience[]> {
+  const { experiences } = await request<{ experiences: Experience[] }>("/api/account/experiences", {
+    method: "POST",
+    body: JSON.stringify({ experiences: inputs }),
+  });
+  return experiences;
+}
+
 export async function updateExperience(id: string, input: Partial<ExperienceInput>): Promise<Experience> {
   const { experience } = await request<{ experience: Experience }>(`/api/account/experiences/${encodeURIComponent(id)}`, {
     method: "PATCH",
