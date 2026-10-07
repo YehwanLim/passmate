@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Check, ChevronRight, FileText, Pause, PenLine, Play } from "lucide-react";
 
 /* ─────────────────────────────────────────────────────────
@@ -15,6 +15,12 @@ import { Check, ChevronRight, FileText, Pause, PenLine, Play } from "lucide-reac
 const SCENE_DURATIONS = [10600, 16600, 11200] as const;
 const SCENE_LABELS = ["경험으로 초안 받기", "채우고 진단받기", "합격까지 한눈에"] as const;
 const TICK_MS = 50;
+/** 시연은 이 높이·최소 폭으로 짜여 있다. 칸이 최소 폭보다 좁으면(폰) 줄바꿈으로 무너뜨리지 않고 통째로 축소한다.
+ *  안쪽 배치는 화면 폭이 아니라 시연 칸 폭(@container, @xl = 576px)으로 바꾼다 — 축소된 폰에서도 같은 기준. */
+const DEMO_HEIGHT = 680;
+const DEMO_MIN_WIDTH = 460;
+// SSR 에는 레이아웃 효과가 없다 — 경고 없이 서버에선 useEffect 로 대신한다.
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const ACCENT_RING = "rgba(0, 100, 255, 0.18)";
 const ACCENT_RIPPLE = "rgba(0, 100, 255, 0.28)";
@@ -192,11 +198,11 @@ function SceneDraft({ t }: { t: number }) {
           </div>
         )}
         {showPreview && (
-          <div className="hero-msg-in flex min-h-0 flex-1 flex-col gap-2 rounded-[16px] bg-fill-soft p-3">
+          <div className="hero-msg-in flex min-h-0 flex-1 flex-col gap-2 rounded-[16px] bg-fill-soft p-3 [&>*]:flex-none">
             <div className="flex flex-col gap-0.5 rounded-[12px] bg-surface px-3 py-2.5">
               <span className="text-[11px] font-bold text-ink-4">고른 경험</span>
               <span className="text-[13.5px] font-bold text-ink">{EXPERIENCE_TITLE}</span>
-              <span className="text-[12px] text-ink-4">문항이 묻는 ‘데이터로 문제를 푼 과정’이 그대로 남아 있어요</span>
+              <span className="hidden text-[12px] text-ink-4 @xl:block">문항이 묻는 ‘데이터로 문제를 푼 과정’이 그대로 남아 있어요</span>
             </div>
             <div className="flex flex-col gap-[9px] rounded-[12px] bg-surface px-3 py-2.5">
               <span className="text-[11px] font-bold text-ink-4">초안</span>
@@ -230,7 +236,7 @@ function SceneDraft({ t }: { t: number }) {
               <div className="hero-msg-in mt-auto flex items-center gap-1.5">
                 <span className="text-[12px] text-ink-4">121자</span>
                 <span className="flex-1" />
-                <span className="hidden h-[34px] items-center px-2.5 text-[12.5px] text-ink-4 sm:inline-flex">닫기</span>
+                <span className="hidden h-[34px] items-center px-2.5 text-[12.5px] text-ink-4 @xl:inline-flex">닫기</span>
                 <span className="inline-flex h-[34px] items-center rounded-[9px] border border-line bg-surface px-[11px] text-[12.5px] font-semibold text-ink-2">
                   다른 경험으로 다시
                 </span>
@@ -367,7 +373,7 @@ function SceneDiagnose({ t }: { t: number }) {
       <div className="flex flex-none items-center justify-between px-[22px] pt-4">
         <span className="flex items-center gap-[7px] text-[13px] text-ink-4">
           <b className="font-bold text-ink">자소서 진단 리포트</b>
-          <span className="hidden sm:inline">현대자동차 서비스 기획</span>
+          <span className="hidden @xl:inline">현대자동차 서비스 기획</span>
         </span>
         <span className="text-[12px] text-ink-4">김민지님 · 문항 2개</span>
       </div>
@@ -379,10 +385,10 @@ function SceneDiagnose({ t }: { t: number }) {
         <span className="pb-[9px] text-ink-4">다음 단계</span>
       </div>
       {onSummary ? (
-        <div className="flex min-h-0 flex-1 flex-col gap-[18px] px-[22px] pb-4 pt-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-3.5 px-[22px] pb-3 pt-4">
           <div className="flex flex-none flex-col gap-1.5">
             <span className="text-[12.5px] text-ink-4">채용 담당자에게 이렇게 읽혀요</span>
-            <span className="text-[22px] font-bold leading-[1.35] tracking-[-0.03em] text-navy sm:text-[24px]">
+            <span className="text-[22px] font-bold leading-[1.35] tracking-[-0.03em] text-navy @xl:text-[24px]">
               사용자가 떠나는 지점을
               <br />
               데이터로 좁히는 기획자
@@ -399,7 +405,7 @@ function SceneDiagnose({ t }: { t: number }) {
                   at(REPORT + 500 + index * 200) && (
                     <div
                       key={item}
-                      className="hero-msg-in flex gap-[9px] border-t border-line-soft py-[11px] text-[13px] font-semibold leading-[1.5] text-ink"
+                      className="hero-msg-in flex gap-[9px] border-t border-line-soft py-2.5 text-[13px] font-semibold leading-[1.5] text-ink"
                     >
                       <span className="mt-px inline-flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-ok-soft">
                         <Check aria-hidden="true" className="h-2.5 w-2.5 text-ok" strokeWidth={3.4} />
@@ -441,7 +447,7 @@ function SceneDiagnose({ t }: { t: number }) {
             </div>
           </div>
           {at(REPORT + 2100) && (
-            <div className="hero-msg-in hidden flex-none grid-cols-[minmax(0,1fr)_14px_minmax(0,1fr)] items-start gap-3 rounded-[14px] bg-fill-soft px-4 py-3.5 sm:grid">
+            <div className="hero-msg-in hidden flex-none grid-cols-[minmax(0,1fr)_14px_minmax(0,1fr)] items-start gap-3 rounded-[14px] bg-fill-soft px-4 py-3.5 @xl:grid">
               <div className="flex flex-col gap-1">
                 <span className="text-[12px] font-bold text-ink-4">지금 읽히는 모습</span>
                 <span className="text-[12.5px] leading-[1.6] text-ink-3">
@@ -458,7 +464,7 @@ function SceneDiagnose({ t }: { t: number }) {
             </div>
           )}
           {at(REPORT + 2500) && (
-            <p className="hero-msg-in mt-auto hidden border-t border-line-soft pt-3.5 text-[12.5px] leading-[1.6] text-ink-4 sm:block">
+            <p className="hero-msg-in mt-auto hidden border-t border-line-soft pt-3 text-[12.5px] leading-[1.6] text-ink-4 @xl:block">
               탭을 넘기면 <b className="font-semibold text-ink-2">예상 면접 질문 5개</b>,{" "}
               <b className="font-semibold text-ink-2">공고 요건 4개 적합도</b>,{" "}
               <b className="font-semibold text-ink-2">고칠 순서 4단계</b>, 실무자 코멘트까지 이어져요.
@@ -466,8 +472,8 @@ function SceneDiagnose({ t }: { t: number }) {
           )}
         </div>
       ) : (
-        <div className="hero-msg-in grid min-h-0 flex-1 gap-[18px] px-[22px] pb-4 pt-[18px] sm:grid-cols-[minmax(0,1fr)_236px]">
-          <div className="hidden min-w-0 flex-col gap-2.5 sm:flex">
+        <div className="hero-msg-in grid min-h-0 flex-1 gap-[18px] px-[22px] pb-4 pt-[18px] @xl:grid-cols-[minmax(0,1fr)_236px]">
+          <div className="hidden min-w-0 flex-col gap-2.5 @xl:flex">
             <span className="text-[12.5px] font-bold leading-[1.5] text-ink">
               <span className="font-semibold text-ink-5">문항 02 </span>
               {QUESTION}
@@ -507,7 +513,7 @@ function SceneDiagnose({ t }: { t: number }) {
               </span>
             </span>
           </div>
-          <div className="flex min-h-0 flex-col gap-2.5 sm:border-l sm:border-line-soft sm:pl-[18px]">
+          <div className="flex min-h-0 flex-col gap-2.5 @xl:border-l @xl:border-line-soft @xl:pl-[18px]">
             <div className="flex flex-col gap-2.5 rounded-[14px] border border-line px-3.5 py-[13px]">
               <span className="flex items-center gap-[7px] text-[13px] font-bold text-ink">
                 <NumberDot n={2} />
@@ -601,10 +607,10 @@ function StepRow({
       </div>
       <div className={`flex ${last ? "" : "pb-3"}`}>
         <div
-          className={`grid flex-1 items-center gap-3 rounded-[24px] bg-surface py-4 pl-5 pr-4 sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-[18px] sm:py-[18px] sm:pl-[22px] sm:pr-[18px] ${STEP_SHADOW}`}
+          className={`grid flex-1 grid-cols-[112px_minmax(0,1fr)] items-center gap-3 rounded-[24px] bg-surface py-4 pl-5 pr-4 @xl:grid-cols-[160px_minmax(0,1fr)] @xl:gap-[18px] @xl:py-[18px] @xl:pl-[22px] @xl:pr-[18px] ${STEP_SHADOW}`}
         >
           <div className="flex flex-col gap-1.5">
-            <span className="text-[19px] font-bold leading-[1.3] tracking-[-0.03em] text-navy sm:text-[21px]">{title}</span>
+            <span className="text-[19px] font-bold leading-[1.3] tracking-[-0.03em] text-navy @xl:text-[21px]">{title}</span>
             <span className="text-[13px] leading-[1.55] text-ink-3">{desc}</span>
           </div>
           {children}
@@ -623,7 +629,7 @@ function SceneJourney({ t }: { t: number }) {
   const interviewOn = at(BAR + 900);
 
   return (
-    <div className="hero-scene-in flex min-h-0 flex-1 flex-col justify-center px-4 pb-6 pt-3 sm:px-6 sm:pb-[26px]">
+    <div className="hero-scene-in flex min-h-0 flex-1 flex-col justify-center px-4 pb-6 pt-3 @xl:px-6 @xl:pb-[26px]">
       <div className="flex flex-col">
         <StepRow n={1} active lineAbove={null} lineBelow={line1} title="경험 관리" desc="흩어진 경험을 한 줄 이름으로 정리해요">
           <div className="flex flex-col gap-[7px]">
@@ -631,7 +637,7 @@ function SceneJourney({ t }: { t: number }) {
               <span className="text-[12.5px] font-bold text-ink-2">{EXPERIENCE_TITLE}</span>
               <span className="text-[11px] text-ink-4">교내 앱 동아리 · 데이터분석</span>
             </div>
-            <div className="hidden flex-col gap-0.5 rounded-[12px] bg-fill-soft px-3 py-2 sm:flex">
+            <div className="hidden flex-col gap-0.5 rounded-[12px] bg-fill-soft px-3 py-2 @xl:flex">
               <span className="text-[12.5px] font-bold text-ink-2">손님 불만을 단골로 바꾼 3개월</span>
               <span className="text-[11px] text-ink-4">2024.03~05 · 고객 응대</span>
             </div>
@@ -721,7 +727,7 @@ function SceneJourney({ t }: { t: number }) {
         style={{ opacity: at(BAR) ? 1 : 0.45 }}
       >
         <span className="text-[14px] font-extrabold tracking-[-0.02em] text-navy">합격까지</span>
-        <span className="hidden h-[18px] w-px bg-line sm:block" />
+        <span className="hidden h-[18px] w-px bg-line @xl:block" />
         <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-2">
           {at(BAR + 300) ? (
             <span className="hero-msg-in inline-flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-ok-soft text-ok">
@@ -762,6 +768,19 @@ export default function HeroWorkflowDemo({ className = "" }: { className?: strin
   const [userPaused, setUserPaused] = useState(false);
   const [visible, setVisible] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  // 칸 폭이 최소 폭보다 좁으면 그 비율만큼 줄인다. 넓으면 그대로(1).
+  useIsomorphicLayoutEffect(() => {
+    const element = rootRef.current;
+    if (!element) return;
+    const update = () => setScale(Math.min(1, element.clientWidth / DEMO_MIN_WIDTH));
+    update();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // 움직임 줄이기 설정이면 처음부터 멈춰 둔다(탭으로는 넘길 수 있다).
   useEffect(() => {
@@ -799,16 +818,24 @@ export default function HeroWorkflowDemo({ className = "" }: { className?: strin
     setT(0);
   };
 
+  const scaled = scale < 1;
   return (
+    // min-w-0·overflow-hidden: 축소 전 안쪽 폭(최소 폭)이 바깥 칸을 밀어 넓히면 비율 계산이 1↔축소로 오락가락한다.
+    <div ref={rootRef} className={`min-w-0 overflow-hidden ${className}`} style={{ height: DEMO_HEIGHT * scale }}>
     <div
-      ref={rootRef}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`relative flex flex-col overflow-hidden rounded-[28px] bg-fill text-left md:rounded-[32px] ${className}`}
+      className="@container relative flex flex-col overflow-hidden rounded-[28px] bg-fill text-left md:rounded-[32px]"
+      style={{
+        width: scaled ? DEMO_MIN_WIDTH : "100%",
+        height: DEMO_HEIGHT,
+        transform: scaled ? `scale(${scale})` : undefined,
+        transformOrigin: "top left",
+      }}
       aria-label="Pre:View 작업실 사용 흐름 미리보기"
       role="region"
     >
-      <div className="grid flex-none grid-cols-[repeat(3,minmax(0,1fr))_30px] items-start gap-3.5 px-4 pb-1 pt-5 sm:px-[22px]">
+      <div className="grid flex-none grid-cols-[repeat(3,minmax(0,1fr))_30px] items-start gap-3.5 px-4 pb-1 pt-5 @xl:px-[22px]">
         {SCENE_LABELS.map((label, index) => {
           const width = index < scene ? 100 : index === scene ? Math.min(100, (t / SCENE_DURATIONS[scene]) * 100) : 0;
           const current = index === scene;
@@ -824,7 +851,7 @@ export default function HeroWorkflowDemo({ className = "" }: { className?: strin
                 <span className="block h-[3px] bg-brand" style={{ width: `${width}%` }} />
               </span>
               <span
-                className="text-[12px] leading-[1.3] sm:text-[13px]"
+                className="text-[12px] leading-[1.3] @xl:text-[13px]"
                 style={{ color: current ? "#12205A" : "#6B7684", fontWeight: current ? 700 : 600 }}
               >
                 {index + 1} {label}
@@ -849,12 +876,13 @@ export default function HeroWorkflowDemo({ className = "" }: { className?: strin
       {scene === 2 ? (
         <SceneJourney key="journey" t={t} />
       ) : (
-        <div key={scene} className="hero-scene-in flex min-h-0 flex-1 flex-col px-3 pb-3.5 pt-2 sm:px-[18px]">
-          <div className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-surface sm:rounded-[28px] ${CARD_SHADOW}`}>
+        <div key={scene} className="hero-scene-in flex min-h-0 flex-1 flex-col px-3 pb-3.5 pt-2 @xl:px-[18px]">
+          <div className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] bg-surface @xl:rounded-[28px] ${CARD_SHADOW}`}>
             {scene === 0 ? <SceneDraft t={t} /> : <SceneDiagnose t={t} />}
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
