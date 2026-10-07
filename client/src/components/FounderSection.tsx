@@ -23,35 +23,35 @@ const founderSignals = [
 
 export function FounderNoteSection() {
   return (
-    <section className="py-28 md:py-36 border-t border-white/[0.04]">
+    <section className="bg-fill py-24 md:py-[120px]">
       <div className="max-w-6xl mx-auto px-6 lg:px-10">
         <div>
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
-            <div>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
+            <div className="rounded-[28px] bg-surface p-8 md:rounded-[32px] md:p-[52px]">
               {/* 워드마크는 이미지라 헤딩 텍스트가 "왜 를 만들었나요?"로 추출된다. 이름을 sr-only 텍스트로 넣고 이미지는 장식으로 둔다. */}
-              <h2 className="text-2xl md:text-4xl font-bold leading-tight tracking-tight mb-6">
+              <h2 className="mb-5 text-[28px] font-extrabold leading-[1.3] tracking-[-0.035em] text-ink md:text-[44px]">
                 왜 <span className="sr-only">Pre:View</span>
-                <BrandName decorative />를 만들었나요?
+                <BrandName decorative variant="default" />를 만들었나요?
               </h2>
-              <p className="text-gray-400 font-light text-[16px] leading-[1.9] mb-5">
+              <p className="mb-5 text-[16px] leading-[1.8] text-ink-2 md:text-[17px]">
                 커피챗에서 만난 취준생들은 대부분 좋은 경험을 가지고 있었습니다.
                 그런데 자소서에는 그 모습이 담기지 않았고, 탈락 메일은 이유를
                 말해주지 않았습니다.
               </p>
-              <p className="text-gray-500 font-light text-[15px] leading-[1.9] mb-8">
+              <p className="mb-6 text-[15px] leading-[1.85] text-ink-3">
                 200번 넘는 멘토링에서 같은 장면을 반복해서 봤습니다. 경험은
                 있는데 직무와 연결되지 않고, 성과는 있는데 본인의 판단이 보이지
                 않는 상태. 옆에서 30분만 같이 읽으면 메울 수 있는 빈틈인데, 그
                 30분이 없어서 계속 떨어지는 사람들이 있었습니다. 모든 취준생
-                옆에 앉을 수는 없기에, 그 시선을 대신 전하려고 <BrandName />를
+                옆에 앉을 수는 없기에, 그 시선을 대신 전하려고 <BrandName variant="default" />를
                 만들었습니다.
               </p>
 
-              <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
-                <p className="mb-3 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
+              <div className="flex flex-col gap-3 rounded-[20px] bg-fill-soft p-6 md:p-[26px]">
+                <span className="inline-flex h-[26px] w-fit items-center rounded-[8px] bg-line px-2.5 text-[13px] font-bold text-ink-3">
                   Founder note
-                </p>
-                <blockquote className="text-[15px] leading-[1.85] text-zinc-300">
+                </span>
+                <blockquote className="text-[16px] font-medium leading-[1.8] text-ink">
                   “떨어진 이유를 아무도 말해주지 않는 시간이 얼마나 막막한지
                   압니다. 그 막막함 앞에 같이 앉아, 당신의 경험이 회사의
                   기준에서 어떻게 읽히는지 짚어주는 한 사람이 되고 싶었습니다.”
@@ -59,11 +59,11 @@ export function FounderNoteSection() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/[0.08] bg-[#0A0A0A] p-6 md:p-7">
-              <p className="text-[15px] font-semibold text-white">
+            <div className="rounded-[28px] bg-ink p-8 text-white md:rounded-[32px] md:p-11">
+              <p className="text-[22px] font-extrabold tracking-[-0.02em] text-white md:text-[24px]">
                 이 기준이 나온 곳
               </p>
-              <p className="mb-6 mt-1.5 text-[13px] leading-[1.7] text-zinc-500">
+              <p className="mb-6 mt-3 text-[15px] leading-[1.7] text-[#B0B8C1]">
                 <BrandName />가 자소서를 읽는 기준은 위 리포트 미리보기에서
                 보신 그대로입니다. 그 기준은 여기서 나왔습니다.
               </p>
@@ -72,9 +72,9 @@ export function FounderNoteSection() {
                   <li key={signal} className="flex items-start gap-3">
                     <CheckCircle2
                       aria-hidden="true"
-                      className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300/70"
+                      className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#5FD39C]"
                     />
-                    <span className="text-[14px] leading-[1.7] text-zinc-300">
+                    <span className="text-[15px] leading-[1.6] text-white">
                       {signal}
                     </span>
                   </li>
@@ -83,10 +83,10 @@ export function FounderNoteSection() {
               {/* 리포트가 아니라 사람과 직접 이야기하고 싶은 방문자는 다른 니즈다. 커피챗은 /mentoring 에서 따로 받는다. */}
               <Link
                 href="/mentoring"
-                className="mt-6 inline-flex items-center gap-1.5 text-[13.5px] text-zinc-400 transition-colors hover:text-white"
+                className="mt-6 inline-flex items-center gap-1.5 border-t border-ink-2 pt-5 text-[15px] font-bold text-white transition-colors hover:text-[#B0B8C1]"
               >
                 직접 이야기하고 싶다면 커피챗·모의면접
-                <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </Link>
             </div>
           </div>
@@ -116,23 +116,15 @@ export default function FounderSection() {
       {/* ══════════════════════════════════════════════════
           CTA
           ══════════════════════════════════════════════════ */}
-      <section className="relative py-28 md:py-36 border-t border-white/[0.04] overflow-hidden">
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(59,130,246,0.06) 0%, rgba(139,92,246,0.03) 35%, transparent 65%)",
-          }}
-        />
-
-        <div className="relative max-w-3xl mx-auto text-center px-6 lg:px-10">
+      <section className="bg-fill px-6 py-24 md:py-[120px] lg:px-10">
+        <div className="mx-auto max-w-7xl rounded-[28px] bg-surface px-6 py-16 text-center md:rounded-[32px] md:px-14 md:py-20">
           <h2
-            className="text-3xl md:text-4xl font-bold tracking-tight mb-5"
+            className="mb-[18px] text-[28px] font-extrabold leading-[1.3] tracking-[-0.035em] text-ink md:text-[46px]"
           >
             지금 바로 자소서를 분석해보세요
           </h2>
           <p
-            className="text-gray-500 font-light text-[15px] leading-[1.8] mb-10 max-w-md mx-auto"
+            className="mx-auto mb-8 max-w-md text-[16px] leading-[1.7] text-ink-3 md:text-[17px]"
           >
             첫 분석은 무료입니다. 지금 자소서가 어떻게 읽히는지 먼저
             확인해보세요.
@@ -143,7 +135,7 @@ export default function FounderSection() {
               <span className="relative z-10">무료 분석 시작하기</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
-            <p className="mt-3.5 text-[12.5px] text-zinc-500">
+            <p className="mt-[18px] text-[13px] text-ink-4">
               자소서 본문은 분석에만 사용하고, 서버 로그에 남기지 않습니다.
             </p>
           </div>
@@ -153,7 +145,7 @@ export default function FounderSection() {
       {/* ══════════════════════════════════════════════════
           Footer
           ══════════════════════════════════════════════════ */}
-      <section className="py-16 border-t border-white/[0.04]">
+      <section className="border-t border-line bg-fill py-14">
         <div className="max-w-2xl mx-auto px-6 lg:px-10">
           {SHOW_NEWSLETTER_FORM && (
             <>
@@ -162,7 +154,7 @@ export default function FounderSection() {
                 <h3 className="text-xl font-semibold mb-2">
                   새로운 기능 소식을 가장 먼저 받아보세요
                 </h3>
-                <p className="text-[14px] text-gray-500 font-light">
+                <p className="text-[14px] text-ink-4">
                   AI 모의 면접, 합격 OS 템플릿 등 곧 출시될 기능의 얼리버드
                   알림을 받아보세요.
                 </p>
@@ -178,11 +170,11 @@ export default function FounderSection() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="이메일 주소를 입력해주세요"
                   required
-                  className="flex-1 h-11 px-4 bg-white/[0.03] border border-white/[0.08] rounded-xl focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all text-[14px] text-white placeholder:text-gray-600"
+                  className="flex-1 h-11 px-4 bg-surface border border-line rounded-[12px] focus:border-brand outline-none transition-colors text-[14px] text-ink placeholder:text-ink-5"
                 />
                 <button
                   type="submit"
-                  className="bg-white text-black h-11 px-6 text-[13px] font-semibold rounded-xl hover:bg-gray-200 transition-colors duration-200"
+                  className="bg-brand text-white h-11 px-6 text-[14px] font-bold rounded-[10px] hover:bg-brand-hover transition-colors duration-200"
                 >
                   {emailSubmitted ? "완료" : "알림 신청"}
                 </button>
@@ -190,7 +182,7 @@ export default function FounderSection() {
 
               {emailSubmitted && (
                 <motion.p
-                  className="text-center text-[13px] text-emerald-400 font-medium mb-6"
+                  className="text-center text-[13px] text-ok font-medium mb-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
@@ -202,30 +194,30 @@ export default function FounderSection() {
 
           {/* Bottom bar */}
           <div
-            className={`text-center ${SHOW_NEWSLETTER_FORM ? "pt-8 border-t border-white/[0.04]" : ""}`}
+            className={`text-center ${SHOW_NEWSLETTER_FORM ? "pt-8 border-t border-line" : ""}`}
           >
             <div className="flex items-center justify-center mb-4">
-              <Logo className="h-3.5 w-auto opacity-60" />
+              <Logo className="h-4 w-auto opacity-70" variant="default" />
             </div>
-            <p className="text-[12px] text-gray-500">
-              &copy; 2026 <BrandName />. All rights reserved.{" "}
+            <p className="text-[13px] text-ink-3">
+              &copy; 2026 <BrandName variant="default" />. All rights reserved.{" "}
               <Link
                 href="/privacy"
-                className="text-gray-400 hover:text-white transition-colors ml-1"
+                className="text-ink-3 hover:text-ink transition-colors ml-1"
               >
                 개인정보처리방침
               </Link>{" "}
               &middot;{" "}
               <Link
                 href="/terms"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-ink-3 hover:text-ink transition-colors"
               >
                 이용약관
               </Link>{" "}
               &middot;{" "}
               <a
                 href="mailto:hansitoring@gmail.com"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-ink-3 hover:text-ink transition-colors"
               >
                 문의 hansitoring@gmail.com
               </a>

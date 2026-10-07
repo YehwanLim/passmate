@@ -8,7 +8,6 @@ vi.mock("@/lib/googleIdentity", () => ({
   createSignInNonce: vi.fn().mockResolvedValue({ nonce: "n", hashedNonce: "h" }),
   loadGoogleIdentity: vi.fn().mockRejectedValue(new Error("no network")),
 }));
-vi.mock("@/components/MoodShiftBackground", () => ({ default: () => null }));
 
 import Login from "./Login";
 

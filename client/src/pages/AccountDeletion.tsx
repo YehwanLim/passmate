@@ -58,18 +58,18 @@ export default function AccountDeletion() {
   };
 
   if (isLoading) {
-    return <main className="flex min-h-screen items-center justify-center bg-[#09090B] text-sm text-zinc-400">로그인 정보를 확인하는 중이에요.</main>;
+    return <main className="flex min-h-screen items-center justify-center bg-stage text-sm text-ink-4">로그인 정보를 확인하는 중이에요.</main>;
   }
 
   if (!isAuthenticated) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-center text-zinc-100">
-        <section className="max-w-md rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8">
-          <h1 className="text-xl font-semibold">계정 삭제 예약</h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+      <main className="flex min-h-screen items-center justify-center bg-stage px-6 text-center text-ink">
+        <section className="max-w-md rounded-[20px] bg-surface p-8">
+          <h1 className="text-xl font-bold text-ink">계정 삭제 예약</h1>
+          <p className="mt-3 text-sm leading-relaxed text-ink-3">
             삭제 예약 후 30일 안에 다시 로그인하면 이 화면에서 취소할 수 있어요.
           </p>
-          <Link href="/login?redirect=%2Faccount%2Fdeletion%3Fpending%3D1" className="mt-6 inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-zinc-900">
+          <Link href="/login?redirect=%2Faccount%2Fdeletion%3Fpending%3D1" className="mt-6 inline-flex h-11 items-center rounded-[10px] bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-hover">
             로그인하기
           </Link>
         </section>
@@ -78,25 +78,25 @@ export default function AccountDeletion() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#09090B] px-6 text-zinc-100">
-      <section className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8">
-        <h1 className="text-xl font-semibold">{pendingIntent ? "계정 삭제 예약 취소" : "계정 삭제 예약"}</h1>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+    <main className="flex min-h-screen items-center justify-center bg-stage px-6 text-ink">
+      <section className="w-full max-w-md rounded-[20px] bg-surface p-8">
+        <h1 className="text-xl font-bold text-ink">{pendingIntent ? "계정 삭제 예약 취소" : "계정 삭제 예약"}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-ink-3">
           {pendingIntent
             ? "예약을 취소하면 계정과 저장된 분석 데이터를 계속 사용할 수 있어요."
             : "예약 즉시 앱 API 접근이 차단되며, 30일 후 계정과 저장된 분석 데이터가 파기됩니다."}
         </p>
-        {message && <p role="alert" className="mt-4 text-sm text-amber-300">{message}</p>}
+        {message && <p role="alert" className="mt-4 text-sm text-danger">{message}</p>}
         <div className="mt-7 flex gap-3">
           <button
-            className="rounded-lg border border-white/15 px-4 py-2.5 text-sm text-zinc-300"
+            className="h-11 rounded-[10px] bg-fill px-4 text-sm font-semibold text-ink-2 transition-colors hover:bg-line"
             disabled={isSubmitting}
             onClick={() => navigate("/")}
           >
             돌아가기
           </button>
           <button
-            className="rounded-lg bg-rose-500 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+            className="h-11 rounded-[10px] bg-danger px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             disabled={isSubmitting}
             onClick={pendingIntent ? cancelDeletion : requestDeletion}
           >

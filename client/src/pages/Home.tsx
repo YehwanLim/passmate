@@ -10,10 +10,9 @@ import CompanyMarqueeSection from "@/components/CompanyMarqueeSection";
 import FounderSection, {
   FounderNoteSection,
 } from "@/components/FounderSection";
-import MoodShiftBackground from "@/components/MoodShiftBackground";
-import HeroReportCard from "@/components/HeroReportCard";
+import HeroWorkflowDemo from "@/components/HeroWorkflowDemo";
 import SiteHeader from "@/components/SiteHeader";
-import { ArrowRight, CheckCircle2, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useEffect, type CSSProperties } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 import { Link } from "wouter";
@@ -64,12 +63,8 @@ export const HERO_TITLE_MOTION = {
 const SHOW_SOCIAL_PROOF = false;
 
 /**
- * PreView – Premium Dark SaaS Landing Page
- *
- * Design: Vercel / Stripe inspired pitch-black theme
- * Colors: #000000 bg, white text, subtle blue/purple neon glows
- * Fonts: Inter (EN/numbers) → Pretendard (KR) via font-stack
- * Icons: Lucide only – zero system emojis
+ * Pre:View 랜딩 — 10월 밝은 서비스형 디자인(디자인 캔버스 "랜딩 · 밝은 서비스형" + "움직이는 첫 화면").
+ * 회색 무대(#f2f4f6 / #f9fafb 번갈아) 위 흰 둥근 카드, 강조색은 파랑(#0064ff) 하나, 어두운 띠는 ChatGPT 비교 하나.
  */
 
 /* ─────────────────────────────────────────────────────────
@@ -103,8 +98,8 @@ export default function Home() {
     stiffness: 100,
     damping: 30,
   });
-  // 랜딩 문서 배경을 검게. body 는 라이트 테마라 iOS 오버스크롤·미도색 타일에 흰색이 비친다(index.css 참고).
-  // 프리렌더 HTML 은 scripts/prerender-landing.mjs 가 같은 클래스를 미리 붙여 두므로 첫 진입은 하이드레이션 전에도 검다.
+  // 랜딩 문서 배경을 히어로 바탕색으로. iOS 오버스크롤·미도색 타일에 비치는 색을 맞춘다(landing.css 참고).
+  // 프리렌더 HTML 은 scripts/prerender-landing.mjs 가 같은 클래스를 미리 붙여 두므로 첫 진입은 하이드레이션 전에도 같다.
   useEffect(() => {
     document.documentElement.classList.add("landing-canvas");
     return () => {
@@ -124,89 +119,83 @@ export default function Home() {
   /* ─── Render ─── */
   return (
     <div
-      className="min-h-screen bg-[#050505] text-white"
+      className="min-h-screen bg-fill-soft text-ink"
       style={{ overflowX: "clip" }}
       onClickCapture={trackLandingCta}
     >
-      {/* ── Mood Shift Background (마우스 반응형) ── */}
-      <MoodShiftBackground />
-
       {/* ── Scroll Progress ── */}
       <motion.div
-        className="fixed top-0 left-0 right-0 h-px z-[60] origin-left"
-        style={{
-          scaleX: smoothProgress,
-          background: "linear-gradient(90deg, #3B82F6, #8B5CF6)",
-        }}
+        className="fixed top-0 left-0 right-0 h-0.5 z-[60] origin-left bg-brand"
+        style={{ scaleX: smoothProgress }}
       />
 
       {/* ══════════════════════════════════════════════════
-          GNB
+          GNB + HERO — 회색 무대 위 떠 있는 흰 바, 왼쪽 문구 + 오른쪽 움직이는 작업실 시연
           ══════════════════════════════════════════════════ */}
-      <SiteHeader variant="transparent" />
+      {/* 헤더는 히어로 래퍼 밖에 둬야 sticky 가 페이지 끝까지 따라온다(sticky 는 부모 안에서만 붙는다). */}
+      <SiteHeader variant="floating" />
 
-      {/* ══════════════════════════════════════════════════
-          HERO  (Step 1 – Premium Centered Hero)
-          ══════════════════════════════════════════════════ */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 pt-24 md:pt-28 overflow-hidden">
-        <div className="relative z-10 max-w-4xl mx-auto">
-          {/* H1 */}
-          <motion.h1
-            className="text-[2.75rem] md:text-[3.75rem] lg:text-[4.5rem] font-bold leading-[1.1] tracking-[-0.03em] mb-7"
-            {...HERO_TITLE_MOTION}
-          >
-            서류 탈락의 <br className="sm:hidden" />
-            진짜 이유,
-            <br />
-            현직자는 <br className="sm:hidden" />
-            <span className="bg-gradient-to-r from-sky-300 via-blue-400 to-indigo-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(125,145,255,0.35)]">
-              10초면
-            </span>{" "}
-            압니다.
-          </motion.h1>
+      <div className="bg-fill-soft">
+        <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-14 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:gap-14 lg:px-10 lg:pb-[120px] lg:pt-16 xl:grid-cols-[520px_minmax(0,1fr)]">
+          <div className="flex flex-col items-start gap-6">
+            {/* H1 */}
+            <motion.h1
+              className="text-[36px] font-semibold leading-[1.3] tracking-[-0.03em] text-navy sm:text-[44px] xl:text-[50px]"
+              {...HERO_TITLE_MOTION}
+            >
+              흩어진 경험을,
+              <br />
+              <span className="text-brand">합격하는 자소서</span>로
+            </motion.h1>
 
-          {/* Sub copy */}
-          <p
-            className="landing-rise text-[16px] md:text-[18px] text-gray-400 max-w-2xl mx-auto leading-[1.75] font-light mb-12"
-            style={{ "--rise-delay": "0.5s" } as CSSProperties}
-          >
-            대기업 현직 PM이 200회 이상의 커피챗을 진행하며 알게 된 패턴을
-            기준으로,{" "}
-            {/* JSX 는 요소와 붙은 줄바꿈 공백을 지운다. br 이 숨겨지는 모바일에서 "기준으로,여러분의"로 붙지 않도록 공백을 명시한다. */}
-            <br className="hidden md:inline" />
-            여러분의 자소서가 어떻게 읽히는지 알려드려요.
-          </p>
+            {/* Sub copy */}
+            <div
+              className="landing-rise flex flex-col gap-3.5"
+              style={{ "--rise-delay": "0.3s" } as CSSProperties}
+            >
+              <p className="text-[16px] leading-[1.75] text-ink-3 md:text-[18px]">
+                내 경험을 모아 두면 공고에 맞춰 초안을 잡아 드리고,
+                {/* JSX 는 요소와 붙은 줄바꿈 공백을 지운다. br 이 숨겨지는 모바일에서 붙지 않도록 공백을 명시한다. */}{" "}
+                <br className="hidden md:inline" />
+                다 쓰면 채용 담당자 눈으로 고칠 곳을 짚어 드려요.
+              </p>
+              <p className="text-[13px] leading-[1.6] text-ink-4">
+                대기업 현직 PM이 200번 넘는 커피챗에서 찾은 기준으로 만들었어요.
+              </p>
+            </div>
 
-          {/* CTA */}
-          <div
-            className="landing-rise"
-            style={{ "--rise-delay": "0.7s", "--rise-y": "20px", "--rise-duration": "0.7s" } as CSSProperties}
-          >
-            {/* 일반 링크: 번들 평가가 첫 프레임 뒤로 미뤄져 있어(public/landing-boot.js) 그 사이 탭해도 이동해야 한다.
-                하이드레이션 뒤에는 wouter 가 클라이언트 라우팅으로 가로챈다. */}
-            <Link href="/analyze" className="landing-primary-cta group" data-funnel-cta="hero">
-              <span className="relative z-10">내 자소서 무료로 분석하기</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-            </Link>
+            {/* CTA */}
+            <div
+              className="landing-rise mt-1.5 flex flex-wrap gap-2.5"
+              style={{ "--rise-delay": "0.45s", "--rise-y": "16px", "--rise-duration": "0.7s" } as CSSProperties}
+            >
+              {/* 일반 링크: 번들 평가가 첫 프레임 뒤로 미뤄져 있어(public/landing-boot.js) 그 사이 탭해도 이동해야 한다.
+                  하이드레이션 뒤에는 wouter 가 클라이언트 라우팅으로 가로챈다. */}
+              <Link href="/analyze" className="landing-primary-cta" data-funnel-cta="hero">
+                내 자소서 무료로 분석하기
+              </Link>
+              {/* 로그인 없이 결과물부터 보고 싶은 방문자용 예시 리포트(ReportResult 의 ?sample=1, 가상의 지원자). */}
+              <Link href={RESUME_REPORT_SAMPLE_PATH} className="landing-secondary-cta" data-funnel-cta="sample">
+                예시 리포트 보기
+              </Link>
+            </div>
           </div>
 
-          {/* 로그인 없이 결과물부터 보고 싶은 방문자용. 카드 전체와 카드 하단 버튼이 같은 예시 리포트로 간다
-              (ReportResult 의 ?sample=1, 가상의 지원자). 일반 링크라 번들 평가 전에 탭해도 이동한다. */}
-          <HeroReportCard href={RESUME_REPORT_SAMPLE_PATH} />
-        </div>
-      </section>
+          <HeroWorkflowDemo className="h-[600px] sm:h-[640px] lg:h-[680px]" />
+        </section>
+      </div>
 
       {/* ── ChatGPT 와의 차이 — 히어로 다음. 방문자가 가장 먼저 떠올리는 대안이 ChatGPT 라, 왜 또 필요한지부터 답한다 ── */}
       <ChatGptComparisonSection />
 
       {/* ── Before & After ── */}
-      <section className="py-28 md:py-36 border-t border-white/[0.04]">
-        <div className="max-w-5xl mx-auto px-6 lg:px-10">
-          <ScrollReveal className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+      <section className="bg-fill py-24 md:py-[120px]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <ScrollReveal className="text-center mb-12 md:mb-14">
+            <h2 className="mb-4 text-[30px] font-extrabold leading-[1.3] tracking-[-0.035em] text-ink md:text-[46px]">
               합격하는 자소서는 구조부터 다릅니다.
             </h2>
-            <p className="text-gray-500 font-light text-[15px] max-w-xl mx-auto leading-[1.8]">
+            <p className="mx-auto max-w-xl text-[16px] leading-[1.7] text-ink-3 md:text-[17px]">
               추상적인 표현이 데이터와 판단 과정으로 바뀌면 어떻게 읽히는지
               보여주는 예시입니다. 리포트는 이 방향을 문장 단위로 짚어줍니다.
             </p>
@@ -215,16 +204,16 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Before */}
             <ScrollReveal>
-              <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm h-full hover:border-white/[0.1] transition-all duration-300">
-                <div className="flex items-center gap-2.5 mb-6">
-                  <div className="w-6 h-6 rounded-full bg-red-500/[0.08] flex items-center justify-center">
-                    <X className="w-3 h-3 text-red-400" />
+              <div className="flex h-full flex-col gap-5 rounded-[28px] bg-surface p-8 md:p-11">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#FDECEE]">
+                    <X className="h-[15px] w-[15px] text-[#C9252F]" strokeWidth={2.6} />
                   </div>
-                  <span className="text-[12px] font-medium text-red-400/80 uppercase tracking-wider">
+                  <span className="text-[15px] font-bold text-[#C9252F]">
                     개선 전
                   </span>
                 </div>
-                <p className="text-gray-500 text-[14px] leading-[1.9] font-light">
+                <p className="text-[16px] leading-[1.8] text-ink-3 md:text-[17px]">
                   &ldquo;프로젝트를 진행하면서 많은 것을 배웠고, 팀원들과
                   협력하여 좋은 결과를 얻었습니다. 이러한 경험이 회사에서 도움이
                   될 것 같습니다.&rdquo;
@@ -234,16 +223,16 @@ export default function Home() {
 
             {/* After */}
             <ScrollReveal>
-              <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8 backdrop-blur-sm h-full hover:border-blue-500/[0.15] transition-all duration-300">
-                <div className="flex items-center gap-2.5 mb-6">
-                  <div className="w-6 h-6 rounded-full bg-emerald-500/[0.08] flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              <div className="flex h-full flex-col gap-5 rounded-[28px] bg-surface p-8 md:p-11">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-ok-soft">
+                    <Check className="h-[15px] w-[15px] text-ok" strokeWidth={2.6} />
                   </div>
-                  <span className="text-[12px] font-medium text-emerald-400/80 uppercase tracking-wider">
+                  <span className="text-[15px] font-bold text-ok">
                     개선 후
                   </span>
                 </div>
-                <p className="text-gray-400 text-[14px] leading-[1.9] font-light">
+                <p className="text-[16px] leading-[1.8] text-ink md:text-[17px]">
                   &ldquo;신규 사용자의 온보딩 이탈률이 35%까지 높아진 원인을
                   찾기 위해 클릭 로그 3,000건을 세그먼트별로 분석했습니다. 핵심
                   기능을 처음 접하는 시점에서 이탈이 집중된다는 점을 확인했고,

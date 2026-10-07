@@ -17,11 +17,13 @@ import Beasties from "beasties";
 
 export const ROOT_PLACEHOLDER = '<div id="root"></div>';
 // Home.tsx 가 마운트 시 <html> 에 붙이는 클래스(index.css `html.landing-canvas`). 프리렌더 HTML 에 미리 넣어
-// 하이드레이션 전에도 iOS 오버스크롤·미도색 타일이 흰색이 아니라 검게 보이게 한다.
+// 하이드레이션 전에도 iOS 오버스크롤·미도색 타일이 히어로 바탕색(#F9FAFB)으로 보이게 한다.
 export const LANDING_CANVAS_CLASS = "landing-canvas";
 // 같은 색을 인라인 style 로도 박는다. 렌더 차단 CSS(약 50KB gz)가 JS 와 대역폭을 나눠 쓰느라 느린 망에서
 // 2~3초 뒤에 오는데, 그동안 브라우저가 그리는 빈 화면이 흰색이 아니라 랜딩 배경색이게 한다(CSP 는 style 인라인 허용).
-export const LANDING_CANVAS_STYLE = "background-color:#050505";
+export const LANDING_CANVAS_STYLE = "background-color:#F9FAFB";
+// 10월 밝은 디자인의 앱·문서 화면 바탕(tokens.css --color-stage).
+export const STAGE_CANVAS_STYLE = "background-color:#F6F7F9";
 
 /** <html> 에 class·style 을 미리 박는다. 페이지마다 첫 화면 배경색이 달라 값을 받는다. */
 export function markDocumentCanvas(html, { className = null, style }) {
@@ -221,19 +223,19 @@ export function buildRss(items, { origin = "https://pre-view.me" } = {}) {
 export const SAMPLE_REPORT_FILE = "sample-report.html";
 export const SAMPLE_REPORT_ROUTE_KEY = "/report-new?sample=1";
 // 리포트 페이지 <main> 배경. 랜딩 클래스는 붙이지 않는다(landing-canvas 는 랜딩 전용 규칙을 켠다).
-// 자소서 리포트는 10월 밝은 디자인(bg-stage), 기업 분석 리포트는 아직 어두운 화면이다.
-export const SAMPLE_REPORT_CANVAS_STYLE = "background-color:#F6F7F9";
-export const SAMPLE_COMPANY_REPORT_CANVAS_STYLE = "background-color:#09090B";
+// 자소서·기업 분석 리포트 모두 10월 밝은 디자인(bg-stage)이다.
+export const SAMPLE_REPORT_CANVAS_STYLE = STAGE_CANVAS_STYLE;
+export const SAMPLE_COMPANY_REPORT_CANVAS_STYLE = STAGE_CANVAS_STYLE;
 
 // 프리렌더 경로(lib/seo.ts PRERENDER_ROUTES)별 첫 화면 배경. 목록에 없는 페이지(404, 라이트 테마)는 그대로 둔다.
 export const CANVAS_BY_ROUTE = {
   "/": { className: LANDING_CANVAS_CLASS, style: LANDING_CANVAS_STYLE },
   [SAMPLE_REPORT_ROUTE_KEY]: { style: SAMPLE_REPORT_CANVAS_STYLE },
   "/company-report?sample=1": { style: SAMPLE_COMPANY_REPORT_CANVAS_STYLE },
-  "/terms": { style: LANDING_CANVAS_STYLE },
-  "/privacy": { style: LANDING_CANVAS_STYLE },
-  "/mentoring": { style: LANDING_CANVAS_STYLE },
-  "/entitlements": { style: "background-color:#0A0A0A" },
+  "/terms": { style: STAGE_CANVAS_STYLE },
+  "/privacy": { style: STAGE_CANVAS_STYLE },
+  "/mentoring": { style: STAGE_CANVAS_STYLE },
+  "/entitlements": { style: STAGE_CANVAS_STYLE },
 };
 
 function assertMarkup(name, markup) {

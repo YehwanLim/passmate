@@ -61,7 +61,7 @@ export default function KakaoSignInButton({
   return (
     <>
       {error && (
-        <div className="flex items-start gap-2.5 mb-3 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-[13px]">
+        <div className="flex items-start gap-2.5 mb-3 p-3.5 rounded-xl bg-danger-soft text-danger text-[13px]">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <span>{error}</span>
         </div>

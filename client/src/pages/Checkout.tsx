@@ -71,28 +71,28 @@ export default function Checkout() {
   const planLabel = product ? PRICING[product].label : "이용권";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#0A0A0A] px-6 text-white">
-      <Logo />
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-stage px-6 text-ink">
+      <Logo variant="default" />
 
       {phase === "opening" && (
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-5 animate-spin text-zinc-500" />
-          <p className="text-sm text-zinc-300">
+          <Loader2 className="size-5 animate-spin text-brand-ink" />
+          <p className="text-sm text-ink-2">
             {planLabel} 결제 페이지로 이동하고 있어요.
           </p>
-          <p className="text-xs text-zinc-600">잠시만 기다려 주세요.</p>
+          <p className="text-xs text-ink-4">잠시만 기다려 주세요.</p>
         </div>
       )}
 
       {phase === "invalid" && (
         <div className="flex flex-col items-center gap-4">
-          <p className="text-sm text-zinc-300">
+          <p className="text-sm text-ink-2">
             이용권 정보를 확인하지 못했어요.
           </p>
           <button
             type="button"
             onClick={() => navigate("/entitlements")}
-            className="text-sm font-medium text-white underline underline-offset-4"
+            className="text-sm font-semibold text-brand-ink underline underline-offset-4 hover:text-brand"
           >
             이용권 안내로 돌아가기
           </button>
@@ -101,19 +101,19 @@ export default function Checkout() {
 
       {phase === "failed" && (
         <div className="flex flex-col items-center gap-4">
-          <p className="text-sm text-zinc-300">결제 페이지를 열지 못했어요.</p>
+          <p className="text-sm text-ink-2">결제 페이지를 열지 못했어요.</p>
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => void openCheckout()}
-              className="text-sm font-medium text-white underline underline-offset-4"
+              className="text-sm font-semibold text-brand-ink underline underline-offset-4 hover:text-brand"
             >
               다시 시도
             </button>
             <button
               type="button"
               onClick={() => navigate("/entitlements")}
-              className="text-sm text-zinc-500 underline underline-offset-4"
+              className="text-sm text-ink-4 underline underline-offset-4 hover:text-ink-2"
             >
               이용권 안내로 돌아가기
             </button>

@@ -59,7 +59,7 @@ describe("markLandingCanvas", () => {
     expect(result).toContain(
       `<html lang="ko" class="${LANDING_CANVAS_CLASS}" style="${LANDING_CANVAS_STYLE}">`
     );
-    expect(LANDING_CANVAS_STYLE).toContain("#050505");
+    expect(LANDING_CANVAS_STYLE).toContain("#F9FAFB");
   });
 
   it("throws when there is no single html tag or it already carries a class or style", () => {

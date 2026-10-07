@@ -10,8 +10,8 @@ export { REPORT_PREVIEW_SCENES };
 const DESKTOP_WHEEL_PAGING_QUERY =
   "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
 
-// 고정 사이트 헤더(SiteHeader: h-14 + 하단 테두리 1px).
-const SITE_HEADER_HEIGHT_PX = 57;
+// 고정 사이트 헤더(SiteHeader floating: 위 여백 12px + 바 64px).
+const SITE_HEADER_HEIGHT_PX = 76;
 
 // 미리보기 블록(프레임 + CTA)이 사이트 헤더 아래 공간에 들어갔을 때 위아래로 남길 최소 여백.
 const PINNED_BLOCK_MIN_MARGIN_PX = 16;
@@ -397,14 +397,14 @@ export default function ReportShowcase() {
   return (
     <section
       id="service-intro"
-      className="border-t border-white/[0.04] pb-16 pt-24 md:pb-24 md:pt-40"
+      className="bg-fill py-24 md:py-[120px]"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
-        <div className="text-center mb-8 md:mb-10">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-5">
+        <div className="text-center mb-10 md:mb-14">
+          <h2 className="mb-[18px] text-[30px] font-extrabold leading-[1.25] tracking-[-0.035em] text-ink md:text-[46px]">
             합격을 설계하는 인사이트 리포트
           </h2>
-          <p className="text-[15px] md:text-[16px] text-gray-500 font-light leading-[1.8] max-w-3xl mx-auto">
+          <p className="mx-auto max-w-3xl text-[16px] leading-[1.7] text-ink-3 md:text-[18px]">
             점수를 매기기보다, 면접관에게 내 자소서가 어떻게 보일지 그 흐름을
             따라가요. 내 자소서의 첫인상과 문장별 피드백, 예상 질문, 당장
             준비해야 할 것들, 채용 공고와 핏한 정도까지 모두 확인해보세요.
@@ -416,7 +416,7 @@ export default function ReportShowcase() {
         <div
           ref={pinnedBlockRef}
           data-report-preview-block
-          className="flex flex-col gap-8 lg:gap-6"
+          className="flex flex-col gap-8 lg:gap-9"
         >
           <ReportPreviewFrame
             activeIndex={activeIndex}

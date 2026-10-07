@@ -165,7 +165,7 @@ export default function GoogleSignInButton({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="flex items-start gap-2.5 mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-[13px]"
+            className="flex items-start gap-2.5 mb-5 p-3.5 rounded-xl bg-danger-soft text-danger text-[13px]"
           >
             <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <span>{error}</span>
@@ -186,9 +186,9 @@ export default function GoogleSignInButton({
             ].join(" ")}
           />
           {(gisStatus === "loading" || isSigningIn) && (
-            <div className="absolute inset-0 mx-auto max-w-[336px] flex items-center justify-center gap-3 rounded-[10px] bg-white/[0.04] border border-white/10">
-              <div className="w-5 h-5 border-2 border-gray-500/40 border-t-gray-300 rounded-full animate-spin" />
-              <span className="text-[14px] text-gray-400">
+            <div className="absolute inset-0 mx-auto max-w-[336px] flex items-center justify-center gap-3 rounded-[10px] bg-surface border border-line">
+              <div className="w-5 h-5 border-2 border-line border-t-ink-4 rounded-full animate-spin" />
+              <span className="text-[14px] text-ink-4">
                 {isSigningIn ? "연결 중..." : "로그인 준비 중..."}
               </span>
             </div>
@@ -206,7 +206,7 @@ export default function GoogleSignInButton({
               "relative mx-auto w-full max-w-[336px] flex items-center justify-center gap-2.5",
               "h-10 px-5 rounded-[10px] font-medium text-[14px]",
               "bg-white text-gray-900",
-              "border border-white/20",
+              "border border-line",
               "transition-colors duration-200",
               "hover:bg-gray-50",
               "disabled:opacity-60 disabled:cursor-not-allowed",

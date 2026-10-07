@@ -13,8 +13,9 @@ import NotFound from "./NotFound";
 
 const RELATED_COUNT = 3;
 
+// 흰 바탕에서 길게 읽는 본문: 17px·줄 간격 1.8, 인용은 왼쪽 줄 대신 회색 판, 링크는 브랜드 글씨 + 밑줄.
 const PROSE_CLASS =
-  "guide-prose prose prose-invert mt-9 max-w-none border-t border-white/[0.08] pt-2 prose-headings:tracking-normal prose-h2:text-xl prose-h2:mt-11 prose-h3:text-lg prose-p:leading-7 prose-li:leading-7 prose-a:text-blue-300 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-img:mx-auto prose-img:w-auto prose-img:max-h-[600px] prose-img:rounded-lg prose-img:border prose-img:border-white/[0.08]";
+  "guide-prose prose mt-9 max-w-none border-t border-line pt-2 text-[17px] text-ink-2 prose-headings:font-bold prose-headings:tracking-[-0.02em] prose-headings:text-ink prose-h2:text-[22px] prose-h2:mt-11 prose-h3:text-[19px] prose-p:leading-[1.8] prose-li:leading-[1.8] prose-a:text-brand-ink prose-a:underline prose-a:underline-offset-2 hover:prose-a:text-brand prose-strong:text-ink prose-blockquote:rounded-[16px] prose-blockquote:border-l-0 prose-blockquote:bg-fill prose-blockquote:px-6 prose-blockquote:py-1 prose-blockquote:font-normal prose-blockquote:not-italic prose-blockquote:text-ink-2 prose-th:text-ink prose-td:text-ink-2 prose-thead:border-line prose-tr:border-line-soft prose-img:mx-auto prose-img:w-auto prose-img:max-h-[600px] prose-img:rounded-[16px] prose-img:border prose-img:border-line";
 
 /** 본문. readGuideHtml 이 아직 못 받은 글이면 Promise 를 던지므로 Suspense 안에 둔다(lib/guideBodies.ts). */
 function GuideBody({ slug }: { slug: string }) {
@@ -50,12 +51,12 @@ export default function GuideArticle() {
   const metaLine = `${formatDate(guide.updated, "ymd-dot")} · ${readingMinutes(guide.bodyChars)}분 읽기`;
 
   return (
-    <GuideLayout>
+    <GuideLayout surface="white">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-10">
         <article className="lg:col-span-7 lg:col-start-2">
           <Link
             href={GUIDE_INDEX_PATH}
-            className="inline-flex items-center gap-1 text-[12px] text-zinc-400 transition-colors hover:text-white"
+            className="inline-flex items-center gap-1 text-[13px] font-medium text-ink-4 transition-colors hover:text-ink"
           >
             <ChevronLeft className="h-3 w-3" aria-hidden="true" />
             취업 가이드
@@ -64,19 +65,19 @@ export default function GuideArticle() {
           <GuideCover tone={cover} text={guide.coverText} image={guide.cover} className="mt-7 w-full max-w-[400px]" />
 
           <header className="mt-9">
-            <h1 className="text-[30px] font-bold leading-[1.2] tracking-[-0.03em] text-balance [word-break:keep-all] md:text-[40px]">
+            <h1 className="text-[30px] font-extrabold leading-[1.25] tracking-[-0.035em] text-balance text-ink [word-break:keep-all] md:text-[40px]">
               {guide.title}
             </h1>
-            <p className="mt-3 text-[13px] text-zinc-500">{metaLine}</p>
-            <p className="mt-4 text-[16px] leading-[1.7] text-gray-400 md:text-[18px]">{guide.description}</p>
+            <p className="mt-3 text-[13px] text-ink-4">{metaLine}</p>
+            <p className="mt-4 text-[16px] leading-[1.7] text-ink-3 md:text-[18px]">{guide.description}</p>
           </header>
 
-          <Suspense fallback={<div className="mt-9 min-h-[60vh] border-t border-white/[0.08]" aria-busy="true" />}>
+          <Suspense fallback={<div className="mt-9 min-h-[60vh] border-t border-line" aria-busy="true" />}>
             <GuideBody slug={guide.slug} />
           </Suspense>
 
           <GuideCtaCard
-            className="mt-12"
+            className="mt-12 bg-fill"
             title="다 쓴 자소서, 내기 전에 한 번 읽혀 보세요"
             body="지원 회사와 문항을 넣으면 채용 담당자가 읽는 순서대로 첫인상과 고칠 곳을 짚어 드려요. 첫 분석은 무료예요."
             withSample
@@ -85,18 +86,18 @@ export default function GuideArticle() {
 
         {related.length > 0 && (
           <aside className="flex flex-col gap-3.5 lg:col-span-3 lg:col-start-10 lg:pt-[292px]">
-            <span className="text-[12px] font-semibold tracking-[0.06em] text-zinc-500">이어서 읽기</span>
+            <span className="text-[13px] font-semibold text-ink-4">이어서 읽기</span>
             {related.map(({ summary, cover: relatedCover }) => (
               <Link
                 key={summary.slug}
                 href={guidePath(summary)}
-                className="flex items-center gap-4 rounded-[10px] border border-white/[0.08] bg-white/[0.03] p-3.5 transition-colors hover:border-white/[0.18] hover:bg-white/[0.05]"
+                className="flex items-center gap-4 rounded-[16px] border border-line bg-surface p-3.5 transition-colors hover:bg-fill-soft"
               >
                 <GuideCover tone={relatedCover} image={summary.cover} mini className="w-16 flex-none" />
-                <span className="text-[14px] font-semibold leading-[1.45] text-balance text-white [word-break:keep-all]">{summary.title}</span>
+                <span className="text-[14px] font-semibold leading-[1.45] text-balance text-ink [word-break:keep-all]">{summary.title}</span>
               </Link>
             ))}
-            <Link href={GUIDE_INDEX_PATH} className="mt-1.5 text-[13px] font-medium text-zinc-400 transition-colors hover:text-white">
+            <Link href={GUIDE_INDEX_PATH} className="mt-1.5 text-[13px] font-semibold text-brand-ink transition-colors hover:text-brand">
               가이드 전체 보기 →
             </Link>
           </aside>

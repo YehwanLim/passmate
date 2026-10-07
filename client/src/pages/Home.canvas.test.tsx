@@ -2,14 +2,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 
-// 랜딩은 <html> 에 landing-canvas 를 붙여 문서 배경을 검게 한다(index.css). body 가 라이트 테마라
+// 랜딩은 <html> 에 landing-canvas 를 붙여 문서 배경을 히어로 바탕색으로 맞춘다(landing.css). body 가 흰색이라
 // iOS 오버스크롤·미도색 타일이 흰색으로 비치는 것을 막는 장치이므로, 떠날 때 반드시 떼야 다른 화면이 어두워지지 않는다.
 vi.mock("wouter", async importOriginal => ({
   ...(await importOriginal<typeof import("wouter")>()),
   useLocation: () => ["/", vi.fn()],
 }));
 vi.mock("@/components/AuthButton", () => ({ default: () => null }));
-vi.mock("@/components/MoodShiftBackground", () => ({ default: () => null }));
 
 import Home from "./Home";
 

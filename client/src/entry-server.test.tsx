@@ -16,7 +16,7 @@ describe("entry-server render", () => {
     const html = render("/");
 
     expect(html.length).toBeGreaterThan(10_000);
-    expect(html).toContain("10초면");
+    expect(html).toContain("합격하는 자소서");
     expect(html).toContain("취업 가이드");
     expect(consoleError).not.toHaveBeenCalled();
   });

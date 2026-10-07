@@ -38,23 +38,26 @@ export function TierCard({
   return (
     <div
       id={tier.key}
-      className={`plan-card flex h-full flex-col rounded-2xl border p-7 md:p-8 ${
-        recommended
-          ? "plan-card--recommended border-white/[0.3] bg-white/[0.06]"
-          : "border-white/[0.12] bg-white/[0.035]"
+      className={`flex h-full flex-col rounded-[28px] border-2 bg-surface p-7 md:p-8 ${
+        recommended ? "border-brand" : "border-surface"
       }`}
     >
-      {recommended && <span className="plan-badge">추천</span>}
-
-      <p className="text-[21px] font-bold tracking-tight text-white">
-        {tier.label}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[17px] font-bold tracking-[-0.02em] text-ink">
+          {tier.label}
+        </p>
+        {recommended && (
+          <span className="inline-flex h-7 items-center rounded-[8px] bg-brand-soft px-2.5 text-[13px] font-semibold text-brand-ink">
+            추천
+          </span>
+        )}
+      </div>
 
       {/* 베이직만 토글이 들어가 아래 가격 줄이 밀리므로 구성 안내 영역 높이를 카드마다 맞춘다. */}
       <div className="mt-2.5 min-h-[62px]">
         {tier.key === "basic" ? (
           <div>
-          <p className="text-[11px] font-medium text-zinc-500">
+          <p className="text-[12px] font-medium text-ink-4">
             둘 중 하나를 골라 주세요
           </p>
           <div
@@ -69,10 +72,10 @@ export function TierCard({
                 role="radio"
                 aria-checked={basicChoice === choice}
                 onClick={() => onBasicChoice(choice)}
-                className={`h-10 whitespace-nowrap rounded-xl border text-[12.5px] font-semibold transition-colors ${
+                className={`h-10 whitespace-nowrap rounded-[10px] border text-[13px] font-semibold transition-colors ${
                   basicChoice === choice
-                    ? "border-white/40 bg-white/[0.12] text-white"
-                    : "border-white/[0.12] bg-white/[0.05] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200"
+                    ? "border-brand bg-brand-soft text-brand-ink"
+                    : "border-line bg-surface text-ink-3 hover:bg-fill-soft hover:text-ink-2"
                 }`}
               >
                 {PRICING[choice].label}
@@ -81,45 +84,45 @@ export function TierCard({
           </div>
           </div>
         ) : (
-          <p className="text-[13.5px] text-zinc-300">{usesLabel}</p>
+          <p className="text-[14px] text-ink-3">{usesLabel}</p>
         )}
       </div>
 
-      <p className="mt-5 whitespace-nowrap text-[2.4rem] font-bold leading-none tracking-tight text-white">
+      <p className="mt-5 whitespace-nowrap text-[36px] font-extrabold leading-none tracking-[-0.03em] text-ink">
         {formatKrw(plan.salePrice)}
-        <span className="ml-1.5 text-[14px] font-medium text-zinc-300">
+        <span className="ml-1.5 text-[14px] font-medium tracking-normal text-ink-4">
           / {totalUses}회
         </span>
       </p>
 
       {hasStrike ? (
-        <p className="mt-2 whitespace-nowrap text-[12px] text-zinc-500 line-through decoration-zinc-500">
+        <p className="mt-2 whitespace-nowrap text-[13px] text-ink-4 line-through">
           {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
         </p>
       ) : (
-        <p className="mt-2 text-[12px] text-zinc-500">정가 판매</p>
+        <p className="mt-2 text-[13px] text-ink-4">정가 판매</p>
       )}
 
-      <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap text-[12.5px] text-zinc-400">
+      <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap text-[13px] text-ink-4">
         {totalUses > 0 && (
           <span>
             1회당{" "}
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-ink-2">
               {formatKrw(Math.round(plan.salePrice / totalUses))}
             </span>
           </span>
         )}
-        {totalUses > 0 && hasStrike && <span className="text-zinc-600">·</span>}
+        {totalUses > 0 && hasStrike && <span className="text-ink-5">·</span>}
         {hasStrike && (
-          <span className={`font-bold ${PLAN_ACCENT_TEXT[product]}`}>
+          <span className={`font-extrabold ${PLAN_ACCENT_TEXT[product]}`}>
             {plan.discountLabel}
           </span>
         )}
       </p>
 
       <div className="mt-5 flex-1">
-        <p className="text-[15px] font-semibold text-white">{TIER_COPY[tier.key].when}</p>
-        <p className="mt-1.5 text-[13.5px] leading-[1.7] text-zinc-300">{TIER_COPY[tier.key].what[product]}</p>
+        <p className="text-[15px] font-semibold text-ink">{TIER_COPY[tier.key].when}</p>
+        <p className="mt-1.5 text-[14px] leading-[1.7] text-ink-3">{TIER_COPY[tier.key].what[product]}</p>
       </div>
 
       <div className="mt-6">{children}</div>
