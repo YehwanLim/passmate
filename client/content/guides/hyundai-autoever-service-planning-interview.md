@@ -4,11 +4,10 @@ description: 신입 공채 서비스 기획 직무의 사전 과제와 1차 면�
 category: 면접 후기
 coverTone: hyundai
 coverLogo: /guide/logos/autoever-white.svg
-coverLabel: 서비스 기획 직무
-coverTitle: 현대오토에버
-coverSub: 1차 면접 후기
-coverPoint: 질문 22개
-coverPointNote: 실무진 2:1 → 팀장 1:1
+coverStyle: mark
+coverLabel: 현대오토에버 · 서비스 기획 직무
+coverQuestion: 현대오토에버 1차 면접과\n사전 과제
+coverAnswer: 질문 22개 · 실무진 2:1 → 팀장 1:1
 date: 2026-09-07
 updated: 2026-09-07
 keywords: 현대오토에버 면접 후기, 현대오토에버 서비스 기획 면접, 서비스 기획 면접 질문, 현대오토에버 사전 과제, 신입 공채 면접 후기

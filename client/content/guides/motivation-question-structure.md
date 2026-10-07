@@ -2,11 +2,10 @@
 title: 자소서 지원동기, "이 회사는 이걸 잘해요"에서 끝내지 마세요
 description: 회사 칭찬 뒤에 붙일 세 줄, 그리고 모의면접에서 실제로 걸렸던 지원동기 실수 세 가지. 커피챗 기록에서 골랐어요.
 category: 자소서
-coverLabel: 자소서 문항 / 커피챗 기록
-coverTitle: 지원동기
-coverSub: 칭찬에서 끝내지 않기
-coverPoint: 칭찬 뒤 세 줄
-coverPointNote: 실수 3가지
+coverStyle: quote
+coverLabel: 자소서 문항 · 커피챗 기록
+coverQuestion: 회사 칭찬에서\n끝나는 지원동기
+coverAnswer: 칭찬 뒤에 붙일 세 줄
 date: 2026-09-15
 updated: 2026-10-06
 keywords: 자소서 지원동기, 지원동기 쓰는 법, 신입 공채 자소서, 지원동기 면접, 자소서 첨삭

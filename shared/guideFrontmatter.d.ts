@@ -6,7 +6,7 @@ export type GuideSummary = {
   category: string;
   /** 커버 이미지 경로(/guide/<slug>/cover.png). 면접 후기처럼 만든 커버가 있을 때. */
   cover: string | null;
-  /** 이미지가 없을 때 그리는 글자 커버(블로그 커버 틀). frontmatter coverLabel·coverTitle·coverSub·coverPoint·coverPointNote */
+  /** 이미지가 없을 때 그리는 질문형 커버. frontmatter coverStyle·coverLabel·coverQuestion·coverAnswer·coverTone·coverLogo */
   coverText: GuideCoverText | null;
   /** YYYY-MM-DD */
   date: string;
@@ -19,16 +19,15 @@ export type GuideSummary = {
 };
 
 export type GuideCoverText = {
-  /** 작은 분류 줄. 비어 있을 수 있다 */
+  /** chat: 고민·답 말풍선 · quote: 큰따옴표 · plain: 질문만 · mark: 질문 + 답 + 큰 물음표 */
+  style: "chat" | "quote" | "plain" | "mark";
+  /** 작은 분류 줄(quote·plain 에서 쓴다). 비어 있을 수 있다 */
   label: string;
-  /** 큰 키워드 */
-  title: string;
-  sub: string;
-  /** 가로선 아래 강조 줄 */
-  point: string;
-  /** 강조 줄 옆 작은 덧말. 비어 있을 수 있다 */
-  pointNote: string;
-  /** 회사 색 키(COMPANY_COVER_TONES). 없으면 목록 순서대로 옅은 판 */
+  /** 큰 글씨. \n 으로 줄을 나눈다 */
+  question: string;
+  /** 짧은 답 한 줄(chat·mark 에서 보인다). 비어 있을 수 있다 */
+  answer: string;
+  /** 회사 색 키(COMPANY_COVER_TONES). 없으면 목록 순서대로 강조색 */
   tone: string | null;
   /** /guide/logos/*.svg 흰 로고 */
   logo: string | null;

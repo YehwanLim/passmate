@@ -4,11 +4,10 @@ description: 자소서에서 예상 질문을 뽑는 법부터 기업·산업·�
 category: 면접 후기
 coverTone: samsung
 coverLogo: /guide/logos/samsung-white.svg
-coverLabel: 마케팅 직무 / 합격 후기 3
-coverTitle: 삼성전자
-coverSub: 면접 준비 A to Z
-coverPoint: 준비 4단계
-coverPointNote: 자소서부터 모의면접까지
+coverStyle: quote
+coverLabel: 삼성전자 · 마케팅 직무 · 합격 후기 3
+coverQuestion: 삼성전자 면접\n준비 A to Z
+coverAnswer: 자소서부터 모의면접까지 4단계
 date: 2023-11-05
 updated: 2026-09-06
 keywords: 삼성전자 면접 준비, 삼성전자 DX 마케팅 면접, 삼성전자 합격 후기, 면접 예상 질문 만드는 법, 기업 분석 면접 준비

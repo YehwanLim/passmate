@@ -42,6 +42,8 @@ export type GuideCoverStyle = {
   label: string;
   /** 가로선. 없으면 ink */
   line?: string;
+  /** 진한 회사 색 판(흰 글씨). 말풍선·물음표 색이 반대가 된다 */
+  dark?: boolean;
 };
 
 const PLATE = { background: "#f2f4f6", ink: "#191f28", label: "#6b7684", line: "#d1d6db" } as const;
@@ -60,8 +62,8 @@ export function guideCoverStyle(index: number): GuideCoverStyle {
 
 /** 면접 후기 커버의 회사 색. 블로그 커버(.agents/blog-job-posts/covers/src/iv-*.html)와 같은 값이다. */
 export const COMPANY_COVER_TONES: Readonly<Record<string, GuideCoverStyle>> = {
-  hyundai: { background: "#002c5f", ink: "#ffffff", accent: "#bcd3f2", label: "#9fbbe0" },
-  samsung: { background: "#1428a0", ink: "#ffffff", accent: "#c3cbf6", label: "#c3cbf6" },
+  hyundai: { background: "#002c5f", ink: "#ffffff", accent: "#bcd3f2", label: "#9fbbe0", dark: true },
+  samsung: { background: "#1428a0", ink: "#ffffff", accent: "#c3cbf6", label: "#c3cbf6", dark: true },
 };
 
 /** 글의 커버 색: 회사 색이 지정돼 있으면 그것, 아니면 목록 위치의 옅은 판. */

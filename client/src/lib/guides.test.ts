@@ -40,16 +40,18 @@ describe("parseGuideFile", () => {
     expect(() => parseGuideFile("/x/My Guide.md", raw)).toThrow(/slug/);
   });
 
-  it("reads the text cover fields and an optional cover image, which must live under /guide/", () => {
-    const withText = raw.replace("date:", "coverLabel: 자소서 문항\ncoverTitle: 지원동기\ncoverSub: 칭찬에서 끝내지 않기\ncoverPoint: 칭찬 뒤 세 줄\ndate:");
+  it("reads the question cover fields (style · question with \\n line breaks · answer) and an optional cover image", () => {
+    const withText = raw.replace("date:", "coverStyle: chat\ncoverLabel: 자소서 문항\ncoverQuestion: 회사 칭찬에서\\n끝나는 지원동기\ncoverAnswer: 칭찬 뒤에 붙일 세 줄\ndate:");
     expect(parseGuideFile("/content/guides/my-guide.md", withText).coverText).toEqual({
-      label: "자소서 문항", title: "지원동기", sub: "칭찬에서 끝내지 않기", point: "칭찬 뒤 세 줄", pointNote: "", tone: null, logo: null,
+      style: "chat", label: "자소서 문항", question: "회사 칭찬에서\n끝나는 지원동기", answer: "칭찬 뒤에 붙일 세 줄", tone: null, logo: null,
     });
+    expect(() => parseGuideFile("/x/a.md", withText.replace("coverStyle: chat", "coverStyle: fancy"))).toThrow(/coverStyle/);
+    expect(() => parseGuideFile("/x/a.md", withText.replace("coverAnswer: 칭찬 뒤에 붙일 세 줄\n", ""))).toThrow(/coverAnswer/);
     const company = withText.replace("date:", "coverTone: hyundai\ncoverLogo: /guide/logos/hyundai-white.svg\ndate:");
     expect(parseGuideFile("/content/guides/my-guide.md", company).coverText).toMatchObject({ tone: "hyundai", logo: "/guide/logos/hyundai-white.svg" });
     expect(() => parseGuideFile("/x/a.md", withText.replace("date:", "coverLogo: https://x.example/a.svg\ndate:"))).toThrow(/coverLogo/);
     expect(parseGuideFile("/content/guides/my-guide.md", raw).coverText).toBeNull();
-    expect(() => parseGuideFile("/x/a.md", raw.replace("date:", "coverTitle: 지원동기\ndate:"))).toThrow(/coverSub/);
+    expect(() => parseGuideFile("/x/a.md", raw.replace("date:", "coverQuestion: 지원동기\ndate:"))).toThrow(/coverStyle/);
     const withImage = raw.replace("date:", "cover: /guide/my-guide/cover.png\ndate:");
     expect(parseGuideFile("/content/guides/my-guide.md", withImage).cover).toBe("/guide/my-guide/cover.png");
     expect(() => parseGuideFile("/x/a.md", raw.replace("date:", "cover: https://evil.example/x.png\ndate:"))).toThrow(/cover/);
@@ -81,12 +83,22 @@ describe("guide summaries (vite `?summary` loader)", () => {
     for (const guide of GUIDE_SUMMARIES) {
       expect(["자소서", "면접 후기"], guide.slug).toContain(guide.category);
       expect(Boolean(guide.cover || guide.coverText), guide.slug).toBe(true);
+      // 10-07: "~라면/~였을까"로만 끝내지 않는다 — 명사형도 섞는다(검사는 하지 않고, 같은 어미가 전부를 차지하지 않는지만 본다).
       if (guide.cover) expect(existsSync(new URL(`../../public${guide.cover}`, import.meta.url)), guide.cover).toBe(true);
       const logo = guide.coverText?.logo;
       if (logo) expect(existsSync(new URL(`../../public${logo}`, import.meta.url)), logo).toBe(true);
       const tone = guide.coverText?.tone;
       if (tone) expect(Object.keys(COMPANY_COVER_TONES), `${guide.slug} tone`).toContain(tone);
     }
+  });
+
+  it("fixes a cover layout per guide and never repeats it between neighbours in the list", () => {
+    const styles = GUIDE_SUMMARIES.map(guide => guide.coverText?.style);
+    for (let index = 1; index < styles.length; index += 1) {
+      expect(styles[index], GUIDE_SUMMARIES[index].slug).not.toBe(styles[index - 1]);
+    }
+    const endings = GUIDE_SUMMARIES.map(guide => guide.coverText!.question.trim().slice(-2));
+    expect(endings.filter(end => end === "라면").length).toBeLessThan(endings.length / 2);
   });
 
   it("draws interview reviews with the same text cover as other guides, in the company colour (10-06: 글씨 크기 일관성)", () => {

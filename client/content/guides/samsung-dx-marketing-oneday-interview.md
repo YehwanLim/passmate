@@ -4,11 +4,10 @@ description: 인성면접·창의성 면접·직무역량면접·약식 GSAT을 
 category: 면접 후기
 coverTone: samsung
 coverLogo: /guide/logos/samsung-white.svg
-coverLabel: 마케팅 직무 / 합격 후기 4
-coverTitle: 삼성전자
-coverSub: 원데이 면접 후기
-coverPoint: 면접 4개 하루에
-coverPointNote: 3~5시간
+coverStyle: chat
+coverLabel: 삼성전자 · 마케팅 직무 · 합격 후기 4
+coverQuestion: 삼성전자 원데이 면접,\n하루에 뭘 볼까
+coverAnswer: 면접 4개, 3~5시간
 date: 2024-03-16
 updated: 2026-09-06
 keywords: 삼성전자 면접 후기, 삼성전자 원데이 면접, 삼성전자 직무면접 질문, 삼성전자 창의성 면접, 삼성전자 임원면접, 약식 GSAT

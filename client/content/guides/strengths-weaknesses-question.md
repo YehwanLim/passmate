@@ -2,11 +2,10 @@
 title: 자소서 성격의 장단점, 단점을 솔직하게 쓰고도 괜찮은 구조
 description: 장점은 직무 기준에서 고르고, 단점은 관리하는 방법까지 써야 읽힙니다. 채용 담당자가 장단점 문항에서 걸러내는 것과 안전한 단점 고르는 법, 예시를 정리합니다.
 category: 자소서
+coverStyle: quote
 coverLabel: 자소서 문항
-coverTitle: 성격 장단점
-coverSub: 단점도 솔직하게
-coverPoint: 안전한 단점
-coverPointNote: 고르는 법
+coverQuestion: 단점,\n솔직하게 써도 될까
+coverAnswer: 직무 핵심만 피하면 괜찮아요
 date: 2026-09-16
 updated: 2026-09-16
 keywords: 자소서 성격의 장단점, 자소서 장단점 예시, 자소서 단점 쓰는 법, 자소서 장점 단점, 신입 자소서 성격

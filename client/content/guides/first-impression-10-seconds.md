@@ -2,10 +2,10 @@
 title: 채용 담당자는 자소서 첫 10초에 무엇을 보나
 description: 서류를 읽는 사람은 첫 문단에서 이미 결론을 반쯤 내립니다. 그 10초 동안 실제로 무엇을 확인하는지, 내 자소서 첫 문단을 어떻게 점검할지 정리합니다.
 category: 자소서
+coverStyle: mark
 coverLabel: 첫인상
-coverTitle: 첫 10초
-coverSub: 첫 문단에서 보는 것
-coverPoint: 확인하는 세 가지
+coverQuestion: 채용 담당자의\n첫 10초
+coverAnswer: 첫 문단에서 확인하는 세 가지
 date: 2026-09-15
 updated: 2026-09-15
 keywords: 자소서 첫인상, 자소서 첫 문장, 자소서 첨삭, 자소서 피드백, 서류 탈락 이유
