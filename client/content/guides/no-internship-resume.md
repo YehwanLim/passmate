@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: chat
 coverLabel: 상황별
 coverQuestion: 인턴 경험 없는\n신입 자소서
-coverAnswer: 알바·팀플·동아리를 직무 언어로
+coverAnswer: 알바·팀 과제·동아리를\n직무 언어로 바꾸는 법
 date: 2026-09-16
 updated: 2026-09-16
 keywords: 인턴 경험 없는 자소서, 경험 없는 자소서, 신입 자소서 경험, 자소서 쓸 경험이 없을 때, 아르바이트 경험 자소서

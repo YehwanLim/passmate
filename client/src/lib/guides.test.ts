@@ -41,12 +41,16 @@ describe("parseGuideFile", () => {
   });
 
   it("reads the question cover fields (style · question with \\n line breaks · answer) and an optional cover image", () => {
-    const withText = raw.replace("date:", "coverStyle: chat\ncoverLabel: 자소서 문항\ncoverQuestion: 회사 칭찬에서\\n끝나는 지원동기\ncoverAnswer: 칭찬 뒤에 붙일 세 줄\ndate:");
+    const withText = raw.replace("date:", "coverStyle: chat\ncoverLabel: 자소서 문항\ncoverQuestion: 회사 칭찬에서\\n끝나는 지원동기\ncoverAnswer: 칭찬 뒤에 붙일 세 줄과\\n실수 세 가지\ndate:");
     expect(parseGuideFile("/content/guides/my-guide.md", withText).coverText).toEqual({
-      style: "chat", label: "자소서 문항", question: "회사 칭찬에서\n끝나는 지원동기", answer: "칭찬 뒤에 붙일 세 줄", tone: null, logo: null,
+      style: "chat", label: "자소서 문항", question: "회사 칭찬에서\n끝나는 지원동기", answer: "칭찬 뒤에 붙일 세 줄과\n실수 세 가지", tone: null, logo: null,
     });
     expect(() => parseGuideFile("/x/a.md", withText.replace("coverStyle: chat", "coverStyle: fancy"))).toThrow(/coverStyle/);
-    expect(() => parseGuideFile("/x/a.md", withText.replace("coverAnswer: 칭찬 뒤에 붙일 세 줄\n", ""))).toThrow(/coverAnswer/);
+    // 10-07: 모든 구성에 답 줄이 들어간다(빈 느낌을 채우려고) — 따옴표·질문만 구성도 답이 필수다.
+    for (const style of ["chat", "quote", "plain", "mark"]) {
+      const noAnswer = withText.replace("coverStyle: chat", `coverStyle: ${style}`).replace(/coverAnswer: .*\n/, "");
+      expect(() => parseGuideFile("/x/a.md", noAnswer), style).toThrow(/coverAnswer/);
+    }
     const company = withText.replace("date:", "coverTone: hyundai\ncoverLogo: /guide/logos/hyundai-white.svg\ndate:");
     expect(parseGuideFile("/content/guides/my-guide.md", company).coverText).toMatchObject({ tone: "hyundai", logo: "/guide/logos/hyundai-white.svg" });
     expect(() => parseGuideFile("/x/a.md", withText.replace("date:", "coverLogo: https://x.example/a.svg\ndate:"))).toThrow(/coverLogo/);
@@ -99,6 +103,12 @@ describe("guide summaries (vite `?summary` loader)", () => {
     }
     const endings = GUIDE_SUMMARIES.map(guide => guide.coverText!.question.trim().slice(-2));
     expect(endings.filter(end => end === "라면").length).toBeLessThan(endings.length / 2);
+  });
+
+  it("keeps interview covers to a one-line answer (logo already names the company, 10-07 H2)", () => {
+    for (const guide of GUIDE_SUMMARIES.filter(summary => summary.coverText?.logo)) {
+      expect(guide.coverText!.answer, guide.slug).not.toContain("\n");
+    }
   });
 
   it("draws interview reviews with the same text cover as other guides, in the company colour (10-06: 글씨 크기 일관성)", () => {

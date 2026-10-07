@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: chat
 coverLabel: 수정하기
 coverQuestion: 피드백 받은 뒤\n고치는 순서
-coverAnswer: 영향 큰 순서대로 4단계
+coverAnswer: 영향 큰 순서대로 고치는 4단계,\n마감 하루 전이라면
 date: 2026-09-15
 updated: 2026-09-15
 keywords: 자소서 피드백, 자소서 수정, 자소서 첨삭 반영, 자소서 고치는 법, 자소서 마감

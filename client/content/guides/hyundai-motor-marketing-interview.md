@@ -7,7 +7,7 @@ coverLogo: /guide/logos/hyundai-white.svg
 coverStyle: plain
 coverLabel: 현대자동차 · 마케팅 직무
 coverQuestion: 현대자동차 1차 면접\n실제 질문 25개
-coverAnswer: 비대면 40분, 4:1
+coverAnswer: 비대면 40분 · 면접관 4명
 date: 2026-09-08
 updated: 2026-09-08
 keywords: 현대자동차 면접 후기, 현대자동차 마케팅 면접, 현대차 1차 면접 질문, 마케팅 면접 질문 리스트, 면접 불합격 후기

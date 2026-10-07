@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: quote
 coverLabel: 자소서 문항 · 커피챗 기록
 coverQuestion: 회사 칭찬에서\n끝나는 지원동기
-coverAnswer: 칭찬 뒤에 붙일 세 줄
+coverAnswer: 칭찬 뒤에 붙일 세 줄과\n모의면접에서 걸린 실수 세 가지
 date: 2026-09-15
 updated: 2026-10-06
 keywords: 자소서 지원동기, 지원동기 쓰는 법, 신입 공채 자소서, 지원동기 면접, 자소서 첨삭

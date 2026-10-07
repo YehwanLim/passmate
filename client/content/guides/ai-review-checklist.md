@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: plain
 coverLabel: 자소서 점검
 coverQuestion: AI 첨삭에\n넣기 전 체크리스트
-coverAnswer: 확인할 7가지
+coverAnswer: 넣기 전에 확인할 7가지와\nAI 결과를 읽는 법
 date: 2026-09-15
 updated: 2026-09-15
 keywords: 자소서 첨삭 AI, AI 자소서 첨삭, 자소서 AI, 자소서 피드백, ChatGPT 자소서

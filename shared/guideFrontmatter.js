@@ -12,7 +12,6 @@ const COVER_LOGO = /^\/guide\/logos\/[a-z0-9-]+\.(svg|png)$/;
 const COVER_TONE = /^[a-z]+$/;
 // chat: 고민 말풍선 + 답 말풍선 · quote: 큰따옴표 · plain: 질문만 크게 · mark: 질문 + 답 + 큰 물음표
 const COVER_STYLES = new Set(["chat", "quote", "plain", "mark"]);
-const STYLES_WITH_ANSWER = new Set(["chat", "mark"]);
 
 /**
  * @param {string} raw
@@ -59,9 +58,8 @@ export function parseGuideFile(filePath, raw) {
   if (data.coverStyle || data.coverQuestion || data.coverAnswer) {
     if (!COVER_STYLES.has(data.coverStyle)) throw new Error(`guide ${fileSlug} has a bad coverStyle: ${data.coverStyle}`);
     if (!data.coverQuestion) throw new Error(`guide ${fileSlug} has a cover without "coverQuestion"`);
-    if (STYLES_WITH_ANSWER.has(data.coverStyle) && !data.coverAnswer) {
-      throw new Error(`guide ${fileSlug} uses coverStyle ${data.coverStyle} without "coverAnswer"`);
-    }
+    // 모든 구성에 답 줄이 들어간다(10-07: 커버가 비어 보인다는 피드백).
+    if (!data.coverAnswer) throw new Error(`guide ${fileSlug} has a cover without "coverAnswer"`);
     if (data.coverLogo && !COVER_LOGO.test(data.coverLogo)) {
       throw new Error(`guide ${fileSlug} has a coverLogo outside /guide/logos/: ${data.coverLogo}`);
     }
@@ -71,7 +69,7 @@ export function parseGuideFile(filePath, raw) {
       label: data.coverLabel || "",
       // frontmatter 는 한 줄이라 줄바꿈은 \n 두 글자로 적는다.
       question: data.coverQuestion.replace(/\\n/g, "\n"),
-      answer: data.coverAnswer || "",
+      answer: data.coverAnswer.replace(/\\n/g, "\n"),
       // 면접 후기: 회사 색(lib/guideSummaries.ts COMPANY_COVER_TONES 의 키)과 흰 로고
       tone: data.coverTone || null,
       logo: data.coverLogo || null,

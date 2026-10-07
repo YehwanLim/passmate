@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: plain
 coverLabel: 자소서 문항
 coverQuestion: "열심히 배우겠습니다"로\n끝나는 포부
-coverAnswer: 공고에서 뽑는 첫 1년 계획
+coverAnswer: 공고의 담당 업무에서\n첫 1년 계획을 뽑는 순서
 date: 2026-09-16
 updated: 2026-09-16
 keywords: 입사 후 포부, 자소서 입사후포부 예시, 입사 후 계획 쓰는 법, 신입 자소서 포부, 자소서 첨삭

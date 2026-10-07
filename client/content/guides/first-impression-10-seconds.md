@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: mark
 coverLabel: 첫인상
 coverQuestion: 채용 담당자의\n첫 10초
-coverAnswer: 첫 문단에서 확인하는 세 가지
+coverAnswer: 첫 문단에서 확인하는 세 가지와\n고치는 순서
 date: 2026-09-15
 updated: 2026-09-15
 keywords: 자소서 첫인상, 자소서 첫 문장, 자소서 첨삭, 자소서 피드백, 서류 탈락 이유

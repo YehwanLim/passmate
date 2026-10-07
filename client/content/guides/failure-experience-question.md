@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: quote
 coverLabel: 자소서 문항
 coverQuestion: 실패 경험,\n뭘 골라야 할까
-coverAnswer: 결과보다 판단이 보이는 경험
+coverAnswer: 결과보다 판단이 보이는 경험,\n고르는 기준 세 가지
 date: 2026-09-16
 updated: 2026-09-16
 keywords: 자소서 실패 경험, 도전 경험 자소서, 자소서 어려움 극복 경험, 실패 경험 예시, 자소서 첨삭

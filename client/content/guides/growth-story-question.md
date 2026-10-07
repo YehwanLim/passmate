@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: mark
 coverLabel: 자소서 문항
 coverQuestion: 어린 시절부터 시작하는\n성장과정
-coverAnswer: 판단 기준이 생긴 장면 하나
+coverAnswer: 어린 시절 대신\n판단 기준이 생긴 장면 하나
 date: 2026-09-16
 updated: 2026-09-16
 keywords: 자소서 성장과정, 성장과정 쓰는 법, 자소서 성장과정 예시, 신입 자소서 성장과정, 자소서 첨삭

@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: quote
 coverLabel: 자소서 문항
 coverQuestion: 단점,\n솔직하게 써도 될까
-coverAnswer: 직무 핵심만 피하면 괜찮아요
+coverAnswer: 직무 핵심만 피하면 괜찮아요,\n안전한 단점 고르는 법
 date: 2026-09-16
 updated: 2026-09-16
 keywords: 자소서 성격의 장단점, 자소서 장단점 예시, 자소서 단점 쓰는 법, 자소서 장점 단점, 신입 자소서 성격
