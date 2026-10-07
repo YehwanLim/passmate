@@ -3,8 +3,10 @@ import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 const FIELDS = WORKSPACE_COPY.experiences.fields;
 const COPY = WORKSPACE_COPY.experiences.import;
-const field = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none";
-const emptyField = "border-transparent bg-blank-soft placeholder:text-blank";
+// 바탕·테두리는 채움 여부로 하나만 붙인다(둘 다 붙으면 bg-surface 가 이겨 빈칸 표시가 사라진다).
+const base = "w-full rounded-xl border px-3.5 py-2.5 text-[15px] text-ink focus:border-brand focus:outline-none";
+const field = `${base} border-line bg-surface placeholder:text-ink-5`;
+const tone = (value: string) => (value.trim() ? field : `${base} border-transparent bg-blank-soft placeholder:text-blank`);
 
 export type EditableCandidate = ExperienceCandidate & { key: string; selected: boolean; similar: boolean; tagText: string };
 
@@ -26,8 +28,8 @@ export default function ExperienceCandidateCard({
         placeholder={COPY.blank}
         onChange={(e) => set({ [key]: e.target.value } as Partial<EditableCandidate>)}
         maxLength={1500}
-        rows={2}
-        className={`${field} resize-y leading-relaxed ${item[key].trim() ? "" : emptyField}`}
+        rows={3}
+        className={`${tone(item[key])} resize-y leading-relaxed`}
       />
     </label>
   );
@@ -62,7 +64,7 @@ export default function ExperienceCandidateCard({
           placeholder={COPY.blank}
           onChange={(e) => set({ period: e.target.value })}
           maxLength={50}
-          className={`${field} ${item.period.trim() ? "" : emptyField}`}
+          className={tone(item.period)}
         />
       </label>
       {area("situation")}
