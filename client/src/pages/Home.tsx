@@ -136,7 +136,9 @@ export default function Home() {
       <SiteHeader variant="floating" />
 
       <div className="bg-fill-soft">
-        <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-14 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:gap-14 lg:px-10 lg:pb-[120px] lg:pt-16 xl:grid-cols-[520px_minmax(0,1fr)]">
+        {/* 시연 칸은 폭 600px 안팎에서 짜여 있다. 좌우로 나누면 1280px 미만에선 시연이 400px 대로 좁아져 글자가 겹치므로,
+            xl 부터만 좌우로 두고 그 아래는 문구 → 시연 순으로 쌓는다. */}
+        <section className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] items-center gap-12 px-6 pb-20 pt-14 lg:px-10 lg:pb-[120px] lg:pt-16 xl:grid-cols-[520px_minmax(0,1fr)] xl:gap-14">
           <div className="flex flex-col items-start gap-6">
             {/* H1 */}
             <motion.h1
@@ -181,7 +183,7 @@ export default function Home() {
             </div>
           </div>
 
-          <HeroWorkflowDemo className="h-[600px] sm:h-[640px] lg:h-[680px]" />
+          <HeroWorkflowDemo className="mx-auto w-full max-w-[640px] xl:max-w-none" />
         </section>
       </div>
 
