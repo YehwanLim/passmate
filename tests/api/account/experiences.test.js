@@ -18,7 +18,7 @@ const ROW = {
 };
 
 function createDb() {
-  return {
+  const db = {
     experience: {
       findMany: vi.fn(async () => [ROW]),
       count: vi.fn(async () => 0),
@@ -28,6 +28,8 @@ function createDb() {
       deleteMany: vi.fn(async () => ({ count: 1 })),
     },
   };
+  db.$transaction = vi.fn(async (operations) => Promise.all(operations));
+  return db;
 }
 
 describe("normalizeExperience", () => {
@@ -88,6 +90,45 @@ describe("GET·POST /api/account/experiences", () => {
     await handler({ method: "POST", headers: {}, body: { title: "x" } }, full);
     expect(full.statusCode).toBe(409);
     expect(full.body.error).toBe("EXPERIENCE_LIMIT_REACHED");
+  });
+
+  it("{ experiences: [...] } 는 트랜잭션으로 한꺼번에 내 소유로 만든다", async () => {
+    const db = createDb();
+    const handler = createExperiencesHandler({ db, requireUser: async () => USER });
+    const res = createResponse();
+    await handler({ method: "POST", headers: {}, body: { experiences: [{ title: "발주 개선" }, { title: "동아리 회계", tags: ["정리"] }] } }, res);
+    expect(res.statusCode).toBe(201);
+    expect(res.body.experiences).toHaveLength(2);
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expect(db.experience.create.mock.calls.map(([arg]) => arg.data.userId)).toEqual([USER.applicationUser.id, USER.applicationUser.id]);
+  });
+
+  it("하나라도 틀리면 전체 400, 아무것도 만들지 않는다", async () => {
+    const db = createDb();
+    const handler = createExperiencesHandler({ db, requireUser: async () => USER });
+    for (const body of [
+      { experiences: [{ title: "정상" }, { title: "" }] },
+      { experiences: [] },
+      { experiences: Array.from({ length: 9 }, (_, i) => ({ title: `경험${i}` })) },
+      { experiences: [{ title: "정상" }], extra: 1 },
+      { experiences: [{ title: "정상", userId: "someone-else" }] },
+    ]) {
+      const res = createResponse();
+      await handler({ method: "POST", headers: {}, body }, res);
+      expect(res.statusCode).toBe(400);
+    }
+    expect(db.experience.create).not.toHaveBeenCalled();
+  });
+
+  it("지금 개수 + 새 개수가 100을 넘으면 409, 아무것도 만들지 않는다", async () => {
+    const db = createDb();
+    db.experience.count.mockResolvedValue(99);
+    const handler = createExperiencesHandler({ db, requireUser: async () => USER });
+    const res = createResponse();
+    await handler({ method: "POST", headers: {}, body: { experiences: [{ title: "a" }, { title: "b" }] } }, res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe("EXPERIENCE_LIMIT_REACHED");
+    expect(db.experience.create).not.toHaveBeenCalled();
   });
 });
 
