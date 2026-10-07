@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import analyzeHandler from "../../api/analyze.js";
 import { buildExtractPrompt } from "../../shared/prompts/extractPrompt.js";
-import { normalizeExtractOutput, normalizeExtractRequest } from "../../lib/experience-extract.js";
+import { createExperienceExtractHandler, normalizeExtractOutput, normalizeExtractRequest } from "../../lib/experience-extract.js";
+import { createResponse } from "../helpers/http.js";
 
 const SOURCE = [
   "1. 지원 동기",
@@ -93,5 +95,111 @@ describe("buildExtractPrompt", () => {
     expect(prompt).toContain('"quotes"');
     expect(prompt).toContain("한 글자도 바꾸지 않고");
     expect(prompt).toContain("최대 8개");
+  });
+});
+
+const USER = "11111111-1111-4111-8111-111111111111";
+const TEXT = `${SOURCE}\n${"동아리 운영 기록을 정리했습니다. ".repeat(6)}`;
+const okOutput = { candidates: [candidate()] };
+
+function makeHandler(overrides = {}) {
+  const deps = {
+    callModel: vi.fn(async () => okOutput),
+    consumeRateLimit: vi.fn(async () => ({ allowed: true, remaining: 2 })),
+    refundRateLimit: vi.fn(async () => {}),
+    db: { experience: { count: vi.fn(async () => 3) } },
+    requireUser: async () => ({ applicationUser: { id: USER } }),
+    ...overrides,
+  };
+  return { deps, handler: createExperienceExtractHandler(deps) };
+}
+
+const post = (body) => ({ method: "POST", headers: {}, query: { extract: "1" }, body });
+
+describe("POST /api/analyze?extract=1", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("extract=1 미인증은 401 (analyze.js 배선)", async () => {
+    const res = createResponse();
+    await analyzeHandler(post({ text: TEXT }), res);
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("POST 이외는 405", async () => {
+    const { handler } = makeHandler();
+    const res = createResponse();
+    await handler({ ...post({ text: TEXT }), method: "GET" }, res);
+    expect(res.statusCode).toBe(405);
+  });
+
+  it("짧은 글은 400, 횟수 차감 없음", async () => {
+    const { deps, handler } = makeHandler();
+    const res = createResponse();
+    await handler(post({ text: "짧아요" }), res);
+    expect(res.statusCode).toBe(400);
+    expect(deps.consumeRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("성공하면 정리된 후보와 남은 횟수를 주고, 원문을 프롬프트에 넣는다", async () => {
+    const { deps, handler } = makeHandler();
+    const res = createResponse();
+    await handler(post({ text: TEXT }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.remaining_today).toBe(2);
+    expect(res.body.candidates).toHaveLength(1);
+    expect(res.body.candidates[0]).toMatchObject({ title: "로그 3,000건으로 찾은 이탈 원인", quotes: [candidate().quotes[0]] });
+    expect(deps.callModel.mock.calls[0][0]).toBe(buildExtractPrompt({ text: normalizeExtractRequest({ text: TEXT }).text }));
+    expect(deps.consumeRateLimit.mock.calls[0][1].policy.route).toBe("experience-extract");
+    expect(deps.refundRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("금고가 100개면 409, 횟수 차감·모델 호출 없음", async () => {
+    const { deps, handler } = makeHandler({ db: { experience: { count: vi.fn(async () => 100) } } });
+    const res = createResponse();
+    await handler(post({ text: TEXT }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe("EXPERIENCE_LIMIT_REACHED");
+    expect(deps.consumeRateLimit).not.toHaveBeenCalled();
+    expect(deps.callModel).not.toHaveBeenCalled();
+  });
+
+  it("한도를 넘으면 429, 모델을 부르지 않는다", async () => {
+    const { deps, handler } = makeHandler({ consumeRateLimit: vi.fn(async () => ({ allowed: false, retryAfterSeconds: 60 })) });
+    const res = createResponse();
+    await handler(post({ text: TEXT }), res);
+    expect(res.statusCode).toBe(429);
+    expect(deps.callModel).not.toHaveBeenCalled();
+    expect(deps.refundRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("모델 오류·형태가 틀린 출력은 502 EXTRACT_FAILED 이고 환불한다", async () => {
+    for (const callModel of [vi.fn(async () => { throw new Error("timeout"); }), vi.fn(async () => "nope")]) {
+      const { deps, handler } = makeHandler({ callModel });
+      const res = createResponse();
+      await handler(post({ text: TEXT }), res);
+      expect(res.statusCode).toBe(502);
+      expect(res.body.error).toBe("EXTRACT_FAILED");
+      expect(deps.refundRateLimit).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it("정리 후 0개면 200 빈 배열, 환불하고 남은 횟수를 되돌린 값으로 준다", async () => {
+    const { deps, handler } = makeHandler({ callModel: vi.fn(async () => ({ candidates: [candidate({ quotes: ["원문에 없는 문장입니다 정말로"] })] })) });
+    const res = createResponse();
+    await handler(post({ text: TEXT }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ candidates: [], remaining_today: 3 });
+    expect(deps.refundRateLimit).toHaveBeenCalledTimes(1);
+  });
+
+  it("어느 경로에서도 자소서 본문을 로그에 남기지 않는다", async () => {
+    const spies = ["log", "info", "warn", "error"].map((name) => vi.spyOn(console, name).mockImplementation(() => {}));
+    for (const callModel of [vi.fn(async () => okOutput), vi.fn(async () => { throw new Error(TEXT); })]) {
+      const { handler } = makeHandler({ callModel });
+      await handler(post({ text: TEXT }), createResponse());
+    }
+    for (const spy of spies) {
+      for (const call of spy.mock.calls) expect(JSON.stringify(call)).not.toContain("3,000건의 로그");
+    }
   });
 });

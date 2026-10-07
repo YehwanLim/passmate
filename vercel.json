@@ -72,6 +72,10 @@
       "destination": "/api/analyze?draft=1"
     },
     {
+      "source": "/api/analyze/extract",
+      "destination": "/api/analyze?extract=1"
+    },
+    {
       "source": "/api/analyze/company",
       "destination": "/api/analyze?kind=company"
     },

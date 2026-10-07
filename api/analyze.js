@@ -24,6 +24,7 @@ import { ApiError, sendError, sendJson, sendRateLimited, withApiHandler } from "
 import { requireActiveApplicationUser } from "../lib/auth.js";
 import { COMPANY_HANDLER_DEFAULTS } from "../lib/company-analysis.js";
 import { createExperienceDraftHandler } from "../lib/experience-draft.js";
+import { createExperienceExtractHandler } from "../lib/experience-extract.js";
 import { createJobPostingHandler } from "../lib/job-posting.js";
 import { consumeUserRateLimit, getAnalysisThroughputPolicy } from "../lib/rate-limit.js";
 import {
@@ -223,23 +224,26 @@ const companyAnalyzeHandler = createCompanyAnalyzeHandler();
 const resumeSplitHandler = createResumeSplitHandler();
 const jobPostingHandler = createJobPostingHandler();
 const experienceDraftHandler = createExperienceDraftHandler();
+const experienceExtractHandler = createExperienceExtractHandler();
 
-/** 쿼리로 다섯 핸들러 중 하나를 고른다. split → posting → draft → kind 순으로 우선한다(기존 동작 유지). */
-export function selectAnalyzeHandler(query, { company, draft, posting, resume, split }) {
+/** 쿼리로 여섯 핸들러 중 하나를 고른다. split → posting → draft → extract → kind 순으로 우선한다(기존 동작 유지). */
+export function selectAnalyzeHandler(query, { company, draft, extract, posting, resume, split }) {
   if (query?.split === "1") return split;
   if (query?.posting === "1") return posting;
   if (query?.draft === "1") return draft;
+  if (query?.extract === "1") return extract;
   if (query?.kind === "company") return company;
   return resume;
 }
 
 // /api/analyze/split → ?split=1, /api/analyze/posting → ?posting=1, /api/analyze/draft → ?draft=1,
-// /api/analyze/company → ?kind=company
+// /api/analyze/extract → ?extract=1, /api/analyze/company → ?kind=company
 // 로 rewrite 되어 이 함수 하나로 들어온다 (Hobby 12함수 제한).
 export default function handler(req, res) {
   return selectAnalyzeHandler(req.query, {
     company: companyAnalyzeHandler,
     draft: experienceDraftHandler,
+    extract: experienceExtractHandler,
     posting: jobPostingHandler,
     resume: analyzeHandler,
     split: resumeSplitHandler,
