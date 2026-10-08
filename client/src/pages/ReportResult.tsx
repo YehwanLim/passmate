@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAnalysisReport } from "@/hooks/useAnalysisReport";
 import { useFeedbackRewardAvailable } from "@/hooks/useFeedbackRewardAvailable";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
+import { ReadingProgressBar } from "@/components/report/ReadingProgressBar";
 import type { JobPostingRecord } from "@/types/jobPosting";
 import type { ReportData } from "@/types/report";
 import { isReportSectionLocked } from "@/utils/reportAccess";
@@ -213,6 +214,7 @@ function ReportContent({
         <SiteHeader variant="light" />
       </div>
       <MiniNavigator sections={navSections} activeSection={activeSection} tone="light" />
+      <ReadingProgressBar />
 
       {/* 1040px 은 눈에 잘 안 들어와 조금 좁혔다(10-08) */}
       <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6 px-4 pb-24 pt-10 sm:px-6 lg:px-0">
