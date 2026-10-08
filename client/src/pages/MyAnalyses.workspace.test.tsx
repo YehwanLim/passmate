@@ -293,7 +293,8 @@ describe("작업 화면", () => {
         id: "p1", title: "한솔제지 · 국내영업", company_name: "한솔제지", job_role: "국내영업", deadline: "2026-10-20T14:59:00.000Z",
       });
       render(<MyAnalyses />);
-      expect(await screen.findByText("D-8")).toBeTruthy();
+      // 원고지 머리말과 오른쪽 지원 정보 두 곳에 보인다
+      expect((await screen.findAllByText("D-8")).length).toBe(2);
       fireEvent.click(screen.getByRole("button", { name: "수정" }));
       const deadline = screen.getByLabelText("마감일") as HTMLInputElement;
       expect(deadline.value).toBe("2026-10-11");
@@ -302,7 +303,7 @@ describe("작업 화면", () => {
       await waitFor(() => expect(mocks.updateApplicationMeta).toHaveBeenCalledWith("p1", {
         company: "한솔제지", jobKeyword: "국내영업", deadline: "2026-10-20T23:59:00+09:00",
       }));
-      expect(await screen.findByText("D-17")).toBeTruthy();
+      expect(await screen.findAllByText("D-17")).toBeTruthy();
       expect(screen.queryByLabelText("마감일")).toBeNull();
     });
 
@@ -323,7 +324,7 @@ describe("작업 화면", () => {
       await waitFor(() => expect(mocks.updateApplicationMeta).toHaveBeenCalledWith("p1", {
         company: "한솔제지", jobKeyword: "국내영업", deadline: null,
       }));
-      expect(await screen.findByText("마감 미정")).toBeTruthy();
+      expect((await screen.findAllByText("마감 미정")).length).toBe(2);
     });
 
     it("저장에 실패하면 폼을 둔 채 오류를 알린다", async () => {
@@ -427,7 +428,7 @@ describe("오늘 한도를 다 쓰면", () => {
     await screen.findByText(/오늘 무료 초안 2개를 다 썼어요/);
     expect((screen.getByRole("button", { name: "내 경험으로 초안 쓰기" }) as HTMLButtonElement).disabled).toBe(true);
 
-    fireEvent.click(screen.getByRole("button", { name: "문항 2" }));
+    fireEvent.click(screen.getByRole("tab", { name: "문항 2" }));
     expect((screen.getByRole("button", { name: "내 경험으로 초안 쓰기" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(/오늘 무료 초안 2개를 다 썼어요/)).toBeTruthy();
   });
