@@ -11,9 +11,11 @@ interface KebabMenuItem {
 
 interface KebabMenuProps {
   items: KebabMenuItem[];
+  /** 여는 버튼의 읽기용 이름. 한 화면에 여러 개면 무엇의 메뉴인지 적는다. */
+  label?: string;
 }
 
-export default function KebabMenu({ items }: KebabMenuProps) {
+export default function KebabMenu({ items, label = "More actions" }: KebabMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +40,7 @@ export default function KebabMenu({ items }: KebabMenuProps) {
           setOpen((v) => !v);
         }}
         className="p-2 rounded-lg hover:bg-fill transition-colors duration-150"
-        aria-label="More actions"
+        aria-label={label}
       >
         <MoreVertical className="w-4 h-4 text-ink-4" />
       </button>

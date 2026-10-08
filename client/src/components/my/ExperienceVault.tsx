@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, Search, X } from "lucide-react";
+import { ChevronLeft, PenLine, Search, Trash2, X } from "lucide-react";
 import {
   createExperience,
   deleteExperience,
@@ -13,6 +13,7 @@ import {
 import { parseTags } from "@/lib/experienceImport";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 import ExperienceImportDialog from "./ExperienceImportDialog";
+import KebabMenu from "./KebabMenu";
 
 const COPY = WORKSPACE_COPY.experiences;
 const field = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none";
@@ -206,18 +207,20 @@ function ExperienceDetail({ item, onEdit, onRemove }: { item: Experience; onEdit
   const period = formatPeriod(item.period);
   return (
     <article>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-[20px] font-bold leading-[1.4] tracking-[-0.02em] text-ink break-keep sm:text-[22px]">{item.title}</h3>
           {period && <p className="mt-1 text-[14px] tabular-nums text-ink-4">{period}</p>}
         </div>
-        <div className="flex shrink-0 gap-1.5">
-          <button type="button" aria-label={`${item.title} ${COPY.edit}`} onClick={onEdit} className="h-9 rounded-[10px] border border-line bg-surface px-3 text-[13.5px] font-semibold text-ink-2 hover:bg-fill-soft">
-            {COPY.edit}
-          </button>
-          <button type="button" aria-label={`${item.title} ${COPY.remove}`} onClick={onRemove} className="h-9 rounded-[10px] border border-line bg-surface px-3 text-[13.5px] font-semibold text-ink-4 hover:bg-fill-soft hover:text-danger">
-            {COPY.remove}
-          </button>
+        {/* 수정·삭제는 ⋯ 안에 — 읽는 화면에서 버튼이 먼저 눈에 띄지 않게(내 지원서 표와 같은 메뉴) */}
+        <div className="-mr-2 -mt-1 shrink-0">
+          <KebabMenu
+            label={COPY.more(item.title)}
+            items={[
+              { label: COPY.edit, icon: PenLine, onClick: onEdit },
+              { label: COPY.remove, icon: Trash2, onClick: onRemove, danger: true },
+            ]}
+          />
         </div>
       </div>
       {item.tags.length > 0 && (
@@ -244,7 +247,7 @@ function ExperienceDetail({ item, onEdit, onRemove }: { item: Experience; onEdit
 
 /**
  * 내 경험 탭: 위는 찾기 + 자주 쓴 키워드(캡슐), 아래는 왼쪽 경험 카드 목록(좁게) + 오른쪽 자세히(넓게).
- * 폰에서는 목록 → 누르면 자세히 화면(목록으로 돌아가기). 새로 적기·고치기도 오른쪽 칸에서 한다.
+ * 폰에서는 목록 → 누르면 자세히 화면(목록으로 돌아가기). 직접 추가·수정도 오른쪽 칸에서 한다.
  */
 export default function ExperienceVault({ onCountChange }: { onCountChange?: (count: number) => void } = {}) {
   const [items, setItems] = useState<Experience[] | null>(null);
@@ -363,7 +366,7 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
     />
   ) : null;
 
-  // 빈 금고: 가운데 안내만(가져오기 + 직접 적기). 직접 적기를 누르면 그 자리에 적는 칸.
+  // 빈 금고: 가운데 안내만(자동 추가 + 직접 추가). 직접 추가를 누르면 그 자리에 적는 칸.
   if (items.length === 0) {
     return (
       <div>

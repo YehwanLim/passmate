@@ -31,7 +31,7 @@ function setup(props: Partial<Parameters<typeof ExperienceImportDialog>[0]> = {}
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
-describe("이력서·자소서로 경험 채우기", () => {
+describe("이력서·자소서로 자동 추가", () => {
   it("200자 미만이면 뽑기 버튼이 막혀 있다", () => {
     setup();
     fireEvent.change(screen.getByLabelText("이력서·자소서 붙여넣기"), { target: { value: "짧은 글" } });

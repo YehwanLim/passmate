@@ -6,7 +6,7 @@ import { AlertTriangle, Check, ChevronDown, FileText, FileUp, Pause, PenLine, Pl
    10-06 시안(디자인 캔버스 Hero-Play)을 옮겼다. 실제 화면 흐름만 보여준다(지어낸 UI 금지):
      1 내 경험으로 초안 쓰기 — 작업실 문항에서 "내 경험으로 초안 쓰기" → 미리보기 → 이 초안으로 채우기
      2 완성하고 진단받기   — [실제 수치] 빈칸 채우기·문장 덧붙이기 → 자소서 분석하기 → 리포트 01 첫인상 → 문장별 코멘트
-     3 합격까지 한 번에     — 이력서·자소서로 경험 채우기 → 자소서 초안 → 자소서 분석(예상 질문)
+     3 합격까지 한 번에     — 이력서·자소서로 자동 추가 → 자소서 초안 → 자소서 분석(예상 질문)
    리포트 장면의 문장·번호는 예시 리포트(resumeReportSample 문항 2)와 같다. 시연 번들이 가벼워야 해서 데이터를 import 하지 않고 옮겨 적었다.
    시간은 장면마다 t(ms) 하나로 흘러가고, 화면의 모든 상태는 t 에서 계산한다.
    프리렌더 HTML 은 첫 장면 t=0(빈 답변 칸)으로 구워진다 — opacity 0 에서 시작하는 요소가 없다.
@@ -54,7 +54,7 @@ const BLANK_LABEL = "[실제 수치]";
 const BASE_CHAR_COUNT = 505 - BLANK_LABEL.length;
 
 /* 장면 3: 3단계 */
-/* 장면 3: 이력서·자소서로 경험 채우기(내 경험 탭의 가져오기, 예시 카드는 workspaceCopy 고정 예시) → 초안 → 분석 */
+/* 장면 3: 이력서·자소서로 자동 추가(내 경험 탭의 가져오기, 예시 카드는 workspaceCopy 고정 예시) → 초안 → 분석 */
 const IMPORT_CLICK = 900;
 const IMPORT_FOUND = IMPORT_CLICK + 1900;
 const STEP2 = IMPORT_FOUND + 1400;
@@ -765,7 +765,7 @@ function SceneJourney({ t }: { t: number }) {
                 style={{ transform: between(IMPORT_CLICK, IMPORT_CLICK + 160) ? "scale(0.97)" : "scale(1)" }}
               >
                 <FileUp aria-hidden="true" className="h-3.5 w-3.5 flex-none" strokeWidth={2.2} />
-                이력서·자소서로 경험 채우기
+                이력서·자소서로 자동 추가
                 {between(IMPORT_CLICK - 550, IMPORT_CLICK + 150) && (
                   <FakeCursor left="60%" top="45%" ripple={between(IMPORT_CLICK, IMPORT_CLICK + 150)} />
                 )}
