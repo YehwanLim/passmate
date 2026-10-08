@@ -1,28 +1,41 @@
-import { getPrerenderedHtml, isChunkLoadError } from "@/lib/prerenderedSnapshot";
+import { canReloadForChunkError, getPrerenderedHtml, isChunkLoadError, markChunkReload } from "@/lib/prerenderedSnapshot";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
+  /** 테스트용. 기본은 window.location.reload */
+  reload?: () => void;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
+  /** 청크 실패라 지금 주소를 새로 불러오는 중 — 아무것도 그리지 않는다 */
+  reloading: boolean;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, reloading: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    // 지금 주소의 프리렌더 본문이 없으면(다른 화면에서 넘어온 경우) 저장본 대신 이 주소를 한 번 새로 불러온다.
+    const reloading = isChunkLoadError(error) && getPrerenderedHtml() === null && canReloadForChunkError();
+    return { hasError: true, error, reloading };
+  }
+
+  componentDidCatch() {
+    if (!this.state.reloading) return;
+    markChunkReload();
+    (this.props.reload ?? (() => window.location.reload()))();
   }
 
   render() {
+    if (this.state.reloading) return null;
     if (this.state.hasError) {
       // 지연 청크 로드 실패(배포 전환 직후, 크롤러 렌더러의 리소스 타임아웃)면 프리렌더된 본문을 되살린다.
       // 오류 화면이 본문을 덮으면 검색 엔진이 Soft 404 로 판정한다. 링크는 일반 앵커라 그대로 동작한다.
