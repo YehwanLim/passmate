@@ -1,12 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
-import {
   ArrowRight,
-  Plus,
   Loader2,
   BarChart3,
   Info,
@@ -17,22 +11,18 @@ import {
 import CompanyCombobox from "@/components/analyze/CompanyCombobox";
 import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
 import {
-  ANALYZE_CONTAINER_VARIANTS,
-  ANALYZE_ITEM_VARIANTS,
-  ANALYZE_SUBMIT_BUTTON_CLASS,
+  ANALYZE_BIG_SUBMIT_BUTTON_CLASS,
   AnalyzeBottomBar,
   AnalyzeErrorModal,
   type AnalyzeErrorView,
 } from "@/components/analyze/AnalyzeShell";
-import FormSection from "@/components/analyze/FormSection";
 import SiteHeader from "@/components/SiteHeader";
-import QuestionCard from "@/components/analyze/QuestionCard";
+import ApplicationEditor from "@/components/my/ApplicationEditor";
 import PreviousResumePicker from "@/components/analyze/PreviousResumePicker";
 import ImportPreviewDialog from "@/components/analyze/ImportPreviewDialog";
 import AnalyzeLoadingOverlay from "@/components/analyze/AnalyzeLoadingOverlay";
 import AnalyzeLoginModal from "@/components/analyze/AnalyzeLoginModal";
 import JobPostingSection from "@/components/analyze/JobPostingSection";
-import JobPostingStickyBar from "@/components/analyze/JobPostingStickyBar";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
@@ -68,6 +58,7 @@ import {
   type ResumeImportPair,
 } from "@/lib/resumeFileImport";
 import type { ProjectSummary } from "@/types/my";
+import type { ApplicationQuestionDraft } from "@/lib/workspace";
 import type { JobPostingRecord } from "@/types/jobPosting";
 import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
 import {
@@ -83,13 +74,14 @@ import {
   type SavedAnalysisDetail,
 } from "./analyzeQuestions";
 
+const EMPTY_TITLES = new Map<string, string>();
+
 /**
- * PassMate - 자소서 분석 페이지 (/analyze)
+ * 자소서 분석 페이지 (/analyze). 10-08 부터 마이페이지 지원서 작성 화면과 같은 편집기 틀이다.
  *
- * - 지원 직무/키워드 (선택 입력)
- * - 다중 문항 입력 (최대 5개)
- * - 개별 글자 수 + 전체 글자 수 카운터
- * - Sticky 하단 바: 총 글자 수 + 결제 버튼
+ * - 위 막대: 제목 + 이전 지원서 불러오기 · 자소서 파일 올리기
+ * - 왼쪽: 문항 번호 탭 + 원고지(최대 5문항), 오른쪽: 지원 정보(회사·직무 자동완성) + 채용공고
+ * - 하단 고정 막대: 총 글자 수 + 큰 "자소서 분석하기" 버튼. 로그인은 이 버튼을 누를 때만 받는다.
  */
 export default function Analyze() {
   const [, navigate] = useLocation();
@@ -108,6 +100,7 @@ export default function Analyze() {
   const [questions, setQuestions] = useState<QuestionItem[]>(() =>
     draft && draft.questions.length > 0 ? draft.questions : [createEmptyQuestion()]
   );
+  const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [errorModal, setErrorModal] = useState<AnalyzeErrorView | null>(null);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
@@ -193,7 +186,6 @@ export default function Analyze() {
   );
   const isOverLimit = totalChars > MAX_TOTAL_CHARS;
   const isBelowMinimum = totalChars < MIN_TOTAL_CHARS;
-  const isAtMaxQuestions = questions.length >= MAX_QUESTIONS;
   const hasContent = questions.some(q => q.answer.trim().length > 0);
   // Hard Block: 200자 미만 OR 6000자 초과 → 버튼 완전 비활성화
   const canSubmit = hasContent && !isBelowMinimum && !isOverLimit && !isLoading;
@@ -287,6 +279,7 @@ export default function Analyze() {
 
       setCompany(analysis.company_name?.trim() || "");
       setQuestions(restoredQuestions);
+      setActiveIndex(0);
       setJobRole(analysis.job_role?.trim() || "");
       setIsResumePickerOpen(false);
       setResumeLoaded(true);
@@ -351,6 +344,7 @@ export default function Analyze() {
       }))
     );
     setImportPreview(null);
+    setActiveIndex(0);
     setResumeLoaded(true);
     setTimeout(() => setResumeLoaded(false), 4000);
   };
@@ -503,231 +497,183 @@ export default function Analyze() {
     initiallyArmed: draft?.submitOnReturn === true,
   });
 
+  // 편집기(ApplicationEditor)는 { prompt, charLimit, answer } 모양을 쓴다. 이 화면의 문항은 id 를 가진 QuestionItem 이라 여기서 맞춘다.
+  const editorQuestions = questions.map(q => ({ prompt: q.question, charLimit: q.charLimit ?? null, answer: q.answer }));
+  const shownIndex = Math.min(activeIndex, questions.length - 1);
+  const updateEditorQuestion = (index: number, patch: Partial<ApplicationQuestionDraft>) => {
+    const target = questions[index];
+    if (!target) return;
+    if (patch.prompt !== undefined) handleUpdateQuestion(target.id, "question", patch.prompt);
+    if (patch.answer !== undefined) handleUpdateQuestion(target.id, "answer", patch.answer);
+    if (patch.charLimit !== undefined) {
+      setQuestions(prev => prev.map(q => (q.id === target.id ? { ...q, charLimit: patch.charLimit } : q)));
+    }
+  };
+  const headingText = [company.trim(), jobRole.trim()].filter(Boolean).join(" ");
+  const toolButton =
+    "inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-line bg-surface px-3 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-fill disabled:cursor-wait";
+  const sideLabel = "block text-[12.5px] font-semibold text-ink-4 mb-1.5";
+
   return (
-    <div className="min-h-screen bg-stage pb-28">
+    <div className="min-h-screen bg-stage pb-36">
       <SiteHeader variant="light" />
 
-      {/* ════════ MAIN FORM ════════ */}
-      {/* initial={false}: 첫 화면은 등장 애니메이션 없이 바로 보인다. 폰 첫 로드에서 청크를 받은 뒤에도
-          폼이 투명한 상태로 시작해 빈 화면이 더 길어졌다(10-02 실측 2초+). */}
-      <motion.section
-        className="py-12 md:py-20"
-        variants={ANALYZE_CONTAINER_VARIANTS}
-        initial={false}
-        animate="visible"
-      >
-        <div className="container max-w-3xl mx-auto px-4">
-          {/* ── Title ── */}
-          <motion.div className="text-center mb-12" variants={ANALYZE_ITEM_VARIANTS}>
-            <h1 className="text-3xl md:text-4xl font-bold text-ink mb-3 tracking-tight">
-              자소서 분석
-            </h1>
-            <p className="text-ink-4 text-base md:text-lg leading-relaxed max-w-xl mx-auto break-keep">
-              제출 버튼을 누르기 전에,
-              <br className="hidden md:block" /> 채용 담당자의 눈으로 내
-              자소서의 <span className="whitespace-nowrap">현재 위치</span>를
-              파악해 보세요.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-              {user?.id && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={openPreviousResumePicker}
-                  className="h-10 border-line bg-surface px-4 text-sm font-medium text-ink-2 hover:border-brand/40 hover:bg-brand-hover/[0.06] hover:text-brand-ink"
-                >
-                  <History className="mr-2 h-4 w-4" />
-                  이전 지원서 불러오기
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                disabled={Boolean(fileImportStage)}
-                onClick={() => fileInputRef.current?.click()}
-                className="h-10 border-line bg-surface px-4 text-sm font-medium text-ink-2 hover:border-brand/40 hover:bg-brand-hover/[0.06] hover:text-brand-ink disabled:cursor-wait"
-              >
-                {fileImportStage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-brand" />
-                    {fileImportStage === "extracting"
-                      ? "파일 읽는 중..."
-                      : "문항 나누는 중..."}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="mr-2 h-4 w-4" />
-                    자소서 파일 올리기
-                  </>
-                )}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx"
-                className="hidden"
-                onChange={handleResumeFileSelected}
-                aria-label="자소서 PDF 또는 Word 파일 선택"
-              />
-            </div>
-            <p className="mt-2.5 text-xs text-ink-5">
-              PDF·Word(.docx) 파일만 올릴 수 있어요
-            </p>
-            {freeRemaining !== null && freeRemaining > 0 && (
-              <p className="mt-4 text-sm text-ink-2">
-                무료 분석 {freeRemaining}회가 남아 있어요
-              </p>
+      {/* 위 막대: 지원서 작성 화면(마이페이지)과 같은 자리. 불러오기 도구는 오른쪽에 둔다. */}
+      <div className="sticky top-14 z-30 border-b border-line bg-surface/95 backdrop-blur">
+        <div className="container flex h-14 max-w-6xl items-center justify-between gap-3">
+          <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">자소서 분석</h1>
+          <div className="flex shrink-0 items-center gap-2">
+            {user?.id && (
+              <button type="button" onClick={openPreviousResumePicker} className={toolButton}>
+                <History className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">이전 지원서 불러오기</span>
+                <span className="sm:hidden">불러오기</span>
+              </button>
             )}
-            {/* 붙여넣을 초안이 지금 손에 없는 방문자용 출구. 폰이면 주소를 복사해 PC 에서 이어 하게 한다. */}
-            <p className="mt-3 text-[12.5px] text-ink-4">
-              아직 자소서가 없다면{" "}
-              <Link
-                href={RESUME_REPORT_SAMPLE_PATH}
-                className="text-ink-2 underline underline-offset-4 hover:text-ink"
-              >
-                예시 리포트 먼저 보기
-              </Link>
-              {" · "}
-              <Link href="/my" className="text-ink-2 underline underline-offset-4 hover:text-ink">
-                내 경험으로 초안 쓰기
-              </Link>
-              {isPhone && (
+            <button
+              type="button"
+              disabled={Boolean(fileImportStage)}
+              onClick={() => fileInputRef.current?.click()}
+              className={toolButton}
+              title="PDF·Word(.docx) 파일만 올릴 수 있어요"
+            >
+              {fileImportStage ? (
                 <>
-                  {" · "}
-                  <button
-                    type="button"
-                    onClick={copyAnalyzeLink}
-                    className="text-ink-2 underline underline-offset-4 hover:text-ink"
-                  >
-                    {linkCopied ? "주소를 복사했어요" : "PC에서 이어 하게 주소 복사"}
-                  </button>
+                  <Loader2 className="h-4 w-4 animate-spin text-brand" aria-hidden="true" />
+                  {fileImportStage === "extracting" ? "파일 읽는 중..." : "문항 나누는 중..."}
+                </>
+              ) : (
+                <>
+                  <FileUp className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">자소서 파일 올리기</span>
+                  <span className="sm:hidden">파일</span>
                 </>
               )}
-            </p>
-          </motion.div>
-
-          {/* ── 목표 회사 및 직무 정보 ── */}
-          <FormSection title="목표 회사 및 직무 정보">
-            {/* 지원 회사 */}
-            <div>
-              <label className="block text-[13px] font-semibold text-ink-3 mb-2.5">
-                지원 회사
-              </label>
-              <CompanyCombobox value={company} onChange={setCompany} />
-              {/* 회사를 고른 순간의 조용한 진입점. 크레딧 유무는 기업 분석 폼과 서버가 판단한다. */}
-              {company.trim().length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const path = `/company-analysis?company=${encodeURIComponent(company.trim())}&jobKeyword=${encodeURIComponent(jobRole.trim())}`;
-                    // 작성 중인 자소서를 잃지 않도록 새 탭으로 연다. 팝업이 막히면 같은 탭으로 이동한다.
-                    // noopener 피처를 넘기면 window.open 이 항상 null 을 돌려줘 폴백이 매번 발동하므로,
-                    // 반환값으로 차단 여부를 판별한 뒤 opener 를 손으로 끊는다.
-                    const opened = window.open(path, "_blank");
-                    if (opened) {
-                      opened.opener = null;
-                    } else {
-                      navigate(path);
-                    }
-                  }}
-                  className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] text-ink-4 transition-colors hover:text-brand"
-                >
-                  {company.trim()} 기업 분석 리포트 먼저 받기
-                  <ArrowRight className="h-3 w-3" aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            {/* 지원 직무 */}
-            <div>
-              <label className="block text-[13px] font-semibold text-ink-3 mb-3">
-                지원 직무
-              </label>
-              <JobRoleCombobox value={jobRole} onChange={setJobRole} />
-            </div>
-          </FormSection>
-
-          {/* ── 채용공고 (선택) ── */}
-          <JobPostingSection
-            value={jobPosting}
-            onChange={setJobPosting}
-            isAuthenticated={isAuthenticated}
-            onRequireLogin={() => {
-              trackLoginPrompt("job_posting");
-              setLoginPromptOpen(true);
-            }}
-          />
-
-          {/* ── 문항 리스트 ── */}
-          <motion.div variants={ANALYZE_ITEM_VARIANTS}>
-            {jobPosting && <JobPostingStickyBar record={jobPosting} />}
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-ink">
-                자소서 문항
-              </h2>
-              <span className="text-xs text-ink-5 tabular-nums">
-                {questions.length} / {MAX_QUESTIONS}
-              </span>
-            </div>
-
-            <div className="space-y-5">
-              <AnimatePresence mode="popLayout" initial={false}>
-                {questions.map((item, index) => (
-                  <QuestionCard
-                    key={item.id}
-                    item={item}
-                    index={index}
-                    canDelete={questions.length > 1}
-                    onUpdate={handleUpdateQuestion}
-                    onDelete={handleDeleteQuestion}
-                  />
-                ))}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-
-          {/* ── 문항 추가 버튼 ── */}
-          <motion.div variants={ANALYZE_ITEM_VARIANTS} className="mt-5">
-            {isAtMaxQuestions ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Button
-                      disabled
-                      variant="outline"
-                      className="w-full border-line bg-surface text-ink-5 rounded-xl h-12 text-sm font-medium cursor-not-allowed"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      문항 추가하기
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="bg-fill text-ink-2 border-line"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-blank" />
-                    <span>최대 {MAX_QUESTIONS}개 문항까지 분석 가능합니다</span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Button
-                onClick={handleAddQuestion}
-                variant="outline"
-                className="w-full border-line border-dashed bg-surface text-ink-3 hover:text-ink hover:bg-fill hover:border-ink-5 rounded-xl h-12 text-sm font-medium transition-all"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                문항 추가하기
-              </Button>
-            )}
-          </motion.div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx"
+              className="hidden"
+              onChange={handleResumeFileSelected}
+              aria-label="자소서 PDF 또는 Word 파일 선택"
+            />
+          </div>
         </div>
-      </motion.section>
+      </div>
+
+      <div className="container max-w-6xl pt-6">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          {/* 왼쪽: 번호 탭 + 원고지 */}
+          <div className="min-w-0">
+            <ApplicationEditor
+              questions={editorQuestions}
+              activeIndex={shownIndex}
+              onSelect={setActiveIndex}
+              onChange={updateEditorQuestion}
+              onAdd={() => {
+                handleAddQuestion();
+                setActiveIndex(questions.length);
+              }}
+              onRemove={index => {
+                const target = questions[index];
+                if (target) handleDeleteQuestion(target.id);
+                setActiveIndex(0);
+              }}
+              heading={
+                headingText ? <p className="min-w-0 truncate text-[15px] font-bold text-brand-ink">{headingText}</p> : undefined
+              }
+              showDraft={false}
+              answerPlaceholder="여기에 답변을 작성해 주세요."
+              draft={null}
+              onRequestDraft={() => undefined}
+              onApplyDraft={() => undefined}
+              onCloseDraft={() => undefined}
+              experienceTitles={EMPTY_TITLES}
+              experienceCount={null}
+              draftLimitReached={false}
+            />
+          </div>
+
+          {/* 오른쪽: 지원 정보 · 채용공고 (넓은 화면에서는 따라 내려온다) */}
+          <aside className="space-y-4 lg:sticky lg:top-32">
+            <section className="space-y-3 rounded-[18px] bg-surface p-5">
+              <h2 className="text-[15px] font-bold text-ink">지원 정보</h2>
+              <div>
+                <label className={sideLabel}>지원 회사</label>
+                <CompanyCombobox compact ariaLabel="지원 회사" value={company} onChange={setCompany} placeholder="예: CJ제일제당" />
+                {/* 회사를 고른 순간의 조용한 진입점. 크레딧 유무는 기업 분석 폼과 서버가 판단한다. */}
+                {company.trim().length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const path = `/company-analysis?company=${encodeURIComponent(company.trim())}&jobKeyword=${encodeURIComponent(jobRole.trim())}`;
+                      // 작성 중인 자소서를 잃지 않도록 새 탭으로 연다. 팝업이 막히면 같은 탭으로 이동한다.
+                      // noopener 피처를 넘기면 window.open 이 항상 null 을 돌려줘 폴백이 매번 발동하므로,
+                      // 반환값으로 차단 여부를 판별한 뒤 opener 를 손으로 끊는다.
+                      const opened = window.open(path, "_blank");
+                      if (opened) {
+                        opened.opener = null;
+                      } else {
+                        navigate(path);
+                      }
+                    }}
+                    className="mt-2 inline-flex items-center gap-1 text-[12.5px] text-ink-4 transition-colors hover:text-brand"
+                  >
+                    {company.trim()} 기업 분석 리포트 먼저 받기
+                    <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+              <div>
+                <label className={sideLabel}>지원 직무</label>
+                <JobRoleCombobox compact ariaLabel="지원 직무" value={jobRole} onChange={setJobRole} placeholder="예: 마케팅" />
+              </div>
+            </section>
+
+            <section className="rounded-[18px] bg-surface p-5">
+              <JobPostingSection
+                value={jobPosting}
+                onChange={setJobPosting}
+                isAuthenticated={isAuthenticated}
+                onRequireLogin={() => {
+                  trackLoginPrompt("job_posting");
+                  setLoginPromptOpen(true);
+                }}
+                tone="light"
+              />
+            </section>
+
+            {/* 붙여넣을 초안이 지금 손에 없는 방문자용 출구. 폰이면 주소를 복사해 PC 에서 이어 하게 한다. */}
+            <div className="space-y-1.5 px-1 text-[12.5px] text-ink-4">
+              {freeRemaining !== null && freeRemaining > 0 && (
+                <p className="text-[13px] font-semibold text-ink-2">무료 분석 {freeRemaining}회가 남아 있어요</p>
+              )}
+              <p>
+                아직 자소서가 없다면{" "}
+                <Link href={RESUME_REPORT_SAMPLE_PATH} className="text-ink-2 underline underline-offset-4 hover:text-ink">
+                  예시 리포트 먼저 보기
+                </Link>
+                {" · "}
+                <Link href="/my" className="text-ink-2 underline underline-offset-4 hover:text-ink">
+                  내 경험으로 초안 쓰기
+                </Link>
+                {isPhone && (
+                  <>
+                    {" · "}
+                    <button type="button" onClick={copyAnalyzeLink} className="text-ink-2 underline underline-offset-4 hover:text-ink">
+                      {linkCopied ? "주소를 복사했어요" : "PC에서 이어 하게 주소 복사"}
+                    </button>
+                  </>
+                )}
+              </p>
+            </div>
+          </aside>
+        </div>
+      </div>
 
       {/* ════════ STICKY BOTTOM BAR ════════ */}
-      <AnalyzeBottomBar>
+      <AnalyzeBottomBar wide>
         {/* 글자 수 경고 메시지 */}
         {isOverLimit && (
           <div className="flex items-center gap-2 pt-2.5 pb-1">
@@ -746,11 +692,11 @@ export default function Analyze() {
           </div>
         )}
 
-        <div className="h-[72px] flex items-center justify-between gap-4">
+        <div className="flex h-[84px] items-center justify-between gap-4">
           {/* 총 글자 수 */}
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex min-w-0 items-center gap-2.5">
             <BarChart3
-              className={`w-4 h-4 flex-shrink-0 ${
+              className={`hidden h-4 w-4 flex-shrink-0 sm:block ${
                 isOverLimit ? "text-danger" : "text-ink-4"
               }`}
             />
@@ -759,7 +705,7 @@ export default function Analyze() {
                 isOverLimit ? "text-danger" : "text-ink-3"
               }`}
             >
-              총 글자 수:{" "}
+              <span className="hidden sm:inline">총 글자 수: </span>
               <span
                 className={`font-semibold ${
                   isOverLimit ? "text-danger" : "text-ink"
@@ -771,26 +717,25 @@ export default function Analyze() {
             </span>
           </div>
 
-          {/* 결제 + 분석 버튼 */}
-          <Button
+          <button
+            type="button"
             onClick={() => {
               // 로그인 뒤 자동 제출(useSubmitAfterLogin)은 handleSubmit 을 직접 부르므로 여기서만 센다 — 사람의 클릭 1번 = 1건.
               void sendFunnelEvent("analyze_submit_click", isAuthenticated ? "authed" : "anon");
               handleSubmit();
             }}
             disabled={!canSubmit}
-            size="lg"
-            className={ANALYZE_SUBMIT_BUTTON_CLASS}
+            className={ANALYZE_BIG_SUBMIT_BUTTON_CLASS}
           >
             {isLoading ? (
-              <>
+              <span className="inline-flex items-center">
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 분석 중...
-              </>
+              </span>
             ) : (
-              <>분석 시작</>
+              <>자소서 분석하기</>
             )}
-          </Button>
+          </button>
         </div>
       </AnalyzeBottomBar>
 

@@ -63,7 +63,7 @@ describe("Analyze login prompt", () => {
 
     const answer = screen.getByPlaceholderText("여기에 답변을 작성해 주세요.") as HTMLTextAreaElement;
     fireEvent.change(answer, { target: { value: LONG_ANSWER } });
-    fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
+    fireEvent.click(screen.getByRole("button", { name: "자소서 분석하기" }));
 
     expect(screen.getByText("로그인이 필요해요")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Google로 계속하기" })).toBeTruthy();
@@ -78,7 +78,7 @@ describe("Analyze login prompt", () => {
     fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), {
       target: { value: LONG_ANSWER },
     });
-    fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
+    fireEvent.click(screen.getByRole("button", { name: "자소서 분석하기" }));
     expect(screen.getByText("로그인이 필요해요")).toBeTruthy();
     expect(fetchSpy).not.toHaveBeenCalled();
 
@@ -101,7 +101,7 @@ describe("Analyze login prompt", () => {
     fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), {
       target: { value: LONG_ANSWER },
     });
-    fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
+    fireEvent.click(screen.getByRole("button", { name: "자소서 분석하기" }));
     fireEvent.click(screen.getByRole("button", { name: "닫기" }));
 
     mocks.useAuth.mockReturnValue(LOGGED_IN);
@@ -121,7 +121,7 @@ describe("Analyze login prompt", () => {
     fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), {
       target: { value: LONG_ANSWER },
     });
-    fireEvent.click(screen.getByRole("button", { name: "분석 시작" }));
+    fireEvent.click(screen.getByRole("button", { name: "자소서 분석하기" }));
     fireEvent.click(screen.getByRole("button", { name: "카카오로 계속하기" }));
 
     const stored = JSON.parse(window.sessionStorage.getItem(ANALYZE_DRAFT_KEY) ?? "null");
