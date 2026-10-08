@@ -12,6 +12,7 @@ import {
   WorkspaceApiError,
   type Experience,
   type ExperienceInput,
+  type YearMonth,
 } from "@/lib/workspace";
 import { parseTags } from "@/lib/experienceImport";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
@@ -76,19 +77,130 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
 }
 
 const PP = COPY.periodPicker;
-const select = "h-[42px] rounded-xl border border-line bg-surface pl-3 pr-8 text-[14px] text-ink focus:border-brand focus:outline-none disabled:bg-fill disabled:text-ink-5";
+const capsule = "inline-flex h-8 items-center justify-center rounded-full text-[13px] font-semibold transition-colors";
+
+/** 숫자만 쳐도 "2024.03" 모양으로: 202403 → 2024.03, 20243 → 2024.3 */
+function formatYearMonthInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 6);
+  return digits.length > 4 ? `${digits.slice(0, 4)}.${digits.slice(4)}` : digits;
+}
+
+function readYearMonth(text: string): YearMonth | null {
+  const m = text.match(/^(\d{4})\.(\d{1,2})$/);
+  if (!m) return null;
+  const month = Number(m[2]);
+  return month >= 1 && month <= 12 ? { year: Number(m[1]), month } : null;
+}
+
+const toText = (v: YearMonth | null | undefined) => (v ? `${v.year}.${String(v.month).padStart(2, "0")}` : "");
 
 /**
- * 경험 기간: 시작 [년][월] ~ 끝 [년][월] · 진행 중. 늘 "2024.03 ~ 2024.12" 같은 정해진 형식으로 저장한다.
+ * 연·월 한 칸: 숫자로 바로 치거나(202403 → 2024.03), 칸을 누르면 뜨는 작은 창에서 연도 캡슐 → 월 캡슐로 고른다.
+ */
+function YearMonthField({
+  label: fieldLabel,
+  text,
+  onText,
+  disabled,
+  years,
+}: {
+  label: string;
+  text: string;
+  onText: (text: string) => void;
+  disabled?: boolean;
+  years: number[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [pickedYear, setPickedYear] = useState<number | null>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const openPicker = () => {
+    if (disabled) return;
+    setPickedYear(readYearMonth(text)?.year ?? null);
+    setOpen(true);
+  };
+
+  return (
+    <div ref={boxRef} className="relative">
+      <input
+        aria-label={fieldLabel}
+        inputMode="numeric"
+        placeholder="2024.03"
+        value={disabled ? "" : text}
+        disabled={disabled}
+        onFocus={openPicker}
+        onClick={openPicker}
+        onChange={(e) => {
+          setOpen(false); // 직접 치기 시작하면 고르기 창은 닫는다
+          onText(formatYearMonthInput(e.target.value));
+        }}
+        onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Tab") setOpen(false); }}
+        className="h-[42px] w-[112px] rounded-xl border border-line bg-surface px-3 text-[14px] tabular-nums text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none disabled:bg-fill"
+      />
+      {open && (
+        <div role="dialog" aria-label={PP.pickerLabel(fieldLabel)} className="absolute left-0 top-full z-30 mt-1.5 w-[268px] rounded-2xl border border-line bg-surface p-3 shadow-[0_12px_32px_rgba(18,32,90,0.12)]">
+          {pickedYear === null ? (
+            <>
+              <p className="mb-2 px-1 text-[12.5px] font-semibold text-ink-4">{PP.chooseYear}</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {years.map((year) => (
+                  <button key={year} type="button" onClick={() => setPickedYear(year)} className={`${capsule} bg-fill text-ink-2 hover:bg-line`}>
+                    {year}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-2 flex items-center justify-between px-1">
+                <button type="button" onClick={() => setPickedYear(null)} className="inline-flex items-center gap-0.5 text-[12.5px] font-semibold text-ink-3 hover:text-ink">
+                  <ChevronLeft className="size-3.5" aria-hidden="true" />
+                  {PP.yearLabel(pickedYear)}
+                </button>
+                <span className="text-[12.5px] font-semibold text-ink-4">{PP.chooseMonth}</span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+                  const current = readYearMonth(text);
+                  const active = current?.year === pickedYear && current.month === month;
+                  return (
+                    <button
+                      key={month}
+                      type="button"
+                      onClick={() => { onText(toText({ year: pickedYear, month })); setOpen(false); }}
+                      className={`${capsule} ${active ? "bg-ink text-white" : "bg-fill text-ink-2 hover:bg-line"}`}
+                    >
+                      {month}월
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 경험 기간: 시작 ~ 끝 · 진행 중. 늘 "2024.03 ~ 2024.12" 같은 정해진 형식으로 저장한다.
  * 옛 자유 형식("2024 여름")은 고르기 전까지 그대로 둔다.
  */
 function PeriodPicker({ value, onChange }: { value: string | null; onChange: (value: string | null, error: string | null) => void }) {
   const [initial] = useState(() => parsePeriod(value)); // 처음 연 값만 읽는다
   const legacy = initial === null && value ? value : null;
-  const [sy, setSy] = useState(initial?.start ? String(initial.start.year) : "");
-  const [sm, setSm] = useState(initial?.start ? String(initial.start.month) : "");
-  const [ey, setEy] = useState(initial?.end ? String(initial.end.year) : "");
-  const [em, setEm] = useState(initial?.end ? String(initial.end.month) : "");
+  const [startText, setStartText] = useState(toText(initial?.start));
+  const [endText, setEndText] = useState(toText(initial?.end));
   const [ongoing, setOngoing] = useState(initial?.ongoing ?? false);
 
   const thisYear = new Date().getFullYear();
@@ -98,45 +210,28 @@ function PeriodPicker({ value, onChange }: { value: string | null; onChange: (va
     return list.sort((a, b) => b - a);
   }, [thisYear, initial]);
 
-  const update = (next: { sy?: string; sm?: string; ey?: string; em?: string; ongoing?: boolean }) => {
-    const v = { sy, sm, ey, em, ongoing, ...next };
-    setSy(v.sy); setSm(v.sm); setEy(v.ey); setEm(v.em); setOngoing(v.ongoing);
-    const start = v.sy && v.sm ? { year: Number(v.sy), month: Number(v.sm) } : null;
-    const end = !v.ongoing && v.ey && v.em ? { year: Number(v.ey), month: Number(v.em) } : null;
-    const touched = Boolean(v.sy || v.sm || v.ey || v.em || v.ongoing);
+  const update = (next: { startText?: string; endText?: string; ongoing?: boolean }) => {
+    const v = { startText, endText, ongoing, ...next };
+    setStartText(v.startText); setEndText(v.endText); setOngoing(v.ongoing);
+    const start = readYearMonth(v.startText);
+    const end = v.ongoing ? null : readYearMonth(v.endText);
+    const touched = Boolean(v.startText || v.endText || v.ongoing);
     if (!touched) return onChange(legacy, null); // 아무것도 안 골랐으면 옛 값 유지(없으면 비움)
+    if ((v.startText && !start) || (!v.ongoing && v.endText && !end)) return onChange(null, PP.invalid);
     const parts = { start, end, ongoing: v.ongoing };
     if (!start) return onChange(null, PP.needStart);
     if (isPeriodReversed(parts)) return onChange(buildPeriod(parts), PP.reversed);
     onChange(buildPeriod(parts), null);
   };
 
-  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
-  const ymSelects = (kind: "start" | "end") => {
-    const disabled = kind === "end" && ongoing;
-    const [y, m] = kind === "start" ? [sy, sm] : [ey, em];
-    return (
-      <div className="flex items-center gap-1.5">
-        <select aria-label={kind === "start" ? PP.startYear : PP.endYear} value={y} disabled={disabled} onChange={(e) => update(kind === "start" ? { sy: e.target.value } : { ey: e.target.value })} className={select}>
-          <option value="">{PP.year}</option>
-          {years.map((year) => <option key={year} value={year}>{year}년</option>)}
-        </select>
-        <select aria-label={kind === "start" ? PP.startMonth : PP.endMonth} value={m} disabled={disabled} onChange={(e) => update(kind === "start" ? { sm: e.target.value } : { em: e.target.value })} className={select}>
-          <option value="">{PP.month}</option>
-          {monthOptions.map((month) => <option key={month} value={month}>{month}월</option>)}
-        </select>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-1.5">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-        {ymSelects("start")}
+        <YearMonthField label={PP.start} text={startText} onText={(text) => update({ startText: text })} years={years} />
         {/* "~" 는 끝과 함께 줄을 바꾼다(좁은 화면에서 윗줄 끝에 홀로 남지 않게) */}
         <div className="flex items-center gap-2">
           <span className="text-ink-5" aria-hidden="true">~</span>
-          {ymSelects("end")}
+          <YearMonthField label={PP.end} text={endText} onText={(text) => update({ endText: text })} disabled={ongoing} years={years} />
         </div>
         <label className="ml-1 inline-flex cursor-pointer items-center gap-1.5 text-[14px] font-medium text-ink-3">
           <input type="checkbox" checked={ongoing} onChange={(e) => update({ ongoing: e.target.checked })} className="size-4 accent-brand" />
