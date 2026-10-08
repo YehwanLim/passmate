@@ -47,6 +47,10 @@ export const WORKSPACE_COPY = {
   },
   editor: {
     addQuestion: "문항 추가",
+    questionsLabel: "문항",
+    promptLabel: "문항 원문",
+    answerLabel: "답변",
+    noLimit: "없음",
     removeQuestion: "문항 삭제",
     promptPlaceholder: "문항 원문을 붙여 넣으세요",
     answerPlaceholder: "답변을 직접 써 보세요. 쓰는 동안 자동으로 저장돼요.",

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Building2, Briefcase } from "lucide-react";
+import { Building2, Briefcase, ChevronLeft } from "lucide-react";
 import type { AnalysisSummary } from "@/types/my";
 import AnalysisCard from "@/components/my/AnalysisCard";
-import JobPostingSection, { getJobPostingTitle } from "@/components/analyze/JobPostingSection";
-import ApplicationEditor, { type DraftUiState } from "@/components/my/ApplicationEditor";
+import JobPostingSection from "@/components/analyze/JobPostingSection";
+import ApplicationEditor, { saveLabel, type DraftUiState } from "@/components/my/ApplicationEditor";
 import SkeletonCard from "@/components/my/SkeletonCard";
 import SiteHeader from "@/components/SiteHeader";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -154,7 +154,7 @@ function ApplicationMetaForm({
   };
 
   return (
-    <form onSubmit={submit} className="grid gap-3 rounded-[20px] bg-surface p-5 sm:grid-cols-3">
+    <form onSubmit={submit} className="mt-3 grid gap-3">
       <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{labels.company}</span>
         <input aria-label={labels.company} value={company} onChange={(e) => setCompany(e.target.value)} maxLength={100} className={metaField} />
@@ -167,7 +167,7 @@ function ApplicationMetaForm({
         <span>{labels.deadline}</span>
         <input aria-label={labels.deadline} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={metaField} />
       </label>
-      <div className="flex items-center justify-end gap-2 sm:col-span-3">
+      <div className="flex items-center justify-end gap-2">
         {error && <p role="alert" className="mr-auto text-[13px] text-danger">{error}</p>}
         <button type="button" onClick={onCancel} className="h-10 rounded-[10px] px-4 text-[14px] font-semibold text-ink-3 hover:bg-fill">{WORKSPACE_COPY.meta.cancel}</button>
         <button type="submit" disabled={busy} className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-hover disabled:opacity-50">
@@ -428,177 +428,204 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
   // 목록은 최신순(api orderBy createdAt desc)이라 처음 만나는 성공 진단이 가장 최근 리포트다.
   const latestReportId = analyses.find((analysis) => analysis.status === "SUCCESS")?.id ?? null;
 
+  const days = detail ? daysUntil(detail.deadline) : null;
+  const saveText = saveLabel(autosave.state);
+  const saveFailed = autosave.state === "error" || autosave.state === "conflict";
+
   return (
     <div className="min-h-screen bg-stage pb-28">
       <SiteHeader variant="light" />
-      <div className="container max-w-5xl space-y-5 pt-10">
-        {loadError ? (
-          <p role="alert" className="py-10 text-center text-sm text-danger">
-            {loadError}
-          </p>
-        ) : !detail || !loaded ? (
+      {loadError ? (
+        <p role="alert" className="container py-10 text-center text-sm text-danger">
+          {loadError}
+        </p>
+      ) : !detail || !loaded ? (
+        <div className="container max-w-6xl pt-10">
           <SkeletonCard variant="analysis" />
-        ) : (
-          <>
-            <header className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-ink-4">
-                {detail.company_name && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5" />
-                    {detail.company_name}
-                  </span>
-                )}
-                {detail.job_role && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Briefcase className="h-3.5 w-3.5" />
-                    {detail.job_role}
-                  </span>
-                )}
-                <span className="font-semibold text-ink-2">{deadlineLabel(detail.deadline)}</span>
-                {!editingMeta && (
-                  <button type="button" onClick={() => setEditingMeta(true)} className="font-semibold text-brand-ink underline-offset-4 hover:underline">
-                    {WORKSPACE_COPY.meta.edit}
+        </div>
+      ) : (
+        <>
+          {/* ════════ 편집기 위 막대: 돌아가기 · 지원서 이름 | 저장 상태 · 리포트 보기 · 분석받기 ════════ */}
+          <div className="sticky top-14 z-30 border-b border-line bg-surface/95 backdrop-blur">
+            <div className="container flex h-14 max-w-6xl items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate("/my")}
+                  className="-ml-1.5 inline-flex shrink-0 items-center gap-0.5 rounded-lg px-1.5 py-1 text-[13.5px] font-semibold text-ink-3 hover:bg-fill"
+                >
+                  <ChevronLeft className="size-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">{WORKSPACE_COPY.page.title}</span>
+                </button>
+                <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">{detail.title}</h1>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                <span className={`hidden text-[12.5px] sm:inline ${saveFailed ? "text-danger" : "text-ink-4"}`} role={saveFailed ? "alert" : undefined} aria-live="polite">
+                  {saveText}
+                </span>
+                {autosave.state === "error" && (
+                  <button type="button" onClick={() => void autosave.flush()} className="text-[12.5px] font-semibold text-brand-ink underline-offset-4 hover:underline">
+                    {WORKSPACE_COPY.save.retry}
                   </button>
                 )}
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-[26px] font-bold tracking-[-0.03em] text-ink">{detail.title}</h1>
-                {/* 마이페이지 카드를 누르면 이 화면으로 온다. 리포트는 가장 최근에 끝난 진단 것으로 바로 간다. */}
                 {latestReportId && (
                   <button
                     type="button"
                     onClick={() => navigate(reportPath(latestReportId))}
-                    className="h-10 rounded-[10px] bg-ink px-4 text-[14px] font-semibold text-white transition-colors hover:bg-ink-2"
+                    className="h-9 rounded-[10px] border border-line bg-surface px-3 text-[13.5px] font-semibold text-ink-2 transition-colors hover:bg-fill-soft"
                   >
                     {WORKSPACE_COPY.viewReport}
                   </button>
                 )}
-              </div>
-            </header>
-
-            {editingMeta && (
-              <ApplicationMetaForm
-                projectId={projectId}
-                detail={detail}
-                onCancel={() => setEditingMeta(false)}
-                onSaved={(meta) => {
-                  setDetail((current) =>
-                    current
-                      ? { ...current, title: meta.title, company_name: meta.company_name, job_role: meta.job_role, deadline: meta.deadline }
-                      : current
-                  );
-                  setEditingMeta(false);
-                }}
-              />
-            )}
-
-            <details className="rounded-[20px] bg-surface px-5 py-4">
-              <summary className="cursor-pointer text-[14px] font-semibold text-ink-2">
-                {posting ? WORKSPACE_COPY.draft.postingAttached(getJobPostingTitle(posting)) : WORKSPACE_COPY.draft.attachPosting}
-              </summary>
-              <div className="pt-3">
-                <JobPostingSection
-                  value={posting}
-                  onChange={changePosting}
-                  isAuthenticated
-                  onRequireLogin={() => navigate("/login")}
-                  tone="light"
-                />
-                {postingError && (
-                  <p role="alert" className="pt-2 text-[13px] text-danger">
-                    {WORKSPACE_COPY.meta.failed}
-                  </p>
-                )}
-              </div>
-            </details>
-
-            {seeded && <p className="text-[14px] text-ink-3">{WORKSPACE_COPY.seeded}</p>}
-
-            {backup && (
-              <div role="status" className="flex flex-wrap items-center gap-3 rounded-[20px] bg-blank-soft px-5 py-3.5 text-[14px] text-ink-2">
-                <span>{WORKSPACE_COPY.backup.notice}</span>
-                <div className="ml-auto flex gap-2">
-                  <button type="button" onClick={dismissBackup} className="h-9 rounded-[10px] px-3 text-[13px] font-semibold text-ink-3 hover:bg-white/60">
-                    {WORKSPACE_COPY.backup.dismiss}
-                  </button>
-                  <button type="button" onClick={restoreBackup} className="h-9 rounded-[10px] bg-ink px-3.5 text-[13px] font-semibold text-white hover:bg-ink-2">
-                    {WORKSPACE_COPY.backup.restore}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <ApplicationEditor
-              questions={questions}
-              activeIndex={Math.min(activeIndex, questions.length - 1)}
-              onSelect={setActiveIndex}
-              onChange={updateQuestion}
-              onAdd={() => {
-                setQuestions((current) => [...current, { prompt: "", charLimit: null, answer: "" }]);
-                setActiveIndex(questions.length);
-                setSeeded(false);
-              }}
-              onRemove={(index) => {
-                setQuestions((current) => current.filter((_, i) => i !== index));
-                setActiveIndex(0);
-                draftSeq.current += 1; // 문항 번호가 바뀌므로 진행 중인 초안 결과는 버린다
-                setDraft(null);
-                setSeeded(false);
-              }}
-              saveState={autosave.state}
-              draft={draft}
-              onRequestDraft={(index, opts) => void requestDraft(index, opts)}
-              onApplyDraft={applyDraft}
-              onCloseDraft={() => setDraft(null)}
-              experienceTitles={experienceTitles}
-              experienceCount={experienceCount}
-              draftLimitReached={draftLimitReached}
-            />
-            {autosave.state === "error" && (
-              <div className="-mt-3 flex justify-end">
-                <button type="button" onClick={() => void autosave.flush()} className="text-[13px] font-semibold text-brand-ink underline-offset-4 hover:underline">
-                  {WORKSPACE_COPY.save.retry}
+                <button
+                  type="button"
+                  onClick={diagnose}
+                  disabled={submitting}
+                  className="h-9 rounded-[10px] bg-brand px-3.5 text-[13.5px] font-bold text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
+                >
+                  {WORKSPACE_COPY.diagnose}
                 </button>
               </div>
+            </div>
+          </div>
+
+          <div className="container max-w-6xl pt-6">
+            {submitError && (
+              <p role="alert" className="mb-4 rounded-[14px] bg-danger-soft px-4 py-3 text-[13.5px] text-danger">
+                {submitError.title} · {submitError.message}
+              </p>
             )}
 
-            <div className="flex flex-col items-end gap-2">
-              <button
-                type="button"
-                onClick={diagnose}
-                disabled={submitting}
-                className="h-12 rounded-xl bg-brand px-6 text-[15px] font-bold text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
-              >
-                {WORKSPACE_COPY.diagnose}
-              </button>
-              {submitError && (
-                <p role="alert" className="text-[13px] text-danger">
-                  {submitError.title} · {submitError.message}
-                </p>
-              )}
-            </div>
+            {/* ════════ 왼쪽 원고지 | 오른쪽 지원 정보 · 채용공고 ════════ */}
+            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="min-w-0 space-y-4">
+                {seeded && <p className="text-[14px] text-ink-3">{WORKSPACE_COPY.seeded}</p>}
 
-            <section className="space-y-3 pt-4">
-              <h2 className="text-[17px] font-bold text-ink">{WORKSPACE_COPY.history}</h2>
-              {historyFailed ? (
-                <p role="alert" className="text-[13px] text-danger">{WORKSPACE_COPY.historyError}</p>
-              ) : analyses.length === 0 ? (
-                <p className="text-[14px] text-ink-4">{WORKSPACE_COPY.historyEmpty}</p>
-              ) : (
-                <div className="grid gap-3">
-                  {analyses.map((analysis) => (
-                    <AnalysisCard
-                      key={analysis.id}
-                      analysis={analysis}
-                      onViewReport={analysis.status === "SUCCESS" ? () => navigate(reportPath(analysis.id)) : undefined}
+                {backup && (
+                  <div role="status" className="flex flex-wrap items-center gap-3 rounded-[20px] bg-blank-soft px-5 py-3.5 text-[14px] text-ink-2">
+                    <span>{WORKSPACE_COPY.backup.notice}</span>
+                    <div className="ml-auto flex gap-2">
+                      <button type="button" onClick={dismissBackup} className="h-9 rounded-[10px] px-3 text-[13px] font-semibold text-ink-3 hover:bg-white/60">
+                        {WORKSPACE_COPY.backup.dismiss}
+                      </button>
+                      <button type="button" onClick={restoreBackup} className="h-9 rounded-[10px] bg-ink px-3.5 text-[13px] font-semibold text-white hover:bg-ink-2">
+                        {WORKSPACE_COPY.backup.restore}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <ApplicationEditor
+                  questions={questions}
+                  activeIndex={Math.min(activeIndex, questions.length - 1)}
+                  onSelect={setActiveIndex}
+                  onChange={updateQuestion}
+                  onAdd={() => {
+                    setQuestions((current) => [...current, { prompt: "", charLimit: null, answer: "" }]);
+                    setActiveIndex(questions.length);
+                    setSeeded(false);
+                  }}
+                  onRemove={(index) => {
+                    setQuestions((current) => current.filter((_, i) => i !== index));
+                    setActiveIndex(0);
+                    draftSeq.current += 1; // 문항 번호가 바뀌므로 진행 중인 초안 결과는 버린다
+                    setDraft(null);
+                    setSeeded(false);
+                  }}
+                  heading={
+                    <p className="min-w-0 truncate text-[15px] font-bold text-brand-ink">
+                      {[detail.company_name, detail.job_role].filter(Boolean).join(" ")}
+                      <span className="ml-2 text-[13px] font-medium text-ink-4">{deadlineLabel(detail.deadline)}</span>
+                    </p>
+                  }
+                  draft={draft}
+                  onRequestDraft={(index, opts) => void requestDraft(index, opts)}
+                  onApplyDraft={applyDraft}
+                  onCloseDraft={() => setDraft(null)}
+                  experienceTitles={experienceTitles}
+                  experienceCount={experienceCount}
+                  draftLimitReached={draftLimitReached}
+                />
+
+                <section id="history" className="space-y-3 pt-4">
+                  <h2 className="text-[17px] font-bold text-ink">
+                    {WORKSPACE_COPY.history}
+                    {analyses.length > 0 && <span className="ml-1.5 text-ink-5">{analyses.length}</span>}
+                  </h2>
+                  {historyFailed ? (
+                    <p role="alert" className="text-[13px] text-danger">{WORKSPACE_COPY.historyError}</p>
+                  ) : analyses.length === 0 ? (
+                    <p className="text-[14px] text-ink-4">{WORKSPACE_COPY.historyEmpty}</p>
+                  ) : (
+                    <div className="grid gap-3">
+                      {analyses.map((analysis) => (
+                        <AnalysisCard
+                          key={analysis.id}
+                          analysis={analysis}
+                          onViewReport={analysis.status === "SUCCESS" ? () => navigate(reportPath(analysis.id)) : undefined}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+
+              {/* 오른쪽: 지원 정보 · 채용공고 (넓은 화면에서는 따라 내려온다) */}
+              <aside className="space-y-4 lg:sticky lg:top-32">
+                <section className="rounded-[18px] bg-surface p-5">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[15px] font-bold text-ink">{WORKSPACE_COPY.newApplicationForm.basicsTitle}</h2>
+                    {!editingMeta && (
+                      <button type="button" onClick={() => setEditingMeta(true)} className="text-[13px] font-semibold text-brand-ink underline-offset-4 hover:underline">
+                        {WORKSPACE_COPY.meta.edit}
+                      </button>
+                    )}
+                  </div>
+                  {editingMeta ? (
+                    <ApplicationMetaForm
+                      projectId={projectId}
+                      detail={detail}
+                      onCancel={() => setEditingMeta(false)}
+                      onSaved={(meta) => {
+                        setDetail((current) =>
+                          current
+                            ? { ...current, title: meta.title, company_name: meta.company_name, job_role: meta.job_role, deadline: meta.deadline }
+                            : current
+                        );
+                        setEditingMeta(false);
+                      }}
                     />
-                  ))}
-                </div>
-              )}
-            </section>
-          </>
-        )}
-      </div>
+                  ) : (
+                    <dl className="mt-3 space-y-2.5 text-[14px]">
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="shrink-0 text-ink-4"><Building2 className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />{WORKSPACE_COPY.newApplicationForm.company}</dt>
+                        <dd className="text-right font-semibold text-ink break-keep">{detail.company_name || "—"}</dd>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="shrink-0 text-ink-4"><Briefcase className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />{WORKSPACE_COPY.newApplicationForm.job}</dt>
+                        <dd className="text-right font-semibold text-ink break-keep">{detail.job_role || "—"}</dd>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="shrink-0 text-ink-4">{WORKSPACE_COPY.newApplicationForm.deadline}</dt>
+                        <dd className={`text-right font-semibold ${days !== null && days >= 0 && days <= 3 ? "text-danger" : "text-ink"}`}>{deadlineLabel(detail.deadline)}</dd>
+                      </div>
+                    </dl>
+                  )}
+                </section>
+
+                <section className="rounded-[18px] bg-surface p-5">
+                  <JobPostingSection value={posting} onChange={changePosting} isAuthenticated onRequireLogin={() => navigate("/login")} tone="light" />
+                  {postingError && (
+                    <p role="alert" className="pt-2 text-[13px] text-danger">
+                      {WORKSPACE_COPY.meta.failed}
+                    </p>
+                  )}
+                </section>
+              </aside>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
