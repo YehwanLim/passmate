@@ -31,10 +31,10 @@ function setup(props: Partial<Parameters<typeof ExperienceImportDialog>[0]> = {}
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
-describe("예전 자소서에서 경험 가져오기", () => {
+describe("이력서·자소서로 경험 채우기", () => {
   it("200자 미만이면 뽑기 버튼이 막혀 있다", () => {
     setup();
-    fireEvent.change(screen.getByLabelText("자소서 붙여넣기"), { target: { value: "짧은 글" } });
+    fireEvent.change(screen.getByLabelText("이력서·자소서 붙여넣기"), { target: { value: "짧은 글" } });
     expect(screen.getByRole("button", { name: "경험 뽑기" })).toHaveProperty("disabled", true);
     expect(screen.getByText("하루 3번까지 무료예요.")).toBeTruthy();
   });
@@ -48,7 +48,7 @@ describe("예전 자소서에서 경험 가져오기", () => {
     mocks.createExperiences.mockImplementation(async (inputs) => inputs.map((x: object, i: number) => ({ ...x, id: `n${i}`, updatedAt: "" })));
     const { onSaved, onClose } = setup();
 
-    fireEvent.change(screen.getByLabelText("자소서 붙여넣기"), { target: { value: TEXT } });
+    fireEvent.change(screen.getByLabelText("이력서·자소서 붙여넣기"), { target: { value: TEXT } });
     fireEvent.click(screen.getByRole("button", { name: "경험 뽑기" }));
 
     expect(await screen.findByText("경험 2개를 찾았어요. 저장할 것만 골라 주세요.")).toBeTruthy();
@@ -69,16 +69,16 @@ describe("예전 자소서에서 경험 가져오기", () => {
   it("한도를 다 쓰면 안내하고 입력 화면에 머문다", async () => {
     mocks.requestExperienceCandidates.mockResolvedValue({ kind: "rate_limited" });
     setup();
-    fireEvent.change(screen.getByLabelText("자소서 붙여넣기"), { target: { value: TEXT } });
+    fireEvent.change(screen.getByLabelText("이력서·자소서 붙여넣기"), { target: { value: TEXT } });
     fireEvent.click(screen.getByRole("button", { name: "경험 뽑기" }));
     expect(await screen.findByText("오늘 가져오기를 다 썼어요. 내일 오전 9시에 다시 쓸 수 있어요.")).toBeTruthy();
-    expect(screen.getByLabelText("자소서 붙여넣기")).toBeTruthy();
+    expect(screen.getByLabelText("이력서·자소서 붙여넣기")).toBeTruthy();
   });
 
   it("0개면 횟수가 차감되지 않았다고 알린다", async () => {
     mocks.requestExperienceCandidates.mockResolvedValue({ kind: "empty", remainingToday: 3 });
     setup();
-    fireEvent.change(screen.getByLabelText("자소서 붙여넣기"), { target: { value: TEXT } });
+    fireEvent.change(screen.getByLabelText("이력서·자소서 붙여넣기"), { target: { value: TEXT } });
     fireEvent.click(screen.getByRole("button", { name: "경험 뽑기" }));
     expect(await screen.findByText(/이 글에서는 경험을 찾지 못했어요/)).toBeTruthy();
   });
@@ -86,7 +86,7 @@ describe("예전 자소서에서 경험 가져오기", () => {
   it("금고 한도를 넘게 고르면 저장 전에 남은 개수를 알려 준다", async () => {
     mocks.requestExperienceCandidates.mockResolvedValue({ kind: "ok", remainingToday: 2, candidates: [cand("가 경험"), cand("나 경험")] });
     setup({ ownedCount: 99, existingTitles: [] });
-    fireEvent.change(screen.getByLabelText("자소서 붙여넣기"), { target: { value: TEXT } });
+    fireEvent.change(screen.getByLabelText("이력서·자소서 붙여넣기"), { target: { value: TEXT } });
     fireEvent.click(screen.getByRole("button", { name: "경험 뽑기" }));
     fireEvent.click(await screen.findByRole("button", { name: "선택한 2개 저장" }));
     expect(await screen.findByText("경험은 100개까지 담을 수 있어요. 지금 1개 더 담을 수 있어요.")).toBeTruthy();

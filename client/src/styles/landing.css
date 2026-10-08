@@ -367,7 +367,8 @@
   outline-offset: 2px;
 }
 
-@media (min-width: 640px) {
+/* 메뉴가 다섯 개라 640~767px 에서는 한 줄에 안 들어간다(10-08). SiteHeader 의 md: 기준과 같이 간다. */
+@media (min-width: 768px) {
   .mobile-nav-toggle,
   .mobile-nav-panel {
     display: none;

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -31,14 +31,24 @@ beforeEach(() => mocks.listExperiences.mockResolvedValue([EXP]));
 afterEach(() => { cleanup(); vi.clearAllMocks(); vi.restoreAllMocks(); });
 
 describe("내 경험", () => {
-  it("빈 금고에서는 가져오기 버튼을 크게 보여 주고, 누르면 창이 열린다", async () => {
+  it("빈 금고에서는 가운데에만 가져오기 버튼을 두고(위 줄 버튼은 숨김), 누르면 창이 열린다", async () => {
     mocks.listExperiences.mockResolvedValue([]);
     render(<ExperienceVault />);
     await screen.findByText(/아직 적어 둔 경험이 없어요/);
-    const buttons = screen.getAllByRole("button", { name: "예전 자소서에서 경험 가져오기" });
-    expect(buttons).toHaveLength(2);
-    fireEvent.click(buttons[1]);
-    expect(screen.getByRole("dialog", { name: "예전 자소서에서 경험 가져오기" })).toBeTruthy();
+    const buttons = screen.getAllByRole("button", { name: "이력서·자소서로 경험 채우기" });
+    expect(buttons).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "경험 추가" })).toBeNull();
+    fireEvent.click(buttons[0]);
+    const dialog = screen.getByRole("dialog", { name: "이력서·자소서로 경험 채우기" });
+    // 빈 입력칸 아래에 넣을 글 → 나올 카드 예시가 보인다.
+    expect(within(dialog).getByRole("region", { name: "예시" })).toBeTruthy();
+  });
+
+  it("경험이 있으면 위 줄에만 가져오기 버튼이 하나 있다", async () => {
+    render(<ExperienceVault />);
+    await screen.findByText("카페 발주 개선");
+    expect(screen.getAllByRole("button", { name: "이력서·자소서로 경험 채우기" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "경험 추가" })).toBeTruthy();
   });
 
   it("가져와 저장한 경험이 목록 맨 위에 붙는다", async () => {
@@ -49,8 +59,8 @@ describe("내 경험", () => {
     mocks.createExperiences.mockImplementation(async (inputs: object[]) => inputs.map((x, i) => ({ ...x, id: `n${i}`, updatedAt: "" })));
     render(<ExperienceVault />);
     await screen.findByText("카페 발주 개선");
-    fireEvent.click(screen.getByRole("button", { name: "예전 자소서에서 경험 가져오기" }));
-    fireEvent.change(screen.getByLabelText("자소서 붙여넣기"), { target: { value: "가".repeat(220) } });
+    fireEvent.click(screen.getByRole("button", { name: "이력서·자소서로 경험 채우기" }));
+    fireEvent.change(screen.getByLabelText("이력서·자소서 붙여넣기"), { target: { value: "가".repeat(220) } });
     fireEvent.click(screen.getByRole("button", { name: "경험 뽑기" }));
     fireEvent.click(await screen.findByRole("button", { name: "선택한 1개 저장" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -80,7 +90,7 @@ describe("내 경험", () => {
     mocks.listExperiences.mockResolvedValue([]);
     mocks.createExperience.mockImplementation(async (input) => ({ ...input, id: "e2", updatedAt: "2026-10-03T01:00:00Z" }));
     render(<ExperienceVault />);
-    fireEvent.click(await screen.findByRole("button", { name: "경험 추가" }));
+    fireEvent.click(await screen.findByRole("button", { name: "직접 적기" }));
     fireEvent.change(screen.getByLabelText("이 경험을 한 줄로 부르면"), { target: { value: "학회 리서치" } });
     fireEvent.change(screen.getByLabelText("키워드 (쉼표로 구분, 최대 5개)"), { target: { value: "리서치, 협업" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
@@ -93,7 +103,7 @@ describe("내 경험", () => {
   it("한 줄 이름이 비어 있으면 저장하지 않고 안내한다", async () => {
     mocks.listExperiences.mockResolvedValue([]);
     render(<ExperienceVault />);
-    fireEvent.click(await screen.findByRole("button", { name: "경험 추가" }));
+    fireEvent.click(await screen.findByRole("button", { name: "직접 적기" }));
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
     expect(await screen.findByText("이 경험을 한 줄로 부르는 이름을 적어 주세요.")).toBeTruthy();
     expect(mocks.createExperience).not.toHaveBeenCalled();
@@ -103,7 +113,7 @@ describe("내 경험", () => {
     mocks.listExperiences.mockResolvedValue([]);
     mocks.createExperience.mockRejectedValue(new WorkspaceApiError("EXPERIENCE_LIMIT_REACHED", 409));
     render(<ExperienceVault />);
-    fireEvent.click(await screen.findByRole("button", { name: "경험 추가" }));
+    fireEvent.click(await screen.findByRole("button", { name: "직접 적기" }));
     fireEvent.change(screen.getByLabelText("이 경험을 한 줄로 부르면"), { target: { value: "학회 리서치" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
     expect(await screen.findByText("경험은 100개까지 적어 둘 수 있어요.")).toBeTruthy();
