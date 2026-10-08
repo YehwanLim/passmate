@@ -93,7 +93,7 @@ describe("작업 화면", () => {
       receipt: { analysisId: "a1", analysisRequestId: "r1", projectId: "p1", status: "PENDING" },
     });
     render(<MyAnalyses />);
-    fireEvent.click(await screen.findByRole("button", { name: "이 지원서로 진단받기" }));
+    fireEvent.click(await screen.findByRole("button", { name: "자소서 분석하기" }));
     await waitFor(() => expect(mocks.submitAnalysisRequest).toHaveBeenCalled());
     const [endpoint, payload] = mocks.submitAnalysisRequest.mock.calls[0];
     expect(endpoint).toBe("/api/analyze");
