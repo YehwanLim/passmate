@@ -27,6 +27,8 @@ export type ApplicationDetail = ProjectSummary & {
     draft_experience_ids?: string[];
   }>;
   questions_updated_at: string | null;
+  /** 성공한 최신 분석. 있으면 글이 잠긴다(서버도 문항 저장을 409 APPLICATION_LOCKED 로 막는다). 구버전 응답엔 없다. */
+  analyzed_report?: { analysis_id: string; analyzed_at: string; summary: string | null } | null;
 };
 
 export type Experience = {
@@ -223,6 +225,15 @@ function kstDayNumber(date: Date): number {
 }
 
 /** 마감까지 남은 날(한국 날짜 기준). 오늘 마감 0, 지났으면 음수, 마감 없으면 null. */
+/** "10월 8일" — 한국 시간 기준. 값이 없거나 깨졌으면 null. */
+export function monthDay(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return null;
+  const kst = new Date(time + 9 * 60 * 60 * 1000);
+  return `${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일`;
+}
+
 export function daysUntil(deadline: string | null, now: Date = new Date()): number | null {
   if (!deadline) return null;
   const date = new Date(deadline);

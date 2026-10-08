@@ -101,4 +101,18 @@ describe("GET /api/projects 작업실 필드", () => {
     const [strings] = db.$queryRaw.mock.calls[0];
     expect(strings.join("?")).toContain("application_questions");
   });
+
+  it("최근 분석 시각을 latest_analyzed_at 으로 내려준다", async () => {
+    const db = createDb();
+    const analyzedAt = new Date("2026-10-08T05:00:00Z");
+    db.$queryRaw.mockResolvedValue([{
+      id: "p1", title: "t", company: "A", job_keyword: null, created_at: new Date("2026-10-01T00:00:00Z"),
+      analysis_count: 1, latest_id: "a1", latest_status: "SUCCESS", latest_created_at: analyzedAt, latest_kind: "RESUME",
+      total_chars: 900, question_text: null, summary: null, keywords: null,
+      deadline: null, updated_at: new Date("2026-10-08T05:00:00Z"), draft_question_count: 1, answered_count: 1,
+    }]);
+    const res = createResponse();
+    await createProjectsHandler({ db, requireUser: activeUser })({ method: "GET", headers: {} }, res);
+    expect(res.body[0].latest_analyzed_at).toEqual(analyzedAt);
+  });
 });

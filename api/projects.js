@@ -66,6 +66,7 @@ export function createProjectsHandler({
           (SELECT count(*)::int FROM analyses a WHERE a.project_id = p.id) AS analysis_count,
           latest.id AS latest_id,
           latest.status::text AS latest_status,
+          latest.created_at AS latest_created_at,
           latest.kind::text AS latest_kind,
           latest.total_chars,
           latest.question_text,
@@ -81,7 +82,7 @@ export function createProjectsHandler({
           ) AS keywords
         FROM projects p
         LEFT JOIN LATERAL (
-          SELECT a.id, a.status, a.kind, a.total_chars, a.question_text, a.ai_response_json
+          SELECT a.id, a.status, a.created_at, a.kind, a.total_chars, a.question_text, a.ai_response_json
           FROM analyses a
           WHERE a.project_id = p.id
           ORDER BY a.created_at DESC
@@ -102,6 +103,7 @@ export function createProjectsHandler({
         question_count: countQuestions(row.question_text),
         latest_analysis_id: row.latest_id ?? null,
         latest_status: row.latest_status ?? null,
+        latest_analyzed_at: row.latest_created_at ?? null,
         total_chars: row.total_chars ?? 0,
         summary: stripEmphasis(row.summary) ?? null,
         keywords: normalizeKeywords(row.keywords),

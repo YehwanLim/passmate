@@ -27,6 +27,16 @@ const DETAIL_SELECT = {
   },
 };
 
+// 분석이 한 번 성공한 지원서는 글을 잠근다(10-09). 리포트가 본 글과 화면의 글이 항상 같게 하려는 것.
+// 더 고치려면 화면의 "수정하기"가 글을 복사해 새 지원서를 만든다. 지원 정보(회사·마감·공고)는 계속 고칠 수 있다.
+function findAnalyzedReport(db, projectId, userId, select) {
+  return db.analysis.findFirst({
+    where: { projectId, userId, status: "SUCCESS" },
+    orderBy: { createdAt: "desc" },
+    select,
+  });
+}
+
 function latestQuestionTime(questions) {
   return questions.reduce((latest, q) => (!latest || q.updatedAt > latest ? q.updatedAt : latest), null);
 }
@@ -96,6 +106,9 @@ export function createProjectDetailHandler({
         const { questions, baseUpdatedAt } = normalizeQuestionSave(req.body);
         const owned = await db.project.findFirst({ where, select: { id: true } });
         if (!owned) throw new ApiError("NOT_FOUND", 404);
+        if (await findAnalyzedReport(db, owned.id, applicationUser.id, { id: true })) {
+          throw new ApiError("APPLICATION_LOCKED", 409);
+        }
         // 초안 경험은 본인 경험 id 만 남긴다(남의 id 는 조용히 버린다).
         const wanted = [...new Set(questions.flatMap((q) => q.draftExperienceIds))];
         if (wanted.length > 0) {
@@ -142,6 +155,11 @@ export function createProjectDetailHandler({
 
       const latest = project.analyses?.[0];
       const questions = project.questions ?? [];
+      const report = await findAnalyzedReport(db, project.id, applicationUser.id, {
+        id: true,
+        createdAt: true,
+        aiResponseJson: true,
+      });
       return sendJson(res, 200, {
         id: project.id,
         title: project.title,
@@ -161,6 +179,9 @@ export function createProjectDetailHandler({
             }
           : null,
         latest_analysis_id: latest?.id ?? null,
+        analyzed_report: report
+          ? { analysis_id: report.id, analyzed_at: report.createdAt, summary: extractSummary(report.aiResponseJson) }
+          : null,
         questions: questions.map((q) => ({
           position: q.position,
           prompt: q.prompt,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { Building2, Briefcase, ChevronLeft } from "lucide-react";
+import { ArrowRight, Building2, Briefcase, ChevronLeft, Lock } from "lucide-react";
 import type { AnalysisSummary } from "@/types/my";
 import AnalysisCard from "@/components/my/AnalysisCard";
 import CompanyCombobox from "@/components/analyze/CompanyCombobox";
@@ -18,9 +18,12 @@ import { resolveIdempotencyKey, submitAnalysisRequest, type IdempotentRequest } 
 import { requestExperienceDraft } from "@/lib/experienceDraft";
 import {
   WorkspaceApiError,
+  countChars,
+  createApplication,
   daysUntil,
   fetchApplication,
   listExperiences,
+  monthDay,
   saveApplicationQuestions,
   updateApplicationMeta,
   type ApplicationDetail,
@@ -263,7 +266,8 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
         if (cancelled) return;
         if (drafts.length === 0) drafts = [{ prompt: "", charLimit: null, answer: "" }];
         // 지난번에 저장하지 못한 내용이 이 기기에 남아 있으면 불러올지 묻는다. 서버와 같으면 묻지 않는다.
-        const stored = readBackup(`${BACKUP_PREFIX}${projectId}`);
+        // 분석이 끝나 잠긴 지원서는 고칠 수 없으니 묻지 않는다.
+        const stored = application.analyzed_report ? null : readBackup(`${BACKUP_PREFIX}${projectId}`);
         setBackup(stored && JSON.stringify(stored) !== JSON.stringify(drafts) ? stored : null);
         setSeeded(fromAnalysis);
         setQuestions(drafts);
@@ -304,11 +308,15 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
     [projectId]
   );
 
+  // 분석이 성공한 지원서는 글을 잠근다. 더 고치려면 "수정하기"로 글을 복사한 새 지원서를 만든다.
+  const analyzedReport = detail?.analyzed_report ?? null;
+  const locked = analyzedReport !== null;
+
   // 미리채움도 불러온 값 그대로를 기준선으로 삼는다. 사용자가 고치기 전에는 DB 에 쓰지 않는다.
   const autosave = useDraftAutosave({
     value: questions,
     save,
-    enabled: loaded,
+    enabled: loaded && !locked,
     isConflict: (error) => error instanceof WorkspaceApiError && error.code === "STALE_DRAFT",
   });
 
@@ -317,13 +325,36 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
   const flushRef = useRef(autosave.flush);
   flushRef.current = autosave.flush;
   const loadedRef = useRef(false);
-  loadedRef.current = loaded;
+  loadedRef.current = loaded && !locked;
   useEffect(
     () => () => {
       if (loadedRef.current) void flushRef.current();
     },
     []
   );
+
+  const [copying, setCopying] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+
+  // 잠긴 글을 그대로 복사한 새 지원서를 만들고 그쪽 작성 화면으로 간다. 공고는 붙이기만 하고 실패해도 넘어간다.
+  const editAsNew = async () => {
+    if (!detail || copying) return;
+    setCopying(true);
+    setCopyFailed(false);
+    try {
+      const { id } = await createApplication({
+        company: detail.company_name || detail.title,
+        ...(detail.job_role ? { jobKeyword: detail.job_role } : {}),
+        deadline: detail.deadline,
+        questions: questions.map(({ prompt, charLimit, answer }) => ({ prompt, charLimit, answer })),
+      });
+      if (posting) await updateApplicationMeta(id, { jobPostingId: posting.id }).catch(() => undefined);
+      navigate(`/my/${id}`);
+    } catch {
+      setCopyFailed(true);
+      setCopying(false);
+    }
+  };
 
   // 저장되지 않은 동안(대기·저장 중·실패·충돌)은 이 기기에 보관하고, 서버와 맞으면 지운다.
   // 남은 보관본을 사용자가 고르기 전에는 덮어쓰거나 지우지 않는다.
@@ -461,6 +492,16 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                 </button>
                 <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">{detail.title}</h1>
               </div>
+              {locked ? (
+                <button
+                  type="button"
+                  onClick={() => void editAsNew()}
+                  disabled={copying}
+                  className="h-9 shrink-0 rounded-[10px] border border-line bg-surface px-3.5 text-[13.5px] font-semibold text-ink-2 transition-colors hover:bg-fill-soft disabled:opacity-50"
+                >
+                  {copying ? WORKSPACE_COPY.locked.editing : WORKSPACE_COPY.locked.edit}
+                </button>
+              ) : (
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                 <span className={`hidden text-[12.5px] sm:inline ${saveFailed ? "text-danger" : "text-ink-4"}`} role={saveFailed ? "alert" : undefined} aria-live="polite">
                   {saveText}
@@ -488,6 +529,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                   {WORKSPACE_COPY.diagnose}
                 </button>
               </div>
+              )}
             </div>
           </div>
 
@@ -497,10 +539,57 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                 {submitError.title} · {submitError.message}
               </p>
             )}
+            {copyFailed && (
+              <p role="alert" className="mb-4 rounded-[14px] bg-danger-soft px-4 py-3 text-[13.5px] text-danger">
+                {WORKSPACE_COPY.locked.editFailed}
+              </p>
+            )}
 
             {/* ════════ 왼쪽 원고지 | 오른쪽 지원 정보 · 채용공고 ════════ */}
             <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
               <div className="min-w-0 space-y-4">
+                {analyzedReport ? (
+                  <>
+                    {/* 잠긴 지원서: 리포트가 화면의 주인공, 글은 읽기만 */}
+                    <section className="rounded-[20px] bg-surface p-6 sm:p-7">
+                      <p className="text-[13px] font-semibold text-ink-4">
+                        {WORKSPACE_COPY.analyzedOn(monthDay(analyzedReport.analyzed_at) ?? "")}
+                      </p>
+                      <p className="mt-1.5 text-[19px] font-bold leading-[1.5] tracking-[-0.02em] text-ink break-keep sm:text-[21px]">
+                        {analyzedReport.summary || WORKSPACE_COPY.locked.summaryFallback}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => navigate(reportPath(analyzedReport.analysis_id))}
+                        className="mt-5 inline-flex h-12 items-center gap-1.5 rounded-[12px] bg-brand px-5 text-[15px] font-bold text-white transition-colors hover:bg-brand-hover"
+                      >
+                        {WORKSPACE_COPY.viewReport}
+                        <ArrowRight className="size-4" aria-hidden="true" />
+                      </button>
+                    </section>
+
+                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-[1.6] text-ink-4">
+                      <Lock className="mt-[3px] size-3.5 shrink-0" aria-hidden="true" />
+                      {WORKSPACE_COPY.locked.notice}
+                    </p>
+
+                    <section className="divide-y divide-line-soft rounded-[20px] bg-surface" data-testid="locked-questions">
+                      {questions.map((q, i) => (
+                        <article key={i} className="px-5 py-5 sm:px-7">
+                          <p className="text-[13px] font-bold text-brand-ink">{WORKSPACE_COPY.questionLabel(i + 1)}</p>
+                          {q.prompt.trim() && <h3 className="mt-1 text-[16px] font-semibold leading-[1.6] text-ink break-keep">{q.prompt}</h3>}
+                          <p className="mt-3 whitespace-pre-wrap text-[15px] leading-[1.9] text-ink-2">
+                            {q.answer.trim() ? q.answer : <span className="text-ink-5">{WORKSPACE_COPY.locked.emptyAnswer}</span>}
+                          </p>
+                          <p className="mt-3 text-[12.5px] text-ink-4">
+                            {WORKSPACE_COPY.editor.charCount(countChars(q.answer).withSpaces, countChars(q.answer).withoutSpaces)}
+                          </p>
+                        </article>
+                      ))}
+                    </section>
+                  </>
+                ) : (
+                <>
                 {seeded && <p className="text-[14px] text-ink-3">{WORKSPACE_COPY.seeded}</p>}
 
                 {backup && (
@@ -548,7 +637,11 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                   experienceCount={experienceCount}
                   draftLimitReached={draftLimitReached}
                 />
+                </>
+                )}
 
+                {/* 잠긴 지원서는 위 카드가 리포트로 보내므로, 회차가 둘 이상일 때만 지난 진단을 보인다. */}
+                {(!locked || analyses.length > 1) && (
                 <section id="history" className="space-y-3 pt-4">
                   <h2 className="text-[17px] font-bold text-ink">
                     {WORKSPACE_COPY.history}
@@ -570,6 +663,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                     </div>
                   )}
                 </section>
+                )}
               </div>
 
               {/* 오른쪽: 지원 정보 · 채용공고 (넓은 화면에서는 따라 내려온다) */}

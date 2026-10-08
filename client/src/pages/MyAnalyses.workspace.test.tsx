@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   listExperiences: vi.fn(),
   saveApplicationQuestions: vi.fn(),
   updateApplicationMeta: vi.fn(),
+  createApplication: vi.fn(),
   submitAnalysisRequest: vi.fn(),
   requestExperienceDraft: vi.fn(),
   fetchMock: vi.fn(),
@@ -27,6 +28,7 @@ vi.mock("@/lib/workspace", async (importOriginal) => ({
   listExperiences: mocks.listExperiences,
   saveApplicationQuestions: mocks.saveApplicationQuestions,
   updateApplicationMeta: mocks.updateApplicationMeta,
+  createApplication: mocks.createApplication,
 }));
 vi.mock("@/lib/experienceDraft", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/experienceDraft")>()),
@@ -79,6 +81,60 @@ const readBackup = () => {
   const raw = window.localStorage.getItem(BACKUP_KEY);
   return raw ? JSON.parse(raw) : null;
 };
+
+describe("분석이 끝나 잠긴 지원서", () => {
+  const LOCKED = {
+    ...DETAIL,
+    analyzed_report: { analysis_id: "a1", analyzed_at: "2026-10-08T05:00:00Z", summary: "로그 3,000건이 무기인 자소서" },
+  };
+
+  it("분석 날짜·요약·리포트 보기를 크게 보여 주고, 글은 읽기만 된다", async () => {
+    mocks.fetchApplication.mockResolvedValue(LOCKED);
+    render(<MyAnalyses />);
+    expect(await screen.findByText("10월 8일 분석")).toBeTruthy();
+    expect(screen.getByText("로그 3,000건이 무기인 자소서")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "리포트 보기" }));
+    expect(mocks.navigate).toHaveBeenLastCalledWith("/report-new?analysisId=a1");
+    // 편집 칸·분석하기 없이 글만
+    expect(screen.queryByDisplayValue("지원 동기")).toBeNull();
+    expect(screen.getByTestId("locked-questions").textContent).toContain("지원 동기");
+    expect(screen.queryByRole("button", { name: "자소서 분석하기" })).toBeNull();
+    // 회차가 하나뿐이면 지난 진단 목록은 숨긴다
+    expect(screen.queryByText("지난 진단")).toBeNull();
+  });
+
+  it("떠나도 잠긴 글을 저장하지 않는다", async () => {
+    mocks.fetchApplication.mockResolvedValue(LOCKED);
+    const { unmount } = render(<MyAnalyses />);
+    await screen.findByText("10월 8일 분석");
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mocks.saveApplicationQuestions).not.toHaveBeenCalled();
+  });
+
+  it("수정하기는 글을 복사한 새 지원서를 만들어 그쪽으로 간다", async () => {
+    mocks.fetchApplication.mockResolvedValue(LOCKED);
+    mocks.createApplication.mockResolvedValue({ id: "p2" });
+    render(<MyAnalyses />);
+    fireEvent.click(await screen.findByRole("button", { name: "수정하기" }));
+    await waitFor(() => expect(mocks.navigate).toHaveBeenLastCalledWith("/my/p2"));
+    expect(mocks.createApplication).toHaveBeenCalledWith({
+      company: "한솔제지",
+      jobKeyword: "국내영업",
+      deadline: "2026-10-11T14:59:00Z",
+      questions: [{ prompt: "지원 동기", charLimit: 700, answer: "가".repeat(250) }],
+    });
+  });
+
+  it("새 지원서를 못 만들면 알리고 이 화면에 남는다", async () => {
+    mocks.fetchApplication.mockResolvedValue(LOCKED);
+    mocks.createApplication.mockRejectedValue(new Error("fail"));
+    render(<MyAnalyses />);
+    fireEvent.click(await screen.findByRole("button", { name: "수정하기" }));
+    expect(await screen.findByText(/새 지원서를 만들지 못했어요/)).toBeTruthy();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+  });
+});
 
 describe("작업 화면", () => {
   it("저장된 문항과 글자 수를 보여 준다", async () => {

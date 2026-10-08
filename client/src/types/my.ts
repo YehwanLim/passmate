@@ -29,6 +29,8 @@ export interface ProjectSummary {
   keywords?: string[];
   /** 최신 analysis의 상태. 구버전 응답이나 분석이 없으면 null/undefined. */
   latest_status?: AnalysisStatus | null;
+  /** 최신 analysis를 만든 시각 ISO 8601. 분석이 없거나 구버전 응답이면 null/undefined. */
+  latest_analyzed_at?: string | null;
   /** 분석 종류. 구버전 응답에 없으면 RESUME 으로 본다. */
   kind?: "RESUME" | "COMPANY";
   /** 접수 마감 ISO 8601. 작업실 이전 지원서나 미입력이면 null/undefined */

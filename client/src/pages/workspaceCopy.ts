@@ -85,6 +85,15 @@ export const WORKSPACE_COPY = {
   diagnose: "자소서 분석하기",
   history: "지난 진단",
   viewReport: "리포트 보기",
+  analyzedOn: (date: string) => `${date} 분석`,
+  locked: {
+    edit: "수정하기",
+    editing: "새 지원서를 만들고 있어요…",
+    editFailed: "새 지원서를 만들지 못했어요. 잠시 후 다시 시도해 주세요.",
+    notice: "분석받은 글이라 고칠 수 없어요. 고치고 싶으면 오른쪽 위 '수정하기'를 눌러 주세요. 이 글을 복사한 새 지원서가 만들어져요.",
+    summaryFallback: "리포트에서 채용 담당자 시선의 피드백을 확인해 보세요.",
+    emptyAnswer: "답변 없음",
+  },
   historyEmpty: "아직 진단받은 적이 없어요.",
   historyError: "지난 진단을 불러오지 못했어요. 새로고침해 주세요.",
   credits: {

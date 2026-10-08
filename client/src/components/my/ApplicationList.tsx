@@ -1,6 +1,6 @@
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
-import { applicationStatus, daysUntil, type ApplicationStatus } from "@/lib/workspace";
+import { applicationStatus, daysUntil, monthDay, type ApplicationStatus } from "@/lib/workspace";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 type Deadline = { label: string; tone: "urgent" | "normal" | "muted" | "passed" };
@@ -61,6 +61,7 @@ export default function ApplicationList({
       status,
       deadline: deadlineOf(project.deadline),
       summary: summaryOf(project, status),
+      analyzedOn: status === "done" ? monthDay(project.latest_analyzed_at) : null,
       name: project.company_name || project.title || "기업 미지정",
     };
   });
@@ -78,7 +79,7 @@ export default function ApplicationList({
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ project, status, deadline, summary, name }) => (
+          {rows.map(({ project, status, deadline, summary, analyzedOn, name }) => (
             <tr
               key={project.id}
               data-testid="application-row"
@@ -99,6 +100,7 @@ export default function ApplicationList({
               <td className="px-5 py-4 align-middle"><span className={DEADLINE_CLASS[deadline.tone]}>{deadline.label}</span></td>
               <td className="px-5 py-4 align-middle"><StatusTag status={status} /></td>
               <td className="px-5 py-4 align-middle text-[14px] leading-[1.55] text-ink-2 break-keep">
+                {analyzedOn && <span className="block text-[12.5px] text-ink-4">{WORKSPACE_COPY.analyzedOn(analyzedOn)}</span>}
                 {summary ?? <span className="text-ink-4">{WORKSPACE_COPY.noSummary}</span>}
               </td>
               <td className="pr-3 align-middle">
@@ -110,7 +112,7 @@ export default function ApplicationList({
       </table>
 
       <ul className="space-y-2.5 md:hidden">
-        {rows.map(({ project, status, deadline, summary, name }) => (
+        {rows.map(({ project, status, deadline, summary, analyzedOn, name }) => (
           <li
             key={project.id}
             data-testid="application-card"
@@ -135,7 +137,8 @@ export default function ApplicationList({
                 <KebabMenu items={createDefaultKebabItems({ onDelete: () => onDelete(project) })} />
               </div>
             </div>
-            {summary && <p className="mt-2.5 text-[13.5px] leading-[1.55] text-ink-2 break-keep">{summary}</p>}
+            {analyzedOn && <p className="mt-2.5 text-[12.5px] text-ink-4">{WORKSPACE_COPY.analyzedOn(analyzedOn)}</p>}
+            {summary && <p className={`${analyzedOn ? "mt-0.5" : "mt-2.5"} text-[13.5px] leading-[1.55] text-ink-2 break-keep`}>{summary}</p>}
           </li>
         ))}
       </ul>

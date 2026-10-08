@@ -41,6 +41,10 @@ function createDb(project = projectRecord()) {
     jobPosting: {
       findFirst: vi.fn(async ({ where }) => (where.userId === USER_ID && where.id === POSTING_OWN ? { id: POSTING_OWN } : null)),
     },
+    // 기본은 성공한 분석이 없는(잠기지 않은) 지원서
+    analysis: {
+      findFirst: vi.fn(async () => null),
+    },
   };
   db.$transaction = vi.fn(async (work) => work(db));
   return db;
@@ -65,6 +69,47 @@ describe("GET /api/projects/:id 작업실", () => {
       questions: [{ position: 1, prompt: "지원 동기", char_limit: 700, answer: "안녕" }],
       questions_updated_at: T1,
     });
+  });
+});
+
+describe("분석이 끝난 지원서 잠금", () => {
+  const report = { id: "a1", createdAt: T2, aiResponseJson: { firstImpression: { summaryOneLiner: "한 줄 **요약**" } } };
+
+  it("GET: 성공한 분석이 있으면 analyzed_report 로 날짜·요약을 내려주고, 없으면 null", async () => {
+    const db = createDb();
+    db.analysis.findFirst.mockResolvedValueOnce(report);
+    const res = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({ method: "GET" }), res);
+    expect(db.analysis.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { projectId: PROJECT_ID, userId: USER_ID, status: "SUCCESS" },
+    }));
+    expect(res.body.analyzed_report).toEqual({ analysis_id: "a1", analyzed_at: T2, summary: "한 줄 요약" });
+
+    const empty = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({ method: "GET" }), empty);
+    expect(empty.body.analyzed_report).toBeNull();
+  });
+
+  it("PUT: 성공한 분석이 있으면 409 APPLICATION_LOCKED 이고 문항을 건드리지 않는다", async () => {
+    const db = createDb();
+    db.analysis.findFirst.mockResolvedValue({ id: "a1" });
+    const res = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(
+      req({ method: "PUT", body: { questions: [{ prompt: "지원 동기", answer: "고친 글" }], baseUpdatedAt: T1.toISOString() } }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe("APPLICATION_LOCKED");
+    expect(db.applicationQuestion.deleteMany).not.toHaveBeenCalled();
+    expect(db.applicationQuestion.createMany).not.toHaveBeenCalled();
+  });
+
+  it("PATCH: 잠긴 지원서도 지원 정보(마감)는 고칠 수 있다", async () => {
+    const db = createDb();
+    db.analysis.findFirst.mockResolvedValue({ id: "a1" });
+    const res = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(
+      req({ method: "PATCH", body: { deadline: "2026-10-20T23:59:00+09:00" } }), res);
+    expect(res.statusCode).toBe(200);
+    expect(db.project.update).toHaveBeenCalled();
   });
 });
 
