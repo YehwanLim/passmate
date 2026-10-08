@@ -138,15 +138,17 @@ export default function CompanyAnalyze() {
     <div className="min-h-screen bg-stage pb-36">
       <SiteHeader variant="light" />
 
-      {/* 위 막대: 자소서 분석·지원서 작성 화면과 같은 자리. 오른쪽에 남은 기업 분석 이용권. */}
+      {/* 위 막대: 자소서 분석·지원서 작성 화면과 같은 자리. 제목 옆에 남은 기업 분석 이용권을 작게. */}
       <div className="sticky top-14 z-30 border-b border-line bg-surface/95 backdrop-blur">
         <div className="container flex h-14 max-w-6xl items-center justify-between gap-3">
-          <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">기업 분석</h1>
-          {summary && (
-            <p className="shrink-0 text-[13px] text-ink-3">
-              기업 분석 이용권 <span className="font-bold tabular-nums text-ink">{summary.companyRemaining}회</span>
-            </p>
-          )}
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">기업 분석</h1>
+            {summary && (
+              <span className="shrink-0 text-[12px] text-ink-4">
+                남은 이용권 <span className="font-semibold tabular-nums text-ink-3">{summary.companyRemaining}회</span>
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
