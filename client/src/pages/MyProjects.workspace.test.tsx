@@ -67,7 +67,7 @@ describe("내 지원서 현황판", () => {
     expect(screen.getByText("경험 탭 내용")).toBeTruthy();
   });
 
-  it("이 화면에 있을 때 상단 메뉴 '내 경험'(/my#experiences 로 이동)을 누르면 탭이 바로 바뀐다", async () => {
+  it("이 화면에 있을 때 주소가 /my#experiences 로 바뀌면(편집기의 경험 링크 등) 탭이 바로 바뀐다", async () => {
     render(<MyProjects />);
     await screen.findByRole("tab", { name: "내 지원서", selected: true });
     act(() => window.history.pushState(null, "", "/my#experiences"));
@@ -75,29 +75,39 @@ describe("내 지원서 현황판", () => {
     expect(screen.getByRole("tab", { name: "내 경험" }).getAttribute("aria-selected")).toBe("true");
   });
 
-  it("진단 전 지원서는 리포트 대신 작성 중 안내·초안 문항 수·이어서 쓰기를 보여 준다", async () => {
+  it("카드는 버튼 없이 통째로 열린다 — 자소서는 지원서 화면, 기업 분석은 리포트로", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([
       row("draft", null, { question_count: 0 }),
-      row("done", null, { question_count: 2, latest_analysis_id: "a1", summary: "요약", latest_status: "SUCCESS" }),
+      row("done", null, { question_count: 2, latest_analysis_id: "a1", summary: "데이터로 문제를 좁히는 기획자로 읽혀요. 다만 결과 수치가 비어 있어요.", latest_status: "SUCCESS" }),
+      row("corp", null, { kind: "COMPANY", latest_analysis_id: "c1", summary: "회사 요약", latest_status: "SUCCESS" }),
     ]), { status: 200, headers: { "content-type": "application/json" } })));
     render(<MyProjects />);
     const cards = await screen.findAllByTestId("application-card");
     const draft = cards.find((card) => within(card).queryByText("draft"))!;
-    expect(within(draft).queryByRole("button", { name: /리포트 보기/ })).toBeNull();
     expect(within(draft).getByText(/아직 진단받지 않은 지원서예요/)).toBeTruthy();
-    expect(within(draft).queryByText(/한줄 요약이 없는 리포트입니다/)).toBeNull();
-    expect(within(draft).queryByText("한줄 요약")).toBeNull();
     expect(within(draft).getByText("3개 문항")).toBeTruthy();
     expect(within(draft).queryByText("0개 문항")).toBeNull();
-    fireEvent.click(within(draft).getByRole("button", { name: /이어서 쓰기/ }));
+    fireEvent.click(within(draft).getByRole("button", { name: "draft 열기" }));
     expect(mocks.navigate).toHaveBeenCalledWith("/my/draft");
     expect(screen.queryByRole("alert")).toBeNull();
 
     const done = cards.find((card) => within(card).queryByText("done"))!;
-    expect(within(done).getByText("2개 문항")).toBeTruthy();
-    expect(within(done).getByText("한줄 요약")).toBeTruthy();
-    fireEvent.click(within(done).getByRole("button", { name: /리포트 보기/ }));
-    expect(mocks.navigate).toHaveBeenCalledWith("/report-new?analysisId=a1");
+    // "한줄 요약" 이름표 없이 요약 전문만
+    expect(within(done).queryByText("한줄 요약")).toBeNull();
+    expect(within(done).getByText("데이터로 문제를 좁히는 기획자로 읽혀요. 다만 결과 수치가 비어 있어요.")).toBeTruthy();
+    expect(within(done).queryByRole("button", { name: /리포트 보기|작성한 자소서 보기/ })).toBeNull();
+    fireEvent.click(within(done).getByRole("button", { name: "done 열기" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/my/done");
+
+    const corp = cards.find((card) => within(card).queryByText("corp"))!;
+    fireEvent.click(within(corp).getByRole("button", { name: "corp 열기" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/company-report?analysisId=c1");
+  });
+
+  it("회원 탈퇴는 마이페이지에 두지 않는다(내 이용권 화면 맨 아래로 옮김)", async () => {
+    render(<MyProjects />);
+    await screen.findAllByTestId("application-card");
+    expect(screen.queryByRole("button", { name: "회원 탈퇴" })).toBeNull();
   });
 
   it("어느 탭에서든 이용권 칸이 함께 보인다", async () => {

@@ -89,6 +89,10 @@ function clearBackup(key: string) {
   }
 }
 
+function reportPath(analysisId: string): string {
+  return `/report-new?analysisId=${encodeURIComponent(analysisId)}`;
+}
+
 function deadlineLabel(deadline: string | null): string {
   const days = daysUntil(deadline);
   if (days === null) return WORKSPACE_COPY.deadlineNone;
@@ -421,6 +425,9 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
     }
   };
 
+  // 목록은 최신순(api orderBy createdAt desc)이라 처음 만나는 성공 진단이 가장 최근 리포트다.
+  const latestReportId = analyses.find((analysis) => analysis.status === "SUCCESS")?.id ?? null;
+
   return (
     <div className="min-h-screen bg-stage pb-28">
       <SiteHeader variant="light" />
@@ -454,7 +461,19 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                   </button>
                 )}
               </div>
-              <h1 className="text-[26px] font-bold tracking-[-0.03em] text-ink">{detail.title}</h1>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h1 className="text-[26px] font-bold tracking-[-0.03em] text-ink">{detail.title}</h1>
+                {/* 마이페이지 카드를 누르면 이 화면으로 온다. 리포트는 가장 최근에 끝난 진단 것으로 바로 간다. */}
+                {latestReportId && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(reportPath(latestReportId))}
+                    className="h-10 rounded-[10px] bg-ink px-4 text-[14px] font-semibold text-white transition-colors hover:bg-ink-2"
+                  >
+                    {WORKSPACE_COPY.viewReport}
+                  </button>
+                )}
+              </div>
             </header>
 
             {editingMeta && (
@@ -568,7 +587,11 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
               ) : (
                 <div className="grid gap-3">
                   {analyses.map((analysis) => (
-                    <AnalysisCard key={analysis.id} analysis={analysis} />
+                    <AnalysisCard
+                      key={analysis.id}
+                      analysis={analysis}
+                      onViewReport={analysis.status === "SUCCESS" ? () => navigate(reportPath(analysis.id)) : undefined}
+                    />
                   ))}
                 </div>
               )}

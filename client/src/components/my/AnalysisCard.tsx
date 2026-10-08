@@ -7,9 +7,11 @@ import StatusBadge from "./StatusBadge";
 
 interface AnalysisCardProps {
   analysis: AnalysisSummary;
+  /** 끝난 진단만 넘긴다. 있으면 회차 머리에 리포트 보기를 단다. */
+  onViewReport?: () => void;
 }
 
-export default function AnalysisCard({ analysis }: AnalysisCardProps) {
+export default function AnalysisCard({ analysis, onViewReport }: AnalysisCardProps) {
   const [sections, setSections] = useState<AnalysisSection[] | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
 
@@ -55,7 +57,18 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
         <span className="text-[13px] text-ink-4">
           {formatDate(analysis.created_at, "ymd-dot")} 작성 · 문항 {Math.max(visibleSections.length, 1)}개
         </span>
-        <StatusBadge status={analysis.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={analysis.status} />
+          {onViewReport && (
+            <button
+              type="button"
+              onClick={onViewReport}
+              className="h-8 rounded-lg bg-fill px-3 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-line"
+            >
+              리포트 보기
+            </button>
+          )}
+        </div>
       </div>
 
       {detailError && (

@@ -55,6 +55,7 @@ export const WORKSPACE_COPY = {
   seeded: "지난 진단의 문항을 불러왔어요. 고치면 이 지원서에 저장돼요.",
   diagnose: "자소서 분석하기",
   history: "지난 진단",
+  viewReport: "리포트 보기",
   historyEmpty: "아직 진단받은 적이 없어요.",
   historyError: "지난 진단을 불러오지 못했어요. 새로고침해 주세요.",
   credits: {
