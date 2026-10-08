@@ -138,6 +138,8 @@ export default function Analyze() {
   const analysisRequestRef = useRef<IdempotentRequest | null>(null);
   // 무료 분석이 남았는지. 가입하고도 "이제 뭐 하지?"에서 멈추던 사람에게 바로 보이게 한다. null = 모름/표시 안 함.
   const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
+  // 위 막대 제목 옆의 작은 "남은 이용권 N회"(자소서 분석 크레딧 합계). 로그인 전·못 불러오면 null 이라 숨긴다.
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   // 폼에 처음 손댄 순간을 한 번만 남긴다(퍼널: 폼 도달 → 입력 시작 → 제출).
   const formStartSentRef = useRef(false);
   const markFormStart = useCallback((how: "typed" | "file") => {
@@ -158,7 +160,10 @@ export default function Analyze() {
         const token = data.session?.access_token;
         if (!token) return;
         const summary = await fetchEntitlementSummary(token);
-        if (!cancelled) setFreeRemaining(summary.freeRemaining);
+        if (!cancelled) {
+          setFreeRemaining(summary.freeRemaining);
+          setCreditsRemaining(summary.remaining);
+        }
       } catch {
         // 잔여 표시는 편의 정보다. 실패해도 폼은 쓸 수 있고 서버가 최종 판단한다.
       }
@@ -521,7 +526,14 @@ export default function Analyze() {
       {/* 위 막대: 지원서 작성 화면(마이페이지)과 같은 자리. 불러오기 도구는 오른쪽에 둔다. */}
       <div className="sticky top-14 z-30 border-b border-line bg-surface/95 backdrop-blur">
         <div className="container flex h-14 max-w-6xl items-center justify-between gap-3">
-          <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">자소서 분석</h1>
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">자소서 분석</h1>
+            {creditsRemaining !== null && (
+              <span className="shrink-0 text-[12px] text-ink-4">
+                남은 이용권 <span className="font-semibold tabular-nums text-ink-3">{creditsRemaining}회</span>
+              </span>
+            )}
+          </div>
           <div className="flex shrink-0 items-center gap-2">
             {user?.id && (
               <button type="button" onClick={openPreviousResumePicker} className={toolButton}>

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   useAuth: vi.fn(),
   getAuthorizationHeader: vi.fn(),
+  fetchEntitlementSummary: vi.fn(),
 }));
 
 vi.mock("wouter", () => ({
@@ -16,6 +17,13 @@ vi.mock("@/contexts/AuthContext", () => ({ useAuth: mocks.useAuth }));
 vi.mock("@/lib/apiAuth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/apiAuth")>()),
   getAuthorizationHeader: mocks.getAuthorizationHeader,
+}));
+vi.mock("@/lib/entitlements", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/entitlements")>()),
+  fetchEntitlementSummary: mocks.fetchEntitlementSummary,
+}));
+vi.mock("@/lib/supabase", () => ({
+  supabase: { auth: { getSession: async () => ({ data: { session: { access_token: "t" } } }) } },
 }));
 vi.mock("@/components/AuthButton", () => ({ default: () => null }));
 vi.mock("@/components/Logo", () => ({ default: () => null }));
@@ -49,11 +57,21 @@ describe("Analyze login prompt", () => {
 
   it("shows the form to logged-out visitors instead of bouncing them to /login", () => {
     render(<Analyze />);
+    // 남은 이용권은 계정 정보라 로그인 전엔 보이지 않는다
+    expect(screen.queryByText(/남은 이용권/)).toBeNull();
 
     expect(screen.getByPlaceholderText("여기에 답변을 작성해 주세요.")).toBeTruthy();
     expect(mocks.navigate).not.toHaveBeenCalledWith(expect.stringContaining("/login"));
     // 이전 지원서는 계정 데이터라 로그인 전엔 숨긴다.
     expect(screen.queryByText("이전 지원서 불러오기")).toBeNull();
+  });
+
+  it("shows the remaining essay credits small next to the title once logged in", async () => {
+    mocks.useAuth.mockReturnValue(LOGGED_IN);
+    mocks.fetchEntitlementSummary.mockResolvedValue({ freeRemaining: 1, remaining: 3 });
+    render(<Analyze />);
+    const credit = await screen.findByText(/남은 이용권/);
+    expect(credit.textContent).toBe("남은 이용권 3회");
   });
 
   it("asks for login at submit without sending anything and keeps what was typed", () => {
