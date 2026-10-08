@@ -147,12 +147,13 @@ export default function ApplicationEditor({
             <div className="flex flex-wrap items-center justify-between gap-2 pb-4">
               <label className="inline-flex items-center gap-1.5 rounded-lg bg-fill px-2.5 py-1 text-[12.5px] font-semibold text-ink-3">
                 {COPY.charLimitLabel}
+                {/* 위아래 화살표가 붙는 number 칸 대신 숫자 자판만 띄우는 글자 칸. 숫자가 아닌 글자는 버린다. */}
                 <input
-                  type="number"
-                  min={1}
-                  max={MAX_CHAR_LIMIT}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={5}
                   value={active.charLimit ?? ""}
-                  onChange={(e) => onChange(activeIndex, { charLimit: parseCharLimit(e.target.value) })}
+                  onChange={(e) => onChange(activeIndex, { charLimit: parseCharLimit(e.target.value.replace(/\D/g, "")) })}
                   aria-label={COPY.charLimitLabel}
                   placeholder={COPY.noLimit}
                   className="w-16 rounded-md border border-transparent bg-surface px-1.5 py-0.5 text-right text-[12.5px] tabular-nums text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none"
