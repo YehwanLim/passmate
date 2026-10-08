@@ -149,16 +149,12 @@ function CreditSummaryRow({
         <p className="mt-0.5 text-[13px] text-ink-4">{description}</p>
       </div>
       <p
-        className={`shrink-0 text-right text-base tabular-nums ${
-          isEmpty ? "font-medium text-ink-4" : "font-bold text-ink"
+        className={`shrink-0 text-right text-[22px] leading-none tracking-[-0.02em] tabular-nums ${
+          isEmpty ? "font-semibold text-ink-4" : "font-extrabold text-ink"
         }`}
       >
         {remaining}
-        <span
-          className="ml-0.5 text-xs font-normal text-ink-4"
-        >
-          회
-        </span>
+        <span className="ml-0.5 text-sm font-medium tracking-normal text-ink-4">회</span>
       </p>
     </div>
   );
@@ -173,9 +169,9 @@ function FreeToolRow({ title, description, usage }: { title: string; description
         <p className={`text-[15px] ${isEmpty ? "font-medium text-ink-4" : "font-semibold text-ink-2"}`}>{title}</p>
         <p className="mt-0.5 text-[13px] text-ink-4">{description}</p>
       </div>
-      <p className={`shrink-0 text-right text-base tabular-nums ${isEmpty ? "font-medium text-ink-4" : "font-bold text-ink"}`}>
+      <p className={`shrink-0 text-right text-[22px] leading-none tracking-[-0.02em] tabular-nums ${isEmpty ? "font-semibold text-ink-4" : "font-extrabold text-ink"}`}>
         {usage.remaining}
-        <span className="text-xs font-normal text-ink-4"> / {usage.limit}회</span>
+        <span className="text-sm font-medium tracking-normal text-ink-4"> / {usage.limit}회</span>
       </p>
     </div>
   );
@@ -320,24 +316,24 @@ export default function MyEntitlements() {
               <CreditGroupCard
                 icon={<FileText className="h-4 w-4" />}
                 title="자소서 분석"
-                description="분석 결과가 저장될 때 1회씩 차감돼요."
+                description="분석이 끝나면 1회 차감돼요."
               >
                 <CreditSummaryRow
                   title="무료 이용권"
-                  description="가입 후 제공되는 무료 분석 이용권이에요."
+                  description="가입하면 1회 드려요."
                   remaining={summary.freeRemaining}
                 />
                 {/* 보너스 이용권은 받은 사람에게만 보인다(0회면 숨김). */}
                 {summary.bonusRemaining > 0 && (
                   <CreditSummaryRow
                     title="보너스 이용권"
-                    description="피드백 참여 보상 등으로 받은 이용권이에요."
+                    description="피드백 참여 보상이에요."
                     remaining={summary.bonusRemaining}
                   />
                 )}
                 <CreditSummaryRow
                   title="프리미엄 이용권"
-                  description="구매 후 사용할 수 있는 추가 분석 이용권이에요."
+                  description="구매한 이용권이에요."
                   remaining={summary.premiumRemaining}
                 />
               </CreditGroupCard>
