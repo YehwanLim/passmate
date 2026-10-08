@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), createApplication: vi.fn() }));
+const mocks = vi.hoisted(() => ({ navigate: vi.fn(), createApplication: vi.fn(), listExperiences: vi.fn() }));
 vi.mock("wouter", () => ({ useLocation: () => ["/my", mocks.navigate], Link: ({ children }: { children: unknown }) => children }));
 vi.mock("@/hooks/useRequireAuth", () => ({ useRequireAuth: () => ({ user: { id: "u1" }, isLoading: false }) }));
 vi.mock("@/components/SiteHeader", () => ({ default: () => null }));
@@ -16,6 +16,7 @@ vi.mock("@/lib/apiAuth", () => ({
 vi.mock("@/lib/workspace", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/workspace")>()),
   createApplication: mocks.createApplication,
+  listExperiences: mocks.listExperiences,
 }));
 
 import MyProjects from "./MyProjects";
@@ -29,6 +30,7 @@ const row = (id: string, deadline: string | null, extra = {}) => ({
 beforeEach(() => {
   // 앞 테스트가 내 경험 탭으로 바꾸며 남긴 #experiences 를 지운다.
   window.history.replaceState(null, "", "/");
+  mocks.listExperiences.mockResolvedValue([{ id: "e1" }, { id: "e2" }]);
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-03T03:00:00Z"));
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([
@@ -38,19 +40,61 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 
-describe("내 지원서 현황판", () => {
-  it("마감 임박순으로 D-day 와 작성 진행을 보여 준다", async () => {
+const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+const rowsOf = async () => screen.findAllByTestId("application-row");
+const nameOf = (el: HTMLElement) => within(el).getAllByRole("button")[0].getAttribute("aria-label");
+
+describe("마이페이지 · 내 지원서", () => {
+  it("탭은 종류 셋(내 지원서·내 경험·기업 분석)이고 숫자를 단다", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json([row("a", null), row("corp", null, { kind: "COMPANY", latest_analysis_id: "c1", latest_status: "SUCCESS" })])));
     render(<MyProjects />);
-    const cards = await screen.findAllByTestId("application-card");
-    expect(within(cards[0]).getByText("soon")).toBeTruthy();
-    expect(within(cards[0]).getByText("D-2")).toBeTruthy();
-    expect(within(cards[0]).getByText("3문항 중 1문항 작성")).toBeTruthy();
+    await rowsOf();
+    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
+    expect(tabs).toEqual(["내 지원서1", "내 경험2", "기업 분석1"]);
+  });
+
+  it("작성 중을 위로, 마감 가까운 순 — 상태는 '작성 중'만(문항 수·막대 없음)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json([
+      row("done-soon", "2026-10-04T14:59:00Z", { latest_analysis_id: "a1", latest_status: "SUCCESS", summary: "요약 문장" }),
+      row("later", "2026-10-19T08:00:00Z"),
+      row("soon", "2026-10-05T14:59:00Z"),
+      row("past", "2026-09-30T08:00:00Z"),
+    ])));
+    render(<MyProjects />);
+    const rows = await rowsOf();
+    expect(rows.map(nameOf)).toEqual(["soon 열기", "later 열기", "done-soon 열기", "past 열기"]);
+    expect(within(rows[0]).getByText("D-2")).toBeTruthy();
+    expect(within(rows[0]).getByText("작성 중")).toBeTruthy();
+    expect(within(rows[0]).queryByText(/문항/)).toBeNull();
+    expect(within(rows[2]).getByText("분석 완료")).toBeTruthy();
+    expect(within(rows[2]).getByText("요약 문장")).toBeTruthy();
+    expect(within(rows[3]).getByText("마감 지남")).toBeTruthy();
+  });
+
+  it("상태로 거른다(전체·작성 중·분석 완료)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json([
+      row("draft", null),
+      row("done", null, { latest_analysis_id: "a1", latest_status: "SUCCESS" }),
+    ])));
+    render(<MyProjects />);
+    await rowsOf();
+    fireEvent.click(screen.getByRole("button", { name: /^분석 완료/ }));
+    expect((await rowsOf()).map(nameOf)).toEqual(["done 열기"]);
+    fireEvent.click(screen.getByRole("button", { name: /^작성 중/ }));
+    expect((await rowsOf()).map(nameOf)).toEqual(["draft 열기"]);
+  });
+
+  it("줄 아무 데나 누르면 지원서 화면으로 간다", async () => {
+    render(<MyProjects />);
+    const rows = await rowsOf();
+    fireEvent.click(rows[0]);
+    expect(mocks.navigate).toHaveBeenCalledWith("/my/soon");
   });
 
   it("새 지원서를 만들면 작업 화면으로 간다", async () => {
     mocks.createApplication.mockResolvedValue({ id: "p-new" });
     render(<MyProjects />);
-    fireEvent.click(await screen.findByRole("button", { name: "새 지원서" }));
+    fireEvent.click(await screen.findByRole("button", { name: /새 지원서/ }));
     fireEvent.change(screen.getByLabelText("회사"), { target: { value: "한솔제지" } });
     fireEvent.change(screen.getByLabelText("문항 1"), { target: { value: "지원 동기" } });
     fireEvent.click(screen.getByRole("button", { name: "만들기" }));
@@ -61,59 +105,46 @@ describe("내 지원서 현황판", () => {
     expect(mocks.navigate).toHaveBeenCalledWith("/my/p-new");
   });
 
+  it("기업 분석 탭은 기업 분석만 보여 주고, 누르면 리포트로 바로 간다", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json([
+      row("draft", null),
+      row("corp", null, { kind: "COMPANY", latest_analysis_id: "c1", summary: "회사 요약", latest_status: "SUCCESS" }),
+    ])));
+    render(<MyProjects />);
+    expect((await rowsOf()).map(nameOf)).toEqual(["draft 열기"]);
+    fireEvent.click(screen.getByRole("tab", { name: /^기업 분석/ }));
+    const rows = await screen.findAllByTestId("company-row");
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]).getByText("회사 요약")).toBeTruthy();
+    fireEvent.click(rows[0]);
+    expect(mocks.navigate).toHaveBeenCalledWith("/company-report?analysisId=c1");
+    expect(window.location.hash).toBe("#company");
+  });
+
   it("내 경험 탭으로 바꿀 수 있다", async () => {
     render(<MyProjects />);
-    fireEvent.click(await screen.findByRole("tab", { name: "내 경험" }));
+    fireEvent.click(await screen.findByRole("tab", { name: /^내 경험/ }));
     expect(screen.getByText("경험 탭 내용")).toBeTruthy();
   });
 
   it("이 화면에 있을 때 주소가 /my#experiences 로 바뀌면(편집기의 경험 링크 등) 탭이 바로 바뀐다", async () => {
     render(<MyProjects />);
-    await screen.findByRole("tab", { name: "내 지원서", selected: true });
+    await screen.findByRole("tab", { name: /^내 지원서/, selected: true });
     act(() => window.history.pushState(null, "", "/my#experiences"));
     expect(await screen.findByText("경험 탭 내용")).toBeTruthy();
-    expect(screen.getByRole("tab", { name: "내 경험" }).getAttribute("aria-selected")).toBe("true");
-  });
-
-  it("카드는 버튼 없이 통째로 열린다 — 자소서는 지원서 화면, 기업 분석은 리포트로", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([
-      row("draft", null, { question_count: 0 }),
-      row("done", null, { question_count: 2, latest_analysis_id: "a1", summary: "데이터로 문제를 좁히는 기획자로 읽혀요. 다만 결과 수치가 비어 있어요.", latest_status: "SUCCESS" }),
-      row("corp", null, { kind: "COMPANY", latest_analysis_id: "c1", summary: "회사 요약", latest_status: "SUCCESS" }),
-    ]), { status: 200, headers: { "content-type": "application/json" } })));
-    render(<MyProjects />);
-    const cards = await screen.findAllByTestId("application-card");
-    const draft = cards.find((card) => within(card).queryByText("draft"))!;
-    expect(within(draft).getByText(/아직 진단받지 않은 지원서예요/)).toBeTruthy();
-    expect(within(draft).getByText("3개 문항")).toBeTruthy();
-    expect(within(draft).queryByText("0개 문항")).toBeNull();
-    fireEvent.click(within(draft).getByRole("button", { name: "draft 열기" }));
-    expect(mocks.navigate).toHaveBeenCalledWith("/my/draft");
-    expect(screen.queryByRole("alert")).toBeNull();
-
-    const done = cards.find((card) => within(card).queryByText("done"))!;
-    // "한줄 요약" 이름표 없이 요약 전문만
-    expect(within(done).queryByText("한줄 요약")).toBeNull();
-    expect(within(done).getByText("데이터로 문제를 좁히는 기획자로 읽혀요. 다만 결과 수치가 비어 있어요.")).toBeTruthy();
-    expect(within(done).queryByRole("button", { name: /리포트 보기|작성한 자소서 보기/ })).toBeNull();
-    fireEvent.click(within(done).getByRole("button", { name: "done 열기" }));
-    expect(mocks.navigate).toHaveBeenCalledWith("/my/done");
-
-    const corp = cards.find((card) => within(card).queryByText("corp"))!;
-    fireEvent.click(within(corp).getByRole("button", { name: "corp 열기" }));
-    expect(mocks.navigate).toHaveBeenCalledWith("/company-report?analysisId=c1");
+    expect(screen.getByRole("tab", { name: /^내 경험/ }).getAttribute("aria-selected")).toBe("true");
   });
 
   it("회원 탈퇴는 마이페이지에 두지 않는다(내 이용권 화면 맨 아래로 옮김)", async () => {
     render(<MyProjects />);
-    await screen.findAllByTestId("application-card");
+    await rowsOf();
     expect(screen.queryByRole("button", { name: "회원 탈퇴" })).toBeNull();
   });
 
-  it("어느 탭에서든 이용권 칸이 함께 보인다", async () => {
+  it("어느 탭에서든 남은 이용권 한 줄이 머리말에 보인다", async () => {
     render(<MyProjects />);
     expect(await screen.findByText("이용권 칸")).toBeTruthy();
-    fireEvent.click(await screen.findByRole("tab", { name: "내 경험" }));
+    fireEvent.click(await screen.findByRole("tab", { name: /^내 경험/ }));
     expect(screen.getByText("이용권 칸")).toBeTruthy();
   });
 });

@@ -88,8 +88,13 @@ function ExperienceForm({
   );
 }
 
-export default function ExperienceVault() {
+export default function ExperienceVault({ onCountChange }: { onCountChange?: (count: number) => void } = {}) {
   const [items, setItems] = useState<Experience[] | null>(null);
+
+  // 마이페이지 탭 숫자를 맞춘다(추가·가져오기·삭제 때마다).
+  useEffect(() => {
+    if (items) onCountChange?.(items.length);
+  }, [items, onCountChange]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editing, setEditing] = useState<"new" | string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
