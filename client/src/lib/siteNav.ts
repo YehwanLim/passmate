@@ -13,10 +13,11 @@ export type SiteNavItem = {
 export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
   { label: "자소서 분석", type: "route", target: "/analyze" },
   { label: "기업 분석", type: "route", target: "/company-analysis" },
-  { label: "마이페이지", type: "route", target: "/my" },
   { label: "취업 가이드", type: "route", target: "/guide" },
   // 멘토링(/mentoring)은 페이지·파운더 섹션 링크·sitemap 은 그대로 두고, 손볼 것이 남아 상단 메뉴에서만 잠시 뺐다(09-27).
   { label: "이용권", type: "route", target: "/entitlements" },
+  // 마이페이지는 맨 오른쪽 — 내 것(지원서·경험·기업)을 모아 보는 곳이라 "할 수 있는 일" 다음에 둔다(10-08).
+  { label: "마이페이지", type: "route", target: "/my" },
 ];
 
 /** 현재 경로가 이 항목의 페이지(또는 그 하위)인가. aria-current 표시에 쓴다. */

@@ -215,7 +215,8 @@ export default function MyEntitlements() {
     <div className="min-h-screen bg-stage pb-28 text-ink">
       <SiteHeader variant="light" />
 
-      <main className="container pt-10 pb-8">
+      {/* 한 줄짜리 내용이라 왼쪽에 붙이지 않고 가운데 열(최대 672px)에 모은다 */}
+      <main className="container max-w-2xl pt-10 pb-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -229,7 +230,7 @@ export default function MyEntitlements() {
           </p>
         </motion.div>
 
-        <section className="mt-8 max-w-2xl space-y-6" aria-live="polite">
+        <section className="mt-8 space-y-6" aria-live="polite">
           {authLoading || isLoading ? (
             <CreditSkeleton />
           ) : error ? (
@@ -249,7 +250,7 @@ export default function MyEntitlements() {
               <CreditGroupCard
                 icon={<FileText className="h-4 w-4" />}
                 title="자소서 분석"
-                description="아래 세 이용권을 합한 횟수예요. 분석 결과가 저장될 때 차감돼요."
+                description="아래 이용권을 합한 횟수예요. 분석 결과가 저장될 때 차감돼요."
                 remaining={summary.remaining}
               >
                 <CreditSummaryRow
@@ -257,11 +258,14 @@ export default function MyEntitlements() {
                   description="가입 후 제공되는 무료 분석 이용권이에요."
                   remaining={summary.freeRemaining}
                 />
-                <CreditSummaryRow
-                  title="보너스 이용권"
-                  description="피드백 참여 보상 등으로 받은 이용권이에요."
-                  remaining={summary.bonusRemaining}
-                />
+                {/* 보너스 이용권은 받은 사람에게만 보인다(0회면 숨김). 받았는데 숨기면 위 합계와 줄 합이 안 맞는다. */}
+                {summary.bonusRemaining > 0 && (
+                  <CreditSummaryRow
+                    title="보너스 이용권"
+                    description="피드백 참여 보상 등으로 받은 이용권이에요."
+                    remaining={summary.bonusRemaining}
+                  />
+                )}
                 <CreditSummaryRow
                   title="프리미엄 이용권"
                   description="구매 후 사용할 수 있는 추가 분석 이용권이에요."

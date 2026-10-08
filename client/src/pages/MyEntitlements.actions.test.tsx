@@ -99,6 +99,15 @@ describe("MyEntitlements action buttons", () => {
     expect(mocks.navigate).toHaveBeenCalledWith("/analyze");
   });
 
+  it("hides the bonus credit row unless the account actually has bonus credits", async () => {
+    await renderWith({ remaining: 1, freeRemaining: 1, bonusRemaining: 0 });
+    expect(screen.queryByText("보너스 이용권")).toBeNull();
+    expect(screen.getByText("무료 이용권")).toBeTruthy();
+    cleanup();
+    await renderWith({ remaining: 2, freeRemaining: 1, bonusRemaining: 1 });
+    expect(screen.getByText("보너스 이용권")).toBeTruthy();
+  });
+
   it("keeps the account deletion link at the bottom of this page (moved from 마이페이지)", async () => {
     await renderWith({ remaining: 2, freeRemaining: 1, premiumRemaining: 1 });
     screen.getByRole("button", { name: "회원 탈퇴" }).click();
