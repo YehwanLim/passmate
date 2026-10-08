@@ -234,7 +234,7 @@ function ReportContent({
             ) : (
               <>
                 <button className={`${actionButtonClass} bg-fill text-ink-2 hover:bg-line`} onClick={() => navigate("/my")}>
-                  내 지원서
+                  자기소개서
                 </button>
                 <button className={`${actionButtonClass} border border-line bg-surface text-ink-2 hover:bg-fill-soft`} onClick={() => setIsPrinting(true)}>
                   {UI_LABELS.SAVE_REPORT}
