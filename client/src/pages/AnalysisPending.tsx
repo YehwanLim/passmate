@@ -7,7 +7,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import { trackAnalysisComplete, trackAnalysisFailed } from "@/lib/analytics";
 import { parseAnalysisRequestStatus, type AnalysisKind } from "@/lib/analysisRequest";
-import { pickCompanyPendingStep } from "./companyPendingCopy";
+import { COMPANY_PENDING_STEPS, pickCompanyPendingStep } from "./companyPendingCopy";
+import { RESUME_PENDING_STEPS } from "./resumePendingCopy";
+
+/** "1분 12초" — 기다린 시간을 작게 보여 준다. */
+function formatElapsed(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
+}
 
 type PendingView = "checking" | "failed" | "unavailable" | "timeout";
 
@@ -121,18 +130,20 @@ export default function AnalysisPending() {
   };
 
   const isCompany = kind === "COMPANY";
-  const companyStep = pickCompanyPendingStep(elapsedMs);
-  const checkingTitle = isCompany ? companyStep.title : "분석 결과를 확인 중이에요";
-  const checkingLines = isCompany
-    ? companyStep.lines
-    : ["완료되는 즉시 리포트를 자동으로 열어 드릴게요.", "화면을 닫아도 분석은 계속됩니다."];
+  // 기다리는 동안 경과 시간에 따라 가운데 그림과 문구를 바꾼다(10-08: 같은 스피너·같은 문구라 멈춘 것 같았다).
+  const steps = isCompany ? COMPANY_PENDING_STEPS : RESUME_PENDING_STEPS;
+  const step = pickCompanyPendingStep(elapsedMs, steps);
+  const stepIndex = steps.indexOf(step);
+  const StepIcon = step.icon;
+  const checkingTitle = step.title;
+  const checkingLines = step.lines;
 
   return (
     <main className="min-h-screen bg-stage px-4 text-ink">
       <section className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center text-center">
         <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface">
           {view === "checking" ? (
-            <Loader2 className="h-7 w-7 animate-spin text-brand-ink" aria-hidden="true" />
+            <StepIcon key={stepIndex} className="h-7 w-7 text-brand-ink animate-in fade-in-0 zoom-in-75 duration-500" aria-hidden="true" />
           ) : view === "failed" ? (
             <AlertTriangle className="h-7 w-7 text-blank" aria-hidden="true" />
           ) : (
@@ -154,6 +165,21 @@ export default function AnalysisPending() {
                 </span>
               ))}
             </p>
+            {/* 단계 점 + 기다린 시간. 몇 번째 단계인지, 멈추지 않았는지 보이게 한다 */}
+            <div className="mt-6 flex items-center gap-3 text-[12px] text-ink-4" aria-hidden="true">
+              <span className="flex items-center gap-1.5">
+                {steps.map((_, index) => (
+                  <span
+                    key={index}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${index === stepIndex ? "w-5 bg-brand" : index < stepIndex ? "w-1.5 bg-brand/50" : "w-1.5 bg-line"}`}
+                  />
+                ))}
+              </span>
+              <span className="inline-flex items-center gap-1 tabular-nums">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {formatElapsed(elapsedMs)}
+              </span>
+            </div>
           </>
         )}
         {view === "unavailable" && (
