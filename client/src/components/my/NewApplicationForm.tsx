@@ -13,8 +13,8 @@ export type NewApplicationInfo = { company: string; jobKeyword: string; deadline
 
 /**
  * 새 지원서 편집기의 오른쪽 칸: 채용공고 붙이기(선택) + 지원 정보(회사 필수·직무·마감).
- * 회사·직무는 자소서 분석과 같은 자동완성. 회사를 목록에서 고르거나 Enter·칸을 벗어나면 onCommit — 그때 지원서를 만들고 저장이 시작된다.
- * 상태는 페이지가 가진다.
+ * 회사·직무는 자소서 분석과 같은 자동완성. 다 적고 "지원서 만들기"를 누르면 onCommit — 그때 지원서를 만들고 저장이 시작된다(10-08:
+ * 회사를 정하는 순간 만들면 직무·마감일을 적기 전에 화면이 넘어가 버렸다). 상태는 페이지가 가진다.
  */
 export default function NewApplicationForm({
   posting,
@@ -56,7 +56,6 @@ export default function NewApplicationForm({
             value={info.company}
             disabled={busy}
             onChange={(company) => onInfo({ ...info, company })}
-            onCommit={(company) => { if (company.trim()) onCommit({ ...info, company }); }}
             placeholder={COPY.companyPlaceholder}
           />
         </label>
@@ -75,6 +74,14 @@ export default function NewApplicationForm({
           <span>{COPY.deadline}</span>
           <input aria-label={COPY.deadline} type="date" value={info.deadline} disabled={busy} onChange={(e) => onInfo({ ...info, deadline: e.target.value })} className={field} />
         </label>
+        <button
+          type="button"
+          onClick={() => onCommit(info)}
+          disabled={busy || !info.company.trim()}
+          className="h-12 w-full rounded-xl bg-brand text-[15px] font-bold text-white transition-colors hover:bg-brand-hover disabled:opacity-40"
+        >
+          {busy ? COPY.creating : COPY.submit}
+        </button>
         <p className="text-[12.5px] text-ink-4">{COPY.saveHint}</p>
         {error && <p role="alert" className="text-[13px] font-medium text-danger">{error}</p>}
       </section>
