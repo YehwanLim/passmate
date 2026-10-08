@@ -35,6 +35,7 @@ describe("JobsIndex", () => {
     for (const posting of JOB_POSTINGS) {
       const link = screen.getByText(posting.title).closest("a");
       expect(link?.getAttribute("href"), posting.slug).toBe(`/jobs/${posting.slug}`);
+      expect(link?.textContent, posting.slug).toContain(posting.roles);
     }
   });
 

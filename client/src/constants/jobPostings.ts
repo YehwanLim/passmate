@@ -18,6 +18,8 @@ export type JobPostingListing = {
   title: string;
   /** 계열사·직군 한 줄 */
   subtitle: string;
+  /** 목록의 '모집 직무' 칸 한 줄(자세한 건 공고 한 장의 핵심 정보) */
+  roles: string;
   /** 접수 시작일(YYYY-MM-DD) */
   opensAt: string;
   /** 접수 마감(한국 시각, "+09:00" ISO) */
@@ -33,6 +35,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "CJ그룹",
     title: "CJ그룹 2026 하반기 신입 공채",
     subtitle: "CJ제일제당·CJ대한통운·CJ올리브영 등 13개 계열사",
+    roles: "MD·마케팅·SCM·상권개발·IT 등 (올리브영 31개 직무)",
     opensAt: "2026-09-16",
     closesAt: "2026-09-30T17:00:00+09:00",
     updated: "2026-10-09",
@@ -43,6 +46,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "DB그룹",
     title: "DB그룹 2026 하반기 신입 공채",
     subtitle: "DB손해보험·DB하이텍·DB증권 등 8개사",
+    roles: "영업관리·보상·IB·리서치·운용·기업금융·S/W·R&D 등",
     opensAt: "2026-09-01",
     closesAt: "2026-10-02T17:00:00+09:00",
     updated: "2026-10-09",
@@ -53,6 +57,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "교보증권",
     title: "교보증권 2026 하반기 신입사원(5급) 공채",
     subtitle: "본사영업·본사지원·지점영업(채용연계형 인턴)",
+    roles: "본사영업·본사지원·지점영업(채용연계형 인턴)",
     opensAt: "2026-09-21",
     closesAt: "2026-10-05T23:59:00+09:00",
     updated: "2026-10-09",
@@ -63,6 +68,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "한화 테크&라이프",
     title: "한화그룹 테크&라이프 부문 2026 신입 공채",
     subtitle: "한화비전·한화갤러리아·아워홈 등 7개사",
+    roles: "회로설계·SW 개발·기계/제어설계·해외영업·전략기획·경영기획 등",
     opensAt: "2026-09-21",
     closesAt: "2026-10-11T23:59:00+09:00",
     updated: "2026-10-09",
@@ -73,6 +79,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "한솔그룹",
     title: "한솔그룹 2026 하반기 신입사원 공채",
     subtitle: "한솔제지·한솔로지스틱스·한솔PNS 등 5개사",
+    roles: "영업·IT기획·기술개발·생산·회계·S/W개발·웹개발 등",
     opensAt: "2026-09-21",
     closesAt: "2026-10-11T23:59:00+09:00",
     updated: "2026-10-09",
@@ -83,6 +90,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "신세계그룹",
     title: "신세계그룹 2027 신입사원 공채",
     subtitle: "이마트·신세계백화점·스타벅스 등 10개사",
+    roles: "MD·경영지원(재무·개발·마케팅·인사·물류·IT) 등",
     opensAt: "2026-09-18",
     closesAt: "2026-10-12T18:00:00+09:00",
     updated: "2026-10-09",
@@ -93,6 +101,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "이수그룹",
     title: "이수그룹 2026 하반기 신입사원 공채",
     subtitle: "이수페타시스·이수화학 등 6개사",
+    roles: "기획·재경·영업·연구개발·생산·품질·CM 등",
     opensAt: "2026-09-22",
     closesAt: "2026-10-13T10:00:00+09:00",
     updated: "2026-10-09",
@@ -103,6 +112,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "SK브로드밴드",
     title: "SK브로드밴드 2026 Junior Talent 신입 채용",
     subtitle: "마케팅/성과관리·Infra·AT/DT·Staff 4개 직군",
+    roles: "마케팅/성과관리·Infra·AT/DT·Staff",
     opensAt: "2026-09-30",
     closesAt: "2026-10-13T23:59:00+09:00",
     updated: "2026-10-09",
@@ -113,6 +123,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "S-OIL",
     title: "S-OIL 2026 사무직 신입사원 채용",
     subtitle: "서울 본사 경영·영업·재무, 울산 공장 공정·설비·안전환경",
+    roles: "경영전략·영업/마케팅·재무·수급·공정·설비기술·안전환경 등",
     opensAt: "2026-09-30",
     closesAt: "2026-10-14T23:59:00+09:00",
     updated: "2026-10-09",
@@ -123,6 +134,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     shortName: "한국투자증권",
     title: "한국투자증권 FY2026 신입사원(5급) 공채",
     subtitle: "PB·IB·운용·리서치·경영관리·IT/Digital 등 전 부문",
+    roles: "PB·IB·PF·운용·리서치·경영관리·IT/Digital 등",
     opensAt: "2026-09-15",
     closesAt: "2026-10-19T17:00:00+09:00",
     updated: "2026-10-09",

@@ -4,9 +4,7 @@ import { jobPostingPath, JOB_POSTINGS, type JobPostingListing } from "@/constant
 import { useNow } from "@/hooks/useNow";
 import { closedPostings, dDayLabel, formatDeadline, openPostings } from "@/lib/jobPostingDates";
 
-// 화면 머리말. 검색 설명(lib/seo.ts JOBS_INDEX_DESCRIPTION)과는 따로 둔다.
-const INTRO = "공식 채용 페이지에서 직접 확인한 공고만 모았어요. 마감 가까운 순이에요.";
-const ROW_GRID = "md:grid-cols-[180px_minmax(0,1fr)_72px] md:items-center md:gap-6";
+const ROW_GRID = "md:grid-cols-[150px_minmax(0,1.1fr)_minmax(0,1fr)_72px] md:items-center md:gap-6";
 
 /** 공고 표. now 가 없으면(프리렌더·하이드레이션 첫 화면) D-n 없이 날짜만 보인다. */
 function PostingTable({
@@ -23,6 +21,7 @@ function PostingTable({
       <div className={`hidden border-b border-line bg-fill-soft px-7 py-3 text-[13px] font-semibold text-ink-4 md:grid ${ROW_GRID}`}>
         <span>마감</span>
         <span>공고</span>
+        <span>모집 직무</span>
         <span />
       </div>
       <ul className="divide-y divide-line-soft">
@@ -32,15 +31,21 @@ function PostingTable({
               href={jobPostingPath(posting)}
               className={`grid gap-1.5 px-5 py-5 transition-colors hover:bg-fill-soft md:px-7 ${ROW_GRID}`}
             >
-              <span className="text-[14px] tabular-nums text-ink-3">
-                {now && !closed && <b className="mr-1.5 font-bold text-danger">{dDayLabel(posting.closesAt, now)}</b>}
-                {closed && <span className="mr-1.5 text-ink-4">마감</span>}
-                {formatDeadline(posting.closesAt)}
+              {/* 마감까지 남은 날이 먼저 눈에 들어오게 D-n 을 크게, 날짜는 그 아래 작게 */}
+              <span className="flex items-baseline gap-2 tabular-nums md:flex-col md:gap-1">
+                {now && !closed && (
+                  <b className="text-[22px] font-extrabold leading-none tracking-[-0.02em] text-danger">
+                    {dDayLabel(posting.closesAt, now)}
+                  </b>
+                )}
+                {closed && <span className="text-[16px] font-bold leading-none text-ink-4">마감</span>}
+                <span className="text-[13px] text-ink-4">{formatDeadline(posting.closesAt)}</span>
               </span>
               <span className="min-w-0">
                 <span className="block text-[17px] font-bold leading-snug text-ink [word-break:keep-all]">{posting.title}</span>
                 <span className="mt-0.5 block text-[14px] text-ink-4 [word-break:keep-all]">{posting.subtitle}</span>
               </span>
+              <span className="text-[14px] leading-relaxed text-ink-3 [word-break:keep-all]">{posting.roles}</span>
               <span className="hidden text-right text-[14px] font-semibold text-brand-ink md:block">자세히 →</span>
             </Link>
           </li>
@@ -62,13 +67,8 @@ export default function JobsIndex() {
 
   return (
     <GuideLayout>
-      <div className="mb-10 flex max-w-2xl flex-col gap-3">
-        <p className="text-[14px] font-semibold text-brand-ink">채용 공고</p>
-        <h1 className="text-[32px] font-extrabold leading-[1.2] tracking-[-0.035em] text-ink [word-break:keep-all] md:text-[44px]">
-          지금 접수 중인 대기업 신입 공고
-        </h1>
-        <p className="text-[15px] leading-7 text-ink-3 md:text-[16px]">{INTRO}</p>
-      </div>
+      {/* 머리말 없이 작은 제목 하나 — 바로 목록이 보이게(10-09) */}
+      <h1 className="mb-5 text-[22px] font-bold tracking-[-0.02em] text-ink">채용 공고</h1>
 
       {open === null ? (
         // JOB_POSTINGS 는 마감 순으로 적어 둔다(jobPostings.test.ts).
@@ -83,7 +83,7 @@ export default function JobsIndex() {
 
       {closed.length > 0 && (
         <section className="mt-14" aria-labelledby="closed-jobs">
-          <h2 id="closed-jobs" className="mb-5 text-[22px] font-bold tracking-[-0.02em] text-ink">
+          <h2 id="closed-jobs" className="mb-5 text-[18px] font-bold tracking-[-0.02em] text-ink">
             마감된 공고
           </h2>
           <PostingTable postings={closed} now={now} closed />

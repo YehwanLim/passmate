@@ -16,6 +16,7 @@ describe("JOB_POSTINGS", () => {
       expect(posting.closesAt, posting.slug).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+09:00$/);
       expect(posting.opensAt, posting.slug).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(posting.updated, posting.slug).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(posting.roles.trim().length, posting.slug).toBeGreaterThan(0);
       expect(posting.opensAt < posting.closesAt.slice(0, 10), posting.slug).toBe(true);
     }
   });
