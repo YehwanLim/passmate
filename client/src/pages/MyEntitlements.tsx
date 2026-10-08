@@ -201,7 +201,7 @@ function FreeToolsCard({ tools }: { tools: FreeTools }) {
         />
         <FreeToolRow
           title="경험 자동 추가"
-          description="'내 경험'에서 이력서·자소서를 올리면 경험을 뽑아 정리해 줘요. 정리된 경험은 지원서를 쓸 때 쓰여요."
+          description="'내 경험'에서 이력서·자소서를 올리면 경험을 뽑아 정리해 줘요. 정리된 경험은 지원서를 작성할 때 사용돼요."
           usage={tools.experienceExtract}
         />
       </div>
@@ -316,24 +316,24 @@ export default function MyEntitlements() {
               <CreditGroupCard
                 icon={<FileText className="h-4 w-4" />}
                 title="자소서 분석"
-                description="분석이 끝나면 1회 차감돼요."
+                description="리포트가 만들어지면 1회 차감돼요. 분석에 실패하면 차감되지 않아요."
               >
                 <CreditSummaryRow
                   title="무료 이용권"
-                  description="가입하면 1회 드려요."
+                  description="가입하면 자소서 분석 1회를 무료로 드려요."
                   remaining={summary.freeRemaining}
                 />
                 {/* 보너스 이용권은 받은 사람에게만 보인다(0회면 숨김). */}
                 {summary.bonusRemaining > 0 && (
                   <CreditSummaryRow
                     title="보너스 이용권"
-                    description="피드백 참여 보상이에요."
+                    description="피드백 설문에 참여하고 받은 이용권이에요."
                     remaining={summary.bonusRemaining}
                   />
                 )}
                 <CreditSummaryRow
                   title="프리미엄 이용권"
-                  description="구매한 이용권이에요."
+                  description="구매한 분석 이용권이에요. 다 쓰면 더 구매할 수 있어요."
                   remaining={summary.premiumRemaining}
                 />
               </CreditGroupCard>

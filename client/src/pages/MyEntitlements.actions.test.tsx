@@ -125,7 +125,7 @@ describe("MyEntitlements action buttons", () => {
 
   it("lists each essay credit pool on its own line instead of a combined total", async () => {
     await renderWith({ remaining: 2, freeRemaining: 1, premiumRemaining: 1 });
-    const card = screen.getByText("분석이 끝나면 1회 차감돼요.").closest("section");
+    const card = screen.getByText("리포트가 만들어지면 1회 차감돼요. 분석에 실패하면 차감되지 않아요.").closest("section");
     expect(card?.textContent).not.toContain("회 남음");
     expect(card?.textContent).toContain("무료 이용권");
     expect(card?.textContent).toContain("프리미엄 이용권");
