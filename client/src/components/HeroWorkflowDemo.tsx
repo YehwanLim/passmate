@@ -68,6 +68,16 @@ const JOURNEY_END = STEP3 + 4000;
 const SCENE_DURATIONS = [10600, DIAGNOSE_END, JOURNEY_END] as const;
 
 const EXPERIENCE_TITLE = "로그 3,000건으로 이탈 원인 찾기";
+/** 장면 1 초안. 경험에 적힌 사실만으로 쓰고, 경험에 없던 수치는 노란 빈칸으로 남긴다. 셋째 문장은 좁은 칸(폰)에선 접는다. */
+const DRAFT_SENTENCES = [
+  "교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영했지만, 오픈 두 달이 지나도 재방문율이 기대에 미치지 못했습니다.",
+  "감이 아니라 데이터로 원인을 찾기 위해 직접 3,000건 이상의 유저 행동 데이터를 수집하고, 사용자가 어디에서 떠나는지 화면별로 정리했습니다.",
+  "개발자와 실험 기간과 성공 기준을 먼저 합의한 뒤, 추천 콘텐츠의 노출 순서를 바꾸는 실험을 2주 단위로 반복했습니다.",
+];
+const DRAFT_LAST = ["그 결과 메인 화면 이탈률을 35%에서 ", "로 낮췄습니다."] as const;
+const DRAFT_PLAIN = [...DRAFT_SENTENCES, `${DRAFT_LAST[0]}${BLANK_LABEL}${DRAFT_LAST[1]}`].join(" ");
+const DRAFT_CHARS = DRAFT_PLAIN.length;
+const DRAFT_CHARS_NO_SPACE = DRAFT_PLAIN.replace(/\s/g, "").length;
 const QUESTION = "목표를 달성하기 위해 데이터를 활용해 문제를 해결한 경험을 구체적으로 작성해 주세요.";
 
 function typed(text: string, t: number, start: number, msPerChar: number) {
@@ -167,7 +177,7 @@ function SceneDraft({ t }: { t: number }) {
   return (
     <>
       <ApplicationHead saveLabel={between(APPLY_CLICK + 150, APPLY_CLICK + 1000) ? "저장 중" : "저장됨"} />
-      <div className="flex flex-none items-center gap-2.5 px-[22px] pt-4">
+      <div className="flex flex-none items-center gap-2.5 px-[22px] pt-3.5">
         <span
           className="relative inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-brand bg-surface px-[13px] text-[13px] font-bold text-brand-ink transition-transform duration-[120ms]"
           style={{
@@ -182,7 +192,7 @@ function SceneDraft({ t }: { t: number }) {
           )}
         </span>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col px-[22px] pb-[18px] pt-4">
+      <div className="flex min-h-0 flex-1 flex-col px-[22px] pb-[18px] pt-3">
         {showEmpty && (
           <div className="flex-1 rounded-[14px] border border-line p-3.5 text-[13.5px] text-ink-5">
             답변을 직접 써 보세요. 쓰는 동안 자동으로 저장돼요.
@@ -200,46 +210,43 @@ function SceneDraft({ t }: { t: number }) {
           </div>
         )}
         {showPreview && (
-          <div className="hero-msg-in flex min-h-0 flex-1 flex-col gap-2 rounded-[16px] bg-fill-soft p-3 [&>*]:flex-none">
-            <div className="flex flex-col gap-0.5 rounded-[12px] bg-surface px-3 py-2.5">
-              <span className="text-[11px] font-bold text-ink-4">고른 경험</span>
-              <span className="text-[13.5px] font-bold text-ink">{EXPERIENCE_TITLE}</span>
-              <span className="hidden text-[12px] text-ink-4 @xl:block">문항이 묻는 ‘데이터로 문제를 푼 과정’이 그대로 남아 있어요</span>
+          <div className="hero-msg-in flex min-h-0 flex-1 flex-col gap-1.5 rounded-[16px] bg-fill-soft p-3 [&>*]:flex-none">
+            <div className="rounded-[12px] bg-surface px-3 py-2.5">
+              <span className="flex items-baseline gap-2">
+                <span className="flex-none text-[11px] font-bold text-ink-4">고른 경험</span>
+                <span className="truncate text-[13.5px] font-bold text-ink">{EXPERIENCE_TITLE}</span>
+              </span>
             </div>
-            <div className="flex flex-col gap-[9px] rounded-[12px] bg-surface px-3 py-2.5">
+            <div className="flex flex-col gap-1 rounded-[12px] bg-surface px-3 py-2.5">
               <span className="text-[11px] font-bold text-ink-4">초안</span>
               {[
-                { at: LOAD_END + 400, text: <>교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영했습니다.</> },
-                { at: LOAD_END + 900, text: <>직접 3,000건 이상의 유저 행동 데이터를 수집하고 분석했습니다.</> },
-                {
-                  at: LOAD_END + 1400,
-                  text: (
-                    <>
-                      그 결과 메인 화면 이탈률을 35%에서 <Blank />로 낮췄습니다.
-                    </>
-                  ),
-                },
+                ...DRAFT_SENTENCES.map(sentence => <>{sentence}</>),
+                <>
+                  {DRAFT_LAST[0]}
+                  <Blank />
+                  {DRAFT_LAST[1]}
+                </>,
               ].map(
-                (line, index) =>
-                  t >= line.at && (
-                    <p key={index} className="hero-msg-in text-[13.5px] leading-[1.6] text-ink">
-                      {line.text}
-                      {/* 좁은 칸(폰)은 높이가 모자라 출처를 마지막 문장에만 단다(세 문장 모두 같은 경험). */}
-                      <span className={`mt-0.5 text-[11px] text-ink-5 ${index === 2 ? "block" : "hidden @xl:block"}`}>
-                        출처 · {EXPERIENCE_TITLE}
-                      </span>
+                (text, index) =>
+                  t >= LOAD_END + 400 + index * 450 && (
+                    <p key={index} className={`hero-msg-in text-[13px] leading-[1.6] text-ink ${index === 2 ? "hidden @xl:block" : ""}`}>
+                      {text}
                     </p>
                   )
               )}
+              {/* 실제 미리보기는 문장마다 출처를 단다. 네 문장 모두 같은 경험이라 한 번만 보여준다. */}
+              {t >= LOAD_END + 400 + 3 * 450 && (
+                <span className="hero-msg-in text-[11px] text-ink-5">출처 · {EXPERIENCE_TITLE}</span>
+              )}
             </div>
-            {t >= LOAD_END + 2000 && (
-              <span className="hero-msg-in px-0.5 text-[12px] text-blank">
+            {t >= LOAD_END + 2200 && (
+              <span className="hero-msg-in hidden px-0.5 text-[12px] text-blank @xl:block">
                 노란 칸은 경험에 없던 내용이에요. 실제 내용으로 채워 주세요.
               </span>
             )}
-            {t >= LOAD_END + 2400 && (
+            {t >= LOAD_END + 2600 && (
               <div className="hero-msg-in mt-auto flex items-center gap-1.5">
-                <span className="text-[12px] text-ink-4">121자</span>
+                <span className="text-[12px] text-ink-4">{DRAFT_CHARS}자</span>
                 <span className="flex-1" />
                 <span className="hidden h-[34px] items-center px-2.5 text-[12.5px] text-ink-4 @xl:inline-flex">닫기</span>
                 <span className="inline-flex h-[34px] items-center rounded-[9px] border border-line bg-surface px-[11px] text-[12.5px] font-semibold text-ink-2">
@@ -261,11 +268,14 @@ function SceneDraft({ t }: { t: number }) {
         {showApplied && (
           <div className="hero-msg-in flex flex-1 flex-col gap-2">
             <span className="text-[12px] text-ink-3">초안에 쓴 경험: {EXPERIENCE_TITLE}</span>
-            <div className="flex-1 rounded-[14px] border border-brand p-3.5 text-[13.5px] leading-[1.8] text-ink">
-              교내 앱 개발 동아리에서 콘텐츠 추천 플랫폼의 초기 버전을 기획하고 운영했습니다. 직접 3,000건 이상의 유저
-              행동 데이터를 수집하고 분석했습니다. 그 결과 메인 화면 이탈률을 35%에서 <Blank />로 낮췄습니다.
+            <div className="flex-1 overflow-hidden rounded-[14px] border border-brand p-3.5 text-[13.5px] leading-[1.8] text-ink">
+              {DRAFT_SENTENCES.join(" ")} {DRAFT_LAST[0]}
+              <Blank />
+              {DRAFT_LAST[1]}
             </div>
-            <span className="self-end text-[12px] text-ink-4">공백 포함 121자 · 제외 94자 / 1,000자</span>
+            <span className="self-end text-[12px] text-ink-4">
+              공백 포함 {DRAFT_CHARS}자 · 제외 {DRAFT_CHARS_NO_SPACE}자 / 1,000자
+            </span>
           </div>
         )}
       </div>
@@ -540,7 +550,7 @@ function SceneDiagnose({ t }: { t: number }) {
               {at(REPORT + 400) && (
                 <div className="hero-msg-in flex flex-col gap-2">
                   <ReadingTime time="3초" label="처음 보이는 것" tone="ok" />
-                  <p className="m-0 rounded-[12px] bg-fill-soft px-3.5 py-2.5 text-[13px] font-bold leading-[1.55] text-ink @xl:py-3">
+                  <p className="m-0 rounded-[12px] bg-fill-soft px-3.5 py-2.5 text-[12.5px] font-medium leading-[1.6] text-ink-2 @xl:py-3">
                     로그 3,000건과 2주 단위 실험이 무기인 자소서, 이제 그 시선이 차 안의 고객에게 닿으면 완성됩니다
                   </p>
                 </div>
@@ -553,7 +563,7 @@ function SceneDiagnose({ t }: { t: number }) {
                       at(REPORT + 1000 + index * 250) && (
                         <div
                           key={item}
-                          className="hero-msg-in flex items-center gap-2.5 rounded-[12px] bg-fill-soft px-3 py-2 text-[13px] font-bold leading-[1.45] text-ink @xl:items-start @xl:px-2.5"
+                          className="hero-msg-in flex items-center gap-2.5 rounded-[12px] bg-fill-soft px-3 py-2 text-[12.5px] font-medium leading-[1.5] text-ink-2 @xl:items-start @xl:px-2.5"
                         >
                           <span className="inline-flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-ok-soft @xl:mt-px">
                             <Check aria-hidden="true" className="h-2.5 w-2.5 text-ok" strokeWidth={3.4} />
@@ -569,8 +579,8 @@ function SceneDiagnose({ t }: { t: number }) {
                   <ReadingTime time="30초" label="다 읽고 남는 질문" tone="fix" last />
                   <div className="flex items-center gap-2.5 rounded-[12px] bg-blank-soft px-3 py-2.5 @xl:flex-col @xl:items-start @xl:gap-2 @xl:px-3.5 @xl:py-3">
                     <AlertTriangle aria-hidden="true" className="h-4 w-4 flex-none text-blank" strokeWidth={2.2} />
-                    <span className="text-[13px] font-bold leading-[1.45] text-ink @xl:text-[14px]">차량 서비스로 옮겨 올 근거는 아직 얇다</span>
-                    <span className="hidden text-[12px] leading-[1.55] text-ink-3 @xl:block">
+                    <span className="text-[12.5px] font-semibold leading-[1.5] text-ink">차량 서비스로 옮겨 올 근거는 아직 얇다</span>
+                    <span className="hidden text-[12px] leading-[1.55] text-ink-4 @xl:block">
                       면접에서 먼저 물어볼 수 있는 부분이에요.
                     </span>
                   </div>
