@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 import AuthButton from "@/components/AuthButton";
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
  * - floating: 랜딩 전용. light 와 같은 글자색에, 회색 무대 위에 떠 있는 둥근 흰 바(스픽식) + "무료로 시작하기" 버튼.
  * 항목은 실제 <a> 라 지연 하이드레이션 전에도 동작하고 크롤러가 따라간다. 현재 페이지는 aria-current 로 표시한다.
  * 768px 미만에서는 햄버거 메뉴로 바꾼다(landing.css 의 미디어쿼리도 같은 기준). 메뉴가 다섯 개라 640px 에선 넘친다.
+ * 하위 항목(siteNav children)이 있는 칸은 데스크톱에선 마우스를 올리면 펼치고, 폰 메뉴에선 들여 쓴 채 늘 보인다.
  */
 type SiteHeaderProps = {
   variant?: "transparent" | "solid" | "light" | "floating";
@@ -52,6 +53,45 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
   const isLight = variant === "light" || variant === "floating";
   const isFloating = variant === "floating";
 
+  // 하위 항목이 있는 칸: 부모 링크는 그대로 누를 수 있고, 마우스를 올리거나 키보드로 들어가면(focus-within) 아래로 펼친다.
+  // JS 상태 없이 CSS 로만 열어 프리렌더 HTML 에서도 같은 모양이고, 하위 링크도 크롤러가 따라간다.
+  const renderDesktopItem = (item: SiteNavItem) => {
+    if (!item.children) return renderItem(item, "landing-nav-link");
+    const current = isCurrentNavItem(item, location);
+    return (
+      <div key={item.label} className="group relative">
+        <Link href={item.target} className="landing-nav-link gap-1" aria-current={current ? "page" : undefined} aria-haspopup="true">
+          {item.label}
+          <ChevronDown className="size-3 opacity-60 transition-transform group-hover:rotate-180" aria-hidden="true" />
+        </Link>
+        <div className="invisible absolute left-0 top-full z-50 pt-2 opacity-0 transition-opacity duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+          <div
+            className={cn(
+              "w-[300px] rounded-[14px] border p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)]",
+              isLight ? "border-line bg-surface" : "border-white/10 bg-[#111]"
+            )}
+          >
+            {item.children.map(child => (
+              <Link
+                key={child.target}
+                href={child.target}
+                className={cn(
+                  "block rounded-[10px] px-3 py-2.5 transition-colors",
+                  isLight ? "hover:bg-fill-soft focus-visible:bg-fill-soft" : "hover:bg-white/5 focus-visible:bg-white/5"
+                )}
+              >
+                <span className={cn("block text-[14px] font-semibold", isLight ? "text-ink" : "text-white")}>{child.label}</span>
+                {child.description && (
+                  <span className={cn("mt-0.5 block text-[13px]", isLight ? "text-ink-4" : "text-white/60")}>{child.description}</span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <nav className={cn("sticky top-0 z-50 border-b", SURFACE_CLASS[variant])}>
       <div
@@ -67,7 +107,7 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
         </Link>
 
         <div className="hidden md:flex items-center gap-4 lg:gap-7">
-          {SITE_NAV_ITEMS.map(item => renderItem(item, "landing-nav-link"))}
+          {SITE_NAV_ITEMS.map(renderDesktopItem)}
         </div>
 
         <div className="flex items-center gap-2">
@@ -104,7 +144,20 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
             exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
           >
-            {SITE_NAV_ITEMS.map(item => renderItem(item, "mobile-nav-link"))}
+            {/* 폰은 마우스를 올릴 수 없어 하위 항목을 늘 펼쳐 둔다 */}
+            {SITE_NAV_ITEMS.map(item => [
+              renderItem(item, "mobile-nav-link"),
+              ...(item.children ?? []).map(child => (
+                <Link
+                  key={`${item.label}-${child.target}`}
+                  href={child.target}
+                  className="mobile-nav-link mobile-nav-sublink"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {child.label}
+                </Link>
+              )),
+            ])}
           </motion.div>
         )}
       </AnimatePresence>
