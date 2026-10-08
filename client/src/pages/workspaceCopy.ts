@@ -1,6 +1,6 @@
 // 내 지원서·내 경험 화면 문구. 사용자 검수 전 임시안 — 여기만 고치면 화면 전체가 바뀐다.
 export const WORKSPACE_COPY = {
-  tabs: { applications: "내 지원서", experiences: "내 경험", company: "기업 분석" },
+  tabs: { applications: "내 지원서", experiences: "내 경험", company: "내 기업" },
   status: { draft: "작성 중", analyzing: "분석 중", done: "분석 완료" },
   filters: { all: "전체", draft: "작성 중", done: "분석 완료" },
   table: { application: "회사 · 직무", deadline: "마감", status: "상태", summary: "최근 분석 요약", company: "회사", analyzedAt: "분석한 날" },
