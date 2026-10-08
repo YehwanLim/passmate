@@ -12,6 +12,7 @@ import {
 } from "../lib/entitlement-products.js";
 import grobleWebhookHandler from "../lib/groble-webhook-handler.js";
 import prisma from "../lib/prisma.js";
+import { USER_RATE_LIMITS, peekUserRateLimit } from "../lib/rate-limit.js";
 import { handleRequestError, requestIdFor } from "../lib/request-errors.js";
 
 // Groble 웹훅은 HMAC 서명을 원문(raw body)으로 검증하므로 파싱을 끈다.
@@ -103,13 +104,35 @@ async function getAuthenticatedUser(req, res) {
   }
 }
 
+function freeToolView({ limit, remaining, resetAt }) {
+  return { limit, remaining, resetAt: resetAt.toISOString() };
+}
+
+/**
+ * 크레딧 없이 하루 몇 번 쓰는 AI 도구(경험 → 초안, 경험 자동 채우기)의 오늘 남은 횟수. 읽기만 한다.
+ * 이 표시 때문에 이용권 요약 전체가 실패하면 안 되므로, 읽기에 실패하면 null 을 주고 화면은 칸을 숨긴다.
+ */
+async function readFreeTools(userId) {
+  const now = new Date();
+  try {
+    const [experienceDraft, experienceExtract] = await Promise.all([
+      peekUserRateLimit(prisma, { userId, policy: USER_RATE_LIMITS.experienceDraft, now }),
+      peekUserRateLimit(prisma, { userId, policy: USER_RATE_LIMITS.experienceExtract, now }),
+    ]);
+    return { experienceDraft: freeToolView(experienceDraft), experienceExtract: freeToolView(experienceExtract) };
+  } catch {
+    return null;
+  }
+}
+
 async function getEntitlements(res, user) {
   // 표시용 조회라 잠금 트랜잭션 대신 조회 전용 요약을 쓴다 — 왕복이 병렬화되어 빠르다.
-  const [summary, switches, productSettings, feedbackRewardClaimed] = await Promise.all([
+  const [summary, switches, productSettings, feedbackRewardClaimed, freeTools] = await Promise.all([
     getEntitlementSummaryReadOnly(prisma, user.id),
     prisma.entitlementSetting.findUnique({ where: { id: SETTINGS_ID }, select: SWITCH_SELECT }),
     readPurchaseProductSettings(prisma),
     hasClaimedFeedbackReward(prisma, user.id),
+    readFreeTools(user.id),
   ]);
   const checkoutUrls = checkoutUrlsFor(productSettings, switches);
 
@@ -120,6 +143,7 @@ async function getEntitlements(res, user) {
     grobleSinglePaymentUrl: checkoutUrls.single,
     checkoutUrls,
     feedbackRewardClaimed,
+    freeTools,
   });
 }
 

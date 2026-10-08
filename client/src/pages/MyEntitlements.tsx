@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, Building2, FileText, RefreshCw } from "lucide-react";
+import { ArrowRight, Building2, FileText, PenLine, RefreshCw } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import { getLoginRedirectPath, useRequireAuth } from "@/hooks/useRequireAuth";
 import {
   fetchEntitlementSummary,
   type EntitlementSummary,
+  type FreeTools,
+  type FreeToolUsage,
 } from "@/lib/entitlements";
 import { supabase } from "@/lib/supabase";
 
@@ -161,6 +163,55 @@ function CreditSummaryRow({
   );
 }
 
+function FreeToolRow({ title, description, usage }: { title: string; description: string; usage: FreeToolUsage }) {
+  const isEmpty = usage.remaining === 0;
+
+  return (
+    <div className="flex items-center justify-between gap-4 py-4">
+      <div>
+        <p className={`text-[15px] ${isEmpty ? "font-medium text-ink-4" : "font-semibold text-ink-2"}`}>{title}</p>
+        <p className="mt-0.5 text-[13px] text-ink-4">{description}</p>
+      </div>
+      <p className={`shrink-0 text-right text-base tabular-nums ${isEmpty ? "font-medium text-ink-4" : "font-bold text-ink"}`}>
+        {usage.remaining}
+        <span className="text-xs font-normal text-ink-4"> / {usage.limit}회</span>
+      </p>
+    </div>
+  );
+}
+
+/**
+ * 이용권 없이 하루 몇 번 쓰는 AI 도구. 이용권과 섞이지 않게 카드를 따로 두고, 위 두 카드처럼 큰 숫자 대신 "남은 / 하루" 로 쓴다.
+ * 서버 창이 UTC 자정 정렬이라 다시 채워지는 시각은 늘 KST 오전 9시다.
+ */
+function FreeToolsCard({ tools }: { tools: FreeTools }) {
+  return (
+    <section className="rounded-[20px] bg-surface p-[22px]">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-fill text-ink-3">
+          <PenLine className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-[16px] font-bold text-ink">오늘 무료로 쓰는 AI 도구</p>
+          <p className="mt-1 text-[13px] leading-[1.6] text-ink-4">이용권 없이 하루에 정해진 횟수만큼 쓸 수 있어요. 매일 오전 9시에 다시 채워져요.</p>
+        </div>
+      </div>
+      <div className="mt-4 divide-y divide-line-soft border-t border-line-soft sm:ml-12">
+        <FreeToolRow
+          title="내 경험으로 초안 쓰기"
+          description="지원서 문항 하나에 내 경험으로 초안 1개를 써 줘요."
+          usage={tools.experienceDraft}
+        />
+        <FreeToolRow
+          title="이력서·자소서로 자동 추가"
+          description="붙여 넣은 글에서 경험을 뽑아 내 경험에 넣어 줘요."
+          usage={tools.experienceExtract}
+        />
+      </div>
+    </section>
+  );
+}
+
 /**
  * MyEntitlements — 프로필 메뉴 > 내 이용권에서 보는 보유 현황 페이지.
  * 가격표·구매는 /entitlements(이용권 구매)로 분리되어 있다.
@@ -279,6 +330,8 @@ export default function MyEntitlements() {
                 description="회사·직무를 넣으면 기업 분석 리포트를 만들어 드려요."
                 remaining={summary.companyRemaining}
               />
+
+              {summary.freeTools ? <FreeToolsCard tools={summary.freeTools} /> : null}
             </div>
           ) : null}
 
