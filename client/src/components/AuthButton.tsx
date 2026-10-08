@@ -3,6 +3,8 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, ChevronDown, User, FileText, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCreditSummary } from "@/hooks/useCreditSummary";
+import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 /**
  * AuthButton
@@ -10,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
  * Header에서 사용하는 인증 상태 버튼 컴포넌트.
  * - 비로그인: "로그인" 버튼 → /login 이동. 랜딩(/)에서 누르면 로그인 뒤 분석 폼(/analyze)으로 보낸다 —
  *   랜딩으로 되돌려 보내면 가입하고도 다음 할 일을 못 찾고 나갔다(10-01 실사례).
- * - 로그인: 프로필 이미지 + 이름 + 드롭다운 (로그아웃)
+ * - 로그인: 프로필 이미지 + 이름 + 드롭다운 (남은 이용권 · 마이페이지 · 내 이용권 · 로그아웃)
  */
 export function loginPathFrom(currentPath: string): string {
   return currentPath === "/" ? "/login?redirect=%2Fanalyze" : "/login";
@@ -28,6 +30,8 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // 남은 이용권은 메뉴를 열 때만 읽는다(헤더는 모든 화면에 있으니 매번 부르지 않는다).
+  const { summary: credits, failed: creditsFailed } = useCreditSummary(dropdownOpen && isAuthenticated);
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -142,6 +146,25 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
               </p>
             </div>
 
+            {/* 남은 이용권 — 누르면 내 이용권 화면 */}
+            <button
+              type="button"
+              id="header-credits-btn"
+              onClick={() => handleNavigate("/my/entitlements")}
+              className={`block w-full px-4 py-2.5 text-left border-b transition-colors ${light ? "border-line-soft hover:bg-fill-soft" : "border-white/[0.06] hover:bg-white/5"}`}
+            >
+              <span className={`block text-[11px] font-semibold ${light ? "text-ink-4" : "text-gray-500"}`}>{WORKSPACE_COPY.credits.heading}</span>
+              {creditsFailed ? (
+                <span className={`mt-0.5 block text-[12px] ${light ? "text-ink-4" : "text-gray-400"}`}>{WORKSPACE_COPY.credits.error}</span>
+              ) : credits ? (
+                <span className={`mt-0.5 block text-[12.5px] font-bold ${light ? "text-ink" : "text-white"}`}>
+                  {WORKSPACE_COPY.credits.compactLine(credits.remaining, credits.companyAnalysisEnabled ? credits.companyRemaining : null)}
+                </span>
+              ) : (
+                <span className={`mt-1 block h-3 w-28 animate-pulse rounded ${light ? "bg-fill" : "bg-white/10"}`} aria-hidden="true" />
+              )}
+            </button>
+
             <div className={`p-1.5 border-b ${light ? "border-line-soft" : "border-white/[0.06]"}`}>
               <button
                 id="header-my-projects-btn"
@@ -149,7 +172,7 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
                 className={menuItem}
               >
                 <FileText className={menuIcon} />
-                내 지원서
+                마이페이지
               </button>
               <button
                 id="header-entitlements-btn"

@@ -20,7 +20,7 @@ const summary = (extra = {}) => ({
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe("MyCreditsPanel", () => {
-  it("남은 자소서·기업 분석 횟수를 칸 안에 보여 준다", async () => {
+  it("남은 자소서·기업 분석 횟수를 작은 띠 한 줄로 보여 준다", async () => {
     mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 3, premiumRemaining: 3, companyRemaining: 1 }));
     render(<MyCreditsPanel />);
     expect(await screen.findByText("자소서 진단 3회 · 기업 분석 1회")).toBeTruthy();
@@ -30,7 +30,7 @@ describe("MyCreditsPanel", () => {
   it("무료 1회가 남아 있으면 알려 준다", async () => {
     mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 1, freeRemaining: 1 }));
     render(<MyCreditsPanel />);
-    expect(await screen.findByText("무료 진단 1회가 남아 있어요")).toBeTruthy();
+    expect(await screen.findByText("무료 1회 포함")).toBeTruthy();
   });
 
   it("기업 분석이 꺼져 있으면 그 부분을 뺀다", async () => {
@@ -39,7 +39,7 @@ describe("MyCreditsPanel", () => {
     expect(await screen.findByText("자소서 진단 2회")).toBeTruthy();
   });
 
-  it("칸을 누르면 내 이용권 화면으로 간다", async () => {
+  it("띠를 누르면 내 이용권 화면으로 간다", async () => {
     mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 2 }));
     render(<MyCreditsPanel />);
     await screen.findByText(/자소서 진단 2회/);

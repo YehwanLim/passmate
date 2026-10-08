@@ -86,6 +86,7 @@ export const WORKSPACE_COPY = {
     company: "기업 분석",
     count: (n: number) => `${n}회`,
     freeLeft: "무료 진단 1회가 남아 있어요",
+    freeShort: "무료 1회 포함",
     buy: "이용권 사기",
     detail: "자세히 보기",
     error: "이용권 정보를 불러오지 못했어요.",
