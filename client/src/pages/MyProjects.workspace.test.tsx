@@ -49,7 +49,7 @@ describe("마이페이지 · 내 지원서", () => {
     render(<MyProjects />);
     await rowsOf();
     const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
-    expect(tabs).toEqual(["내 지원서1", "내 경험2", "내 기업1"]);
+    expect(tabs).toEqual(["자기소개서1", "경험 카드2", "기업 리포트1"]);
   });
 
   it("작성 중을 위로, 마감 가까운 순 — 상태는 '작성 중'만(문항 수·막대 없음)", async () => {
@@ -104,7 +104,7 @@ describe("마이페이지 · 내 지원서", () => {
     ])));
     render(<MyProjects />);
     expect((await rowsOf()).map(nameOf)).toEqual(["draft 열기"]);
-    fireEvent.click(screen.getByRole("tab", { name: /^내 기업/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^기업 리포트/ }));
     const rows = await screen.findAllByTestId("company-row");
     expect(rows).toHaveLength(1);
     expect(within(rows[0]).getByText("회사 요약")).toBeTruthy();
@@ -115,16 +115,16 @@ describe("마이페이지 · 내 지원서", () => {
 
   it("내 경험 탭으로 바꿀 수 있다", async () => {
     render(<MyProjects />);
-    fireEvent.click(await screen.findByRole("tab", { name: /^내 경험/ }));
+    fireEvent.click(await screen.findByRole("tab", { name: /^경험 카드/ }));
     expect(screen.getByText("경험 탭 내용")).toBeTruthy();
   });
 
   it("이 화면에 있을 때 주소가 /my#experiences 로 바뀌면(편집기의 경험 링크 등) 탭이 바로 바뀐다", async () => {
     render(<MyProjects />);
-    await screen.findByRole("tab", { name: /^내 지원서/, selected: true });
+    await screen.findByRole("tab", { name: /^자기소개서/, selected: true });
     act(() => window.history.pushState(null, "", "/my#experiences"));
     expect(await screen.findByText("경험 탭 내용")).toBeTruthy();
-    expect(screen.getByRole("tab", { name: /^내 경험/ }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: /^경험 카드/ }).getAttribute("aria-selected")).toBe("true");
   });
 
   it("회원 탈퇴는 마이페이지에 두지 않는다(내 이용권 화면 맨 아래로 옮김)", async () => {
@@ -136,7 +136,7 @@ describe("마이페이지 · 내 지원서", () => {
   it("어느 탭에서든 남은 이용권 한 줄이 머리말에 보인다", async () => {
     render(<MyProjects />);
     expect(await screen.findByText("이용권 칸")).toBeTruthy();
-    fireEvent.click(await screen.findByRole("tab", { name: /^내 경험/ }));
+    fireEvent.click(await screen.findByRole("tab", { name: /^경험 카드/ }));
     expect(screen.getByText("이용권 칸")).toBeTruthy();
   });
 });

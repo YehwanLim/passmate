@@ -201,7 +201,7 @@ function FreeToolsCard({ tools }: { tools: FreeTools }) {
         />
         <FreeToolRow
           title="경험 자동 추가"
-          description="'내 경험'에서 이력서·자소서를 올리면 경험을 뽑아 정리해 줘요. 정리된 경험은 지원서를 작성할 때 사용돼요."
+          description="'경험 카드'에서 이력서·자소서를 올리면 경험을 뽑아 정리해 줘요. 정리된 경험은 지원서를 작성할 때 사용돼요."
           usage={tools.experienceExtract}
         />
       </div>

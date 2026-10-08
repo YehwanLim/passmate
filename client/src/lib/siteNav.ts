@@ -28,7 +28,7 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
     type: "route",
     target: "/analyze",
     children: [
-      { label: "자소서 분석", target: "/analyze", description: "다 쓴 자소서를 채용 담당자 눈으로 읽어 드려요" },
+      { label: "자소서 분석", target: "/analyze", description: "자소서를 채용 담당자의 눈으로 분석해 드려요" },
       { label: "기업 분석", target: "/company-analysis", description: "지원할 회사의 사업·이슈·직무를 정리해 드려요" },
     ],
   },
@@ -42,9 +42,9 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
     type: "route",
     target: "/my",
     children: [
-      { label: "내 지원서", target: "/my" },
-      { label: "내 경험", target: "/my#experiences" },
-      { label: "내 기업", target: "/my#company" },
+      { label: "자기소개서", target: "/my" },
+      { label: "경험 카드", target: "/my#experiences" },
+      { label: "기업 리포트", target: "/my#company" },
       { label: "내 이용권", target: "/my/entitlements" },
     ],
   },
