@@ -115,12 +115,20 @@ describe("MyEntitlements action buttons", () => {
       freeRemaining: 1,
       freeTools: { experienceDraft: { limit: 2, remaining: 1 }, experienceExtract: { limit: 3, remaining: 0 } },
     });
-    expect(screen.getByText("오늘 무료로 쓰는 AI 도구")).toBeTruthy();
-    expect(screen.getByText("내 경험으로 초안 쓰기").closest("div")?.parentElement?.textContent).toContain("1 / 2회");
-    expect(screen.getByText("이력서·자소서로 자동 추가").closest("div")?.parentElement?.textContent).toContain("0 / 3회");
+    expect(screen.getByText("매일 무료")).toBeTruthy();
+    expect(screen.getByText("자소서 초안 쓰기").closest("div")?.parentElement?.textContent).toContain("1 / 2회");
+    expect(screen.getByText("경험 자동 추가").closest("div")?.parentElement?.textContent).toContain("0 / 3회");
     cleanup();
     await renderWith({ remaining: 1, freeRemaining: 1, freeTools: null });
-    expect(screen.queryByText("오늘 무료로 쓰는 AI 도구")).toBeNull();
+    expect(screen.queryByText("매일 무료")).toBeNull();
+  });
+
+  it("lists each essay credit pool on its own line instead of a combined total", async () => {
+    await renderWith({ remaining: 2, freeRemaining: 1, premiumRemaining: 1 });
+    const card = screen.getByText("분석 결과가 저장될 때 1회씩 차감돼요.").closest("section");
+    expect(card?.textContent).not.toContain("회 남음");
+    expect(card?.textContent).toContain("무료 이용권");
+    expect(card?.textContent).toContain("프리미엄 이용권");
   });
 
   it("keeps the account deletion link at the bottom of this page (moved from 마이페이지)", async () => {

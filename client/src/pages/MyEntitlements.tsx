@@ -98,7 +98,8 @@ function CreditGroupCard({
   icon: ReactNode;
   title: string;
   description: string;
-  remaining: number;
+  /** 없으면 큰 숫자를 쓰지 않는다 — 줄마다 횟수를 보여 주는 카드(자소서 분석). */
+  remaining?: number;
   children?: ReactNode;
 }) {
   return (
@@ -113,7 +114,7 @@ function CreditGroupCard({
             <p className="mt-1 text-[13px] leading-[1.6] text-ink-4">{description}</p>
           </div>
         </div>
-        <RemainingStat remaining={remaining} />
+        {remaining === undefined ? null : <RemainingStat remaining={remaining} />}
       </div>
 
       {children ? (
@@ -192,19 +193,19 @@ function FreeToolsCard({ tools }: { tools: FreeTools }) {
           <PenLine className="h-4 w-4" />
         </span>
         <div>
-          <p className="text-[16px] font-bold text-ink">오늘 무료로 쓰는 AI 도구</p>
-          <p className="mt-1 text-[13px] leading-[1.6] text-ink-4">이용권 없이 하루에 정해진 횟수만큼 쓸 수 있어요. 매일 오전 9시에 다시 채워져요.</p>
+          <p className="text-[16px] font-bold text-ink">매일 무료</p>
+          <p className="mt-1 text-[13px] leading-[1.6] text-ink-4">무료 횟수는 매일 오전 9시에 다시 채워져요.</p>
         </div>
       </div>
       <div className="mt-4 divide-y divide-line-soft border-t border-line-soft sm:ml-12">
         <FreeToolRow
-          title="내 경험으로 초안 쓰기"
-          description="지원서 문항 하나에 내 경험으로 초안 1개를 써 줘요."
+          title="자소서 초안 쓰기"
+          description="문항에 맞는 내 경험을 골라 자소서 초안을 자동으로 써 줘요."
           usage={tools.experienceDraft}
         />
         <FreeToolRow
-          title="이력서·자소서로 자동 추가"
-          description="붙여 넣은 글에서 경험을 뽑아 내 경험에 넣어 줘요."
+          title="경험 자동 추가"
+          description="'내 경험'에서 이력서·자소서를 올리면 경험을 뽑아 정리해 줘요. 정리된 경험은 지원서를 쓸 때 쓰여요."
           usage={tools.experienceExtract}
         />
       </div>
@@ -262,6 +263,8 @@ export default function MyEntitlements() {
     summary?.companyAnalysisEnabled && summary.companyRemaining > 0
   );
 
+  const needsPurchase = Boolean(summary && !hasEssayCredit && !hasCompanyCredit);
+
   return (
     <div className="min-h-screen bg-stage pb-28 text-ink">
       <SiteHeader variant="light" />
@@ -273,12 +276,28 @@ export default function MyEntitlements() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.08 }}
         >
-          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink">
-            내 이용권
-          </h1>
-          <p className="mt-1.5 text-[15px] text-ink-4">
-            보유한 분석 이용권을 확인할 수 있어요.
-          </p>
+          {/* 구매는 맨 아래에 두면 안 보여서(10-08) 제목 옆으로 올린다. 남은 게 없을 때만 파랑으로 강조한다. */}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink">
+                내 이용권
+              </h1>
+              <p className="mt-1.5 text-[15px] text-ink-4">
+                보유한 분석 이용권을 확인할 수 있어요.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/entitlements")}
+              className={`mt-1 inline-flex h-10 shrink-0 items-center rounded-[10px] px-4 text-[14px] font-bold transition-colors ${
+                needsPurchase
+                  ? "bg-brand text-white hover:bg-brand-hover"
+                  : "border border-line bg-surface text-brand hover:bg-fill"
+              }`}
+            >
+              이용권 구매하기
+            </button>
+          </div>
         </motion.div>
 
         <section className="mt-8 space-y-6" aria-live="polite">
@@ -301,15 +320,14 @@ export default function MyEntitlements() {
               <CreditGroupCard
                 icon={<FileText className="h-4 w-4" />}
                 title="자소서 분석"
-                description="아래 이용권을 합한 횟수예요. 분석 결과가 저장될 때 차감돼요."
-                remaining={summary.remaining}
+                description="분석 결과가 저장될 때 1회씩 차감돼요."
               >
                 <CreditSummaryRow
                   title="무료 이용권"
                   description="가입 후 제공되는 무료 분석 이용권이에요."
                   remaining={summary.freeRemaining}
                 />
-                {/* 보너스 이용권은 받은 사람에게만 보인다(0회면 숨김). 받았는데 숨기면 위 합계와 줄 합이 안 맞는다. */}
+                {/* 보너스 이용권은 받은 사람에게만 보인다(0회면 숨김). */}
                 {summary.bonusRemaining > 0 && (
                   <CreditSummaryRow
                     title="보너스 이용권"
@@ -352,12 +370,6 @@ export default function MyEntitlements() {
               </ActionButton>
             ) : null}
 
-            <ActionButton
-              primary={Boolean(summary && !hasEssayCredit && !hasCompanyCredit)}
-              onClick={() => navigate("/entitlements")}
-            >
-              이용권 구매하기
-            </ActionButton>
           </div>
         </section>
 
