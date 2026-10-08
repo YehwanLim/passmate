@@ -62,6 +62,9 @@ export const COMPANY_REPORT_SAMPLE_PATH = "/company-report?sample=1";
 export const GUIDE_INDEX_PATH = "/guide";
 export const JOBS_INDEX_PATH = "/jobs";
 export const GUIDE_INDEX_TITLE = "취업 가이드 - 채용 담당자가 진짜 보는 것 | Pre:View";
+export const JOBS_INDEX_TITLE = "대기업 신입 채용공고·자소서 문항 모음 | Pre:View";
+export const JOBS_INDEX_DESCRIPTION =
+  "지금 접수 중인 대기업 신입 공채를 공식 채용 페이지에서 직접 확인해 모았습니다. 마감일, 지원 자격, 전형 절차와 자소서 문항이 무엇을 묻는지까지 한 장에 정리합니다.";
 export const GUIDE_INDEX_DESCRIPTION =
   "채용 담당자가 자소서에서 실제로 확인하는 것을 첫인상·문항별·수정 순서로 정리했습니다. 자소서 첨삭이나 AI 피드백을 받기 전에 읽어 두면 어디부터 고칠지 보입니다.";
 
@@ -107,6 +110,12 @@ export const SEO_ROUTES: Record<string, RouteMeta> = {
     description: GUIDE_INDEX_DESCRIPTION,
     canonical: absolute(GUIDE_INDEX_PATH),
     updated: "2026-09-14",
+  },
+  [JOBS_INDEX_PATH]: {
+    title: JOBS_INDEX_TITLE,
+    description: JOBS_INDEX_DESCRIPTION,
+    canonical: absolute(JOBS_INDEX_PATH),
+    updated: "2026-10-09",
   },
   "/mentoring": {
     title: "현직 PM 커피챗·모의면접 신청 | Pre:View",
@@ -168,6 +177,8 @@ export const PRERENDER_ROUTES: readonly PrerenderRoute[] = [
   { key: "/entitlements", path: "/entitlements", search: "", file: "entitlements.html" },
   // 가이드 글(/guide/<slug>)은 content/guides 에서 나오므로 entry-server.tsx 의 getPrerenderPages() 가 덧붙인다.
   { key: GUIDE_INDEX_PATH, path: GUIDE_INDEX_PATH, search: "", file: "guide.html" },
+  // 공고 한 장(/jobs/<slug>)은 constants/jobPostings.ts 에서 나오므로 entry-server.tsx 의 getPrerenderPages() 가 덧붙인다.
+  { key: JOBS_INDEX_PATH, path: JOBS_INDEX_PATH, search: "", file: "jobs.html" },
   // Vercel 은 어떤 라우트에도 맞지 않는 요청에 출력 루트의 404.html 을 404 상태로 준다.
   { key: "/404", path: "/404", search: "", file: "404.html" },
 ];
@@ -200,6 +211,10 @@ export function resolveRouteMeta(pathname: string, search: string): RouteMeta {
   // 가이드 글은 페이지(GuideArticle)가 frontmatter 로 정확한 메타를 덮어쓴다. 여기서는 색인 가능한 기본값만 준다.
   if (key.startsWith(`${GUIDE_INDEX_PATH}/`)) {
     return { title: "취업 가이드 | Pre:View", description: GUIDE_INDEX_DESCRIPTION, canonical: absolute(key) };
+  }
+  // 공고 한 장도 페이지(JobPostingPage)가 공고별 메타로 덮어쓴다.
+  if (key.startsWith(`${JOBS_INDEX_PATH}/`)) {
+    return { title: JOBS_INDEX_TITLE, description: JOBS_INDEX_DESCRIPTION, canonical: absolute(key) };
   }
   const privateRoute = PRIVATE_ROUTE_TITLES.find(
     ([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`)

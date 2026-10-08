@@ -236,6 +236,7 @@ export const CANVAS_BY_ROUTE = {
   "/privacy": { style: STAGE_CANVAS_STYLE },
   "/mentoring": { style: STAGE_CANVAS_STYLE },
   "/entitlements": { style: STAGE_CANVAS_STYLE },
+  "/jobs": { style: STAGE_CANVAS_STYLE },
 };
 
 function assertMarkup(name, markup) {

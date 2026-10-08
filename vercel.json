@@ -95,6 +95,8 @@
     { "source": "/entitlements", "destination": "/entitlements.html" },
     { "source": "/guide", "destination": "/guide.html" },
     { "source": "/guide/:slug", "destination": "/guide/:slug.html" },
+    { "source": "/jobs", "destination": "/jobs.html" },
+    { "source": "/jobs/:slug", "destination": "/jobs/:slug.html" },
     { "source": "/404", "destination": "/404.html" },
     {
       "source": "/((?:login|analyze|analysis-pending|report-new|company-analysis|company-report|feedback|checkout|my|account|admin)(?:/.*)?)",

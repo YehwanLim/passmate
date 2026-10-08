@@ -398,6 +398,13 @@ describe("vercel routing for the prerendered pages", () => {
     expect(vercel.rewrites[index].destination).toBe("/guide/:slug.html");
   });
 
+  it("rewrites job postings to their prerendered files by slug", () => {
+    const index = vercel.rewrites.findIndex(rule => rule.source === "/jobs/:slug");
+    expect(index).toBeGreaterThan(-1);
+    expect(index).toBeLessThan(fallbackIndex);
+    expect(vercel.rewrites[index].destination).toBe("/jobs/:slug.html");
+  });
+
   it("gives every prerendered route a meta entry and a canvas for the dark pages", () => {
     for (const route of PRERENDER_ROUTES) {
       expect(SEO_ROUTES[route.key], route.key).toBeDefined();

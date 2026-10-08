@@ -31,6 +31,8 @@ const Mentoring = lazy(() => import("./pages/Mentoring"));
 const AccountDeletion = lazy(() => import("./pages/AccountDeletion"));
 const GuideIndex = lazy(() => import("./pages/GuideIndex"));
 const GuideArticle = lazy(() => import("./pages/GuideArticle"));
+const JobsIndex = lazy(() => import("./pages/JobsIndex"));
+const JobPostingPage = lazy(() => import("./pages/JobPostingPage"));
 const AdminRoot = lazy(() => import("./pages/admin/AdminRoot"));
 
 function Router() {
@@ -64,6 +66,9 @@ function Router() {
         {/* 취업 가이드(client/content/guides). 빌드 때 프리렌더되고 sitemap·RSS 에 오른다 */}
         <Route path={"/guide"} component={GuideIndex} />
         <Route path={"/guide/:slug"} component={GuideArticle} />
+        {/* 채용 공고(constants/jobPostings.ts). 빌드 때 프리렌더되고 sitemap 에 오른다 */}
+        <Route path={"/jobs"} component={JobsIndex} />
+        <Route path={"/jobs/:slug"} component={JobPostingPage} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

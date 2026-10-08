@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { COMPANY_REPORT_SAMPLE_COMPANY } from "@/constants/companyReportSampleMeta";
 import { GUIDES } from "@/lib/guides";
+import { JOB_POSTINGS } from "@/constants/jobPostings";
 import { getGuideFeedItems, getPrerenderPages, render, renderRoute, renderSampleReport } from "./entry-server";
 
 // 빌드 시점 프리렌더(scripts/prerender-landing.mjs)가 쓰는 렌더 함수.
@@ -90,6 +91,26 @@ describe("entry-server renderRoute for every prerendered page", () => {
       expect(page?.route.file).toBe(`guide/${guide.slug}.html`);
     }
     expect(getGuideFeedItems().map(item => item.url)).toEqual(GUIDES.map(guide => `https://pre-view.me/guide/${guide.slug}`));
+  });
+
+  it("includes the jobs index and every posting with its own meta", () => {
+    const keys = pages.map(page => page.route.key);
+    expect(keys).toContain("/jobs");
+    for (const posting of JOB_POSTINGS) {
+      const page = pages.find(candidate => candidate.route.key === `/jobs/${posting.slug}`);
+      expect(page?.route.file, posting.slug).toBe(`jobs/${posting.slug}.html`);
+      expect(page?.meta.canonical, posting.slug).toBe(`https://pre-view.me/jobs/${posting.slug}`);
+      expect(page?.meta.updated, posting.slug).toBe(posting.updated);
+    }
+  });
+
+  it("renders a posting page with its title and no time-dependent D-n baked in", async () => {
+    const [posting] = JOB_POSTINGS;
+    const html = await renderRoute(`/jobs/${posting.slug}`, "");
+    expect(html).toContain(posting.title);
+    expect(html).not.toContain("Page Not Found");
+    // D-n·마감 표시는 브라우저 시각으로만 붙는다(hooks/useNow). 굳으면 배포 다음 날부터 틀린다.
+    expect(html).not.toMatch(/D-\d+|오늘 마감|마감된 공고예요/);
   });
 
   it("renders a guide article body, not the 404 fallback", async () => {

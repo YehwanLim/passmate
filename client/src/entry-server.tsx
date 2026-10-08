@@ -4,6 +4,9 @@ import App from "./App";
 
 import { seedGuideHtml } from "./lib/guideBodies";
 import { GUIDES, guideMeta, guidePath, guidePrerenderRoute, renderGuideHtml } from "./lib/guides";
+import { JOB_POSTINGS } from "./constants/jobPostings";
+import { JOB_POSTING_DETAILS } from "./constants/jobPostingDetails";
+import { jobPostingMeta, jobPrerenderRoute } from "./lib/jobPostingMeta";
 import { absoluteUrl, PRERENDER_ROUTES, SEO_ROUTES, type PrerenderRoute, type RouteMeta } from "./lib/seo";
 
 // 본문을 미리 넣어 둔다: GuideArticle 은 글 하나씩 지연 로드하지만(lib/guideBodies.ts) 프리렌더는 기다리지 않고 바로 그린다.
@@ -14,7 +17,7 @@ export { PRERENDER_ROUTES, SEO_ROUTES };
 
 export type PrerenderPage = { route: PrerenderRoute; meta: RouteMeta };
 
-/** 빌드 때 HTML 로 굳힐 페이지 전부: 고정 목록(lib/seo.ts) + 가이드 글(client/content/guides). sitemap 도 이 목록에서 나온다. */
+/** 빌드 때 HTML 로 굳힐 페이지 전부: 고정 목록(lib/seo.ts) + 가이드 글(client/content/guides) + 공고 한 장(constants/jobPostings.ts). sitemap 도 이 목록에서 나온다. */
 export function getPrerenderPages(): PrerenderPage[] {
   return [
     ...PRERENDER_ROUTES.map(route => {
@@ -23,6 +26,10 @@ export function getPrerenderPages(): PrerenderPage[] {
       return { route, meta };
     }),
     ...GUIDES.map(guide => ({ route: guidePrerenderRoute(guide), meta: guideMeta(guide) })),
+    ...JOB_POSTINGS.map(posting => ({
+      route: jobPrerenderRoute(posting),
+      meta: jobPostingMeta(posting, JOB_POSTING_DETAILS[posting.slug]),
+    })),
   ];
 }
 
