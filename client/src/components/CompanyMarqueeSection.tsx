@@ -1,4 +1,5 @@
 import { type CSSProperties } from "react";
+import OpenJobsStrip from "@/components/OpenJobsStrip";
 import { SUCCESSFUL_COMPANIES } from "@/constants/socialProof";
 
 /* ─────────────────────────────────────────────────────────
@@ -55,6 +56,9 @@ export default function CompanyMarqueeSection() {
           ))}
         </div>
       </div>
+
+      {/* 로고(이런 회사 자소서를 본다) 바로 밑에 그중 지금 뽑는 곳(10-09). 접수 중 공고가 없으면 그리지 않는다. */}
+      <OpenJobsStrip />
 
       <p className="mt-6 text-center text-[12px] text-ink-3">
         각 로고는 해당 기업의 상표이며, Pre:View와의 제휴·보증 관계를 의미하지
