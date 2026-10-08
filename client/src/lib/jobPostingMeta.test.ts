@@ -12,6 +12,7 @@ describe("jobPostingMeta", () => {
       expect(meta.title, posting.slug).toContain(posting.title);
       expect(meta.robots, posting.slug).toBeUndefined();
       expect(meta.ogType).toBe("article");
+      expect(meta.title, posting.slug).not.toContain("채용 채용");
     }
   });
 

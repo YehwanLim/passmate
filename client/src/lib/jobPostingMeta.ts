@@ -9,7 +9,10 @@ const MAX_TITLE_CHARS = 60;
 /** 공고 한 장의 검색 메타. 프리렌더(entry-server.tsx)와 JobPostingPage 가 같이 쓴다. */
 export function jobPostingMeta(listing: JobPostingListing, detail: JobPostingDetail): RouteMeta {
   const url = absoluteUrl(jobPostingPath(listing));
-  const long = `${listing.title} 채용공고·자소서 | Pre:View`;
+  // "…신입사원 채용"으로 끝나는 제목에 "채용공고"를 또 붙이면 "채용 채용공고"가 된다.
+  const long = listing.title.endsWith("채용")
+    ? `${listing.title}공고·자소서 | Pre:View`
+    : `${listing.title} 채용공고·자소서 | Pre:View`;
   return {
     title: long.length <= MAX_TITLE_CHARS ? long : `${listing.title} | Pre:View`,
     description: detail.description,
