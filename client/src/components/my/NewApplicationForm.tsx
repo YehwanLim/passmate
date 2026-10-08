@@ -1,5 +1,7 @@
 import type { RefObject } from "react";
+import CompanyCombobox from "@/components/analyze/CompanyCombobox";
 import JobPostingSection from "@/components/analyze/JobPostingSection";
+import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
 import type { JobPostingRecord } from "@/types/jobPosting";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
@@ -11,7 +13,8 @@ export type NewApplicationInfo = { company: string; jobKeyword: string; deadline
 
 /**
  * 새 지원서 편집기의 오른쪽 칸: 채용공고 붙이기(선택) + 지원 정보(회사 필수·직무·마감).
- * 회사 칸을 벗어나면(또는 Enter) onCommit — 그때 지원서를 만들고 저장이 시작된다. 상태는 페이지가 가진다.
+ * 회사·직무는 자소서 분석과 같은 자동완성. 회사를 목록에서 고르거나 Enter·칸을 벗어나면 onCommit — 그때 지원서를 만들고 저장이 시작된다.
+ * 상태는 페이지가 가진다.
  */
 export default function NewApplicationForm({
   posting,
@@ -28,7 +31,8 @@ export default function NewApplicationForm({
   onPosting: (record: JobPostingRecord | null) => void;
   info: NewApplicationInfo;
   onInfo: (info: NewApplicationInfo) => void;
-  onCommit: () => void;
+  /** 고른 직후엔 페이지 상태가 아직 옛 값이라 정해진 지원 정보를 함께 넘긴다. */
+  onCommit: (info: NewApplicationInfo) => void;
   onRequireLogin: () => void;
   companyRef?: RefObject<HTMLInputElement | null>;
   error: string | null;
@@ -45,22 +49,27 @@ export default function NewApplicationForm({
         <h2 className="text-[15px] font-bold text-ink">{COPY.basicsTitle}</h2>
         <label className={label}>
           <span>{COPY.company} *</span>
-          <input
-            ref={companyRef}
-            aria-label={COPY.company}
+          <CompanyCombobox
+            compact
+            inputRef={companyRef}
+            ariaLabel={COPY.company}
             value={info.company}
             disabled={busy}
-            onChange={(e) => onInfo({ ...info, company: e.target.value })}
-            onBlur={() => { if (info.company.trim()) onCommit(); }}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing && info.company.trim()) onCommit(); }}
-            maxLength={100}
+            onChange={(company) => onInfo({ ...info, company })}
+            onCommit={(company) => { if (company.trim()) onCommit({ ...info, company }); }}
             placeholder={COPY.companyPlaceholder}
-            className={field}
           />
         </label>
         <label className={label}>
           <span>{COPY.job}</span>
-          <input aria-label={COPY.job} value={info.jobKeyword} disabled={busy} onChange={(e) => onInfo({ ...info, jobKeyword: e.target.value })} maxLength={100} placeholder={COPY.jobPlaceholder} className={field} />
+          <JobRoleCombobox
+            compact
+            ariaLabel={COPY.job}
+            value={info.jobKeyword}
+            disabled={busy}
+            onChange={(jobKeyword) => onInfo({ ...info, jobKeyword })}
+            placeholder={COPY.jobPlaceholder}
+          />
         </label>
         <label className={label}>
           <span>{COPY.deadline}</span>

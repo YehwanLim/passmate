@@ -3,7 +3,9 @@ import { useLocation, useParams } from "wouter";
 import { Building2, Briefcase, ChevronLeft } from "lucide-react";
 import type { AnalysisSummary } from "@/types/my";
 import AnalysisCard from "@/components/my/AnalysisCard";
+import CompanyCombobox from "@/components/analyze/CompanyCombobox";
 import JobPostingSection from "@/components/analyze/JobPostingSection";
+import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
 import ApplicationEditor, { saveLabel, type DraftUiState } from "@/components/my/ApplicationEditor";
 import SkeletonCard from "@/components/my/SkeletonCard";
 import SiteHeader from "@/components/SiteHeader";
@@ -157,11 +159,11 @@ function ApplicationMetaForm({
     <form onSubmit={submit} className="mt-3 grid gap-3">
       <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{labels.company}</span>
-        <input aria-label={labels.company} value={company} onChange={(e) => setCompany(e.target.value)} maxLength={100} className={metaField} />
+        <CompanyCombobox compact ariaLabel={labels.company} value={company} onChange={setCompany} placeholder={labels.companyPlaceholder} />
       </label>
       <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{labels.job}</span>
-        <input aria-label={labels.job} value={jobKeyword} onChange={(e) => setJobKeyword(e.target.value)} maxLength={100} className={metaField} />
+        <JobRoleCombobox compact ariaLabel={labels.job} value={jobKeyword} onChange={setJobKeyword} placeholder={labels.jobPlaceholder} />
       </label>
       <label className="block space-y-1.5 text-[13px] font-semibold text-ink-3">
         <span>{labels.deadline}</span>

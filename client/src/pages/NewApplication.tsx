@@ -149,7 +149,7 @@ export default function NewApplication() {
                 onPosting={attachPosting}
                 info={info}
                 onInfo={(next) => { setInfo(next); if (error) setError(null); }}
-                onCommit={() => void create()}
+                onCommit={(next) => { setInfo(next); void create(next); }}
                 onRequireLogin={() => navigate("/login?redirect=%2Fmy%2Fnew")}
                 companyRef={companyRef}
                 error={error}
