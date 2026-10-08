@@ -114,6 +114,8 @@ describe("beta deployment security configuration", () => {
       { source: "/entitlements", destination: "/entitlements.html" },
       { source: "/guide", destination: "/guide.html" },
       { source: "/guide/:slug", destination: "/guide/:slug.html" },
+      { source: "/jobs", destination: "/jobs.html" },
+      { source: "/jobs/:slug", destination: "/jobs/:slug.html" },
       { source: "/404", destination: "/404.html" },
       // 앱 화면만 SPA 셸(app.html)로 보낸다. 나열되지 않은 경로는 정적 파일이나 404 로 떨어져 /api/ 가 셸에 삼켜지지 않는다.
       {
