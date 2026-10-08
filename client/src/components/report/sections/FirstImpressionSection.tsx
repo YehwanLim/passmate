@@ -99,12 +99,12 @@ export function FirstImpressionSection({
         <p className="text-[16px] font-bold text-ink">채용 담당자가 읽는 순서대로</p>
         <div className="mt-4 grid gap-6 md:grid-cols-3 md:gap-5">
           <ReadingStep time="10초" label="처음 보이는 것" tone="ok">
-            <p className="break-keep rounded-2xl bg-fill-soft px-5 py-4 text-[16px] font-medium leading-[1.6] text-ink text-pretty">{renderCleanText(heroSummary)}</p>
+            <p className="break-keep rounded-2xl bg-fill-soft px-5 py-4 text-[15px] font-medium leading-[1.6] text-ink text-pretty">{renderCleanText(heroSummary)}</p>
           </ReadingStep>
           <ReadingStep time="1분" label={UI_LABELS.HIRING_MEMORY_SHORT} tone="ok">
             <ul className="flex flex-col gap-2" aria-label={UI_LABELS.HIRING_MEMORY}>
               {remembered.map((item) => (
-                <li key={item.text} className="flex items-center gap-3 break-keep rounded-[14px] bg-fill-soft px-3.5 py-3 text-[15px] font-medium leading-[1.45] text-ink text-pretty">
+                <li key={item.text} className="flex items-center gap-3 break-keep rounded-[14px] bg-fill-soft px-3.5 py-3 text-[14px] font-medium leading-[1.5] text-ink text-pretty">
                   <span aria-hidden="true" className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-full bg-ok-soft text-ok">
                     <Check className="size-3" strokeWidth={3.2} />
                   </span>
