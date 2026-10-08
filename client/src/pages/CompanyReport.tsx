@@ -144,8 +144,8 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
               기업 분석 시작하기
             </button>
           ) : (
-            <button className={`${actionButtonClass} bg-fill text-ink-2 hover:bg-line`} onClick={() => navigate("/my")}>
-              내 지원서
+            <button className={`${actionButtonClass} bg-fill text-ink-2 hover:bg-line`} onClick={() => navigate("/my#company")}>
+              기업 리포트
             </button>
           )}
         </div>

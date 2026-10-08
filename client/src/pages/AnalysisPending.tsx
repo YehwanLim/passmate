@@ -195,11 +195,11 @@ export default function AnalysisPending() {
           <>
             <h1 className="text-2xl font-semibold tracking-tight">분석이 평소보다 오래 걸리고 있어요</h1>
             <p className="mt-3 max-w-sm text-sm leading-6 text-ink-3">
-              완료된 리포트는 내 지원서에서도 확인할 수 있어요. 잠시 후 다시 확인해 주세요.
+              완료된 리포트는 마이페이지 자기소개서에서도 확인할 수 있어요. 잠시 후 다시 확인해 주세요.
             </p>
             <div className="mt-7 flex gap-3">
               <Button className="h-11 rounded-xl bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-hover" onClick={retryStatusCheck}>다시 확인</Button>
-              <Button variant="outline" className="h-11 rounded-xl border-line bg-surface px-5 text-[15px] font-semibold text-ink-2 hover:bg-fill-soft" onClick={() => navigate("/my")}>내 지원서에서 확인</Button>
+              <Button variant="outline" className="h-11 rounded-xl border-line bg-surface px-5 text-[15px] font-semibold text-ink-2 hover:bg-fill-soft" onClick={() => navigate("/my")}>자기소개서에서 확인</Button>
             </div>
           </>
         )}

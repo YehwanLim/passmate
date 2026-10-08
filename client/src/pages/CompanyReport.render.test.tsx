@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { buildCompanyReportFixture } from "./companyReportFixture";
 
@@ -100,6 +100,9 @@ describe("CompanyReport", () => {
     await waitFor(() => expect(screen.getByText("(2026-07) 전동화 투자를 2배로 늘렸다.")).toBeTruthy());
     expect(screen.queryByText(/vertexaisearch\.cloud\.google\.com/)).toBeNull();
     expect(screen.getByText("dart.fss.or.kr")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "기업 리포트" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/my#company");
   });
 
   it("sends a résumé analysis id to the résumé report instead of rendering it here", async () => {
@@ -152,7 +155,7 @@ describe("CompanyReport", () => {
     expect(await screen.findByText(/샘플 리포트/)).toBeTruthy();
     expect(screen.queryByText("로그인이 필요해요")).toBeNull();
     expect(screen.getByRole("button", { name: /내 지원 기업으로 기업 분석 받기/ })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "내 지원서" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "기업 리포트" })).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

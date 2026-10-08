@@ -43,8 +43,8 @@ const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200
 const rowsOf = async () => screen.findAllByTestId("application-row");
 const nameOf = (el: HTMLElement) => within(el).getAllByRole("button")[0].getAttribute("aria-label");
 
-describe("마이페이지 · 내 지원서", () => {
-  it("탭은 종류 셋(내 지원서·내 경험·내 기업)이고 숫자를 단다", async () => {
+describe("마이페이지 · 자기소개서", () => {
+  it("탭은 종류 셋(자기소개서·경험 카드·기업 리포트)이고 숫자를 단다", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json([row("a", null), row("corp", null, { kind: "COMPANY", latest_analysis_id: "c1", latest_status: "SUCCESS" })])));
     render(<MyProjects />);
     await rowsOf();
