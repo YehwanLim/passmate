@@ -3,6 +3,7 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import { Router } from "wouter";
 import App from "./App";
 import { applyFullStylesheet } from "./applyFullStylesheet";
+import { isInternalBrowser } from "./lib/internalTraffic";
 import { capturePrerenderedHtml } from "./lib/prerenderedSnapshot";
 import { routeKey } from "./lib/seo";
 import "./fonts/pretendard-variable-dynamic-subset.css";
@@ -12,10 +13,11 @@ import "./index.css";
 // GA4 초기화 (Production 전용)
 // - VITE_GA_MEASUREMENT_ID 환경변수가 설정된 경우에만 삽입
 // - 개발/테스트 환경에서는 아무것도 로드하지 않음
+// - 관리자 화면에 들어온 적 있는 운영자 브라우저도 로드하지 않음(lib/internalTraffic.ts)
 // ──────────────────────────────────────────────────────────────
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
 
-if (import.meta.env.PROD && GA_ID && GA_ID !== "G-XXXXXXXXXX") {
+if (import.meta.env.PROD && GA_ID && GA_ID !== "G-XXXXXXXXXX" && !isInternalBrowser()) {
   // 1) dataLayer 초기화 및 gtag 설정
   //    CSP(script-src)가 인라인 스크립트를 차단하므로 번들 코드에서 직접 초기화한다.
   //    gtag.js는 배열이 아닌 arguments 객체를 기대하므로 function 선언으로 push한다.

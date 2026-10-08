@@ -11,6 +11,7 @@ import {
   sendVisit,
   shouldTrackPath,
 } from "./siteVisits";
+import { INTERNAL_TRAFFIC_KEY } from "./internalTraffic";
 
 function memoryStorage(initial: Record<string, string> = {}): Storage {
   const map = new Map(Object.entries(initial));
@@ -55,6 +56,24 @@ describe("siteVisits", () => {
     } as Storage;
 
     expect(getVisitorId(broken)).toMatch(/^[A-Za-z0-9-]{8,64}$/);
+  });
+
+  it("운영자 브라우저 표시가 있으면 방문·이벤트를 보내지 않는다", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("window", { localStorage: memoryStorage({ [INTERNAL_TRAFFIC_KEY]: "1" }) });
+    try {
+      const options = {
+        fetcher,
+        getAccessToken: async () => null,
+        visitorId: "8c4d2a70-3b1e-4d5f-9a6b-2c1d0e9f8a7b",
+        inAppBrowser: null,
+      };
+      expect(await sendVisit("/", { ...options, source: null })).toBe(false);
+      expect(await sendClientEvent("landing_cta_click", "d:hero", options)).toBe(false);
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("경로와 방문자 ID 만 보내고, 로그인 토큰이 있으면 Authorization 을 붙인다", async () => {

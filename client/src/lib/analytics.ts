@@ -17,6 +17,8 @@ declare global {
   }
 }
 
+import { isInternalBrowser } from "@/lib/internalTraffic";
+
 // ──────────────────────────────────────────────────────────────
 // 내부 상수 & 헬퍼
 // ──────────────────────────────────────────────────────────────
@@ -35,6 +37,9 @@ function sendEvent(eventName: string, params?: Record<string, unknown>): void {
     console.log(`[GA4 Dev] ${eventName}`, params ?? {});
     return;
   }
+
+  // 운영자 브라우저는 main.tsx 가 gtag 를 싣지 않으므로 경고 없이 넘어간다.
+  if (isInternalBrowser()) return;
 
   if (typeof window.gtag !== "function") {
     console.warn("[GA4] window.gtag is not loaded yet.");

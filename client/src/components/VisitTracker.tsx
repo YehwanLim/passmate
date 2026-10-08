@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 
 import { trackPageView } from "@/lib/analytics";
+import { isInternalBrowser } from "@/lib/internalTraffic";
 import { routeKey } from "@/lib/seo";
 import { sendVisit, shouldTrackPath } from "@/lib/siteVisits";
 
@@ -44,7 +45,8 @@ export function VisitTracker({ enabled = TRACKING_ENABLED }: { enabled?: boolean
   const [location] = useLocation();
 
   useEffect(() => {
-    if (!enabled || !shouldTrackPath(location)) return;
+    // 운영자 브라우저는 관리자 화면에서 표시되므로 같은 탭에서 사이트로 넘어와도 렌더마다 다시 읽는다.
+    if (!enabled || isInternalBrowser() || !shouldTrackPath(location)) return;
 
     // SPA 전환은 gtag 가 스스로 page_view 를 보내지 않는다. 이게 없으면 /login 도달률을 볼 수 없다.
     const viewPath = pageViewPath(location, window.location.search);
