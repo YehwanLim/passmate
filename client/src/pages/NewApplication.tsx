@@ -5,7 +5,11 @@ import SiteHeader from "@/components/SiteHeader";
 import ApplicationEditor from "@/components/my/ApplicationEditor";
 import NewApplicationForm, { type NewApplicationInfo } from "@/components/my/NewApplicationForm";
 import SkeletonCard from "@/components/my/SkeletonCard";
+import { findJobPosting } from "@/constants/jobPostings";
+import { JOB_POSTING_DETAILS, type JobPostingDetail } from "@/constants/jobPostingDetails";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { deadlineDateInput } from "@/lib/jobPostingDates";
+import { readQueryParam } from "@/lib/readQueryParam";
 import {
   createApplication,
   fetchApplication,
@@ -20,19 +24,33 @@ import { WORKSPACE_COPY } from "./workspaceCopy";
 const COPY = WORKSPACE_COPY.newApplicationForm;
 const EMPTY_QUESTION: ApplicationQuestionDraft = { prompt: "", charLimit: null, answer: "" };
 
+/** 공고에 실린 문항을 편집기 문항으로. 공개 문항이 없는 공고면 빈 배열. */
+const postingQuestions = (detail: JobPostingDetail | undefined): ApplicationQuestionDraft[] =>
+  (detail?.questions ?? []).map((question) => ({ prompt: question.prompt, charLimit: question.charLimit, answer: "" }));
+
 const sameQuestions = (a: ApplicationQuestionDraft[], b: ApplicationQuestionDraft[]) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * /my/new — 새 지원서도 작성 화면과 같은 편집기(A안)로 빈 채로 연다.
  * 다 적고 "지원서 만들기"를 누르면 지원서를 만들고, 그 사이 친 글까지 저장한 뒤 /my/:id 로 바꿔 끼운다.
  * 공고를 붙이면 회사·직무를 채우기만 한다 — 만들기는 사람이 정한다(10-08).
+ * 채용 공고 한 장(/jobs/:slug)의 "내 경험으로 초안 쓰기"는 ?job= 으로 와서 회사·마감일·공개 문항을 미리 채운다(10-09).
  */
 export default function NewApplication() {
   const [, navigate] = useLocation();
-  const { isLoading } = useRequireAuth({ redirectPath: "/my/new" });
-  const [questions, setQuestions] = useState<ApplicationQuestionDraft[]>([EMPTY_QUESTION]);
+  const [jobListing] = useState(() => findJobPosting(readQueryParam("job", 80)));
+  // 로그인하고 돌아와도 같은 공고로 채워지게 쿼리를 그대로 들고 간다.
+  const { isLoading } = useRequireAuth({ redirectPath: jobListing ? `/my/new?job=${jobListing.slug}` : "/my/new" });
+  const [questions, setQuestions] = useState<ApplicationQuestionDraft[]>(() => {
+    const fromPosting = postingQuestions(jobListing && JOB_POSTING_DETAILS[jobListing.slug]);
+    return fromPosting.length > 0 ? fromPosting : [EMPTY_QUESTION];
+  });
   const [activeIndex, setActiveIndex] = useState(0);
-  const [info, setInfo] = useState<NewApplicationInfo>({ company: "", jobKeyword: "", deadline: "" });
+  const [info, setInfo] = useState<NewApplicationInfo>(() => ({
+    company: jobListing?.company ?? "",
+    jobKeyword: "",
+    deadline: jobListing ? deadlineDateInput(jobListing.closesAt) : "",
+  }));
   const [posting, setPosting] = useState<JobPostingRecord | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,6 +185,20 @@ export default function NewApplication() {
                 onInfo={(next) => { setInfo(next); if (error) setError(null); }}
                 onCommit={(next) => { setInfo(next); void create(next); }}
                 onRequireLogin={() => navigate("/login?redirect=%2Fmy%2Fnew")}
+                initialListedSlug={jobListing?.slug}
+                onPickListed={(listing, detail) => {
+                  // 직접 적은 값은 덮어쓰지 않는다.
+                  setInfo((current) => ({
+                    ...current,
+                    company: current.company.trim() ? current.company : listing.company,
+                    deadline: current.deadline || deadlineDateInput(listing.closesAt),
+                  }));
+                  const fromPosting = postingQuestions(detail);
+                  if (fromPosting.length > 0 && questions.every((q) => !q.prompt.trim() && !q.answer.trim())) {
+                    setQuestions(fromPosting);
+                    setActiveIndex(0);
+                  }
+                }}
                 companyRef={companyRef}
                 error={error}
                 busy={creating}

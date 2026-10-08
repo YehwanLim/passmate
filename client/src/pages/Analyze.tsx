@@ -23,6 +23,8 @@ import ImportPreviewDialog from "@/components/analyze/ImportPreviewDialog";
 import AnalyzeLoadingOverlay from "@/components/analyze/AnalyzeLoadingOverlay";
 import AnalyzeLoginModal from "@/components/analyze/AnalyzeLoginModal";
 import JobPostingSection from "@/components/analyze/JobPostingSection";
+import { findJobPosting } from "@/constants/jobPostings";
+import { JOB_POSTING_DETAILS, type JobPostingDetail } from "@/constants/jobPostingDetails";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
@@ -74,6 +76,15 @@ import {
   type SavedAnalysisDetail,
 } from "./analyzeQuestions";
 
+/** 공고에 실린 문항을 이 화면의 문항 칸으로. 공개 문항이 없는 공고면 빈 배열. */
+function postingQuestions(detail: JobPostingDetail | undefined): QuestionItem[] {
+  return (detail?.questions ?? []).map(question => ({
+    ...createEmptyQuestion(),
+    question: question.prompt,
+    charLimit: question.charLimit,
+  }));
+}
+
 const EMPTY_TITLES = new Map<string, string>();
 
 /**
@@ -90,16 +101,20 @@ export default function Analyze() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   // 카카오 로그인(전체 페이지 리다이렉트)에서 돌아온 경우 떠나기 전 저장한 초안이 있다. 마운트 때 한 번만 꺼낸다.
   const [draft] = useState(() => takeAnalyzeDraft());
+  // 채용 공고 한 장(/jobs/:slug)의 "다 쓴 자소서 분석하기"가 ?job= 으로 공고를 넘긴다. 초안이 있으면 초안이 우선이다.
+  const [jobListing] = useState(() => (draft ? undefined : findJobPosting(readQueryParam("job", 80))));
   // /company-report 의 CTA 가 회사·직무를 쿼리로 넘긴다. 없으면 빈 값.
   const [company, setCompany] = useState(
-    () => draft?.company ?? readQueryParam("company")
+    () => draft?.company ?? (readQueryParam("company") || jobListing?.company || "")
   );
   const [jobRole, setJobRole] = useState(
     () => draft?.jobRole ?? readQueryParam("jobKeyword")
   );
-  const [questions, setQuestions] = useState<QuestionItem[]>(() =>
-    draft && draft.questions.length > 0 ? draft.questions : [createEmptyQuestion()]
-  );
+  const [questions, setQuestions] = useState<QuestionItem[]>(() => {
+    if (draft && draft.questions.length > 0) return draft.questions;
+    const fromPosting = postingQuestions(jobListing && JOB_POSTING_DETAILS[jobListing.slug]);
+    return fromPosting.length > 0 ? fromPosting : [createEmptyQuestion()];
+  });
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [errorModal, setErrorModal] = useState<AnalyzeErrorView | null>(null);
@@ -653,6 +668,16 @@ export default function Analyze() {
                   setLoginPromptOpen(true);
                 }}
                 tone="light"
+                initialListedSlug={jobListing?.slug}
+                onPickListed={(listing, detail) => {
+                  // 직접 적은 값은 덮어쓰지 않는다: 회사는 빈 칸일 때만, 문항은 하나도 안 적었을 때만 공고 문항으로.
+                  if (!company.trim()) setCompany(listing.company);
+                  const fromPosting = postingQuestions(detail);
+                  if (fromPosting.length > 0 && questions.every(q => !q.question.trim() && !q.answer.trim())) {
+                    setQuestions(fromPosting);
+                    setActiveIndex(0);
+                  }
+                }}
               />
             </section>
 

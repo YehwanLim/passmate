@@ -4,6 +4,9 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { findJobPosting, JOB_POSTINGS, type JobPostingListing } from "@/constants/jobPostings";
+import { JOB_POSTING_DETAILS, postingTextOf, type JobPostingDetail } from "@/constants/jobPostingDetails";
+import { useNow } from "@/hooks/useNow";
 import {
   MAX_POSTING_CHARS,
   MIN_POSTING_CHARS,
@@ -12,12 +15,13 @@ import {
   isValidPostingUrl,
   requestJobPosting,
 } from "@/lib/jobPosting";
+import { dDayLabel, isOpen, openPostings } from "@/lib/jobPostingDates";
 import { cn } from "@/lib/utils";
 import type { JobPostingRecord } from "@/types/jobPosting";
 
 import FormSection from "./FormSection";
 
-type Mode = "url" | "text";
+type Mode = "url" | "text" | "listed";
 
 type Tone = "card" | "light";
 
@@ -64,6 +68,10 @@ function hostnameOf(url: string | null): string | null {
 /**
  * 자소서 분석 폼의 선택 입력: 채용공고를 URL 또는 붙여넣기로 받아 서버가 정리한 요약을 카드로 보여준다.
  * 로그인 없이 폼은 쓸 수 있지만 공고 읽기는 서버 자원을 쓰므로 비로그인 클릭은 onRequireLogin 으로 넘긴다.
+ *
+ * '접수 중인 공고' 탭(10-09): /jobs 에 올린 공고 중 하나를 고르면 onPickListed 로 알려(부모가 회사·문항을 채운다),
+ * '공고 불러오기'는 그 공고의 정리된 본문(postingTextOf)을 붙여넣기와 같은 길로 서버에 보낸다. 로그인 규칙은 그대로다.
+ * 탭은 접수 중 공고가 있거나 /jobs/:slug 에서 ?job= 으로 들어왔을 때만 보인다.
  */
 export default function JobPostingSection({
   value,
@@ -71,15 +79,28 @@ export default function JobPostingSection({
   isAuthenticated,
   onRequireLogin,
   tone = "card",
+  initialListedSlug,
+  onPickListed,
 }: {
   value: JobPostingRecord | null;
   onChange: (record: JobPostingRecord | null) => void;
   isAuthenticated: boolean;
   onRequireLogin: () => void;
   tone?: Tone;
+  /** /jobs/:slug 에서 넘어온 공고. 있으면 '접수 중인 공고' 탭을 그 공고가 골라진 채로 연다 */
+  initialListedSlug?: string;
+  onPickListed?: (listing: JobPostingListing, detail: JobPostingDetail) => void;
 }) {
   const t = STYLE;
-  const [mode, setMode] = useState<Mode>("url");
+  const initialListed = findJobPosting(initialListedSlug);
+  const [mode, setMode] = useState<Mode>(initialListed ? "listed" : "url");
+  const [listedSlug, setListedSlug] = useState<string | null>(initialListed?.slug ?? null);
+  const now = useNow();
+  // 접수 중 공고 + 쿼리로 넘어온 공고(마감됐어도 그 공고로 준비하러 온 것이라 남긴다)
+  const listedOptions = now ? openPostings(JOB_POSTINGS, now) : [];
+  if (initialListed && !listedOptions.some(posting => posting.slug === initialListed.slug)) listedOptions.unshift(initialListed);
+  const listed = findJobPosting(listedSlug);
+  const listedDetail = listed ? JOB_POSTING_DETAILS[listed.slug] : undefined;
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -89,7 +110,19 @@ export default function JobPostingSection({
   const isTextTooShort = trimmedText.length > 0 && trimmedText.length < MIN_POSTING_CHARS;
   const canFetch =
     !isLoading &&
-    (mode === "url" ? isValidPostingUrl(url) : trimmedText.length >= MIN_POSTING_CHARS);
+    (mode === "url"
+      ? isValidPostingUrl(url)
+      : mode === "text"
+        ? trimmedText.length >= MIN_POSTING_CHARS
+        : Boolean(listed && listedDetail));
+
+  const pickListed = (slug: string) => {
+    setListedSlug(slug);
+    setError(null);
+    const listing = findJobPosting(slug);
+    const detail = listing ? JOB_POSTING_DETAILS[listing.slug] : undefined;
+    if (listing && detail) onPickListed?.(listing, detail);
+  };
 
   const switchMode = (next: Mode) => {
     setMode(next);
@@ -115,7 +148,11 @@ export default function JobPostingSection({
     setError(null);
     try {
       const result = await requestJobPosting(
-        mode === "url" ? { url: url.trim() } : { text: trimmedText }
+        mode === "url"
+          ? { url: url.trim() }
+          : mode === "text"
+            ? { text: trimmedText }
+            : { text: postingTextOf(listed as JobPostingListing, listedDetail as JobPostingDetail) }
       );
       if (result.kind === "accepted") {
         onChange(result.record);
@@ -156,6 +193,7 @@ export default function JobPostingSection({
             [
               ["url", "링크"],
               ["text", "본문 붙여넣기"],
+              ...(listedOptions.length > 0 ? ([["listed", "접수 중인 공고"]] as const) : []),
             ] as const
           ).map(([key, label]) => (
             <button
@@ -175,7 +213,40 @@ export default function JobPostingSection({
         </div>
       </div>
 
-      {mode === "url" ? (
+      {mode === "listed" ? (
+        <div>
+          <div
+            role="radiogroup"
+            aria-label="접수 중인 공고"
+            className="max-h-[300px] divide-y divide-line-soft overflow-y-auto rounded-xl border border-line"
+          >
+            {listedOptions.map(posting => (
+              <label key={posting.slug} className="flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-fill-soft">
+                <input
+                  type="radio"
+                  name="listed-job-posting"
+                  value={posting.slug}
+                  checked={listedSlug === posting.slug}
+                  onChange={() => pickListed(posting.slug)}
+                  disabled={isLoading}
+                  className="mt-1 size-4 shrink-0 accent-[#0064ff]"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-bold text-ink break-keep">{posting.title}</span>
+                  <span className="mt-0.5 block text-[13px] text-ink-4 break-keep">{posting.subtitle}</span>
+                </span>
+                {now && isOpen(posting.closesAt, now) && (
+                  <span className="shrink-0 text-[13px] font-bold text-danger">{dDayLabel(posting.closesAt, now)}</span>
+                )}
+              </label>
+            ))}
+          </div>
+          <p className={t.hint}>고르면 회사 이름이 채워지고, 문항이 공개된 공고는 문항도 채워져요.</p>
+          <div className="mt-3 flex justify-end">
+            <FetchButton isLoading={isLoading} disabled={!canFetch} onClick={handleFetch} className={t.fetch} />
+          </div>
+        </div>
+      ) : mode === "url" ? (
         <div>
           <label htmlFor="job-posting-url" className="sr-only">
             채용 공고 링크

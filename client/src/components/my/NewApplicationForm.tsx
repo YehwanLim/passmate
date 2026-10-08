@@ -2,6 +2,8 @@ import type { RefObject } from "react";
 import CompanyCombobox from "@/components/analyze/CompanyCombobox";
 import JobPostingSection from "@/components/analyze/JobPostingSection";
 import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
+import type { JobPostingListing } from "@/constants/jobPostings";
+import type { JobPostingDetail } from "@/constants/jobPostingDetails";
 import type { JobPostingRecord } from "@/types/jobPosting";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
@@ -26,6 +28,8 @@ export default function NewApplicationForm({
   companyRef,
   error,
   busy,
+  initialListedSlug,
+  onPickListed,
 }: {
   posting: JobPostingRecord | null;
   onPosting: (record: JobPostingRecord | null) => void;
@@ -37,12 +41,23 @@ export default function NewApplicationForm({
   companyRef?: RefObject<HTMLInputElement | null>;
   error: string | null;
   busy: boolean;
+  /** 채용 공고 한 장에서 ?job= 으로 넘어온 공고 */
+  initialListedSlug?: string;
+  onPickListed?: (listing: JobPostingListing, detail: JobPostingDetail) => void;
 }) {
   return (
     <div className="space-y-4">
       {/* 제목·설명은 분석 폼과 같은 공고 칸의 것을 그대로 쓴다 */}
       <section className="rounded-[18px] bg-surface p-5">
-        <JobPostingSection value={posting} onChange={onPosting} isAuthenticated onRequireLogin={onRequireLogin} tone="light" />
+        <JobPostingSection
+          value={posting}
+          onChange={onPosting}
+          isAuthenticated
+          onRequireLogin={onRequireLogin}
+          tone="light"
+          initialListedSlug={initialListedSlug}
+          onPickListed={onPickListed}
+        />
       </section>
 
       <section className="space-y-3 rounded-[18px] bg-surface p-5">
