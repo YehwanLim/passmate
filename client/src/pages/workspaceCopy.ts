@@ -105,7 +105,7 @@ export const WORKSPACE_COPY = {
     addManually: "직접 적기",
     empty: "아직 적어 둔 경험이 없어요. 한 번 적어 두면 다음 지원서에서 다시 꺼내 쓸 수 있어요.",
     fields: {
-      title: "이 경험을 한 줄로 부르면",
+      title: "경험 이름",
       titlePlaceholder: "예: 손님 불만을 단골로 바꾼 3개월",
       period: "기간",
       situation: "어떤 상황이었나요",
@@ -117,7 +117,7 @@ export const WORKSPACE_COPY = {
     cancel: "취소",
     remove: "삭제",
     edit: "수정",
-    titleRequired: "이 경험을 한 줄로 부르는 이름을 적어 주세요.",
+    titleRequired: "경험 이름을 적어 주세요.",
     limitReached: "경험은 100개까지 적어 둘 수 있어요.",
     saveFailed: "저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
     loadError: "경험을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",

@@ -24,7 +24,7 @@ describe("후보 카드", () => {
     render(<ExperienceCandidateCard item={ITEM} onChange={onChange} />);
     fireEvent.click(screen.getByRole("checkbox"));
     expect(onChange).toHaveBeenLastCalledWith({ ...ITEM, selected: false });
-    fireEvent.change(screen.getByLabelText("이 경험을 한 줄로 부르면"), { target: { value: "새 제목" } });
+    fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "새 제목" } });
     expect(onChange).toHaveBeenLastCalledWith({ ...ITEM, title: "새 제목" });
   });
 

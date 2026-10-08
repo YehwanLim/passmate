@@ -6,14 +6,14 @@ import { AlertTriangle, Check, ChevronDown, FileText, FileUp, Pause, PenLine, Pl
    10-06 시안(디자인 캔버스 Hero-Play)을 옮겼다. 실제 화면 흐름만 보여준다(지어낸 UI 금지):
      1 내 경험으로 초안 쓰기 — 작업실 문항에서 "내 경험으로 초안 쓰기" → 미리보기 → 이 초안으로 채우기
      2 완성하고 진단받기   — [실제 수치] 빈칸 채우기·문장 덧붙이기 → 자소서 분석하기 → 리포트 01 첫인상 → 문장별 코멘트
-     3 경험 모아 자소서 완성 — 이력서·자소서로 경험 채우기 → 자소서 초안 → 자소서 분석(예상 질문)
+     3 합격까지 한 번에     — 이력서·자소서로 경험 채우기 → 자소서 초안 → 자소서 분석(예상 질문)
    리포트 장면의 문장·번호는 예시 리포트(resumeReportSample 문항 2)와 같다. 시연 번들이 가벼워야 해서 데이터를 import 하지 않고 옮겨 적었다.
    시간은 장면마다 t(ms) 하나로 흘러가고, 화면의 모든 상태는 t 에서 계산한다.
    프리렌더 HTML 은 첫 장면 t=0(빈 답변 칸)으로 구워진다 — opacity 0 에서 시작하는 요소가 없다.
    마우스를 올리면 멈추고, 일시정지 버튼·탭으로 직접 넘길 수 있다. 움직임 줄이기 설정이면 처음부터 멈춰 둔다.
    ───────────────────────────────────────────────────────── */
 
-const SCENE_LABELS = ["내 경험으로 초안 쓰기", "완성하고 진단받기", "경험 모아 자소서 완성"] as const;
+const SCENE_LABELS = ["내 경험으로 초안 쓰기", "완성하고 진단받기", "합격까지 한 번에"] as const;
 const TICK_MS = 50;
 /** 시연은 이 높이·최소 폭으로 짜여 있다. 칸이 최소 폭보다 좁으면(폰) 줄바꿈으로 무너뜨리지 않고 통째로 축소한다.
  *  안쪽 배치는 화면 폭이 아니라 시연 칸 폭(@container, @xl = 576px)으로 바꾼다 — 축소된 폰에서도 같은 기준. */
@@ -224,7 +224,10 @@ function SceneDraft({ t }: { t: number }) {
                   t >= line.at && (
                     <p key={index} className="hero-msg-in text-[13.5px] leading-[1.6] text-ink">
                       {line.text}
-                      <span className="mt-0.5 block text-[11px] text-ink-5">출처 · {EXPERIENCE_TITLE}</span>
+                      {/* 좁은 칸(폰)은 높이가 모자라 출처를 마지막 문장에만 단다(세 문장 모두 같은 경험). */}
+                      <span className={`mt-0.5 text-[11px] text-ink-5 ${index === 2 ? "block" : "hidden @xl:block"}`}>
+                        출처 · {EXPERIENCE_TITLE}
+                      </span>
                     </p>
                   )
               )}
@@ -273,6 +276,7 @@ function SceneDraft({ t }: { t: number }) {
 /* 리포트 장면 — 예시 리포트(resumeReportSample)의 첫인상·문항 2 문장 진단을 옮겨 적었다. */
 const REPORT_NAV = ["01 첫인상", "02 합격 기준", "03 핵심 진단", "04 문장별 코멘트", "05 예상 질문"] as const;
 const LINE_NAV_INDEX = 3;
+const PROFILE_KEYWORDS = ["이탈분석", "실험설계", "서비스기획", "커넥티드서비스"];
 const REMEMBERED = ["로그 3,000건을 직접 모은 동아리 기획자", "틀린 가설까지 기록해 다음 실험에 쓴 점", "아버지 차의 원격 공조 이야기"];
 type SentenceKind = "praise" | "improvement";
 /** 원문에 나오는 순서 = 번호 순서. 오른쪽 코멘트 목록도 같은 순서로 쌓는다(실제 리포트와 같다). */
@@ -496,58 +500,83 @@ function SceneDiagnose({ t }: { t: number }) {
         })}
       </div>
       {!onLine ? (
+        // 리포트 01 첫인상과 같은 짜임: 위는 이름표 띠(이니셜·읽히는 모습 | 지원자 프로필·키워드),
+        // 아래는 채용 담당자가 읽는 순서(3초·10초·30초). 넓은 칸은 세 칸 가로, 좁은 칸은 위아래로 쌓는다.
         <div className="flex min-h-0 flex-1 flex-col gap-4 px-[22px] pb-3 pt-4">
-          <div className="flex flex-none items-center gap-3">
-            <span className="inline-flex h-11 w-11 flex-none items-center justify-center rounded-full bg-navy text-[17px] font-extrabold text-white">
-              김
-            </span>
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-[12px] text-ink-4">김민지님은 채용 담당자에게 이렇게 읽혀요</span>
-              <span className="text-[20px] font-bold leading-[1.3] tracking-[-0.03em] text-navy @xl:text-[22px]">
-                사용자가 떠나는 지점을
-                <br />
-                데이터로 좁히는 기획자
+          <div className="grid flex-none items-center gap-4 @xl:grid-cols-[minmax(0,1fr)_200px]">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-11 w-11 flex-none items-center justify-center rounded-full bg-navy text-[17px] font-extrabold text-white @xl:h-12 @xl:w-12 @xl:text-[19px]">
+                김
+              </span>
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="text-[12px] text-ink-4">김민지님은 채용 담당자에게 이렇게 읽혀요</span>
+                <span className="text-[20px] font-bold leading-[1.3] tracking-[-0.03em] text-navy @xl:text-[22px]">
+                  사용자가 떠나는 지점을
+                  <br />
+                  데이터로 좁히는 기획자
+                </span>
+              </div>
+            </div>
+            <div className="hidden flex-col gap-1.5 @xl:flex">
+              <span className="text-[11px] font-bold text-ink-5">지원자 프로필</span>
+              <span className="text-[12px] leading-[1.6] text-ink-2">
+                동아리 추천 서비스에서 이탈 원인을 로그로 좁히고 실험으로 고친 경험이 중심에 있어요.
+              </span>
+              <span className="flex flex-wrap gap-1">
+                {PROFILE_KEYWORDS.map(keyword => (
+                  <span
+                    key={keyword}
+                    className="rounded-[8px] border border-line bg-fill-soft px-2 py-[3px] text-[11px] font-semibold text-ink-3"
+                  >
+                    #{keyword}
+                  </span>
+                ))}
               </span>
             </div>
           </div>
-          <div className="flex flex-none flex-col gap-3 border-t border-line-soft pt-3.5">
-            <span className="text-[13px] font-bold text-ink">채용 담당자가 읽는 순서대로</span>
-            {at(REPORT + 400) && (
-              <div className="hero-msg-in flex flex-col gap-1.5">
-                <ReadingTime time="3초" label="처음 보이는 것" />
-                <p className="m-0 rounded-[12px] bg-fill-soft px-3.5 py-2.5 text-[13px] font-bold leading-[1.55] text-ink">
-                  로그 3,000건과 2주 단위 실험이 무기인 자소서, 이제 그 시선이 차 안의 고객에게 닿으면 완성됩니다
-                </p>
-              </div>
-            )}
-            {at(REPORT + 1000) && (
-              <div className="hero-msg-in flex flex-col gap-1.5">
-                <ReadingTime time="10초" label="기억에 남는 것" />
-                {REMEMBERED.map(
-                  (item, index) =>
-                    at(REPORT + 1000 + index * 250) && (
-                      <div
-                        key={item}
-                        className="hero-msg-in flex items-center gap-2.5 rounded-[12px] bg-fill-soft px-3 py-2 text-[13px] font-bold leading-[1.45] text-ink"
-                      >
-                        <span className="inline-flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-ok-soft">
-                          <Check aria-hidden="true" className="h-2.5 w-2.5 text-ok" strokeWidth={3.4} />
-                        </span>
-                        {item}
-                      </div>
-                    )
-                )}
-              </div>
-            )}
-            {at(REPORT + 2200) && (
-              <div className="hero-msg-in flex flex-col gap-1.5">
-                <ReadingTime time="30초" label="다 읽고 남는 질문" />
-                <div className="flex items-center gap-2.5 rounded-[12px] bg-blank-soft px-3 py-2.5">
-                  <AlertTriangle aria-hidden="true" className="h-4 w-4 flex-none text-blank" strokeWidth={2.2} />
-                  <span className="text-[13px] font-bold leading-[1.45] text-ink">차량 서비스로 옮겨 올 근거는 아직 얇다</span>
+          <div className="flex min-h-0 flex-col gap-3 border-t border-line-soft pt-3.5">
+            <span className="flex-none text-[13px] font-bold text-ink">채용 담당자가 읽는 순서대로</span>
+            <div className="grid min-h-0 gap-3 @xl:grid-cols-3 @xl:gap-3.5">
+              {at(REPORT + 400) && (
+                <div className="hero-msg-in flex flex-col gap-2">
+                  <ReadingTime time="3초" label="처음 보이는 것" tone="ok" />
+                  <p className="m-0 rounded-[12px] bg-fill-soft px-3.5 py-2.5 text-[13px] font-bold leading-[1.55] text-ink @xl:py-3">
+                    로그 3,000건과 2주 단위 실험이 무기인 자소서, 이제 그 시선이 차 안의 고객에게 닿으면 완성됩니다
+                  </p>
                 </div>
-              </div>
-            )}
+              )}
+              {at(REPORT + 1000) && (
+                <div className="hero-msg-in flex flex-col gap-2">
+                  <ReadingTime time="10초" label="기억에 남는 것" tone="ok" />
+                  {REMEMBERED.map(
+                    (item, index) =>
+                      at(REPORT + 1000 + index * 250) && (
+                        <div
+                          key={item}
+                          className="hero-msg-in flex items-center gap-2.5 rounded-[12px] bg-fill-soft px-3 py-2 text-[13px] font-bold leading-[1.45] text-ink @xl:items-start @xl:px-2.5"
+                        >
+                          <span className="inline-flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-ok-soft @xl:mt-px">
+                            <Check aria-hidden="true" className="h-2.5 w-2.5 text-ok" strokeWidth={3.4} />
+                          </span>
+                          {item}
+                        </div>
+                      )
+                  )}
+                </div>
+              )}
+              {at(REPORT + 2200) && (
+                <div className="hero-msg-in flex flex-col gap-2">
+                  <ReadingTime time="30초" label="다 읽고 남는 질문" tone="fix" last />
+                  <div className="flex items-center gap-2.5 rounded-[12px] bg-blank-soft px-3 py-2.5 @xl:flex-col @xl:items-start @xl:gap-2 @xl:px-3.5 @xl:py-3">
+                    <AlertTriangle aria-hidden="true" className="h-4 w-4 flex-none text-blank" strokeWidth={2.2} />
+                    <span className="text-[13px] font-bold leading-[1.45] text-ink @xl:text-[14px]">차량 서비스로 옮겨 올 근거는 아직 얇다</span>
+                    <span className="hidden text-[12px] leading-[1.55] text-ink-3 @xl:block">
+                      면접에서 먼저 물어볼 수 있는 부분이에요.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (
@@ -635,12 +664,23 @@ function SceneDiagnose({ t }: { t: number }) {
   );
 }
 
-function ReadingTime({ time, label }: { time: string; label: string }) {
+/** 첫인상의 3초·10초·30초 머리. 넓은 칸에서는 실제 리포트처럼 점과 선으로 읽는 순서를 잇는다. */
+function ReadingTime({ time, label, tone, last = false }: { time: string; label: string; tone: "ok" | "fix"; last?: boolean }) {
   return (
-    <span className="flex items-baseline gap-1.5">
-      <span className="text-[15px] font-extrabold tracking-[-0.02em] text-ink">{time}</span>
-      <span className="text-[12px] font-semibold text-ink-4">{label}</span>
-    </span>
+    <div className="flex flex-col gap-2">
+      <div aria-hidden="true" className="hidden items-center @xl:flex">
+        <span
+          className={`h-3 w-3 flex-none rounded-full ${
+            tone === "ok" ? "bg-ok shadow-[0_0_0_4px_var(--color-ok-soft)]" : "bg-[#B97800] shadow-[0_0_0_4px_var(--color-blank-soft)]"
+          }`}
+        />
+        <span className={`ml-2.5 h-0.5 flex-1 ${last ? "" : "bg-line"}`} />
+      </div>
+      <span className="flex items-baseline gap-1.5">
+        <span className="text-[15px] font-extrabold tracking-[-0.02em] text-ink @xl:text-[20px]">{time}</span>
+        <span className="text-[12px] font-semibold text-ink-4">{label}</span>
+      </span>
+    </div>
   );
 }
 
