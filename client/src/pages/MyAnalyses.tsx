@@ -485,10 +485,10 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                 <button
                   type="button"
                   onClick={() => navigate("/my")}
-                  className="-ml-1.5 inline-flex shrink-0 items-center gap-0.5 rounded-lg px-1.5 py-1 text-[13.5px] font-semibold text-ink-3 hover:bg-fill"
+                  aria-label={WORKSPACE_COPY.page.title}
+                  className="-ml-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-3 hover:bg-fill"
                 >
-                  <ChevronLeft className="size-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">{WORKSPACE_COPY.page.title}</span>
+                  <ChevronLeft className="size-5" aria-hidden="true" />
                 </button>
                 <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">{detail.title}</h1>
               </div>
@@ -636,6 +636,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                   experienceTitles={experienceTitles}
                   experienceCount={experienceCount}
                   draftLimitReached={draftLimitReached}
+                  fitHeightClassName="lg:h-[calc(100dvh-11rem)]"
                 />
                 </>
                 )}
@@ -710,7 +711,7 @@ function ApplicationWorkspace({ projectId }: { projectId: string }) {
                 </section>
 
                 <section className="rounded-[18px] bg-surface p-5">
-                  <JobPostingSection value={posting} onChange={changePosting} isAuthenticated onRequireLogin={() => navigate("/login")} tone="light" />
+                  <JobPostingSection value={posting} onChange={changePosting} isAuthenticated onRequireLogin={() => navigate("/login")} tone="light" company={detail.company_name ?? ""} />
                   {postingError && (
                     <p role="alert" className="pt-2 text-[13px] text-danger">
                       {WORKSPACE_COPY.meta.failed}

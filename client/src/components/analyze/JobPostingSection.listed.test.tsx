@@ -12,7 +12,7 @@ vi.mock("@/lib/jobPosting", async (importOriginal) => ({
 import { JOB_POSTINGS } from "@/constants/jobPostings";
 import { JOB_POSTING_DETAILS, postingTextOf } from "@/constants/jobPostingDetails";
 import { openPostings } from "@/lib/jobPostingDates";
-import JobPostingSection from "./JobPostingSection";
+import JobPostingSection, { matchesCompany } from "./JobPostingSection";
 
 const NOW = new Date("2026-10-09T15:30:00+09:00");
 
@@ -64,6 +64,49 @@ describe("JobPostingSection — 접수 중인 공고 탭", () => {
     fireEvent.click(screen.getByRole("button", { name: "공고 불러오기" }));
     expect(onRequireLogin).toHaveBeenCalled();
     expect(mocks.requestJobPosting).not.toHaveBeenCalled();
+  });
+
+  it("shows only open postings similar to the typed company", () => {
+    const { rerender } = render(
+      <JobPostingSection value={null} onChange={vi.fn()} isAuthenticated onRequireLogin={vi.fn()} company="" />
+    );
+    expect(screen.queryByRole("tab", { name: "접수 중인 공고" })).toBeNull();
+
+    const open = openPostings(JOB_POSTINGS, NOW);
+    const target = open[0];
+    rerender(
+      <JobPostingSection value={null} onChange={vi.fn()} isAuthenticated onRequireLogin={vi.fn()} company={target.company} />
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "접수 중인 공고" }));
+    const radios = screen.getAllByRole("radio");
+    expect(radios).toHaveLength(open.filter(posting => matchesCompany(posting, target.company)).length);
+    expect(screen.getByRole("radio", { name: new RegExp(target.title) })).toBeTruthy();
+
+    // 회사를 바꿔 비슷한 공고가 없어지면 탭이 사라지고 링크 칸으로 돌아간다
+    rerender(
+      <JobPostingSection value={null} onChange={vi.fn()} isAuthenticated onRequireLogin={vi.fn()} company="없는회사이름" />
+    );
+    expect(screen.queryByRole("tab", { name: "접수 중인 공고" })).toBeNull();
+    expect(screen.getByRole("tab", { name: "링크" }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("matches company names loosely", () => {
+    const cj = JOB_POSTINGS.find(posting => posting.company === "CJ그룹");
+    if (!cj) return;
+    expect(matchesCompany(cj, "CJ제일제당")).toBe(true);
+    expect(matchesCompany(cj, "cj 그룹")).toBe(true);
+    expect(matchesCompany(cj, "올리브영")).toBe(true);
+    expect(matchesCompany(cj, "삼성전자")).toBe(false);
+    expect(matchesCompany(cj, "C")).toBe(false);
+  });
+
+  it("keeps the how-to copy behind the help button", () => {
+    render(<JobPostingSection value={null} onChange={vi.fn()} isAuthenticated onRequireLogin={vi.fn()} company="" />);
+    expect(screen.queryByText(/지원하려는 공고를 넣으면/)).toBeNull();
+    expect(screen.queryByText(/링크로 열리지 않는 사이트/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "채용공고 넣는 법" }));
+    expect(screen.getByText(/지원하려는 공고를 넣으면/)).toBeTruthy();
+    expect(screen.getByText(/링크로 열리지 않는 사이트/)).toBeTruthy();
   });
 
   it("hides the tab when nothing is open and no posting was passed", () => {

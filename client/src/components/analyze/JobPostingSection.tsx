@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +27,8 @@ type Tone = "card" | "light";
 
 // 분석 폼(흰 카드 한 장)과 작업실(이미 흰 카드 안)이 같은 칸을 쓴다. tone 은 바깥 틀만 바꾼다.
 const STYLE = {
-    intro: "text-[14px] text-ink-4 leading-relaxed break-keep",
-    tabBar: "mt-4 flex items-center gap-5 border-b border-line-soft",
+    help: "space-y-1.5 rounded-xl bg-fill-soft px-4 py-3 text-[13px] leading-relaxed text-ink-3 break-keep",
+    tabBar: "flex items-center gap-5 border-b border-line-soft",
     tabOn: "border-ink font-bold text-ink",
     tabOff: "border-transparent text-ink-4 hover:text-ink-2",
     input:
@@ -51,6 +51,23 @@ const STYLE = {
     listDot: "text-ink-5",
 };
 
+// 회사 이름 비교용: 띄어쓰기·(주)·'그룹'을 떼고 소문자로. "CJ제일제당"과 "CJ그룹"이 서로 닿게 한다.
+function normalizeCompany(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\(주\)|㈜|주식회사|\s/g, "")
+    .replace(/그룹$/, "");
+}
+
+/** 적은 회사 이름과 비슷한 공고인가 — 한쪽 이름이 다른 쪽에 들어 있거나, 계열사 줄에 적은 이름이 있으면 같은 회사로 본다. */
+export function matchesCompany(posting: JobPostingListing, company: string): boolean {
+  const typed = normalizeCompany(company);
+  if (typed.length < 2) return false;
+  const names = [posting.company, posting.shortName].map(normalizeCompany).filter(Boolean);
+  if (names.some(name => typed.includes(name) || name.includes(typed))) return true;
+  return typed.length >= 3 && normalizeCompany(posting.subtitle).includes(typed);
+}
+
 export function getJobPostingTitle(record: JobPostingRecord): string {
   const { title, company, role } = record.summary;
   return title || [company, role].filter(Boolean).join(" · ") || "채용공고";
@@ -71,7 +88,8 @@ function hostnameOf(url: string | null): string | null {
  *
  * '접수 중인 공고' 탭(10-09): /jobs 에 올린 공고 중 하나를 고르면 onPickListed 로 알려(부모가 회사를 채운다),
  * '공고 불러오기'는 그 공고의 정리된 본문(postingTextOf)을 붙여넣기와 같은 길로 서버에 보낸다. 로그인 규칙은 그대로다.
- * 탭은 접수 중 공고가 있거나 /jobs/:slug 에서 ?job= 으로 들어왔을 때만 보인다.
+ * 탭은 적은 회사 이름과 비슷한 접수 중 공고가 있거나 /jobs/:slug 에서 ?job= 으로 들어왔을 때만 보인다.
+ * 쓰는 법 안내는 제목 옆 (i) 를 눌러야 펼쳐진다(10-09, 칸을 조용하게).
  */
 export default function JobPostingSection({
   value,
@@ -81,6 +99,7 @@ export default function JobPostingSection({
   tone = "card",
   initialListedSlug,
   onPickListed,
+  company,
 }: {
   value: JobPostingRecord | null;
   onChange: (record: JobPostingRecord | null) => void;
@@ -90,15 +109,22 @@ export default function JobPostingSection({
   /** /jobs/:slug 에서 넘어온 공고. 있으면 '접수 중인 공고' 탭을 그 공고가 골라진 채로 연다 */
   initialListedSlug?: string;
   onPickListed?: (listing: JobPostingListing, detail: JobPostingDetail) => void;
+  /** 지원 회사 칸에 적은 이름. 넘기면 이와 비슷한 접수 중 공고만 보인다(빈칸이면 탭이 없다). 안 넘기면(새 지원서) 전부 */
+  company?: string;
 }) {
   const t = STYLE;
   const initialListed = findJobPosting(initialListedSlug);
-  const [mode, setMode] = useState<Mode>(initialListed ? "listed" : "url");
+  const [selectedMode, setMode] = useState<Mode>(initialListed ? "listed" : "url");
+  const [helpOpen, setHelpOpen] = useState(false);
   const [listedSlug, setListedSlug] = useState<string | null>(initialListed?.slug ?? null);
   const now = useNow();
-  // 접수 중 공고. 쿼리로 넘어온 공고는 마감됐어도(그 공고로 준비하러 온 것이라) 남기고, 골라진 채로 보이게 맨 위에 둔다.
-  const listedOptions = (now ? openPostings(JOB_POSTINGS, now) : []).filter(posting => posting.slug !== initialListed?.slug);
+  // 적은 회사와 비슷한 접수 중 공고. 쿼리로 넘어온 공고는 마감됐어도(그 공고로 준비하러 온 것이라) 남기고, 골라진 채로 보이게 맨 위에 둔다.
+  const listedOptions = (now ? openPostings(JOB_POSTINGS, now) : []).filter(
+    posting => posting.slug !== initialListed?.slug && (company === undefined || matchesCompany(posting, company))
+  );
   if (initialListed) listedOptions.unshift(initialListed);
+  // 회사 이름을 바꿔 비슷한 공고가 사라지면 탭도 사라지므로 링크 칸으로 돌아간다.
+  const mode: Mode = selectedMode === "listed" && listedOptions.length === 0 ? "url" : selectedMode;
   const listed = findJobPosting(listedSlug);
   const listedDetail = listed ? JOB_POSTING_DETAILS[listed.slug] : undefined;
   const [url, setUrl] = useState("");
@@ -174,6 +200,22 @@ export default function JobPostingSection({
     }
   };
 
+  const helpButton = (
+    <button
+      type="button"
+      onClick={() => setHelpOpen(open => !open)}
+      aria-expanded={helpOpen}
+      aria-controls="job-posting-help"
+      aria-label="채용공고 넣는 법"
+      className={cn(
+        "inline-flex size-6 items-center justify-center rounded-full transition-colors hover:bg-fill hover:text-ink-2",
+        helpOpen ? "text-ink-2" : "text-ink-4"
+      )}
+    >
+      <Info className="size-4" aria-hidden="true" />
+    </button>
+  );
+
   if (value) {
     return (
       <FormSection title="채용공고" className="space-y-5" tone={tone}>
@@ -183,11 +225,14 @@ export default function JobPostingSection({
   }
 
   return (
-    <FormSection title="채용공고" className="space-y-5" tone={tone}>
-      <div>
-        <p className={t.intro}>
-          지원하려는 공고를 넣으면, 해당 공고를 기준으로 자소서를 분석해드려요.
-        </p>
+    <FormSection title="채용공고" titleAside={helpButton} className="space-y-5" tone={tone}>
+      <div className="space-y-4">
+        {helpOpen && (
+          <div id="job-posting-help" className={t.help}>
+            <p>지원하려는 공고를 넣으면, 해당 공고를 기준으로 자소서를 분석해드려요.</p>
+            <p>링크로 열리지 않는 사이트(원티드 등)는 조금 번거롭더라도 본문을 복사해서 붙여주세요.</p>
+          </div>
+        )}
         <div className={t.tabBar} role="tablist">
           {(
             [
@@ -274,9 +319,6 @@ export default function JobPostingSection({
             />
             <FetchButton isLoading={isLoading} disabled={!canFetch} onClick={handleFetch} className={t.fetch} />
           </div>
-          <p className={t.hint}>
-            링크로 열리지 않는 사이트(원티드 등)는 조금 번거롭더라도 본문을 복사해서 붙여주세요.
-          </p>
         </div>
       ) : (
         <div>

@@ -252,19 +252,6 @@ describe("작업 화면", () => {
     expect(screen.queryByText(/아직 진단받은 적이 없어요/)).toBeNull();
   });
 
-  it("글자 수 제한에 범위 밖 값을 넣으면 제한 없음으로 저장한다", async () => {
-    render(<MyAnalyses />);
-    const limit = await screen.findByLabelText("글자 수 제한");
-    fireEvent.change(limit, { target: { value: "10001" } });
-    await waitFor(() => expect((limit as HTMLInputElement).value).toBe(""));
-    fireEvent.change(limit, { target: { value: "800" } });
-    expect((limit as HTMLInputElement).value).toBe("800");
-    // 위아래 화살표 없는 글자 칸 — 숫자가 아닌 글자는 버린다
-    expect(limit.getAttribute("type")).toBe("text");
-    fireEvent.change(limit, { target: { value: "1,000자" } });
-    expect((limit as HTMLInputElement).value).toBe("1000");
-  });
-
   it("불러오기 전에 떠나면 아무것도 저장하지 않는다", async () => {
     mocks.fetchApplication.mockReturnValue(new Promise(() => {}));
     const { unmount } = render(<MyAnalyses />);

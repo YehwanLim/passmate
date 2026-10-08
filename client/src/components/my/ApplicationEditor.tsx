@@ -9,7 +9,6 @@ import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 const MAX_QUESTIONS = 5;
 const COPY = WORKSPACE_COPY.editor;
-const MAX_CHAR_LIMIT = 10000;
 const DRAFT = WORKSPACE_COPY.draft;
 const EXPERIENCES_PATH = "/my#experiences";
 
@@ -33,12 +32,6 @@ export function draftNotice(result: DraftResult): string | null {
   }
 }
 
-// 서버가 1..10000 정수만 받는다. 그 밖의 입력은 제한 없음(null)으로 두어 저장이 막히지 않게 한다.
-export function parseCharLimit(raw: string): number | null {
-  const value = Number(raw);
-  return raw.trim() !== "" && Number.isInteger(value) && value >= 1 && value <= MAX_CHAR_LIMIT ? value : null;
-}
-
 /** 자동 저장 상태 글자. 편집기 위 막대(페이지)가 보여 준다. */
 export function saveLabel(state: AutosaveState): string {
   if (state === "idle") return "";
@@ -47,7 +40,9 @@ export function saveLabel(state: AutosaveState): string {
 
 /**
  * 지원서 편집기(10-08 A안 · 자소설닷컴식): 원고지 왼쪽에 붙은 번호 탭(폰은 위쪽 가로) + 원고지
- * (머리말 · 문항 원문 · 글자 수 제한 · 초안 쓰기 · 답변 · 아래 글자 수와 막대). 저장 상태는 페이지 위 막대가 보여 준다.
+ * (머리말 · 문항 원문 · 글자 수 · 초안 쓰기 · 답변). 저장 상태는 페이지 위 막대가 보여 준다.
+ * 글자 수 제한 칸은 10-09 뺐다 — 쓰는 사람이 알아서 맞춘다. 예전에 저장한 제한 값은 그대로 두고 화면에만 안 보인다.
+ * 글자 수는 원고지 맨 아래에 두면 화면 밖으로 밀려 안 보여서, 제한 칸이 있던 문항 원문 아래로 올렸다.
  */
 export default function ApplicationEditor({
   questions,
@@ -66,6 +61,7 @@ export default function ApplicationEditor({
   draftLimitReached,
   showDraft = true,
   answerPlaceholder = COPY.answerPlaceholder,
+  fitHeightClassName,
 }: {
   questions: ApplicationQuestionDraft[];
   activeIndex: number;
@@ -87,12 +83,14 @@ export default function ApplicationEditor({
   /** 저장된 지원서가 있어야 초안을 쓸 수 있다 — 자소서 분석(/analyze) 화면은 끈다. */
   showDraft?: boolean;
   answerPlaceholder?: string;
+  /**
+   * 넓은 화면에서 원고지를 한 화면 높이에 맞추는 높이 클래스(페이지마다 위아래 막대 높이가 달라 페이지가 정한다).
+   * 주면 문항 원문은 늘 보이고 답변만 칸 안에서 스크롤된다(10-09). 안 주면 예전처럼 글 길이만큼 늘어난다.
+   */
+  fitHeightClassName?: string;
 }) {
   const active = questions[activeIndex];
   const counts = countChars(active?.answer ?? "");
-  const limit = active?.charLimit ?? null;
-  const over = limit != null && counts.withSpaces > limit;
-  const ratio = limit ? Math.min(1, counts.withSpaces / limit) : 0;
 
   const tab = (current: boolean) =>
     `flex h-10 w-11 shrink-0 items-center justify-center text-[15px] font-extrabold tabular-nums transition-colors rounded-t-[10px] sm:h-11 sm:rounded-l-[10px] sm:rounded-tr-none ${
@@ -130,47 +128,39 @@ export default function ApplicationEditor({
       </div>
 
       {active && (
-        <section className="flex min-h-[620px] min-w-0 flex-1 flex-col rounded-[18px] bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+        <section
+          className={`flex min-h-[620px] min-w-0 flex-1 flex-col rounded-[18px] bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.05)] ${
+            fitHeightClassName ? `lg:min-h-[440px] lg:overflow-hidden ${fitHeightClassName}` : ""
+          }`}
+        >
           {heading && <div className="flex items-center justify-between gap-3 border-b border-dashed border-line px-5 py-4 sm:px-7">{heading}</div>}
 
           <div className="space-y-3 px-5 pt-5 sm:px-7">
-            {/* 문항 원문은 길어서 한 줄 칸이면 폰에서 잘린다 — 줄바꿈되는 칸 */}
-            <textarea
-              value={active.prompt}
-              onChange={(e) => onChange(activeIndex, { prompt: e.target.value.replace(/\n/g, " ") })}
-              placeholder={COPY.promptPlaceholder}
-              aria-label={COPY.promptLabel}
-              maxLength={300}
-              rows={2}
-              className="w-full resize-none rounded-xl border border-transparent bg-transparent px-1 py-1 text-[16px] font-semibold leading-[1.6] text-ink placeholder:font-medium placeholder:text-ink-5 hover:bg-fill-soft focus:border-brand focus:bg-surface focus:outline-none"
-            />
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-4">
-              <label className="inline-flex items-center gap-1.5 rounded-lg bg-fill px-2.5 py-1 text-[12.5px] font-semibold text-ink-3">
-                {COPY.charLimitLabel}
-                {/* 위아래 화살표가 붙는 number 칸 대신 숫자 자판만 띄우는 글자 칸. 숫자가 아닌 글자는 버린다. */}
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  value={active.charLimit ?? ""}
-                  onChange={(e) => onChange(activeIndex, { charLimit: parseCharLimit(e.target.value.replace(/\D/g, "")) })}
-                  aria-label={COPY.charLimitLabel}
-                  placeholder={COPY.noLimit}
-                  className="w-16 rounded-md border border-transparent bg-surface px-1.5 py-0.5 text-right text-[12.5px] tabular-nums text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none"
-                />
-                자
-              </label>
+            {/* 문항 원문(길어서 폰에서 잘리지 않게 줄바꿈되는 칸) + 오른쪽 위 구석에 문항 삭제 */}
+            <div className="flex items-start gap-2">
+              <textarea
+                value={active.prompt}
+                onChange={(e) => onChange(activeIndex, { prompt: e.target.value.replace(/\n/g, " ") })}
+                placeholder={COPY.promptPlaceholder}
+                aria-label={COPY.promptLabel}
+                maxLength={300}
+                rows={2}
+                className="min-w-0 flex-1 resize-none rounded-xl border border-transparent bg-transparent px-1 py-1 text-[16px] font-semibold leading-[1.6] text-ink placeholder:font-medium placeholder:text-ink-5 hover:bg-fill-soft focus:border-brand focus:bg-surface focus:outline-none"
+              />
               {questions.length > 1 && (
                 <button
                   type="button"
                   onClick={() => onRemove(activeIndex)}
                   aria-label={COPY.removeQuestion}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12.5px] font-semibold text-ink-4 hover:bg-fill hover:text-danger"
+                  className="-mr-2 -mt-1 inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[12.5px] font-semibold text-ink-4 hover:bg-fill hover:text-danger sm:-mr-4"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   {COPY.removeQuestion}
                 </button>
               )}
+            </div>
+            <div className="pb-4">
+              <p className="inline-block rounded-lg bg-fill px-2.5 py-1 text-[12.5px] font-semibold tabular-nums text-ink-3">{COPY.charCount(counts.withSpaces, counts.withoutSpaces)}</p>
             </div>
           </div>
 
@@ -197,25 +187,10 @@ export default function ApplicationEditor({
             placeholder={answerPlaceholder}
             aria-label={COPY.answerLabel}
             maxLength={6000}
-            className={`min-h-[360px] w-full flex-1 resize-y border-0 bg-transparent px-5 py-4 ${showDraft ? "" : "border-t border-line-soft"} text-[15.5px] leading-[1.9] text-ink placeholder:text-ink-5 focus:outline-none sm:px-7`}
+            className={`min-h-[360px] w-full flex-1 resize-y border-0 bg-transparent px-5 py-4 ${showDraft ? "" : "border-t border-line-soft"} ${
+              fitHeightClassName ? "lg:min-h-[160px] lg:resize-none lg:overflow-y-auto" : ""
+            } text-[14.5px] leading-[1.8] text-ink placeholder:text-ink-5 focus:outline-none sm:px-7`}
           />
-
-          {/* 아래: 큰 글자 수 + 막대(제한이 있을 때) */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line-soft px-5 py-3.5 sm:px-7">
-            <p className={`text-[20px] font-extrabold tabular-nums ${over ? "text-danger" : "text-ink"}`}>
-              {counts.withSpaces.toLocaleString()}
-              <span className="ml-1 text-[15px] font-semibold text-ink-4">/ {limit != null ? limit.toLocaleString() : "—"}</span>
-            </p>
-            <p className={`text-[12.5px] ${over ? "font-semibold text-danger" : "text-ink-4"}`}>
-              {COPY.charCount(counts.withSpaces, counts.withoutSpaces)}
-              {over && ` · ${COPY.overLimit}`}
-            </p>
-            {limit != null && (
-              <div className="h-2 min-w-[120px] flex-1 rounded-full bg-fill" aria-hidden="true">
-                <div className={`h-2 rounded-full ${over ? "bg-danger" : "bg-brand"}`} style={{ width: `${Math.round(ratio * 100)}%` }} />
-              </div>
-            )}
-          </div>
         </section>
       )}
     </div>

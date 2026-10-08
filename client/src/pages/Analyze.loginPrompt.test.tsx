@@ -66,7 +66,7 @@ describe("Analyze login prompt", () => {
     expect(screen.queryByText("이전 지원서 불러오기")).toBeNull();
   });
 
-  it("shows the remaining essay credits small next to the title once logged in", async () => {
+  it("shows the remaining essay credits in the side notes once logged in", async () => {
     mocks.useAuth.mockReturnValue(LOGGED_IN);
     mocks.fetchEntitlementSummary.mockResolvedValue({ freeRemaining: 1, remaining: 3 });
     render(<Analyze />);

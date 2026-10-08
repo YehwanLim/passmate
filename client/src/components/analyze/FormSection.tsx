@@ -7,12 +7,15 @@ import { ANALYZE_ITEM_VARIANTS } from "./AnalyzeShell";
 /** 분석 폼의 칸 한 장: 제목 + 필수/선택 + 입력 영역. */
 export default function FormSection({
   title,
+  titleAside,
   required = false,
   className,
   tone = "card",
   children,
 }: {
   title: string;
+  /** 제목 바로 옆에 붙는 작은 것(도움말 단추 등) */
+  titleAside?: ReactNode;
   required?: boolean;
   className?: string;
   /** card: 분석 폼의 흰 카드 한 장. light: 이미 흰 카드인 화면(작업실) 안에 넣을 때 — 제목만. */
@@ -22,7 +25,10 @@ export default function FormSection({
   if (tone === "light") {
     return (
       <div className={cn("space-y-5", className)}>
-        <h2 className="text-[16px] font-bold text-ink">{title}</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="text-[16px] font-bold text-ink">{title}</h2>
+          {titleAside}
+        </div>
         {children}
       </div>
     );
@@ -35,6 +41,7 @@ export default function FormSection({
     >
       <div className="flex items-baseline gap-2">
         <h2 className="text-[17px] font-bold text-ink">{title}</h2>
+        {titleAside}
         <span className={cn("text-[13px] font-semibold", required ? "text-brand-ink" : "text-ink-5")}>
           {required ? "필수" : "선택"}
         </span>

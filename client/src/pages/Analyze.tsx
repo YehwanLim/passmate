@@ -520,63 +520,24 @@ export default function Analyze() {
   };
   const headingText = [company.trim(), jobRole.trim()].filter(Boolean).join(" ");
   const toolButton =
-    "inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-line bg-surface px-3 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-fill disabled:cursor-wait";
+    "inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-line bg-surface px-3 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-fill disabled:cursor-wait";
   const sideLabel = "block text-[12.5px] font-semibold text-ink-4 mb-1.5";
 
   return (
-    <div className="min-h-screen bg-stage pb-36">
+    // 넓은 화면은 한 화면에 딱 맞춘다: 위(머리 막대 56+테두리 1+여백 24) + 원고지(100dvh-12.5rem) + 아래(119, 고정 막대 자리) = 100dvh.
+    <div className="min-h-screen bg-stage pb-36 lg:pb-[119px]">
       <SiteHeader variant="light" />
 
-      {/* 위 막대: 지원서 작성 화면(마이페이지)과 같은 자리. 불러오기 도구는 오른쪽에 둔다. */}
-      <div className="sticky top-14 z-30 border-b border-line bg-surface/95 backdrop-blur">
-        <div className="container flex h-14 max-w-6xl items-center justify-between gap-3">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">자소서 분석</h1>
-            {creditsRemaining !== null && (
-              <span className="shrink-0 text-[12px] text-ink-4">
-                남은 이용권 <span className="font-semibold tabular-nums text-ink-3">{creditsRemaining}회</span>
-              </span>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {user?.id && (
-              <button type="button" onClick={openPreviousResumePicker} className={toolButton}>
-                <History className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">이전 지원서 불러오기</span>
-                <span className="sm:hidden">불러오기</span>
-              </button>
-            )}
-            <button
-              type="button"
-              disabled={Boolean(fileImportStage)}
-              onClick={() => fileInputRef.current?.click()}
-              className={toolButton}
-              title="PDF·Word(.docx) 파일만 올릴 수 있어요"
-            >
-              {fileImportStage ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin text-brand" aria-hidden="true" />
-                  {fileImportStage === "extracting" ? "파일 읽는 중..." : "문항 나누는 중..."}
-                </>
-              ) : (
-                <>
-                  <FileUp className="h-4 w-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">자소서 파일 올리기</span>
-                  <span className="sm:hidden">파일</span>
-                </>
-              )}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx"
-              className="hidden"
-              onChange={handleResumeFileSelected}
-              aria-label="자소서 PDF 또는 Word 파일 선택"
-            />
-          </div>
-        </div>
-      </div>
+      {/* 위 막대는 10-09 뺐다 — 분석 버튼은 아래 고정 막대에 크게 있고, 불러오기 도구는 원고지 머리말 오른쪽으로 옮겨 쓰는 칸을 넓혔다. */}
+      <h1 className="sr-only">자소서 분석</h1>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.docx"
+        className="hidden"
+        onChange={handleResumeFileSelected}
+        aria-label="자소서 PDF 또는 Word 파일 선택"
+      />
 
       <div className="container max-w-6xl pt-6">
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -597,7 +558,41 @@ export default function Analyze() {
                 setActiveIndex(0);
               }}
               heading={
-                headingText ? <p className="min-w-0 truncate text-[15px] font-bold text-brand-ink">{headingText}</p> : undefined
+                <>
+                  {/* 회사·직무를 적기 전엔 빈칸처럼 보이지 않게 자리 글자를 흐리게 둔다 */}
+                  <p className={`min-w-0 truncate text-[15px] font-bold ${headingText ? "text-brand-ink" : "text-ink-5"}`}>
+                    {headingText || "지원 회사 · 직무"}
+                  </p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {user?.id && (
+                      <button type="button" onClick={openPreviousResumePicker} className={toolButton}>
+                        <History className="h-4 w-4" aria-hidden="true" />
+                        <span className="hidden sm:inline">이전 지원서 불러오기</span>
+                        <span className="sm:hidden">불러오기</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={Boolean(fileImportStage)}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={toolButton}
+                      title="PDF·Word(.docx) 파일만 올릴 수 있어요"
+                    >
+                      {fileImportStage ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-brand" aria-hidden="true" />
+                          {fileImportStage === "extracting" ? "파일 읽는 중..." : "문항 나누는 중..."}
+                        </>
+                      ) : (
+                        <>
+                          <FileUp className="h-4 w-4" aria-hidden="true" />
+                          <span className="hidden sm:inline">자소서 파일 올리기</span>
+                          <span className="sm:hidden">파일</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
               }
               showDraft={false}
               answerPlaceholder="여기에 답변을 작성해 주세요."
@@ -608,11 +603,12 @@ export default function Analyze() {
               experienceTitles={EMPTY_TITLES}
               experienceCount={null}
               draftLimitReached={false}
+              fitHeightClassName="lg:h-[calc(100dvh-12.5rem)]"
             />
           </div>
 
           {/* 오른쪽: 지원 정보 · 채용공고 (넓은 화면에서는 따라 내려온다) */}
-          <aside className="space-y-4 lg:sticky lg:top-32">
+          <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-12.5rem)] lg:overflow-y-auto">
             <section className="space-y-3 rounded-[18px] bg-surface p-5">
               <h2 className="text-[15px] font-bold text-ink">지원 정보</h2>
               <div>
@@ -658,6 +654,7 @@ export default function Analyze() {
                 }}
                 tone="light"
                 initialListedSlug={jobListing?.slug}
+                company={company}
                 onPickListed={listing => {
                   // 직접 적은 회사는 덮어쓰지 않는다.
                   if (!company.trim()) setCompany(listing.company);
@@ -667,11 +664,18 @@ export default function Analyze() {
 
             {/* 붙여넣을 초안이 지금 손에 없는 방문자용 출구. 폰이면 주소를 복사해 PC 에서 이어 하게 한다. */}
             <div className="space-y-1.5 px-1 text-[12.5px] text-ink-4">
+              {/* 남은 이용권은 위 막대에 있다가 막대를 빼며 이리 왔다(10-09) */}
+              {creditsRemaining !== null && (
+                <p className="text-[13px] text-ink-3">
+                  남은 이용권 <span className="font-semibold tabular-nums text-ink-2">{creditsRemaining}회</span>
+                </p>
+              )}
               {freeRemaining !== null && freeRemaining > 0 && (
                 <p className="text-[13px] font-semibold text-ink-2">무료 분석 {freeRemaining}회가 남아 있어요</p>
               )}
               <p>
-                아직 자소서가 없다면{" "}
+                아직 자소서가 없다면
+                <br />
                 <Link href={RESUME_REPORT_SAMPLE_PATH} className="text-ink-2 underline underline-offset-4 hover:text-ink">
                   예시 리포트 먼저 보기
                 </Link>

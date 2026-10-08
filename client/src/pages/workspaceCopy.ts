@@ -54,13 +54,11 @@ export const WORKSPACE_COPY = {
     questionsLabel: "문항",
     promptLabel: "문항 원문",
     answerLabel: "답변",
-    noLimit: "없음",
     removeQuestion: "문항 삭제",
     promptPlaceholder: "예: 1. 우리 회사에 지원한 동기를 작성해 주세요.",
     answerPlaceholder: "답변을 직접 써 보세요. 쓰는 동안 자동으로 저장돼요.",
-    charLimitLabel: "글자 수 제한",
-    charCount: (withSpaces: number, withoutSpaces: number) => `공백 포함 ${withSpaces}자 · 제외 ${withoutSpaces}자`,
-    overLimit: "글자 수 제한을 넘었어요",
+    charCount: (withSpaces: number, withoutSpaces: number) =>
+      `공백 포함 ${withSpaces.toLocaleString()}자 / 제외 ${withoutSpaces.toLocaleString()}자`,
   },
   save: {
     pending: "저장 대기 중",
