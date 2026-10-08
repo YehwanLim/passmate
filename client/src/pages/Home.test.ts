@@ -16,20 +16,18 @@ describe("HERO_TITLE_MOTION", () => {
 describe("HOME_NAV_ITEMS", () => {
   it("shows only immediately usable top navigation items", () => {
     expect(HOME_NAV_ITEMS.map(item => item.label)).toEqual([
-      "자소서 분석",
-      "기업 분석",
+      "채용 공고",
+      "분석하기",
       "취업 가이드",
       "이용권",
       "마이페이지",
     ]);
   });
 
-  it("routes the company analysis nav item to the company analysis form", () => {
-    expect(HOME_NAV_ITEMS).toContainEqual({
-      label: "기업 분석",
-      type: "route",
-      target: "/company-analysis",
-    });
+  it("routes the company analysis item under 분석하기 to the company analysis form", () => {
+    const analyze = HOME_NAV_ITEMS.find(item => item.label === "분석하기");
+    expect(analyze?.target).toBe("/analyze");
+    expect(analyze?.children).toContainEqual(expect.objectContaining({ label: "기업 분석", target: "/company-analysis" }));
   });
 
   it("routes the purchase nav item to the standalone entitlements page", () => {
