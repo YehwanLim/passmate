@@ -3,14 +3,9 @@ import {
   Users,
   FileText,
   Bot,
-  BrainCircuit,
-  MessageSquareCode,
-  BarChart3,
-  CalendarClock,
-  MessageSquare,
-  ScrollText,
+  Footprints,
+  Megaphone,
   Settings,
-  SlidersHorizontal,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -26,6 +21,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import Logo from "@/components/Logo";
 import type { AdminNavGroup } from "@/types/admin";
@@ -34,86 +30,28 @@ import type { AdminNavGroup } from "@/types/admin";
 // 메뉴 구성 정의
 // ============================================================
 
+// 매일 보는 것만 둔다. 멘토링·피드백은 주소(/admin/mentoring, /admin/feedback)와 알림함으로 들어간다.
 const NAV_GROUPS: AdminNavGroup[] = [
   {
-    label: "Overview",
     items: [
-      {
-        key: "dashboard",
-        label: "Dashboard",
-        icon: LayoutDashboard,
-        href: "/admin",
-      },
-    ],
-  },
-  {
-    label: "Management",
-    items: [
-      {
-        key: "users",
-        label: "Users",
-        icon: Users,
-        href: "/admin/users",
-      },
+      { key: "dashboard", label: "홈", icon: LayoutDashboard, href: "/admin" },
+      { key: "behavior", label: "사용 행동", icon: Footprints, href: "/admin/behavior" },
+      { key: "users", label: "사용자", icon: Users, href: "/admin/users" },
       {
         key: "resume-analysis",
-        label: "Resume Analysis",
+        label: "분석 기록",
         icon: FileText,
         href: "/admin/resume-analysis",
+        match: ["/admin/logs"],
       },
       {
-        key: "ai-usage",
-        label: "AI Usage",
+        key: "ai",
+        label: "AI",
         icon: Bot,
         href: "/admin/ai-usage",
+        match: ["/admin/ai-models", "/admin/prompts"],
       },
-      {
-        key: "ai-models",
-        label: "AI Models",
-        icon: BrainCircuit,
-        href: "/admin/ai-models",
-      },
-      {
-        key: "ai-settings",
-        label: "AI Settings",
-        icon: SlidersHorizontal,
-        href: "/admin/ai-settings",
-      },
-      {
-        key: "prompts",
-        label: "Prompts",
-        icon: MessageSquareCode,
-        href: "/admin/prompts",
-      },
-    ],
-  },
-  {
-    label: "Insights",
-    items: [
-      {
-        key: "analytics",
-        label: "Analytics",
-        icon: BarChart3,
-        href: "/admin/analytics",
-      },
-      {
-        key: "feedback",
-        label: "Feedback",
-        icon: MessageSquare,
-        href: "/admin/feedback",
-      },
-      {
-        key: "mentoring",
-        label: "Mentoring",
-        icon: CalendarClock,
-        href: "/admin/mentoring",
-      },
-      {
-        key: "logs",
-        label: "Logs",
-        icon: ScrollText,
-        href: "/admin/logs",
-      },
+      { key: "notices", label: "공지", icon: Megaphone, href: "/admin/notices" },
     ],
   },
 ];
@@ -122,7 +60,7 @@ const FOOTER_ITEMS: AdminNavGroup = {
   items: [
     {
       key: "settings",
-      label: "Settings",
+      label: "설정",
       icon: Settings,
       href: "/admin/settings",
     },
@@ -134,15 +72,22 @@ const FOOTER_ITEMS: AdminNavGroup = {
 // ============================================================
 
 export function AdminSidebar() {
-  const [location, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  // 좁은 화면에선 메뉴가 화면을 덮는 시트라, 이동하면 닫아 줘야 바로 본문이 보인다.
+  const navigate = (href: string) => {
+    setLocation(href);
+    if (isMobile) setOpenMobile(false);
+  };
 
   /**
    * 현재 경로가 해당 메뉴 아이템에 해당하는지 판단.
-   * Dashboard(/admin)는 정확히 일치, 나머지는 startsWith로 판단.
+   * 홈(/admin)은 정확히 일치, 나머지는 href 나 match 접두사로 판단.
    */
-  const isActive = (href: string) => {
+  const isActive = (href: string, match: string[] = []) => {
     if (href === "/admin") return location === "/admin";
-    return location.startsWith(href);
+    return [href, ...match].some((prefix) => location.startsWith(prefix));
   };
 
   return (
@@ -175,7 +120,7 @@ export function AdminSidebar() {
             <SidebarMenu>
               {group.items.map(item => {
                 const Icon = item.icon;
-                const active = isActive(item.href);
+                const active = isActive(item.href, item.match);
                 return (
                   <SidebarMenuItem key={item.key}>
                     <SidebarMenuButton
@@ -200,7 +145,7 @@ export function AdminSidebar() {
         ))}
       </SidebarContent>
 
-      {/* ── 푸터: Settings ── */}
+      {/* ── 푸터: 설정 ── */}
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           {FOOTER_ITEMS.items.map(item => {

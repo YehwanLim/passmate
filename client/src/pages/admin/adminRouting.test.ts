@@ -27,27 +27,32 @@ describe("admin routing", () => {
     expect(detailIndex).toBeLessThan(listIndex);
   });
 
-  it("routes AI Settings and exposes it in the admin sidebar", () => {
+  it("keeps the sidebar to the daily menus and drops the mock screens", () => {
     const adminRoot = read("client/src/pages/admin/AdminRoot.tsx");
     const sidebar = read("client/src/components/admin/layout/AdminSidebar.tsx");
 
-    expect(adminRoot).toContain(
-      'import AiSettingsPage from "./ai-settings/AiSettingsPage";'
-    );
-    expect(adminRoot).toContain(
-      'path="/admin/ai-settings" component={AiSettingsPage}'
-    );
-    expect(sidebar).toContain('key: "ai-settings"');
-    expect(sidebar).toContain('label: "AI Settings"');
-    expect(sidebar).toContain('href: "/admin/ai-settings"');
+    const hrefs = [...sidebar.matchAll(/href: "([^"]+)"/g)].map((match) => match[1]);
+    expect(hrefs).toEqual([
+      "/admin",
+      "/admin/behavior",
+      "/admin/users",
+      "/admin/resume-analysis",
+      "/admin/ai-usage",
+      "/admin/notices",
+      "/admin/settings",
+    ]);
+    expect(adminRoot).toContain('path="/admin/behavior" component={BehaviorPage}');
+    expect(adminRoot).toContain('path="/admin/notices" component={NoticesPage}');
+    expect(adminRoot).not.toContain("ai-settings");
+    expect(adminRoot).not.toContain("/admin/analytics");
+    // 멘토링·피드백은 메뉴에서만 숨기고 주소로는 계속 열린다.
+    expect(adminRoot).toContain('path="/admin/mentoring" component={MentoringPage}');
+    expect(adminRoot).toContain('path="/admin/feedback" component={FeedbackPage}');
   });
 
   it("keeps default and fallback model selection only in AI Models", () => {
     const aiModelsPage = read(
       "client/src/pages/admin/ai-models/AiModelsPage.tsx"
-    );
-    const aiSettingsPage = read(
-      "client/src/pages/admin/ai-settings/AiSettingsPage.tsx"
     );
 
     // 기본/폴백 선택 UI 는 AI Models 페이지가 쓰는 ModelsTable 에 있다.
@@ -58,9 +63,5 @@ describe("admin routing", () => {
     expect(aiModelsPage).toContain("ModelsTable");
     expect(modelsTable).toContain("Default Model");
     expect(modelsTable).toContain("Fallback Model");
-    expect(aiSettingsPage).not.toContain("Default Model");
-    expect(aiSettingsPage).not.toContain("Fallback Model");
-    expect(aiSettingsPage).not.toContain("defaultModel");
-    expect(aiSettingsPage).not.toContain("fallbackModel");
   });
 });

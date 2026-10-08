@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminSectionTabs, ANALYSIS_SECTION_TABS } from "@/components/admin/shared/AdminSectionTabs";
 import { AdminPagination } from "@/components/admin/shared/AdminPagination";
 import { AdminRefreshControl } from "@/components/admin/shared/AdminRefreshControl";
 import { LogsTable } from "@/components/admin/logs/LogsTable";
@@ -53,7 +54,7 @@ export default function LogsPage() {
     <div className="space-y-5">
       {/* 헤더 */}
       <AdminPageHeader
-        title="Logs"
+        title="실패 로그"
         description="시스템 분석 실패 로그를 실시간 추적하고 인프라 오작동을 분석합니다."
         actions={
           <div className="flex items-center gap-2">
@@ -66,6 +67,7 @@ export default function LogsPage() {
           </div>
         }
       />
+      <AdminSectionTabs tabs={ANALYSIS_SECTION_TABS} />
 
       <AdminErrorAlert message={error} />
 

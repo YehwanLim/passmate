@@ -52,6 +52,10 @@
       "destination": "/api/auth/me?visit=1"
     },
     {
+      "source": "/api/notices",
+      "destination": "/api/auth/me?notices=1"
+    },
+    {
       "source": "/api/webhooks/groble",
       "destination": "/api/entitlements?grobleWebhook=1"
     },

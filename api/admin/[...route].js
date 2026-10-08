@@ -2,11 +2,14 @@ import aiModelsHandler from "../../lib/admin-handlers/ai-models.js";
 import analysisReconciliationHandler from "../../lib/admin-handlers/analysis-reconciliation.js";
 import analysesHandler from "../../lib/admin-handlers/analyses.js";
 import analysisDetailHandler from "../../lib/admin-handlers/analysis-detail.js";
+import behaviorHandler from "../../lib/admin-handlers/behavior.js";
 import creditsHandler from "../../lib/admin-handlers/credits.js";
 import dashboardHandler from "../../lib/admin-handlers/dashboard.js";
 import entitlementsHandler from "../../lib/admin-handlers/entitlements.js";
 import feedbackHandler from "../../lib/admin-handlers/feedback.js";
 import { mentoringDetailHandler, mentoringHandler } from "../../lib/admin-handlers/mentoring.js";
+import { noticeDetailHandler, noticesHandler } from "../../lib/admin-handlers/notices.js";
+import notificationsHandler from "../../lib/admin-handlers/notifications.js";
 import productSettingsHandler from "../../lib/admin-handlers/product-settings.js";
 import promptDetailHandler from "../../lib/admin-handlers/prompt-detail.js";
 import promptsHandler from "../../lib/admin-handlers/prompts.js";
@@ -24,12 +27,16 @@ const DEFAULT_HANDLERS = {
   "analysis-reconciliation": analysisReconciliationHandler,
   analyses: analysesHandler,
   "analysis-detail": analysisDetailHandler,
+  behavior: behaviorHandler,
   credits: creditsHandler,
   dashboard: dashboardHandler,
   entitlements: entitlementsHandler,
   feedback: feedbackHandler,
   mentoring: mentoringHandler,
   "mentoring-detail": mentoringDetailHandler,
+  "notice-detail": noticeDetailHandler,
+  notices: noticesHandler,
+  notifications: notificationsHandler,
   "product-settings": productSettingsHandler,
   "prompt-detail": promptDetailHandler,
   prompts: promptsHandler,
@@ -53,6 +60,7 @@ const HANDLER_KEY_BY_RESOURCE = Object.freeze({
   analyses: "analysis-detail",
   "analysis-reconciliation": "analysis-reconciliation",
   mentoring: "mentoring-detail",
+  notices: "notice-detail",
   prompts: "prompt-detail",
   users: "user-detail",
 });

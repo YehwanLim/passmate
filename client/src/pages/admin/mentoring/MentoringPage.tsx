@@ -95,7 +95,7 @@ export default function MentoringPage() {
   return (
     <div className="space-y-5">
       <AdminPageHeader
-        title="Mentoring"
+        title="멘토링"
         description="커피챗·모의 면접·자소서 첨삭 슬롯을 열고 신청을 확정합니다. 확정 답장과 화상 링크는 메일로 직접 보냅니다."
         actions={<AdminRefreshControl lastRefreshed={lastRefreshed} isLoading={isLoading} onRefresh={refresh} id="mentoring-refresh-btn" />}
       />

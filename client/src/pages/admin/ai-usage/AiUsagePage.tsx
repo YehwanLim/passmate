@@ -1,5 +1,6 @@
 import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminSectionTabs, AI_SECTION_TABS } from "@/components/admin/shared/AdminSectionTabs";
 import { AdminRefreshControl } from "@/components/admin/shared/AdminRefreshControl";
 import { AiUsageSummaryCards } from "@/components/admin/ai-usage/AiUsageSummaryCards";
 import { ModelUsageSection } from "@/components/admin/ai-usage/ModelUsageSection";
@@ -13,7 +14,7 @@ export default function AiUsagePage() {
     <div className="space-y-5">
       {/* ── 페이지 헤더 ───────────────────────────────────── */}
       <AdminPageHeader
-        title="AI Usage"
+        title="AI 사용량"
         description="인프라 가동 리소스 및 모델 연동 비용을 모니터링합니다."
         actions={
           <div className="flex items-center gap-2">
@@ -26,6 +27,7 @@ export default function AiUsagePage() {
           </div>
         }
       />
+      <AdminSectionTabs tabs={AI_SECTION_TABS} />
 
       <AdminErrorAlert message={error} />
 

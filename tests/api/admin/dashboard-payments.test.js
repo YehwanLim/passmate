@@ -6,7 +6,6 @@ const mocks = vi.hoisted(() => ({
     analysis: { count: vi.fn(), findMany: vi.fn() },
     tokenUsage: { findMany: vi.fn() },
     siteVisit: { findMany: vi.fn() },
-    clientEvent: { groupBy: vi.fn() },
     paymentEntitlement: { findMany: vi.fn() },
     purchaseProductSetting: { findMany: vi.fn() },
   },
@@ -39,7 +38,6 @@ describe("admin dashboard — 결제 요약", () => {
     mocks.prisma.analysis.findMany.mockResolvedValue([]);
     mocks.prisma.tokenUsage.findMany.mockResolvedValue([]);
     mocks.prisma.siteVisit.findMany.mockResolvedValue([]);
-    mocks.prisma.clientEvent.groupBy.mockResolvedValue([]);
     mocks.prisma.paymentEntitlement.findMany.mockResolvedValue([]);
     mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue([]);
   });
@@ -111,5 +109,27 @@ describe("admin dashboard — 결제 요약", () => {
     expect(res.body.paymentSummary.byProduct).toEqual({
       SINGLE: 0, COMPANY_SINGLE: 0, STANDARD: 2, PREMIUM: 0, TRIPLE: 0, UNKNOWN: 0,
     });
+  });
+
+  it("표용 paymentChart 는 칸별 결제 건수와 상품별 건수를 준다", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-10T06:00:00.000Z"));
+    mocks.prisma.paymentEntitlement.findMany.mockResolvedValue([
+      { createdAt: new Date("2026-09-10T01:00:00.000Z"), rawEvent: { product: "SINGLE" } },
+      { createdAt: new Date("2026-09-10T02:00:00.000Z"), rawEvent: { contentId: PREMIUM_CONTENT_ID } },
+      { createdAt: new Date("2026-08-01T02:00:00.000Z"), rawEvent: { product: "SINGLE" } },
+    ]);
+
+    const res = createResponse();
+    await dashboardHandler({ method: "GET", query: { period: "7d" } }, res);
+    vi.useRealTimers();
+
+    expect(res.body.paymentChart).toHaveLength(7);
+    expect(res.body.paymentChart.at(-1)).toEqual({
+      date: "09/10",
+      count: 2,
+      byProduct: { SINGLE: 1, COMPANY_SINGLE: 0, STANDARD: 0, PREMIUM: 0, TRIPLE: 1, UNKNOWN: 0 },
+    });
+    expect(res.body.paymentChart.reduce((sum, point) => sum + point.count, 0)).toBe(2);
   });
 });

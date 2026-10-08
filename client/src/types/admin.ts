@@ -14,6 +14,8 @@ export type AdminNavItem = {
   icon: LucideIcon;
   /** /admin/... 형태의 경로 */
   href: string;
+  /** 이 메뉴를 활성으로 칠 다른 경로 접두사(묶음 탭으로 들어가는 화면) */
+  match?: string[];
   /** 미읽음 카운트 등 알림 뱃지 (null이면 미표시) */
   badge?: number | null;
 };

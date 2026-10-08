@@ -15,6 +15,7 @@ import { ModelDetailCard } from "@/components/admin/ai-models/ModelDetailCard";
 import { ModelsTable } from "@/components/admin/ai-models/ModelsTable";
 import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminSectionTabs, AI_SECTION_TABS } from "@/components/admin/shared/AdminSectionTabs";
 import { AdminRefreshControl } from "@/components/admin/shared/AdminRefreshControl";
 import { KpiCard } from "@/components/admin/dashboard/KpiCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -154,12 +155,13 @@ export default function AiModelsPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="AI Models"
+        title="AI 모델"
         description="실제 DB 호출 이력과 프롬프트 설정을 기준으로 AI 모델 상태를 확인합니다."
         actions={
           <AdminRefreshControl lastRefreshed={null} isLoading={isLoading} onRefresh={fetchModels} />
         }
       />
+      <AdminSectionTabs tabs={AI_SECTION_TABS} />
 
       <AdminErrorAlert message={error} />
 
@@ -179,14 +181,14 @@ export default function AiModelsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
         <KpiCard
-          title="Connected Models"
+          title="연결된 모델"
           value={data ? `${data.summary.connectedModels}/${data.summary.totalModels}` : null}
           description="실제 연결 상태"
           icon={ShieldCheck}
           isLoading={isLoading}
         />
         <KpiCard
-          title="Default Model"
+          title="기본 모델"
           value={defaultModel?.modelName ?? data?.summary.defaultModelName ?? null}
           description={defaultModel?.provider ?? undefined}
           icon={Zap}
@@ -194,21 +196,21 @@ export default function AiModelsPage() {
           className="[&_.tabular-nums]:truncate [&_.tabular-nums]:text-lg"
         />
         <KpiCard
-          title="Today's Requests"
+          title="오늘 요청"
           value={data?.summary.todaysRequests ?? null}
           description="오늘 token_usages 기준"
           icon={Activity}
           isLoading={isLoading}
         />
         <KpiCard
-          title="Average Latency"
+          title="평균 응답 시간"
           value={data ? formatMs(data.summary.avgLatencyMs) : null}
           description="오늘 평균"
           icon={Timer}
           isLoading={isLoading}
         />
         <KpiCard
-          title="Today's Estimated Cost"
+          title="오늘 예상 비용"
           value={data ? `$${data.summary.todaysEstimatedCost.toFixed(4)}` : null}
           description="USD"
           icon={DollarSign}
@@ -216,7 +218,7 @@ export default function AiModelsPage() {
           isLoading={isLoading}
         />
         <KpiCard
-          title="Error Rate"
+          title="실패율"
           value={data ? `${data.summary.errorRate.toFixed(1)}%` : null}
           description="오늘 실패율"
           icon={AlertTriangle}

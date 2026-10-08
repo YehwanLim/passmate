@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const root = new URL("../../../../", import.meta.url);
 // 관리자 데이터는 adminApiFetch(lib/adminApi.ts) 한 통로로만 나간다. 목록·스냅샷 훅은
 // 그 위에 얹힌 useAdminPagedResource / useAdminResource 를 거쳐도 된다.
-const ADMIN_TRANSPORT = /adminApiFetch|useAdminResource|useAdminPagedResource|useFunnelAnalyticsData/;
+const ADMIN_TRANSPORT = /adminApiFetch|useAdminResource|useAdminPagedResource/;
 const adminDataSources = [
   "client/src/hooks/admin/useAdminResource.ts",
   "client/src/hooks/admin/useAdminPagedResource.ts",
@@ -16,10 +16,11 @@ const adminDataSources = [
   "client/src/hooks/admin/useAnalysesData.ts",
   "client/src/hooks/admin/useAiUsageData.ts",
   "client/src/hooks/admin/useErrorLogs.ts",
-  "client/src/hooks/admin/useFunnelAnalyticsData.ts",
+  "client/src/hooks/admin/useBehaviorData.ts",
+  "client/src/hooks/admin/useAdminNotifications.ts",
   "client/src/hooks/admin/usePrompts.ts",
-  "client/src/pages/admin/analytics/AnalyticsPage.tsx",
   "client/src/pages/admin/ai-models/AiModelsPage.tsx",
+  "client/src/pages/admin/notices/NoticesPage.tsx",
 ];
 
 function source(path: string) {
@@ -49,12 +50,10 @@ describe("admin client server boundary", () => {
     });
   });
 
-  it("does not present browser-backed settings as live administration", () => {
-    ["client/src/pages/admin/settings/SettingsPage.tsx", "client/src/pages/admin/ai-settings/AiSettingsPage.tsx"].forEach((path) => {
-      const file = source(path);
-      expect(file, path).not.toContain("localStorage");
-      expect(file, path).toContain("read-only");
-      expect(file, path).toContain("adminApiFetch");
-    });
+  it("keeps the settings screen to server-backed controls", () => {
+    const file = source("client/src/pages/admin/settings/SettingsPage.tsx");
+    expect(file).not.toContain("localStorage");
+    expect(file).not.toContain("SettingsMockPanel");
+    expect(file).toContain("ServerToggleCard");
   });
 });

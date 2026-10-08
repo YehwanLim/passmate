@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminSectionTabs, ANALYSIS_SECTION_TABS } from "@/components/admin/shared/AdminSectionTabs";
 import { AdminPagination } from "@/components/admin/shared/AdminPagination";
 import { AnalysesFilters } from "@/components/admin/resume-analysis/AnalysesFilters";
 import { AnalysesTable } from "@/components/admin/resume-analysis/AnalysesTable";
@@ -46,9 +47,10 @@ export default function ResumeAnalysisPage() {
   return (
     <div className="space-y-5">
       <AdminPageHeader
-        title="Resume Analysis"
+        title="분석 기록"
         description="제출된 이력서 분석 내역을 상세 조회하고 모델 가동 비용을 추적합니다."
       />
+      <AdminSectionTabs tabs={ANALYSIS_SECTION_TABS} />
 
       <AdminErrorAlert message={error} />
 

@@ -7,16 +7,16 @@ import AnalysisDetailPage from "./resume-analysis/AnalysisDetailPage";
 
 // ── 관리자 페이지 ────────────────────────────────────────────
 import DashboardPage from "./dashboard/DashboardPage";
+import BehaviorPage from "./behavior/BehaviorPage";
 import UsersPage from "./users/UsersPage";
 import ResumeAnalysisPage from "./resume-analysis/ResumeAnalysisPage";
 import AiUsagePage from "./ai-usage/AiUsagePage";
 import AiModelsPage from "./ai-models/AiModelsPage";
-import AiSettingsPage from "./ai-settings/AiSettingsPage";
 import PromptDetailPage from "./prompts/PromptDetailPage";
 import PromptsPage from "./prompts/PromptsPage";
-import AnalyticsPage from "./analytics/AnalyticsPage";
 import FeedbackPage from "./feedback/FeedbackPage";
 import MentoringPage from "./mentoring/MentoringPage";
+import NoticesPage from "./notices/NoticesPage";
 import LogsPage from "./logs/LogsPage";
 import SettingsPage from "./settings/SettingsPage";
 import NotFound from "@/pages/NotFound";
@@ -59,6 +59,7 @@ export default function AdminRoot() {
             <AdminLayout>
               <Switch>
                 <Route path="/admin" component={DashboardPage} />
+                <Route path="/admin/behavior" component={BehaviorPage} />
 
                 {/* /admin/users/:id 는 /admin/users 보다 먼저 매칭되어야 합니다 */}
                 <Route path="/admin/users/:id" component={UserDetailPage} />
@@ -76,7 +77,6 @@ export default function AdminRoot() {
 
                 <Route path="/admin/ai-usage" component={AiUsagePage} />
                 <Route path="/admin/ai-models" component={AiModelsPage} />
-                <Route path="/admin/ai-settings" component={AiSettingsPage} />
                 {PROMPT_DETAIL_ROUTES.map(path => (
                   <Route
                     key={path}
@@ -89,9 +89,9 @@ export default function AdminRoot() {
                   component={PromptDetailPage}
                 />
                 <Route path="/admin/prompts" component={PromptsPage} />
-                <Route path="/admin/analytics" component={AnalyticsPage} />
                 <Route path="/admin/feedback" component={FeedbackPage} />
                 <Route path="/admin/mentoring" component={MentoringPage} />
+                <Route path="/admin/notices" component={NoticesPage} />
                 <Route path="/admin/logs" component={LogsPage} />
                 <Route path="/admin/settings" component={SettingsPage} />
                 {/* 관리자 영역 내 404 */}

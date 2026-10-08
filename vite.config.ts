@@ -32,6 +32,7 @@ function apiRoute(pathname: string) {
     return { file: "api/entitlements.js", query: { grobleWebhook: "1" }, raw: true };
   if (pathname === "/api/auth/me") return { file: "api/auth/me.js", query: {} };
   if (pathname === "/api/visits") return { file: "api/auth/me.js", query: { visit: "1" } };
+  if (pathname === "/api/notices") return { file: "api/auth/me.js", query: { notices: "1" } };
   if (pathname === "/api/feedback") return { file: "api/feedback.js", query: {} };
   if (pathname === "/api/projects") return { file: "api/projects.js", query: {} };
   if (pathname.startsWith("/api/admin/")) {

@@ -6,6 +6,7 @@ import { PromptEditorCard } from "@/components/admin/prompts/PromptEditorCard";
 import { VersionHistoryCard } from "@/components/admin/prompts/VersionHistoryCard";
 import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminSectionTabs, AI_SECTION_TABS } from "@/components/admin/shared/AdminSectionTabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -249,6 +250,7 @@ export default function PromptDetailPage() {
           </>
         }
       />
+      <AdminSectionTabs tabs={AI_SECTION_TABS} />
 
       <AdminErrorAlert message={loadError} />
 
