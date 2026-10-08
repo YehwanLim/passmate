@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), createApplication: vi.fn(), listExperiences: vi.fn() }));
+const mocks = vi.hoisted(() => ({ navigate: vi.fn(), listExperiences: vi.fn() }));
 vi.mock("wouter", () => ({ useLocation: () => ["/my", mocks.navigate], Link: ({ children }: { children: unknown }) => children }));
 vi.mock("@/hooks/useRequireAuth", () => ({ useRequireAuth: () => ({ user: { id: "u1" }, isLoading: false }) }));
 vi.mock("@/components/SiteHeader", () => ({ default: () => null }));
@@ -15,7 +15,6 @@ vi.mock("@/lib/apiAuth", () => ({
 }));
 vi.mock("@/lib/workspace", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/workspace")>()),
-  createApplication: mocks.createApplication,
   listExperiences: mocks.listExperiences,
 }));
 
@@ -91,18 +90,11 @@ describe("마이페이지 · 내 지원서", () => {
     expect(mocks.navigate).toHaveBeenCalledWith("/my/soon");
   });
 
-  it("새 지원서를 만들면 작업 화면으로 간다", async () => {
-    mocks.createApplication.mockResolvedValue({ id: "p-new" });
+  it("'+ 새 지원서'는 목록 아래에 펼치지 않고 새 지원서 전체 화면으로 간다", async () => {
     render(<MyProjects />);
     fireEvent.click(await screen.findByRole("button", { name: /새 지원서/ }));
-    fireEvent.change(screen.getByLabelText("회사"), { target: { value: "한솔제지" } });
-    fireEvent.change(screen.getByLabelText("문항 1"), { target: { value: "지원 동기" } });
-    fireEvent.click(screen.getByRole("button", { name: "만들기" }));
-    await waitFor(() => expect(mocks.createApplication).toHaveBeenCalledWith(expect.objectContaining({
-      company: "한솔제지",
-      questions: [{ prompt: "지원 동기", charLimit: null, answer: "" }],
-    })));
-    expect(mocks.navigate).toHaveBeenCalledWith("/my/p-new");
+    expect(mocks.navigate).toHaveBeenCalledWith("/my/new");
+    expect(screen.queryByLabelText("회사")).toBeNull();
   });
 
   it("내 기업 탭은 기업 분석만 보여 주고, 누르면 리포트로 바로 간다", async () => {
