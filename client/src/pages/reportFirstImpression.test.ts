@@ -174,7 +174,7 @@ describe("report first impression editorial helpers", () => {
 
   it("splits paragraph and legacy comments into three editorial blocks", () => {
     expect(splitMentorComment("첫 인상입니다.\n\n보완점입니다.\n\n면접 준비입니다.").map((item) => item.title))
-      .toEqual(["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"])
+      .toEqual(["처음 읽고 든 생각", "한 가지만 더한다면", "면접에서 준비할 것"])
     expect(splitMentorComment("첫 문장입니다. 둘째 문장입니다. 셋째 문장입니다.")).toHaveLength(3)
   })
 
@@ -183,7 +183,7 @@ describe("report first impression editorial helpers", () => {
     const blocks = splitMentorComment(comment)
 
     expect(blocks.map((block) => block.text).join(" ")).toBe(comment)
-    expect(blocks.map((block) => block.title)).toEqual(["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"])
+    expect(blocks.map((block) => block.title)).toEqual(["처음 읽고 든 생각", "한 가지만 더한다면", "면접에서 준비할 것"])
   })
 
   it("expands legacy keyword emphasis to the full sentence and strips span markup", () => {
