@@ -37,6 +37,7 @@ vi.mock("@/components/AuthButton", () => ({ default: () => null }));
 vi.mock("@/components/Logo", () => ({ default: () => null }));
 
 import MyEntitlements from "./MyEntitlements";
+import type { EntitlementSummary } from "@/lib/entitlements";
 
 const BASE_SUMMARY = {
   premiumEnabled: true,
@@ -63,7 +64,7 @@ function isPrimary(button: HTMLElement) {
   return button.classList.contains("bg-brand");
 }
 
-async function renderWith(summary: Partial<typeof BASE_SUMMARY>) {
+async function renderWith(summary: Partial<typeof BASE_SUMMARY> & Pick<EntitlementSummary, "freeTools">) {
   mocks.fetchEntitlementSummary.mockResolvedValue({
     ...BASE_SUMMARY,
     ...summary,
@@ -106,6 +107,20 @@ describe("MyEntitlements action buttons", () => {
     cleanup();
     await renderWith({ remaining: 2, freeRemaining: 1, bonusRemaining: 1 });
     expect(screen.getByText("보너스 이용권")).toBeTruthy();
+  });
+
+  it("shows today's free AI tool uses only when the server sent them", async () => {
+    await renderWith({
+      remaining: 1,
+      freeRemaining: 1,
+      freeTools: { experienceDraft: { limit: 2, remaining: 1 }, experienceExtract: { limit: 3, remaining: 0 } },
+    });
+    expect(screen.getByText("오늘 무료로 쓰는 AI 도구")).toBeTruthy();
+    expect(screen.getByText("내 경험으로 초안 쓰기").closest("div")?.parentElement?.textContent).toContain("1 / 2회");
+    expect(screen.getByText("이력서·자소서로 자동 추가").closest("div")?.parentElement?.textContent).toContain("0 / 3회");
+    cleanup();
+    await renderWith({ remaining: 1, freeRemaining: 1, freeTools: null });
+    expect(screen.queryByText("오늘 무료로 쓰는 AI 도구")).toBeNull();
   });
 
   it("keeps the account deletion link at the bottom of this page (moved from 마이페이지)", async () => {

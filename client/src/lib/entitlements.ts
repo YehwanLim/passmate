@@ -18,7 +18,12 @@ export type EntitlementSummary = {
   companyAnalysisEnabled: boolean;
   /** 기업 분석 리포트 잔여 크레딧(자소서 remaining 과 별도 풀). 구버전 응답에 없으면 0. */
   companyRemaining: number;
+  /** 크레딧 없이 하루 몇 번 쓰는 AI 도구의 오늘 남은 횟수. 구버전 응답·서버 읽기 실패면 null — 화면은 칸을 숨긴다. */
+  freeTools?: FreeTools | null;
 };
+
+export type FreeToolUsage = { limit: number; remaining: number };
+export type FreeTools = { experienceDraft: FreeToolUsage; experienceExtract: FreeToolUsage };
 
 export class EntitlementApiError extends Error {
   constructor(message: string) {
@@ -37,6 +42,22 @@ function readNonNegativeInteger(value: unknown, field: string): number {
   }
 
   return value;
+}
+
+function readFreeToolUsage(value: unknown): FreeToolUsage | null {
+  if (!isRecord(value)) return null;
+  const { limit, remaining } = value;
+  if (typeof limit !== "number" || typeof remaining !== "number") return null;
+  if (!Number.isInteger(limit) || !Number.isInteger(remaining) || limit < 1 || remaining < 0) return null;
+  return { limit, remaining: Math.min(remaining, limit) };
+}
+
+/** 표시용 덤이라 모양이 어긋나도 요약 전체를 실패시키지 않고 null 로 둔다. */
+function readFreeTools(value: unknown): FreeTools | null {
+  if (!isRecord(value)) return null;
+  const experienceDraft = readFreeToolUsage(value.experienceDraft);
+  const experienceExtract = readFreeToolUsage(value.experienceExtract);
+  return experienceDraft && experienceExtract ? { experienceDraft, experienceExtract } : null;
 }
 
 function readCheckoutUrl(value: unknown, field: string): string | null {
@@ -127,6 +148,7 @@ function parseEntitlementSummary(payload: unknown): EntitlementSummary {
       payload.companyRemaining === undefined
         ? 0
         : readNonNegativeInteger(payload.companyRemaining, "companyRemaining"),
+    freeTools: readFreeTools(payload.freeTools),
   };
 }
 

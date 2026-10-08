@@ -44,6 +44,8 @@ describe("entitlements client", () => {
       // 구버전 서버 응답에 없으면 기업 분석은 "꺼짐·0"으로 읽는다
       companyAnalysisEnabled: false,
       companyRemaining: 0,
+      // 구버전 서버 응답에 없으면 무료 AI 도구 칸은 숨긴다
+      freeTools: null,
     });
     expect(calls).toEqual([
       [
@@ -51,6 +53,23 @@ describe("entitlements client", () => {
         { headers: { Authorization: "Bearer access-token" } },
       ],
     ]);
+  });
+
+  it("reads today's free AI tool uses and drops a malformed block instead of failing the summary", async () => {
+    const base = { premiumEnabled: false, freeRemaining: 1, premiumRemaining: 0, remaining: 1, groblePaymentUrl: null };
+    const read = (freeTools: unknown) =>
+      fetchEntitlementSummary("access-token", async () => jsonResponse({ ...base, freeTools }));
+
+    await expect(
+      read({
+        experienceDraft: { limit: 2, remaining: 1, resetAt: "2026-10-09T00:00:00.000Z" },
+        experienceExtract: { limit: 3, remaining: 3, resetAt: "2026-10-09T00:00:00.000Z" },
+      }),
+    ).resolves.toMatchObject({
+      freeTools: { experienceDraft: { limit: 2, remaining: 1 }, experienceExtract: { limit: 3, remaining: 3 } },
+    });
+    await expect(read({ experienceDraft: { limit: 2, remaining: "1" } })).resolves.toMatchObject({ freeTools: null });
+    await expect(read(null)).resolves.toMatchObject({ freeTools: null, remaining: 1 });
   });
 
   it("rejects malformed credit counts instead of displaying an invented balance", async () => {

@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
       entitlementSetting: { findUnique: vi.fn() },
       purchaseProductSetting: { findMany: vi.fn() },
       purchaseIntent: { create: vi.fn() },
+      apiRateLimitBucket: { findUnique: vi.fn() },
     },
     requireActiveApplicationUser: vi.fn(),
     transaction: {},
@@ -105,6 +106,7 @@ describe("entitlement APIs", () => {
     mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue(buildProductRows());
     mocks.prisma.purchaseIntent.create.mockResolvedValue({ id: INTENT_ID });
     mocks.hasClaimedFeedbackReward.mockResolvedValue(false);
+    mocks.prisma.apiRateLimitBucket.findUnique.mockResolvedValue(null);
     mocks.getEntitlementSummaryReadOnly.mockResolvedValue({
       freeRemaining: 1,
       bonusRemaining: 0,
@@ -134,6 +136,10 @@ describe("entitlement APIs", () => {
       feedbackRewardClaimed: false,
       companyAnalysisEnabled: false,
       companyRemaining: 0,
+      freeTools: {
+        experienceDraft: { limit: 2, remaining: 2, resetAt: expect.any(String) },
+        experienceExtract: { limit: 3, remaining: 3, resetAt: expect.any(String) },
+      },
     });
     // 조회 전용 요약 — 잠금 트랜잭션을 거치지 않고 prisma 로 바로 읽는다.
     expect(mocks.getEntitlementSummaryReadOnly).toHaveBeenCalledWith(
@@ -143,6 +149,31 @@ describe("entitlement APIs", () => {
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
     // 공개 가용성 응답용 캐시 헤더가 인증된 요약 응답에는 붙지 않는다.
     expect(response.headers?.["Cache-Control"]).toBeUndefined();
+  });
+
+  it("reports today's remaining free AI uses for the token user without consuming any", async () => {
+    mocks.prisma.apiRateLimitBucket.findUnique.mockImplementation(async ({ where }) =>
+      where.subjectKey_route_windowStart.route === "experience-draft" ? { requestCount: 1 } : { requestCount: 5 },
+    );
+
+    const response = await invokeEntitlements();
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.freeTools.experienceDraft).toMatchObject({ limit: 2, remaining: 1 });
+    expect(response.body.freeTools.experienceExtract).toMatchObject({ limit: 3, remaining: 0 });
+    for (const [{ where }] of mocks.prisma.apiRateLimitBucket.findUnique.mock.calls) {
+      expect(where.subjectKey_route_windowStart.subjectKey).toBe(`user:${mocks.authenticatedUser.id}`);
+    }
+  });
+
+  it("still returns the summary with freeTools null when the free-use read fails", async () => {
+    mocks.prisma.apiRateLimitBucket.findUnique.mockRejectedValue(new Error("db down"));
+
+    const response = await invokeEntitlements();
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.remaining).toBe(1);
+    expect(response.body.freeTools).toBeNull();
   });
 
   it("passes the company analysis pool through to the summary response", async () => {
