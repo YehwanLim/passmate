@@ -31,14 +31,16 @@ describe("JOB_POSTINGS", () => {
       const text = postingTextOf(posting, detail);
       expect(text.length, posting.slug).toBeGreaterThanOrEqual(MIN_POSTING_CHARS);
       expect(text.length, posting.slug).toBeLessThanOrEqual(MAX_POSTING_CHARS);
+      // 기업 분석 폼(CompanyAnalyze)의 채용공고 칸 상한도 넘지 않는다.
+      expect(text.length, posting.slug).toBeLessThanOrEqual(4000);
+      expect(detail.process.length, posting.slug).toBeGreaterThan(0);
+      expect(detail.facts.some(fact => fact.label === "전형 절차"), posting.slug).toBe(false);
+      expect(detail.facts.some(fact => typeof fact.value !== "string"), posting.slug).toBe(true);
       expect(detail.source.url, posting.slug).toMatch(/^https:\/\//);
       expect(detail.description.length, posting.slug).toBeLessThanOrEqual(160);
       expect(detail.facts.length, posting.slug).toBeGreaterThan(0);
-      // 문항이 없으면 쓰는 법이라도 있어야 페이지가 비지 않는다. 문항이 있으면 어디 기준인지 밝힌다.
-      expect(detail.questions.length + detail.tips.length, posting.slug).toBeGreaterThan(0);
-      expect(detail.questions.length > 0 ? typeof detail.questionsNote : null, posting.slug).toBe(
-        detail.questions.length > 0 ? "string" : null
-      );
+      // 모집 직무는 공고마다 꼭 보인다.
+      expect(detail.facts.some(fact => /직무|직군|부문|분야/.test(fact.label)), posting.slug).toBe(true);
     }
   });
 

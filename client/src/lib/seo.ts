@@ -62,9 +62,9 @@ export const COMPANY_REPORT_SAMPLE_PATH = "/company-report?sample=1";
 export const GUIDE_INDEX_PATH = "/guide";
 export const JOBS_INDEX_PATH = "/jobs";
 export const GUIDE_INDEX_TITLE = "취업 가이드 - 채용 담당자가 진짜 보는 것 | Pre:View";
-export const JOBS_INDEX_TITLE = "대기업 신입 채용공고·자소서 문항 모음 | Pre:View";
+export const JOBS_INDEX_TITLE = "대기업 신입 채용공고 모음 | Pre:View";
 export const JOBS_INDEX_DESCRIPTION =
-  "지금 접수 중인 대기업 신입 공채를 공식 채용 페이지에서 직접 확인해 모았습니다. 마감일, 지원 자격, 전형 절차와 자소서 문항이 무엇을 묻는지까지 한 장에 정리합니다.";
+  "지금 접수 중인 대기업 신입 공채를 공식 채용 페이지에서 직접 확인해 모았습니다. 마감일, 모집 직무, 지원 자격, 전형 절차를 한 장에 정리하고 공식 공고로 연결합니다.";
 export const GUIDE_INDEX_DESCRIPTION =
   "채용 담당자가 자소서에서 실제로 확인하는 것을 첫인상·문항별·수정 순서로 정리했습니다. 자소서 첨삭이나 AI 피드백을 받기 전에 읽어 두면 어디부터 고칠지 보입니다.";
 

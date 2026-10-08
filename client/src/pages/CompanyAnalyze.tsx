@@ -5,6 +5,8 @@ import { Loader2 } from "lucide-react";
 import CompanyCombobox from "@/components/analyze/CompanyCombobox";
 import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
 import ResumeLinkSelect from "@/components/analyze/ResumeLinkSelect";
+import { findJobPosting } from "@/constants/jobPostings";
+import { JOB_POSTING_DETAILS, postingTextOf } from "@/constants/jobPostingDetails";
 import {
   ANALYZE_BIG_SUBMIT_BUTTON_CLASS,
   AnalyzeBottomBar,
@@ -28,11 +30,18 @@ const MAX_NAME_CHARS = 100;
 
 export default function CompanyAnalyze() {
   const [, navigate] = useLocation();
-  const { isLoading: authLoading, isAuthenticated } = useRequireAuth({ redirectPath: "/company-analysis" });
+  // 채용 공고 한 장(/jobs/:slug)의 "기업 분석하기"가 ?job= 으로 공고를 넘긴다. 그 공고의 정리된 내용을 채용공고 칸에 미리 붙인다.
+  const [jobListing] = useState(() => findJobPosting(readQueryParam("job", 80)));
+  // 로그인하고 돌아와도 같은 회사·공고로 채워지게 쿼리를 그대로 들고 간다.
+  const { isLoading: authLoading, isAuthenticated } = useRequireAuth({
+    redirectPath: typeof window === "undefined" ? "/company-analysis" : `/company-analysis${window.location.search}`,
+  });
 
-  const [company, setCompany] = useState(() => readQueryParam("company", MAX_NAME_CHARS));
+  const [company, setCompany] = useState(() => readQueryParam("company", MAX_NAME_CHARS) || jobListing?.company || "");
   const [jobKeyword, setJobKeyword] = useState(() => readQueryParam("jobKeyword", MAX_NAME_CHARS));
-  const [postingText, setPostingText] = useState("");
+  const [postingText, setPostingText] = useState(() =>
+    jobListing ? postingTextOf(jobListing, JOB_POSTING_DETAILS[jobListing.slug]).slice(0, MAX_POSTING_CHARS) : ""
+  );
   const [resumeAnalysisId, setResumeAnalysisId] = useState(() => readQueryParam("resumeAnalysisId", MAX_NAME_CHARS));
   const [previousResumes, setPreviousResumes] = useState<ProjectSummary[]>([]);
   const [summary, setSummary] = useState<EntitlementSummary | null>(null);

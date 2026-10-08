@@ -24,7 +24,6 @@ import AnalyzeLoadingOverlay from "@/components/analyze/AnalyzeLoadingOverlay";
 import AnalyzeLoginModal from "@/components/analyze/AnalyzeLoginModal";
 import JobPostingSection from "@/components/analyze/JobPostingSection";
 import { findJobPosting } from "@/constants/jobPostings";
-import { JOB_POSTING_DETAILS, type JobPostingDetail } from "@/constants/jobPostingDetails";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
@@ -76,15 +75,6 @@ import {
   type SavedAnalysisDetail,
 } from "./analyzeQuestions";
 
-/** 공고에 실린 문항을 이 화면의 문항 칸으로. 공개 문항이 없는 공고면 빈 배열. */
-function postingQuestions(detail: JobPostingDetail | undefined): QuestionItem[] {
-  return (detail?.questions ?? []).map(question => ({
-    ...createEmptyQuestion(),
-    question: question.prompt,
-    charLimit: question.charLimit,
-  }));
-}
-
 const EMPTY_TITLES = new Map<string, string>();
 
 /**
@@ -112,8 +102,7 @@ export default function Analyze() {
   );
   const [questions, setQuestions] = useState<QuestionItem[]>(() => {
     if (draft && draft.questions.length > 0) return draft.questions;
-    const fromPosting = postingQuestions(jobListing && JOB_POSTING_DETAILS[jobListing.slug]);
-    return fromPosting.length > 0 ? fromPosting : [createEmptyQuestion()];
+    return [createEmptyQuestion()];
   });
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -669,14 +658,9 @@ export default function Analyze() {
                 }}
                 tone="light"
                 initialListedSlug={jobListing?.slug}
-                onPickListed={(listing, detail) => {
-                  // 직접 적은 값은 덮어쓰지 않는다: 회사는 빈 칸일 때만, 문항은 하나도 안 적었을 때만 공고 문항으로.
+                onPickListed={listing => {
+                  // 직접 적은 회사는 덮어쓰지 않는다.
                   if (!company.trim()) setCompany(listing.company);
-                  const fromPosting = postingQuestions(detail);
-                  if (fromPosting.length > 0 && questions.every(q => !q.question.trim() && !q.answer.trim())) {
-                    setQuestions(fromPosting);
-                    setActiveIndex(0);
-                  }
                 }}
               />
             </section>

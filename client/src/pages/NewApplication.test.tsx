@@ -107,17 +107,16 @@ describe("새 지원서 편집기", () => {
 describe("채용 공고에서 넘어온 새 지원서(?job=)", () => {
   afterEach(() => window.history.replaceState(null, "", "/"));
 
-  it("공고의 회사·마감일·공개 문항을 채운 채로 열고, 그대로 만들 수 있다", async () => {
+  it("공고의 회사·마감일만 채운 채로 열고(문항은 비워 둔다), 그대로 만들 수 있다", async () => {
     window.history.replaceState(null, "", "/my/new?job=shinsegae-2027");
     mocks.createApplication.mockResolvedValue({ id: "p-job" });
     render(<NewApplication />);
     expect((screen.getByLabelText("회사") as HTMLInputElement).value).toBe("신세계그룹");
+    expect((screen.getByLabelText("문항 원문") as HTMLInputElement).value).toBe("");
     fireEvent.click(screen.getAllByRole("button", { name: "지원서 만들기" })[0]);
     await waitFor(() => expect(mocks.createApplication).toHaveBeenCalled());
     const sent = mocks.createApplication.mock.calls[0][0];
     expect(sent.company).toBe("신세계그룹");
     expect(sent.deadline).toBe("2026-10-12T23:59:00+09:00");
-    expect(sent.questions).toHaveLength(3);
-    expect(sent.questions[0]).toEqual(expect.objectContaining({ charLimit: 1000, answer: "" }));
   });
 });
