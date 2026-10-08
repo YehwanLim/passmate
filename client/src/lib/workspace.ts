@@ -41,6 +41,21 @@ export type Experience = {
 };
 export type ExperienceInput = Omit<Experience, "id" | "updatedAt">;
 
+/**
+ * 경험 기간을 목록용으로 짧게: "2024.07~2024.10" → "24.07 – 24.10", "2024.7" → "24.07".
+ * 알아볼 수 없는 형식("2024 여름" 등)은 적힌 그대로, 비었으면 빈 문자열.
+ */
+export function formatPeriod(period: string | null | undefined): string {
+  const text = (period ?? "").trim();
+  if (!text) return "";
+  const part = (y: string, m: string) => `${y.slice(2)}.${m.padStart(2, "0")}`;
+  const range = text.match(/^(\d{4})[./-](\d{1,2})\.?\s*[~\-–]\s*(\d{4})[./-](\d{1,2})\.?$/);
+  if (range) return `${part(range[1], range[2])} – ${part(range[3], range[4])}`;
+  const single = text.match(/^(\d{4})[./-](\d{1,2})\.?$/);
+  if (single) return part(single[1], single[2]);
+  return text;
+}
+
 export class WorkspaceApiError extends Error {
   code: string;
   status: number;

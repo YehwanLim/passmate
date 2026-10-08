@@ -9,6 +9,7 @@ import {
   saveApplicationQuestions,
   sortApplications,
   applicationStatus,
+  formatPeriod,
   updateApplicationMeta,
 } from "./workspace";
 
@@ -103,5 +104,17 @@ describe("updateApplicationMeta", () => {
     expect(init.method).toBe("PATCH");
     expect(JSON.parse(init.body as string)).toEqual({ company: "한솔제지", jobKeyword: "영업", deadline: "2026-10-20T23:59:00+09:00" });
     expect(result).toEqual(body);
+  });
+});
+
+describe("formatPeriod", () => {
+  it("연.월 기간을 YY.MM – YY.MM 로 줄이고, 모르는 형식은 그대로 둔다", () => {
+    expect(formatPeriod("2024.07~2024.10")).toBe("24.07 – 24.10");
+    expect(formatPeriod("2023.3 - 2023.12")).toBe("23.03 – 23.12");
+    expect(formatPeriod("2025.01 ~ 2025.06.")).toBe("25.01 – 25.06");
+    expect(formatPeriod("2024.7")).toBe("24.07");
+    expect(formatPeriod("2024 여름 (8주)")).toBe("2024 여름 (8주)");
+    expect(formatPeriod(null)).toBe("");
+    expect(formatPeriod("  ")).toBe("");
   });
 });
