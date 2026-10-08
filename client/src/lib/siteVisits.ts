@@ -6,6 +6,7 @@
  * 영구 식별자가 아니며, 인증·권한·리포트 접근의 근거로 쓰지 않는다.
  */
 import { detectInAppBrowser, type InAppBrowserKind } from "@/lib/inAppBrowser";
+import { isInternalBrowser } from "@/lib/internalTraffic";
 
 export const VISIT_ENDPOINT = "/api/visits";
 export const VISITOR_ID_KEY = "preview:visitor-session-id";
@@ -138,6 +139,8 @@ async function postToVisits(
   body: Record<string, unknown>,
   { fetcher, getAccessToken = readAccessToken }: Pick<SendOptions, "fetcher" | "getAccessToken">,
 ): Promise<boolean> {
+  // 운영자 브라우저의 방문·이벤트는 대시보드 집계를 흐리므로 보내지 않는다.
+  if (isInternalBrowser()) return false;
   const doFetch = fetcher ?? (typeof fetch === "function" ? fetch : null);
   if (!doFetch) return false;
 

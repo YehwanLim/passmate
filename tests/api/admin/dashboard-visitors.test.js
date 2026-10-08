@@ -146,6 +146,25 @@ describe("admin dashboard — 방문자 집계", () => {
     expect(now.getTime() - groupArgs.where.createdAt.gte.getTime()).toBeGreaterThanOrEqual(7 * DAY - MINUTE);
   });
 
+  it("관리자 계정이 로그인한 적 있는 방문자 세션은 로그인 전 페이지까지 통째로 집계에서 뺀다", async () => {
+    const now = new Date();
+    mocks.prisma.user.findMany.mockImplementation(async ({ where }) => (where?.role === "admin" ? [{ id: "admin-1" }] : []));
+    mocks.prisma.siteVisit.findMany.mockResolvedValue([
+      { visitorId: "me", userId: null, createdAt: now, referrer: null, utmSource: "threads" },
+      { visitorId: "me", userId: "admin-1", createdAt: now, referrer: null, utmSource: null },
+      { visitorId: "guest", userId: null, createdAt: now, referrer: null, utmSource: null },
+      { visitorId: "member", userId: "user-2", createdAt: now, referrer: null, utmSource: null },
+    ]);
+
+    const res = createResponse();
+    await dashboardHandler({ method: "GET", query: {} }, res);
+
+    expect(res.body.kpi.todayVisitors).toBe(2);
+    expect(res.body.kpi.todayPageViews).toBe(2);
+    expect(res.body.sourceSummary).toEqual([{ source: "직접 유입·알 수 없음", visitors: 2 }]);
+    expect(mocks.prisma.siteVisit.findMany.mock.calls[0][0].select).toEqual(expect.objectContaining({ userId: true }));
+  });
+
   it("허용 목록 밖의 days 는 기본 7일로 돌린다", () => {
     expect(readRangeDays({ days: "90" })).toBe(90);
     expect(readRangeDays({ days: "365" })).toBe(7);

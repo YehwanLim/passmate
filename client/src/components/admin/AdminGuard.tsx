@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useRequireAdmin } from "@/hooks/useRequireAdmin";
+import { markInternalBrowser } from "@/lib/internalTraffic";
 import AdminForbiddenPage from "@/pages/admin/AdminForbiddenPage";
 
 interface AdminGuardProps {
@@ -21,6 +23,11 @@ interface AdminGuardProps {
  */
 export function AdminGuard({ children }: AdminGuardProps) {
   const { roleState } = useRequireAdmin();
+
+  // 관리자로 확인된 브라우저는 운영자 기기로 표시해 이후 GA4·방문 집계에서 뺀다(lib/internalTraffic.ts).
+  useEffect(() => {
+    if (roleState === "admin") markInternalBrowser();
+  }, [roleState]);
 
   // ── 로딩 중 ──────────────────────────────────────────────
   if (roleState === "loading") {
