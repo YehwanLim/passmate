@@ -68,7 +68,7 @@ function DiagnosisColumn({
 }
 
 /**
- * 02 핵심 진단: 잘 읽히는 점·고칠 점을 표 한 칸의 두 열로, 그 아래 합격까지의 거리(지금 → 기대, 아쉬운 부분, 좁히는 법).
+ * 02 핵심 진단: 이미 잘 쓴 부분·손보면 좋아질 부분을 표 한 칸의 두 열로, 그 아래 합격까지의 거리(지금 → 기대, 아쉬운 부분, 좁히는 법).
  * 항목마다 모델이 고른 핵심 문장 하나만 꺼내 형광펜으로 둔다(limitSectionHighlights).
  */
 export function CoreDiagnosisSection({

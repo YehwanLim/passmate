@@ -22,7 +22,7 @@ export type HiringMemoryItem = {
 
 const MAX_KEYWORDS = 6
 const HERO_SUMMARY_MAX_LENGTH = 70
-const MENTOR_COMMENT_TITLES = ["읽힌 인상", "더 선명해질 지점", "면접에서 준비할 것"]
+const MENTOR_COMMENT_TITLES = ["처음 읽고 든 생각", "한 가지만 더한다면", "면접에서 준비할 것"]
 const BLAND_PERSONA_PATTERN = /^(분석가이자\s*기획자|기획자이자\s*분석가|분석형\s*기획자|전략형\s*기획자|실행형\s*기획자)$/
 
 export type MentorCommentBlock = {
