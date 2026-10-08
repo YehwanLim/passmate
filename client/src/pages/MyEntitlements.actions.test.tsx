@@ -99,6 +99,12 @@ describe("MyEntitlements action buttons", () => {
     expect(mocks.navigate).toHaveBeenCalledWith("/analyze");
   });
 
+  it("keeps the account deletion link at the bottom of this page (moved from 마이페이지)", async () => {
+    await renderWith({ remaining: 2, freeRemaining: 1, premiumRemaining: 1 });
+    screen.getByRole("button", { name: "회원 탈퇴" }).click();
+    expect(mocks.navigate).toHaveBeenCalledWith("/account/deletion");
+  });
+
   it("promotes purchasing when every credit pool is empty", async () => {
     await renderWith({ remaining: 0, companyRemaining: 0 });
 

@@ -303,6 +303,18 @@ export default function MyEntitlements() {
             </ActionButton>
           </div>
         </section>
+
+        {/* 회원 탈퇴 — 마이페이지에서 옮겨 왔다(10-08). 법상 탈퇴 길은 있어야 해서 지우지 않고, 자주 오지 않는 이 화면 맨 아래에 작게 둔다. */}
+        <div className="mt-16 flex justify-end">
+          <button
+            id="my-account-deletion-link"
+            type="button"
+            onClick={() => navigate("/account/deletion")}
+            className="text-[12px] text-ink-5 transition-colors hover:text-ink-3"
+          >
+            회원 탈퇴
+          </button>
+        </div>
       </main>
     </div>
   );

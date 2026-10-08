@@ -97,7 +97,7 @@ export default function MyProjects() {
     />
   ) : (
     <motion.div
-      className="divide-y divide-line-soft border-t border-line-soft"
+      className="grid gap-3 px-3 pb-2 sm:grid-cols-2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4, delay: 0.2 }}
@@ -105,20 +105,19 @@ export default function MyProjects() {
       {projects.map((project, idx) => (
         <motion.div
           key={project.id}
+          className="flex"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          // 줄마다 50ms 씩 밀리면 18줄은 마지막 줄이 1초 넘게 늦는다. 여섯 줄까지만 계단식.
+          // 카드마다 50ms 씩 밀리면 18개는 마지막이 1초 넘게 늦는다. 여섯 개까지만 계단식.
           transition={{ duration: 0.35, delay: 0.05 * Math.min(idx, 5) }}
         >
           <ProjectCard
             project={project}
-            onViewQuestions={() => navigate(`/my/${project.id}`)}
-            onViewReport={() => {
-              if (project.latest_analysis_id) {
-                const query = `analysisId=${encodeURIComponent(project.latest_analysis_id)}`;
-                navigate(project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`);
+            onOpen={() => {
+              // 기업 분석은 볼 것이 리포트 하나라 바로 연다. 자소서는 작성한 글·지난 진단·리포트가 모인 지원서 화면으로.
+              if (project.kind === "COMPANY" && project.latest_analysis_id) {
+                navigate(`/company-report?analysisId=${encodeURIComponent(project.latest_analysis_id)}`);
               } else {
-                // 진단 전 지원서는 리포트가 없다. 목록 전체 오류로 바꾸지 않고 작성 화면으로 보낸다.
                 navigate(`/my/${project.id}`);
               }
             }}
@@ -200,19 +199,6 @@ export default function MyProjects() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* ════════ 향후 확장 영역 (멘토링 BM 등) ════════ */}
-
-      {/* ════════ 회원 탈퇴 — 의도적으로 눈에 띄지 않게 우측 하단에 둔다 ════════ */}
-      <div className="container mt-16 flex justify-end">
-        <button
-          id="my-account-deletion-link"
-          onClick={() => navigate("/account/deletion")}
-          className="text-[12px] text-ink-5 hover:text-ink-3 transition-colors"
-        >
-          회원 탈퇴
-        </button>
       </div>
     </div>
   );

@@ -87,6 +87,34 @@ describe("작업 화면", () => {
     expect(screen.getByText(/공백 포함 250자/)).toBeTruthy();
   });
 
+  it("끝난 진단이 있으면 머리말과 지난 진단 회차에서 리포트로 바로 간다", async () => {
+    const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    mocks.fetchMock.mockImplementation(async (url: string) => {
+      if (String(url).includes("/analyses")) {
+        return json([
+          { id: "a-pending", question_text: "[문항 1] 지원 동기", status: "PENDING", created_at: "2026-10-05T00:00:00Z" },
+          { id: "a-new", question_text: "[문항 1] 지원 동기", status: "SUCCESS", created_at: "2026-10-04T00:00:00Z" },
+          { id: "a-old", question_text: "[문항 1] 지원 동기", status: "SUCCESS", created_at: "2026-10-01T00:00:00Z" },
+        ]);
+      }
+      return json({ id: "x", question_text: "[문항 1] 지원 동기", input_text: "[문항 1]\n본문", status: "SUCCESS" });
+    });
+    render(<MyAnalyses />);
+    const buttons = await screen.findAllByRole("button", { name: "리포트 보기" });
+    // 머리말 1개 + 끝난 회차 2개(대기 중 회차엔 없음)
+    expect(buttons).toHaveLength(3);
+    fireEvent.click(buttons[0]);
+    expect(mocks.navigate).toHaveBeenLastCalledWith("/report-new?analysisId=a-new");
+    fireEvent.click(buttons[2]);
+    expect(mocks.navigate).toHaveBeenLastCalledWith("/report-new?analysisId=a-old");
+  });
+
+  it("끝난 진단이 없으면 리포트 보기를 두지 않는다", async () => {
+    render(<MyAnalyses />);
+    await screen.findByDisplayValue("지원 동기");
+    expect(screen.queryByRole("button", { name: "리포트 보기" })).toBeNull();
+  });
+
   it("진단받기는 projectId 를 붙여 분석을 접수하고 대기 화면으로 간다", async () => {
     mocks.submitAnalysisRequest.mockResolvedValue({
       kind: "accepted",

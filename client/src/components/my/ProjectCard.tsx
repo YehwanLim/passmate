@@ -6,8 +6,8 @@ import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
 interface ProjectCardProps {
   project: ProjectSummary;
-  onViewQuestions: () => void;
-  onViewReport: () => void;
+  /** 카드 아무 데나 누르면 연다. 자소서는 지원서 화면, 기업 분석은 리포트(무엇을 열지는 부모가 정한다). */
+  onOpen: () => void;
   onDelete?: () => void;
 }
 
@@ -28,15 +28,11 @@ const DEADLINE_CLASS: Record<Deadline["tone"], string> = {
   muted: "text-[13px] text-ink-5",
 };
 
-const BUTTON = "inline-flex h-10 items-center justify-center rounded-[10px] px-4 text-[14px] font-semibold transition-colors";
-
-/** 마이페이지 지원서 목록의 한 줄: 회사·직무 | 마감 | 진행(또는 한줄 요약) | 버튼. lg 미만에서는 위아래로 쌓는다. */
-export default function ProjectCard({
-  project,
-  onViewQuestions,
-  onViewReport,
-  onDelete,
-}: ProjectCardProps) {
+/**
+ * 마이페이지 지원서 블록 카드: 종류·마감 / 회사·직무 / 요약 전문(진단 전이면 작성 진행) / 문항 수·작성일·더보기.
+ * 버튼을 따로 두지 않고 카드 전체가 하나의 열기 버튼이다(자소서·기업 분석이 같은 동작). 더보기만 그 위에 떠 있다.
+ */
+export default function ProjectCard({ project, onOpen, onDelete }: ProjectCardProps) {
   const kebabItems = createDefaultKebabItems({ onDelete });
   const isCompany = project.kind === "COMPANY";
   const keywords = project.keywords ?? [];
@@ -44,53 +40,45 @@ export default function ProjectCard({
   // (구버전 리포트는 키워드 필드가 없을 수 있다).
   const isPending = project.latest_status === "PENDING";
   const isFailed = project.latest_status === "FAILED";
-  // "새 지원서"로 만들고 아직 진단받지 않은 지원서: 리포트가 없으니 작성 화면이 주 동작이다.
+  // "새 지원서"로 만들고 아직 진단받지 않은 지원서: 요약 대신 작성 진행을 보여 준다.
   const isDraftOnly = !isCompany && !project.latest_analysis_id;
-  const summaryFallback = isDraftOnly
-    ? WORKSPACE_COPY.draftCard.summary
-    : isPending
-    ? "아직 분석이 완료되지 않았습니다."
+  const summary = isPending
+    ? "아직 분석이 끝나지 않았어요."
     : isFailed
-      ? "분석에 실패했습니다. 다시 시도해 주세요."
-      : "한줄 요약이 없는 리포트입니다.";
-  const keywordFallback = isPending ? "분석 대기중" : isFailed ? "분석 실패" : null;
+      ? "분석하지 못했어요. 다시 시도해 주세요."
+      : project.summary?.trim() || null;
   const deadline = deadlineOf(project.deadline);
   const draftTotal = project.draft_question_count ?? 0;
   const answered = project.answered_count ?? 0;
   const questionCount = isDraftOnly ? draftTotal : project.question_count ?? project.analysis_count;
+  const name = project.company_name || project.title || "기업 미지정";
+  const kindLabel = project.id === "mock-proj-1" ? "샘플" : isCompany ? "기업 분석" : "자소서";
 
   return (
     <div
       data-testid="application-card"
-      className="group relative grid grid-cols-1 gap-3 px-5 py-[18px] lg:grid-cols-[minmax(0,1fr)_88px_minmax(0,1.1fr)_288px] lg:items-center lg:gap-5"
+      className="group relative flex w-full flex-col rounded-[18px] border border-line-soft bg-surface p-5 transition-colors hover:border-line hover:bg-fill-soft"
     >
-      {/* 회사·직무 — 직무는 색 칩 대신 제목 아래 부제로 둔다(긴 직무명도 안 잘림) */}
-      <div className="min-w-0 pr-10 lg:pr-0">
-        {(project.id === "mock-proj-1" || isCompany) && (
-          <p className="mb-0.5 text-[12px] font-semibold text-brand-ink">
-            {project.id === "mock-proj-1" ? "샘플" : "기업 분석"}
-          </p>
-        )}
-        <h3 className="truncate text-[17px] font-bold tracking-tight text-ink">
-          {project.company_name || project.title || "기업 미지정"}
-        </h3>
-        {project.job_role && <p className="mt-0.5 truncate text-[14px] text-ink-3">{project.job_role}</p>}
-        <p className="mt-1 flex flex-wrap gap-x-1.5 text-[12.5px] text-ink-4">
-          <span>{isCompany ? "기업 분석 리포트" : `${questionCount}개 문항`}</span>
-          <span aria-hidden="true">·</span>
-          <span>{formatDate(project.created_at, "ymd-dot")} 작성</span>
-        </p>
+      {/* 카드 전체를 덮는 열기 버튼. 글자는 그 아래에 그대로 읽힌다. */}
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`${name} 열기`}
+        className="absolute inset-0 rounded-[18px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      />
+
+      <div className="flex min-h-7 items-center justify-between gap-2">
+        <span className="text-[12.5px] font-semibold text-ink-4">{kindLabel}</span>
+        {!isCompany && <span className={`inline-flex items-center ${DEADLINE_CLASS[deadline.tone]}`}>{deadline.label}</span>}
       </div>
 
-      <div className="flex items-center">
-        <span className={`inline-flex items-center ${DEADLINE_CLASS[deadline.tone]}`}>{deadline.label}</span>
-      </div>
+      <h3 className="mt-2 text-[18px] font-bold tracking-tight text-ink break-keep">{name}</h3>
+      {project.job_role && <p className="mt-0.5 text-[14px] text-ink-3 break-keep">{project.job_role}</p>}
 
-      {/* 진단 전: 몇 문항 썼는지 막대로. 진단 후: 한줄 요약과 키워드. */}
-      <div className="min-w-0">
+      <div className="mt-3 flex-1">
         {isDraftOnly ? (
           <div className="space-y-1.5">
-            <p className="text-[13px] text-ink-3">{summaryFallback}</p>
+            <p className="text-[13px] text-ink-3">{WORKSPACE_COPY.draftCard.summary}</p>
             {draftTotal > 0 && (
               <>
                 <div className="h-1.5 rounded-full bg-fill" aria-hidden="true">
@@ -102,54 +90,23 @@ export default function ProjectCard({
           </div>
         ) : (
           <>
-            {/* 진단 전 지원서에는 요약이 없으니 "한줄 요약" 이름표는 진단 후에만 단다 */}
-            <p className="mb-0.5 text-[11.5px] font-semibold text-ink-4">한줄 요약</p>
-            <p className="line-clamp-2 text-[14px] leading-[1.5] text-ink-2 break-keep">
-              &ldquo;{project.summary || summaryFallback}&rdquo;
-            </p>
-            {keywords.length > 0 ? (
-              // 키워드는 앞 3개만 — 다 늘어놓으면 줄이 늘어 칸이 커진다
-              <p className="mt-1 truncate text-[12px] text-ink-4">
-                {keywords.slice(0, 3).map((kw) => `#${kw}`).join(" ")}
-              </p>
-            ) : keywordFallback ? (
-              <p className="mt-1 text-[12px] font-semibold text-ink-4">{keywordFallback}</p>
-            ) : null}
+            {/* 요약은 자르지 않고 다 보여 준다 */}
+            {summary && <p className="text-[14.5px] leading-[1.6] text-ink-2 break-keep">{summary}</p>}
+            {keywords.length > 0 && (
+              <p className="mt-1.5 text-[12.5px] text-ink-4">{keywords.slice(0, 3).map((kw) => `#${kw}`).join(" ")}</p>
+            )}
           </>
         )}
       </div>
 
-      <div className="flex items-center gap-2 lg:justify-end">
-        {isDraftOnly ? (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
-            className={`${BUTTON} flex-1 bg-brand-soft text-brand-ink hover:bg-[#dceaff] lg:flex-none`}
-          >
-            {WORKSPACE_COPY.draftCard.open}
-          </button>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onViewReport(); }}
-              className={`${BUTTON} flex-1 bg-ink text-white hover:bg-ink-2 lg:flex-none`}
-            >
-              리포트 보기
-            </button>
-            {!isCompany && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onViewQuestions(); }}
-                className={`${BUTTON} flex-1 bg-fill text-ink-2 hover:bg-line lg:flex-none`}
-              >
-                작성한 자소서 보기
-              </button>
-            )}
-          </>
-        )}
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-line-soft pt-3">
+        <p className="flex flex-wrap gap-x-1.5 text-[12.5px] text-ink-4">
+          <span>{isCompany ? "기업 분석 리포트" : `${questionCount}개 문항`}</span>
+          <span aria-hidden="true">·</span>
+          <span>{formatDate(project.created_at, "ymd-dot")} 작성</span>
+        </p>
         {kebabItems.length > 0 && (
-          <div className="absolute right-3 top-4 lg:static">
+          <div className="relative z-10 -my-1.5 -mr-2">
             <KebabMenu items={kebabItems} />
           </div>
         )}

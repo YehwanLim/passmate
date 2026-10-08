@@ -18,7 +18,7 @@ describe("HOME_NAV_ITEMS", () => {
     expect(HOME_NAV_ITEMS.map(item => item.label)).toEqual([
       "자소서 분석",
       "기업 분석",
-      "내 경험",
+      "마이페이지",
       "취업 가이드",
       "이용권",
     ]);

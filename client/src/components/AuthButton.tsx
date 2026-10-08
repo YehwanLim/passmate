@@ -161,7 +161,7 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
               </button>
             </div>
 
-            {/* 로그아웃 — 회원 탈퇴는 내 지원서 화면 하단에서만 제공한다 */}
+            {/* 로그아웃 — 회원 탈퇴는 내 이용권 화면 하단에서만 제공한다 */}
             <div className="p-1.5">
               <button
                 id="header-logout-btn"

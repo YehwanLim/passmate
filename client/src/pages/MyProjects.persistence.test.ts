@@ -5,6 +5,7 @@ const analyzeSource = readFileSync(new URL("./Analyze.tsx", import.meta.url), "u
 const myProjectsSource = readFileSync(new URL("./MyProjects.tsx", import.meta.url), "utf8");
 const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.url), "utf8");
 const reportSource = readFileSync(new URL("./ReportResult.tsx", import.meta.url), "utf8");
+const myAnalysesSource = readFileSync(new URL("./MyAnalyses.tsx", import.meta.url), "utf8");
 const submitSource = readFileSync(new URL("../lib/analysisSubmit.ts", import.meta.url), "utf8");
 const reportLoaderSource = readFileSync(new URL("../hooks/useAnalysisReport.ts", import.meta.url), "utf8");
 
@@ -44,8 +45,10 @@ describe("analysis persistence into My Projects", () => {
   });
 
   it("opens company reports at /company-report and résumé reports at /report-new", () => {
-    expect(myProjectsSource).toContain('project.kind === "COMPANY" ? `/company-report?${query}` : `/report-new?${query}`');
-    expect(myProjectsSource).toContain("analysisId=${encodeURIComponent(project.latest_analysis_id)}");
+    // 기업 분석 카드는 리포트로 바로, 자소서 카드는 지원서 화면(/my/:id)으로 가서 거기서 /report-new 로 간다.
+    expect(myProjectsSource).toContain("`/company-report?analysisId=${encodeURIComponent(project.latest_analysis_id)}`");
+    expect(myProjectsSource).toContain("navigate(`/my/${project.id}`)");
+    expect(myAnalysesSource).toContain("`/report-new?analysisId=${encodeURIComponent(analysisId)}`");
   });
 
 });
