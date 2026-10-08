@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  * - light: 10월 새 디자인으로 바꾼 밝은 화면(마이페이지·작업실). 흰 헤더 + 검은 워드마크. 글자색은 landing.css 의 .site-header-light.
  * - floating: 랜딩 전용. light 와 같은 글자색에, 회색 무대 위에 떠 있는 둥근 흰 바(스픽식) + "무료로 시작하기" 버튼.
  * 항목은 실제 <a> 라 지연 하이드레이션 전에도 동작하고 크롤러가 따라간다. 현재 페이지는 aria-current 로 표시한다.
- * 640px 미만에서는 햄버거 메뉴로 바꾼다(landing.css 의 미디어쿼리도 같은 기준).
+ * 768px 미만에서는 햄버거 메뉴로 바꾼다(landing.css 의 미디어쿼리도 같은 기준). 메뉴가 다섯 개라 640px 에선 넘친다.
  */
 type SiteHeaderProps = {
   variant?: "transparent" | "solid" | "light" | "floating";
@@ -66,7 +66,7 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
           <Logo className="h-5 w-auto" variant={isLight ? "default" : "inverse"} />
         </Link>
 
-        <div className="hidden sm:flex items-center gap-4 lg:gap-7">
+        <div className="hidden md:flex items-center gap-4 lg:gap-7">
           {SITE_NAV_ITEMS.map(item => renderItem(item, "landing-nav-link"))}
         </div>
 
@@ -76,14 +76,14 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
             <Link
               href="/analyze"
               data-funnel-cta="header"
-              className="hidden h-10 items-center rounded-[10px] bg-brand px-4 text-[14px] font-bold text-white transition-colors hover:bg-brand-hover md:inline-flex"
+              className="hidden h-10 items-center whitespace-nowrap rounded-[10px] bg-brand px-4 text-[14px] font-bold text-white transition-colors hover:bg-brand-hover lg:inline-flex"
             >
               무료로 시작하기
             </Link>
           )}
           <button
             type="button"
-            className="mobile-nav-toggle sm:hidden"
+            className="mobile-nav-toggle md:hidden"
             aria-label="모바일 메뉴 열기"
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-site-nav"
@@ -98,7 +98,7 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
         {isMobileMenuOpen && (
           <motion.div
             id="mobile-site-nav"
-            className={cn("mobile-nav-panel sm:hidden", isFloating && "mx-0 mt-2")}
+            className={cn("mobile-nav-panel md:hidden", isFloating && "mx-0 mt-2")}
             initial={{ opacity: 0, y: -8, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}

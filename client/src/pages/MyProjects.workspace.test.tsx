@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn(), createApplication: vi.fn() }));
@@ -65,6 +65,14 @@ describe("내 지원서 현황판", () => {
     render(<MyProjects />);
     fireEvent.click(await screen.findByRole("tab", { name: "내 경험" }));
     expect(screen.getByText("경험 탭 내용")).toBeTruthy();
+  });
+
+  it("이 화면에 있을 때 상단 메뉴 '내 경험'(/my#experiences 로 이동)을 누르면 탭이 바로 바뀐다", async () => {
+    render(<MyProjects />);
+    await screen.findByRole("tab", { name: "내 지원서", selected: true });
+    act(() => window.history.pushState(null, "", "/my#experiences"));
+    expect(await screen.findByText("경험 탭 내용")).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "내 경험" }).getAttribute("aria-selected")).toBe("true");
   });
 
   it("진단 전 지원서는 리포트 대신 작성 중 안내·초안 문항 수·이어서 쓰기를 보여 준다", async () => {

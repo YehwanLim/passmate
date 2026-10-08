@@ -127,7 +127,8 @@ export default function ExperienceVault() {
             setEditing(null);
           }}
         />
-      ) : (
+      ) : items.length > 0 ? (
+        // 비어 있을 때는 가운데 안내에 같은 버튼이 있으니 위 줄은 숨긴다(두 번 보이지 않게).
         <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
@@ -140,7 +141,7 @@ export default function ExperienceVault() {
             {COPY.add}
           </button>
         </div>
-      )}
+      ) : null}
 
       {deleteError && <p role="alert" className="text-[13px] text-danger">{deleteError}</p>}
 
@@ -154,6 +155,11 @@ export default function ExperienceVault() {
           >
             {COPY.import.open}
           </button>
+          <div>
+            <button type="button" onClick={() => setEditing("new")} className="mt-3 h-10 rounded-[10px] px-4 text-[14px] font-semibold text-ink-3 transition-colors hover:bg-fill">
+              {COPY.addManually}
+            </button>
+          </div>
         </div>
       )}
 

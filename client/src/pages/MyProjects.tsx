@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useLocationProperty } from "wouter/use-browser-location";
 import { motion } from "framer-motion";
 import type { ProjectSummary } from "@/types/my";
 import ProjectCard from "@/components/my/ProjectCard";
@@ -19,13 +20,13 @@ import { WORKSPACE_COPY } from "./workspaceCopy";
 // =============================================================================
 export default function MyProjects() {
   const [, navigate] = useLocation();
-  const { user, isLoading: authLoading } = useRequireAuth(); // 미인증 시 /login 리다이렉트
+  // 탭은 주소의 #experiences 를 따른다. 이미 이 화면에 있을 때 상단 메뉴 "내 경험"을 눌러도 바로 바뀐다.
+  const hash = useLocationProperty(() => window.location.hash, () => "");
+  const tab: "applications" | "experiences" = hash === "#experiences" ? "experiences" : "applications";
+  const { user, isLoading: authLoading } = useRequireAuth({ redirectPath: tab === "experiences" ? "/my#experiences" : "/my" }); // 미인증 시 /login 리다이렉트
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"applications" | "experiences">(
-    () => (typeof window !== "undefined" && window.location.hash === "#experiences" ? "experiences" : "applications")
-  );
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -164,10 +165,7 @@ export default function MyProjects() {
                     role="tab"
                     aria-selected={tab === key}
                     type="button"
-                    onClick={() => {
-                      setTab(key);
-                      window.history.replaceState(null, "", key === "experiences" ? "#experiences" : window.location.pathname);
-                    }}
+                    onClick={() => window.history.replaceState(null, "", key === "experiences" ? "#experiences" : window.location.pathname)}
                     className={`h-9 rounded-[10px] px-3.5 text-[15px] transition-colors ${
                       tab === key ? "bg-ink font-bold text-white" : "font-semibold text-ink-4 hover:bg-fill hover:text-ink-2"
                     }`}

@@ -35,7 +35,7 @@ function toInput(c: EditableCandidate): ExperienceInput {
   };
 }
 
-/** 예전 자소서 → 경험 후보 → 골라 저장. 금고(ExperienceVault)가 연다. */
+/** 이력서·자소서 → 경험 후보 → 골라 저장. 금고(ExperienceVault)가 연다. */
 export default function ExperienceImportDialog({
   open,
   onClose,
@@ -166,11 +166,11 @@ export default function ExperienceImportDialog({
           ) : (
             <>
               <textarea
-                aria-label="자소서 붙여넣기"
+                aria-label={COPY.inputLabel}
                 value={text}
                 onChange={(e) => setText(e.target.value.slice(0, EXTRACT_TEXT_MAX))}
                 placeholder={COPY.placeholder}
-                rows={12}
+                rows={8}
                 className="w-full resize-y rounded-xl border border-line bg-surface px-4 py-3 text-[15px] leading-[1.8] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none"
               />
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -193,6 +193,7 @@ export default function ExperienceImportDialog({
                 />
                 <span className="text-[13px] tabular-nums text-ink-4">{COPY.chars(length)}</span>
               </div>
+              {length === 0 && <ImportExample />}
             </>
           )}
           {message && <p role="alert" className="text-[14px] leading-relaxed text-danger">{message}</p>}
@@ -227,5 +228,41 @@ export default function ExperienceImportDialog({
         </div>
       </div>
     </div>
+  );
+}
+
+/** 빈 입력칸 아래 고정 예시: 무엇을 넣으면 무엇이 나오는지. 모델을 부르지 않아 횟수를 쓰지 않는다. */
+function ImportExample() {
+  const example = COPY.example;
+  return (
+    <section aria-label={example.label} className="rounded-2xl border border-line-soft p-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <p className="text-[13px] font-semibold text-ink-4">
+            {example.label} · {example.input}
+          </p>
+          <div className="mt-2 space-y-1 rounded-xl bg-fill-soft px-3.5 py-3 text-[13px] leading-relaxed text-ink-3">
+            {example.source.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-[13px] font-semibold text-ink-4">{example.output}</p>
+          <div className="mt-2 space-y-2 rounded-xl border border-line px-3.5 py-3">
+            <p className="text-[14px] font-bold text-ink">
+              {example.title}
+              <span className="ml-2 text-[12px] font-medium text-ink-5">{example.period}</span>
+            </p>
+            {example.rows.map(([label, value]) => (
+              <p key={label} className="text-[13px] leading-relaxed text-ink-3">
+                <span className="mr-1.5 font-semibold text-ink-4">{label}</span>
+                {value}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
