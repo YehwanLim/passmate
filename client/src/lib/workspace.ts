@@ -43,19 +43,71 @@ export type Experience = {
 };
 export type ExperienceInput = Omit<Experience, "id" | "updatedAt">;
 
+export type YearMonth = { year: number; month: number };
+export type PeriodParts = { start: YearMonth | null; end: YearMonth | null; ongoing: boolean };
+export const PERIOD_ONGOING = "진행 중";
+
+const YM = String.raw`(\d{4})[./-](\d{1,2})\.?`;
+const RANGE = new RegExp(`^${YM}\\s*[~\\-–]\\s*(?:${YM}|(${PERIOD_ONGOING}|현재))$`);
+const SINGLE = new RegExp(`^${YM}$`);
+
+function ym(year: string, month: string): YearMonth | null {
+  const m = Number(month);
+  return m >= 1 && m <= 12 ? { year: Number(year), month: m } : null;
+}
+
 /**
- * 경험 기간을 목록용으로 짧게: "2024.07~2024.10" → "24.07 – 24.10", "2024.7" → "24.07".
+ * 경험 기간 글자를 연·월로 읽는다. "2024.03 ~ 2024.12", "2024.03 ~ 진행 중", "2024.3" 을 읽고,
+ * 비었으면 빈 값, 알아볼 수 없는 옛 형식("2024 여름" 등)은 null.
+ */
+export function parsePeriod(period: string | null | undefined): PeriodParts | null {
+  const text = (period ?? "").trim();
+  if (!text) return { start: null, end: null, ongoing: false };
+  const range = text.match(RANGE);
+  if (range) {
+    const start = ym(range[1], range[2]);
+    if (!start) return null;
+    if (range[5]) return { start, end: null, ongoing: true };
+    const end = ym(range[3], range[4]);
+    return end ? { start, end, ongoing: false } : null;
+  }
+  const single = text.match(SINGLE);
+  if (single) {
+    const start = ym(single[1], single[2]);
+    return start ? { start, end: null, ongoing: false } : null;
+  }
+  return null;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const full = (v: YearMonth) => `${v.year}.${pad(v.month)}`;
+const short = (v: YearMonth) => `${String(v.year).slice(2)}.${pad(v.month)}`;
+
+/** 고른 연·월을 저장 형식으로: "2024.03 ~ 2024.12" · "2024.03 ~ 진행 중" · "2024.03". 시작이 없으면 null. */
+export function buildPeriod(parts: PeriodParts): string | null {
+  if (!parts.start) return null;
+  if (parts.ongoing) return `${full(parts.start)} ~ ${PERIOD_ONGOING}`;
+  if (parts.end) return `${full(parts.start)} ~ ${full(parts.end)}`;
+  return full(parts.start);
+}
+
+/** 끝이 시작보다 앞서는가(저장 전 확인용). */
+export function isPeriodReversed(parts: PeriodParts): boolean {
+  if (!parts.start || !parts.end || parts.ongoing) return false;
+  return parts.end.year * 12 + parts.end.month < parts.start.year * 12 + parts.start.month;
+}
+
+/**
+ * 경험 기간을 목록용으로 짧게: "2024.07~2024.10" → "24.07 – 24.10", "2024.03 ~ 진행 중" → "24.03 – 진행 중".
  * 알아볼 수 없는 형식("2024 여름" 등)은 적힌 그대로, 비었으면 빈 문자열.
  */
 export function formatPeriod(period: string | null | undefined): string {
   const text = (period ?? "").trim();
   if (!text) return "";
-  const part = (y: string, m: string) => `${y.slice(2)}.${m.padStart(2, "0")}`;
-  const range = text.match(/^(\d{4})[./-](\d{1,2})\.?\s*[~\-–]\s*(\d{4})[./-](\d{1,2})\.?$/);
-  if (range) return `${part(range[1], range[2])} – ${part(range[3], range[4])}`;
-  const single = text.match(/^(\d{4})[./-](\d{1,2})\.?$/);
-  if (single) return part(single[1], single[2]);
-  return text;
+  const parts = parsePeriod(text);
+  if (!parts?.start) return text;
+  if (parts.ongoing) return `${short(parts.start)} – ${PERIOD_ONGOING}`;
+  return parts.end ? `${short(parts.start)} – ${short(parts.end)}` : short(parts.start);
 }
 
 export class WorkspaceApiError extends Error {

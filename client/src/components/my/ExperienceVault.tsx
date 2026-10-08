@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, PenLine, Search, Trash2, X } from "lucide-react";
 import {
+  buildPeriod,
   createExperience,
   deleteExperience,
   formatPeriod,
+  isPeriodReversed,
+  parsePeriod,
   listExperiences,
   updateExperience,
   WorkspaceApiError,
@@ -72,6 +75,79 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
   );
 }
 
+const PP = COPY.periodPicker;
+const select = "h-[42px] rounded-xl border border-line bg-surface pl-3 pr-8 text-[14px] text-ink focus:border-brand focus:outline-none disabled:bg-fill disabled:text-ink-5";
+
+/**
+ * 경험 기간: 시작 [년][월] ~ 끝 [년][월] · 진행 중. 늘 "2024.03 ~ 2024.12" 같은 정해진 형식으로 저장한다.
+ * 옛 자유 형식("2024 여름")은 고르기 전까지 그대로 둔다.
+ */
+function PeriodPicker({ value, onChange }: { value: string | null; onChange: (value: string | null, error: string | null) => void }) {
+  const [initial] = useState(() => parsePeriod(value)); // 처음 연 값만 읽는다
+  const legacy = initial === null && value ? value : null;
+  const [sy, setSy] = useState(initial?.start ? String(initial.start.year) : "");
+  const [sm, setSm] = useState(initial?.start ? String(initial.start.month) : "");
+  const [ey, setEy] = useState(initial?.end ? String(initial.end.year) : "");
+  const [em, setEm] = useState(initial?.end ? String(initial.end.month) : "");
+  const [ongoing, setOngoing] = useState(initial?.ongoing ?? false);
+
+  const thisYear = new Date().getFullYear();
+  const years = useMemo(() => {
+    const list = Array.from({ length: 16 }, (_, i) => thisYear - i);
+    for (const y of [initial?.start?.year, initial?.end?.year]) if (y && !list.includes(y)) list.push(y);
+    return list.sort((a, b) => b - a);
+  }, [thisYear, initial]);
+
+  const update = (next: { sy?: string; sm?: string; ey?: string; em?: string; ongoing?: boolean }) => {
+    const v = { sy, sm, ey, em, ongoing, ...next };
+    setSy(v.sy); setSm(v.sm); setEy(v.ey); setEm(v.em); setOngoing(v.ongoing);
+    const start = v.sy && v.sm ? { year: Number(v.sy), month: Number(v.sm) } : null;
+    const end = !v.ongoing && v.ey && v.em ? { year: Number(v.ey), month: Number(v.em) } : null;
+    const touched = Boolean(v.sy || v.sm || v.ey || v.em || v.ongoing);
+    if (!touched) return onChange(legacy, null); // 아무것도 안 골랐으면 옛 값 유지(없으면 비움)
+    const parts = { start, end, ongoing: v.ongoing };
+    if (!start) return onChange(null, PP.needStart);
+    if (isPeriodReversed(parts)) return onChange(buildPeriod(parts), PP.reversed);
+    onChange(buildPeriod(parts), null);
+  };
+
+  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
+  const ymSelects = (kind: "start" | "end") => {
+    const disabled = kind === "end" && ongoing;
+    const [y, m] = kind === "start" ? [sy, sm] : [ey, em];
+    return (
+      <div className="flex items-center gap-1.5">
+        <select aria-label={kind === "start" ? PP.startYear : PP.endYear} value={y} disabled={disabled} onChange={(e) => update(kind === "start" ? { sy: e.target.value } : { ey: e.target.value })} className={select}>
+          <option value="">{PP.year}</option>
+          {years.map((year) => <option key={year} value={year}>{year}년</option>)}
+        </select>
+        <select aria-label={kind === "start" ? PP.startMonth : PP.endMonth} value={m} disabled={disabled} onChange={(e) => update(kind === "start" ? { sm: e.target.value } : { em: e.target.value })} className={select}>
+          <option value="">{PP.month}</option>
+          {monthOptions.map((month) => <option key={month} value={month}>{month}월</option>)}
+        </select>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+        {ymSelects("start")}
+        {/* "~" 는 끝과 함께 줄을 바꾼다(좁은 화면에서 윗줄 끝에 홀로 남지 않게) */}
+        <div className="flex items-center gap-2">
+          <span className="text-ink-5" aria-hidden="true">~</span>
+          {ymSelects("end")}
+        </div>
+        <label className="ml-1 inline-flex cursor-pointer items-center gap-1.5 text-[14px] font-medium text-ink-3">
+          <input type="checkbox" checked={ongoing} onChange={(e) => update({ ongoing: e.target.checked })} className="size-4 accent-brand" />
+          {PP.ongoing}
+        </label>
+      </div>
+      {legacy && <p className="text-[12.5px] text-ink-4">{PP.legacy(legacy)}</p>}
+    </div>
+  );
+}
+
 type WriteMode = "free" | "fields";
 
 /** 기존 경험은 쓴 방식대로 연다: 자유 글이 있거나 칸이 다 비었으면 자유 양식, 칸만 채웠으면 칸. */
@@ -93,6 +169,7 @@ function ExperienceForm({
 }) {
   const [draft, setDraft] = useState<ExperienceInput>({ ...initial, body: initial.body ?? "" });
   const [mode, setMode] = useState<WriteMode>(() => modeOf(initial));
+  const [periodError, setPeriodError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -114,6 +191,10 @@ function ExperienceForm({
     event.preventDefault();
     if (!draft.title.trim()) {
       setError(COPY.titleRequired);
+      return;
+    }
+    if (periodError) {
+      setError(periodError);
       return;
     }
     setBusy(true);
@@ -140,15 +221,20 @@ function ExperienceForm({
         <span>{COPY.fields.title}</span>
         <input aria-label={COPY.fields.title} placeholder={COPY.fields.titlePlaceholder} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} maxLength={100} className={`${field} font-bold`} />
       </label>
-      <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
-        <label className={label}>
-          <span>{COPY.fields.period} {COPY.optional}</span>
-          <input aria-label={COPY.fields.period} placeholder="2024.03 ~ 2024.12" value={draft.period ?? ""} onChange={(e) => setDraft({ ...draft, period: e.target.value })} maxLength={50} className={field} />
-        </label>
-        <div className={label}>
-          <span>{COPY.fields.tags}</span>
-          <TagInput tags={draft.tags} onChange={(tags) => setDraft({ ...draft, tags })} />
-        </div>
+      <div className={label}>
+        <span>{COPY.fields.period} {COPY.optional}</span>
+        <PeriodPicker
+          value={draft.period}
+          onChange={(period, problem) => {
+            setDraft((current) => ({ ...current, period }));
+            setPeriodError(problem);
+          }}
+        />
+        {periodError && <p className="text-[12.5px] font-medium text-danger">{periodError}</p>}
+      </div>
+      <div className={label}>
+        <span>{COPY.fields.tags}</span>
+        <TagInput tags={draft.tags} onChange={(tags) => setDraft({ ...draft, tags })} />
       </div>
       {mode === "free" ? (
         <div className="space-y-1.5">
