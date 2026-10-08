@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 
 import CompanyCombobox from "@/components/analyze/CompanyCombobox";
 import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
+import ResumeLinkSelect from "@/components/analyze/ResumeLinkSelect";
 import {
   ANALYZE_BIG_SUBMIT_BUTTON_CLASS,
   AnalyzeBottomBar,
@@ -199,19 +200,7 @@ export default function CompanyAnalyze() {
             {previousResumes.length > 0 && (
               <section className="space-y-2.5 rounded-[18px] bg-surface p-5">
                 <h2 className="text-[15px] font-bold text-ink">내 자소서 분석과 연결</h2>
-                <select
-                  value={resumeAnalysisId}
-                  onChange={event => setResumeAnalysisId(event.target.value)}
-                  className="h-11 w-full rounded-xl border border-line bg-surface px-3.5 text-[14.5px] text-ink focus:border-brand focus:outline-none"
-                  aria-label="연결할 자소서 분석"
-                >
-                  <option value="" className="bg-surface">연결하지 않기</option>
-                  {previousResumes.map(project => (
-                    <option key={project.id} value={project.latest_analysis_id ?? ""} className="bg-surface">
-                      {(project.company_name || project.title) + (project.job_role ? ` · ${project.job_role}` : "")}
-                    </option>
-                  ))}
-                </select>
+                <ResumeLinkSelect resumes={previousResumes} value={resumeAnalysisId} onChange={setResumeAnalysisId} />
                 <p className="text-xs text-ink-5">연결하면 리포트 안에서 자소서 분석으로 바로 이동할 수 있어요.</p>
               </section>
             )}
