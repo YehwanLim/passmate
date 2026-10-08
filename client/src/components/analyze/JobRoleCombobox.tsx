@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BriefcaseBusiness, Plus, Search, X } from "lucide-react";
 
@@ -10,9 +10,23 @@ import { useComboboxNavigation } from "@/hooks/useComboboxNavigation";
 export default function JobRoleCombobox({
   value,
   onChange,
+  onCommit,
+  ariaLabel,
+  inputRef,
+  placeholder = "직무를 검색하거나 직접 입력하세요",
+  disabled = false,
+  compact = false,
 }: {
   value: string;
   onChange: (v: string) => void;
+  /** 값이 정해졌을 때(목록에서 고름·Enter·위젯 밖으로 나감). 마이페이지 새 지원서가 이때 지원서를 만든다. */
+  onCommit?: (v: string) => void;
+  ariaLabel?: string;
+  inputRef?: RefObject<HTMLInputElement | null>;
+  placeholder?: string;
+  disabled?: boolean;
+  /** 마이페이지 옆 칸처럼 좁은 자리에 맞춘 높이·글자 */
+  compact?: boolean;
 }) {
   const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -36,6 +50,7 @@ export default function JobRoleCombobox({
     resetKey: value,
     onSelect: index => {
       if (flatRoles.length > 0) onChange(flatRoles[index]);
+      onCommit?.(flatRoles.length > 0 ? flatRoles[index] : value);
       setIsFocused(false);
     },
     onClose: () => setIsFocused(false),
@@ -74,21 +89,33 @@ export default function JobRoleCombobox({
       onBlur={e => {
         if (!wrapperRef.current?.contains(e.relatedTarget as Node | null)) {
           setIsFocused(false);
+          onCommit?.(value);
         }
       }}
-      onKeyDown={onKeyDown}
+      onKeyDown={e => {
+        onKeyDown(e);
+        // 목록에서 고르지 않은 Enter 는 적은 그대로 정한다
+        if (e.key === "Enter" && !e.defaultPrevented && !(e.nativeEvent as KeyboardEvent).isComposing) {
+          onCommit?.(value);
+        }
+      }}
     >
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4 pointer-events-none" />
         <Input
+          ref={inputRef}
+          aria-label={ariaLabel}
+          disabled={disabled}
           value={value}
           onChange={e => onChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           // 목록에서 고른 뒤에도 포커스가 인풋에 남아 있어 onFocus가 다시 오지 않는다
           onClick={() => setIsFocused(true)}
           maxLength={100}
-          placeholder="직무를 검색하거나 직접 입력하세요"
-          className="border-line bg-surface text-ink placeholder:text-ink-5 rounded-xl h-12 pl-11 pr-10 text-[15px] focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all"
+          placeholder={placeholder}
+          className={`border-line bg-surface text-ink placeholder:text-ink-5 rounded-xl pl-11 pr-10 focus:border-brand focus:ring-2 focus:ring-brand/15 transition-all ${
+            compact ? "h-11 text-[14.5px] font-normal" : "h-12 text-[15px]"
+          }`}
         />
         {value && (
           <button
@@ -96,6 +123,7 @@ export default function JobRoleCombobox({
             // Tab 한 번에 다음 칸으로 넘어가도록 탭 순서에서 뺀다. 키보드는 방향키·Enter 로 고른다
             tabIndex={-1}
             onClick={() => onChange("")}
+            disabled={disabled}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-ink-5 hover:text-ink-2 hover:bg-fill transition-colors"
             aria-label="입력 초기화"
           >
@@ -113,7 +141,7 @@ export default function JobRoleCombobox({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18 }}
-            className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-line bg-surface shadow-[0_12px_32px_rgba(25,31,40,0.12)] py-1.5"
+            className="absolute z-30 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-line bg-surface py-1.5 font-normal shadow-[0_12px_32px_rgba(25,31,40,0.12)]"
           >
             {filtered.length > 0 ? (
               filtered.map(category => (
@@ -133,6 +161,7 @@ export default function JobRoleCombobox({
                             onMouseDown={e => e.preventDefault()}
                             onClick={() => {
                               onChange(role);
+                              onCommit?.(role);
                               setIsFocused(false);
                             }}
                             className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${
@@ -158,7 +187,10 @@ export default function JobRoleCombobox({
                 tabIndex={-1}
                 data-highlighted={highlight === 0}
                 onMouseDown={e => e.preventDefault()}
-                onClick={() => setIsFocused(false)}
+                onClick={() => {
+                  onCommit?.(value);
+                  setIsFocused(false);
+                }}
                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 text-brand hover:bg-fill ${
                   highlight === 0 ? "bg-fill" : ""
                 }`}

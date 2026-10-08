@@ -41,4 +41,15 @@ describe("새 지원서 오른쪽 칸", () => {
     fireEvent.change(screen.getByLabelText("직무"), { target: { value: "마케팅" } });
     expect(onInfo).toHaveBeenCalledWith({ company: "", jobKeyword: "마케팅", deadline: "" });
   });
+
+  it("회사·직무는 자소서 분석처럼 아래에 자동완성 목록이 뜨고, 회사를 고르면 그 이름으로 바로 만든다", () => {
+    const { onCommit, onInfo } = renderForm("CJ제일");
+    fireEvent.focus(screen.getByLabelText("회사"));
+    fireEvent.click(screen.getByRole("button", { name: "CJ제일제당" }));
+    expect(onInfo).toHaveBeenCalledWith({ company: "CJ제일제당", jobKeyword: "", deadline: "" });
+    expect(onCommit).toHaveBeenCalledWith({ company: "CJ제일제당", jobKeyword: "", deadline: "" });
+
+    fireEvent.focus(screen.getByLabelText("직무"));
+    expect(screen.getAllByRole("button").some((b) => b.textContent?.includes("마케팅"))).toBe(true);
+  });
 });
