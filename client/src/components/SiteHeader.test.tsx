@@ -49,7 +49,7 @@ describe("SiteHeader", () => {
     expect(document.getElementById("mobile-site-nav")).not.toBeNull();
     const childCount = SITE_NAV_ITEMS.reduce((sum, item) => sum + (item.children?.length ?? 0), 0);
     expect(document.querySelectorAll("#mobile-site-nav a")).toHaveLength(SITE_NAV_ITEMS.length + childCount);
-    expect(document.querySelector('#mobile-site-nav a[href="/my#experiences"]')?.textContent).toBe("내 경험");
+    expect(document.querySelector('#mobile-site-nav a[href="/my#experiences"]')?.textContent).toBe("경험 카드");
   });
 
   it("puts 채용 공고 first and folds 자소서·기업 분석 under 분석하기, my pages under 마이페이지", () => {
