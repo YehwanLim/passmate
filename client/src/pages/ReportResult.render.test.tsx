@@ -68,7 +68,7 @@ describe("ReportResult public sample", () => {
 
     render(<PassMateReport />);
 
-    // 01 첫인상: 이름표(페르소나·지원자 프로필) 아래 읽는 순서 3초·10초(기억할 모습 ✓)·30초(남는 질문 △).
+    // 01 첫인상: 이름표(페르소나·지원자 프로필) 아래 읽는 순서 10초·1분(기억할 모습 ✓)·3분(남는 질문 △).
     expect(await screen.findByText("김민지님은 채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
     expect(screen.getByText("채용 담당자가 읽는 순서대로")).toBeTruthy();
     expect(within(screen.getByRole("list", { name: "채용담당자가 기억할 모습" })).getByText("로그 3,000건을 직접 모은 동아리 기획자")).toBeTruthy();
