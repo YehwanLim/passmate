@@ -8,21 +8,27 @@ export function draftTargetChars(charLimit) {
   return Number.isInteger(charLimit) && charLimit > 0 ? Math.floor(charLimit * 0.75) : 700;
 }
 
-function clip(value) {
+// 자유 양식 글은 칸 셋 몫을 한 덩어리로 받는다.
+const BODY_MAX = FIELD_MAX * 3;
+
+function clip(value, max = FIELD_MAX) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, FIELD_MAX);
+    .slice(0, max);
 }
 
 function experienceBlock(exp) {
+  // 자유 양식으로 쓴 경험은 글 그대로, 칸으로 쓴 경험은 채운 칸만 넘긴다.
+  const body = clip(exp.body, BODY_MAX);
   return [
     `[경험 id=${exp.id}]`,
     `이름: ${clip(exp.title)}`,
     exp.period ? `기간: ${clip(exp.period)}` : null,
-    `상황: ${clip(exp.situation)}`,
-    `내가 판단하고 한 일: ${clip(exp.action)}`,
-    `달라진 것: ${clip(exp.result)}`,
+    body ? `내용: ${body}` : null,
+    !body ? `상황: ${clip(exp.situation)}` : null,
+    !body ? `내가 판단하고 한 일: ${clip(exp.action)}` : null,
+    !body ? `달라진 것: ${clip(exp.result)}` : null,
     exp.tags?.length ? `키워드: ${exp.tags.join(", ")}` : null,
   ]
     .filter(Boolean)

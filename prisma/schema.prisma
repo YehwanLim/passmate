@@ -400,6 +400,8 @@ model Experience {
   situation String   @default("") @db.Text
   action    String   @default("") @db.Text
   result    String   @default("") @db.Text
+  /// 자유 양식 글. 비어 있으면 칸(상황·한 일·결과)으로 쓴 경험이다.
+  body      String   @default("") @db.Text
   tags      String[] @default([])
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz

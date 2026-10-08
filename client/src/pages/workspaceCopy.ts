@@ -128,6 +128,13 @@ export const WORKSPACE_COPY = {
     back: "목록으로",
     optional: "(선택)",
     sections: { situation: "상황", action: "내가 한 일", result: "결과" },
+    free: {
+      label: "어떤 경험이었나요",
+      placeholder: "어떤 상황이었는지, 무엇을 했는지, 무엇이 남았는지 편하게 적어 주세요. 정해진 칸은 없어요.",
+      toFields: "칸 나눠 쓰기",
+      toFree: "한 칸에 자유롭게 쓰기",
+      fieldsHint: "필요한 칸만 채우면 돼요.",
+    },
     newTitle: "새 경험",
     editTitle: "경험 고치기",
     tagPlaceholder: "입력 후 Enter",

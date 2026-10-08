@@ -36,6 +36,8 @@ export type Experience = {
   situation: string;
   action: string;
   result: string;
+  /** 자유 양식 글. 비어 있으면 칸(상황·한 일·결과)으로 쓴 경험. 옛 응답엔 없을 수 있다. */
+  body?: string;
   tags: string[];
   updatedAt: string;
 };

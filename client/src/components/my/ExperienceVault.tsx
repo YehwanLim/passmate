@@ -17,7 +17,7 @@ import ExperienceImportDialog from "./ExperienceImportDialog";
 const COPY = WORKSPACE_COPY.experiences;
 const field = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none";
 const label = "block space-y-1.5 text-[13px] font-semibold text-ink-4";
-const EMPTY: ExperienceInput = { title: "", period: null, situation: "", action: "", result: "", tags: [] };
+const EMPTY: ExperienceInput = { title: "", period: null, situation: "", action: "", result: "", body: "", tags: [] };
 const SECTIONS = ["situation", "action", "result"] as const;
 /** 위 거르기 줄에 먼저 꺼내 두는 키워드 수. 나머지는 "더 보기"로 접는다. */
 const TOP_KEYWORDS = 5;
@@ -71,6 +71,14 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
   );
 }
 
+type WriteMode = "free" | "fields";
+
+/** 기존 경험은 쓴 방식대로 연다: 자유 글이 있거나 칸이 다 비었으면 자유 양식, 칸만 채웠으면 칸. */
+function modeOf(input: ExperienceInput): WriteMode {
+  if (input.body?.trim()) return "free";
+  return SECTIONS.some((key) => input[key].trim()) ? "fields" : "free";
+}
+
 function ExperienceForm({
   heading,
   initial,
@@ -82,9 +90,24 @@ function ExperienceForm({
   onSubmit: (input: ExperienceInput) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [draft, setDraft] = useState(initial);
+  const [draft, setDraft] = useState<ExperienceInput>({ ...initial, body: initial.body ?? "" });
+  const [mode, setMode] = useState<WriteMode>(() => modeOf(initial));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // 방식을 바꿔도 쓴 글은 잃지 않는다: 칸 → 자유는 채운 칸을 줄바꿈으로 잇고, 자유 → 칸은 글을 "내가 한 일"에 옮긴다.
+  const switchMode = (next: WriteMode) => {
+    if (next === mode) return;
+    if (next === "free") {
+      const joined = SECTIONS.map((key) => draft[key].trim()).filter(Boolean).join("\n\n");
+      setDraft({ ...draft, body: draft.body?.trim() ? draft.body : joined, situation: "", action: "", result: "" });
+    } else {
+      const body = draft.body?.trim() ?? "";
+      const empty = SECTIONS.every((key) => !draft[key].trim());
+      setDraft({ ...draft, action: empty && body ? body : draft.action, body: "" });
+    }
+    setMode(next);
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -94,13 +117,20 @@ function ExperienceForm({
     }
     setBusy(true);
     setError(null);
+    // 한 경험은 한 가지 방식으로만 저장한다(자유 글이면 칸은 비우고, 칸이면 자유 글은 비운다).
+    const content =
+      mode === "free"
+        ? { body: draft.body ?? "", situation: "", action: "", result: "" }
+        : { body: "", situation: draft.situation, action: draft.action, result: draft.result };
     try {
-      await onSubmit({ ...draft, title: draft.title.trim(), period: draft.period?.trim() || null });
+      await onSubmit({ ...draft, ...content, title: draft.title.trim(), period: draft.period?.trim() || null });
     } catch (caught) {
       setError(caught instanceof WorkspaceApiError && caught.code === "EXPERIENCE_LIMIT_REACHED" ? COPY.limitReached : COPY.saveFailed);
       setBusy(false);
     }
   };
+
+  const switchButton = "text-[13px] font-semibold text-brand-ink underline-offset-4 hover:underline";
 
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -119,20 +149,50 @@ function ExperienceForm({
           <TagInput tags={draft.tags} onChange={(tags) => setDraft({ ...draft, tags })} />
         </div>
       </div>
-      {SECTIONS.map((key) => (
-        <label key={key} className={label}>
-          <span>{COPY.sections[key]} {COPY.optional}</span>
-          <textarea
-            aria-label={COPY.fields[key]}
-            placeholder={COPY.fields[key]}
-            value={draft[key]}
-            onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
-            maxLength={1500}
-            rows={3}
-            className={`${field} leading-[1.7]`}
-          />
-        </label>
-      ))}
+      {mode === "free" ? (
+        <div className="space-y-1.5">
+          <label className={label}>
+            <span>{COPY.free.label}</span>
+            <textarea
+              aria-label={COPY.free.label}
+              placeholder={COPY.free.placeholder}
+              value={draft.body ?? ""}
+              onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+              maxLength={4500}
+              rows={8}
+              className={`${field} leading-[1.75]`}
+            />
+          </label>
+          <div className="flex justify-end">
+            <button type="button" onClick={() => switchMode("fields")} className={switchButton}>
+              {COPY.free.toFields}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] text-ink-4">{COPY.free.fieldsHint}</p>
+            <button type="button" onClick={() => switchMode("free")} className={switchButton}>
+              {COPY.free.toFree}
+            </button>
+          </div>
+          {SECTIONS.map((key) => (
+            <label key={key} className={label}>
+              <span>{COPY.sections[key]} {COPY.optional}</span>
+              <textarea
+                aria-label={COPY.fields[key]}
+                placeholder={COPY.fields[key]}
+                value={draft[key]}
+                onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                maxLength={1500}
+                rows={3}
+                className={`${field} leading-[1.7]`}
+              />
+            </label>
+          ))}
+        </div>
+      )}
       {error && <p role="alert" className="text-[13px] text-danger">{error}</p>}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="h-10 rounded-[10px] border border-line bg-surface px-4 text-[14px] font-semibold text-ink-3 hover:bg-fill-soft">{COPY.cancel}</button>
@@ -165,7 +225,10 @@ function ExperienceDetail({ item, onEdit, onRemove }: { item: Experience; onEdit
           {item.tags.map((tag) => <Capsule key={tag}>{tag}</Capsule>)}
         </div>
       )}
-      {/* 채운 칸만 보여 준다. 빈 칸은 경고 없이 숨긴다 */}
+      {/* 자유 양식이면 글 그대로, 칸으로 썼으면 채운 칸만(빈 칸은 경고 없이 숨김) */}
+      {item.body?.trim() ? (
+        <p className="mt-5 whitespace-pre-line text-[15px] leading-[1.85] text-ink-2 break-keep">{item.body}</p>
+      ) : (
       <div className="mt-2">
         {SECTIONS.filter((key) => item[key].trim()).map((key) => (
           <section key={key} className="mt-5">
@@ -174,6 +237,7 @@ function ExperienceDetail({ item, onEdit, onRemove }: { item: Experience; onEdit
           </section>
         ))}
       </div>
+      )}
     </article>
   );
 }
@@ -218,7 +282,7 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
     return (items ?? []).filter((item) => {
       if (keyword && !item.tags.includes(keyword)) return false;
       if (!q) return true;
-      return [item.title, item.situation, item.action, item.result, ...item.tags].some((text) => text.toLowerCase().includes(q));
+      return [item.title, item.situation, item.action, item.result, item.body ?? "", ...item.tags].some((text) => text.toLowerCase().includes(q));
     });
   }, [items, query, keyword]);
 
@@ -289,7 +353,7 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
     <ExperienceForm
       key={editingItem.id}
       heading={COPY.editTitle}
-      initial={{ title: editingItem.title, period: editingItem.period, situation: editingItem.situation, action: editingItem.action, result: editingItem.result, tags: editingItem.tags }}
+      initial={{ title: editingItem.title, period: editingItem.period, situation: editingItem.situation, action: editingItem.action, result: editingItem.result, body: editingItem.body ?? "", tags: editingItem.tags }}
       onCancel={() => setEditing(null)}
       onSubmit={async (input) => {
         const updated = await updateExperience(editingItem.id, input);
