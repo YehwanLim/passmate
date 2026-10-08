@@ -112,6 +112,7 @@ describe("beta deployment security configuration", () => {
       // 로그인이 필요 없는 공개 페이지는 전부 프리렌더 HTML 로 받는다(client/src/lib/seo.ts PRERENDER_ROUTES).
       { source: "/terms", destination: "/terms.html" },
       { source: "/privacy", destination: "/privacy.html" },
+      { source: "/help", destination: "/help.html" },
       { source: "/mentoring", destination: "/mentoring.html" },
       { source: "/entitlements", destination: "/entitlements.html" },
       { source: "/guide", destination: "/guide.html" },
