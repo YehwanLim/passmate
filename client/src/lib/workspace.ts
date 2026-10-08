@@ -161,22 +161,32 @@ export function daysUntil(deadline: string | null, now: Date = new Date()): numb
   return kstDayNumber(date) - kstDayNumber(now);
 }
 
-/** 현황판 순서: 다가오는 마감(가까운 순) → 마감 없음(최근 수정순) → 지난 마감(최근 마감순). */
-export function sortApplications<T extends { deadline?: string | null; updated_at?: string; created_at: string }>(
-  items: T[],
-  now: Date = new Date()
-): T[] {
+export type ApplicationStatus = "draft" | "analyzing" | "done";
+
+/** 지원서 상태: 분석 전·실패는 작성 중, 접수된 분석은 분석 중, 끝났으면 분석 완료(구버전 응답은 상태가 없어 완료로 본다). */
+export function applicationStatus(item: { latest_analysis_id?: string | null; latest_status?: string | null }): ApplicationStatus {
+  if (!item.latest_analysis_id || item.latest_status === "FAILED") return "draft";
+  if (item.latest_status === "PENDING") return "analyzing";
+  return "done";
+}
+
+/**
+ * 내 지원서 순서: 작성 중(마감 가까운 순 → 마감 없음은 최근 수정순) → 분석 중·완료(같은 규칙) → 마감 지난 것(최근 마감순).
+ * 지금 손댈 것이 위로 오게 한다.
+ */
+export function sortApplications<
+  T extends { deadline?: string | null; updated_at?: string; created_at: string; latest_analysis_id?: string | null; latest_status?: string | null },
+>(items: T[], now: Date = new Date()): T[] {
   const time = (value: string | undefined | null) => (value ? new Date(value).getTime() : 0);
-  const group = (item: T) => {
-    if (!item.deadline) return 1;
-    return new Date(item.deadline).getTime() >= now.getTime() ? 0 : 2;
-  };
+  const passed = (item: T) => Boolean(item.deadline) && new Date(item.deadline as string).getTime() < now.getTime();
+  const rank = (item: T) => (passed(item) ? 2 : applicationStatus(item) === "draft" ? 0 : 1);
   return [...items].sort((a, b) => {
-    const ga = group(a);
-    const gb = group(b);
-    if (ga !== gb) return ga - gb;
-    if (ga === 0) return time(a.deadline) - time(b.deadline);
-    if (ga === 2) return time(b.deadline) - time(a.deadline);
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    if (ra === 2) return time(b.deadline) - time(a.deadline);
+    if (Boolean(a.deadline) !== Boolean(b.deadline)) return a.deadline ? -1 : 1;
+    if (a.deadline && b.deadline) return time(a.deadline) - time(b.deadline);
     return time(b.updated_at ?? b.created_at) - time(a.updated_at ?? a.created_at);
   });
 }

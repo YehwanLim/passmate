@@ -8,6 +8,7 @@ import {
   daysUntil,
   saveApplicationQuestions,
   sortApplications,
+  applicationStatus,
   updateApplicationMeta,
 } from "./workspace";
 
@@ -41,6 +42,28 @@ describe("sortApplications", () => {
       { id: "soon", deadline: "2026-10-05T14:59:00Z", created_at: "2026-09-01T00:00:00Z" },
     ];
     expect(sortApplications(items, now).map((i) => i.id)).toEqual(["soon", "far", "none-new", "none-old", "past"]);
+  });
+
+  it("작성 중인 지원서를 분석 끝난 것보다 위에 둔다(마감 지난 건 상태와 상관없이 맨 아래)", () => {
+    const now = new Date("2026-10-03T03:00:00Z");
+    const items = [
+      { id: "done-soon", deadline: "2026-10-04T14:59:00Z", created_at: "2026-09-01T00:00:00Z", latest_analysis_id: "a", latest_status: "SUCCESS" },
+      { id: "draft-far", deadline: "2026-10-19T08:00:00Z", created_at: "2026-09-01T00:00:00Z", latest_analysis_id: null },
+      { id: "failed", deadline: null, created_at: "2026-09-01T00:00:00Z", latest_analysis_id: "b", latest_status: "FAILED" },
+      { id: "draft-past", deadline: "2026-09-30T08:00:00Z", created_at: "2026-09-01T00:00:00Z", latest_analysis_id: null },
+      { id: "pending", deadline: "2026-10-10T08:00:00Z", created_at: "2026-09-01T00:00:00Z", latest_analysis_id: "c", latest_status: "PENDING" },
+    ];
+    expect(sortApplications(items, now).map((i) => i.id)).toEqual(["draft-far", "failed", "done-soon", "pending", "draft-past"]);
+  });
+});
+
+describe("applicationStatus", () => {
+  it("분석 전·실패는 작성 중, 접수됨은 분석 중, 끝났거나 상태 없는 구버전은 분석 완료", () => {
+    expect(applicationStatus({ latest_analysis_id: null })).toBe("draft");
+    expect(applicationStatus({ latest_analysis_id: "a", latest_status: "FAILED" })).toBe("draft");
+    expect(applicationStatus({ latest_analysis_id: "a", latest_status: "PENDING" })).toBe("analyzing");
+    expect(applicationStatus({ latest_analysis_id: "a", latest_status: "SUCCESS" })).toBe("done");
+    expect(applicationStatus({ latest_analysis_id: "a" })).toBe("done");
   });
 });
 

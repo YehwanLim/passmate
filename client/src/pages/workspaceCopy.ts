@@ -1,6 +1,19 @@
 // 내 지원서·내 경험 화면 문구. 사용자 검수 전 임시안 — 여기만 고치면 화면 전체가 바뀐다.
 export const WORKSPACE_COPY = {
-  tabs: { applications: "내 지원서", experiences: "내 경험" },
+  tabs: { applications: "내 지원서", experiences: "내 경험", company: "기업 분석" },
+  status: { draft: "작성 중", analyzing: "분석 중", done: "분석 완료" },
+  filters: { all: "전체", draft: "작성 중", done: "분석 완료" },
+  table: { application: "회사 · 직무", deadline: "마감", status: "상태", summary: "최근 분석 요약", company: "회사", analyzedAt: "분석한 날" },
+  noSummary: "아직 분석 전이에요",
+  analyzingSummary: "분석하고 있어요",
+  passedDeadline: "마감 지남",
+  open: (name: string) => `${name} 열기`,
+  companyTab: {
+    start: "기업 분석하기",
+    emptyTitle: "아직 기업 분석이 없어요",
+    emptyDescription: "지원할 회사를 분석해 두면 여기에서 다시 볼 수 있어요.",
+    failed: "분석하지 못했어요. 다시 시도해 주세요.",
+  },
   newApplication: "새 지원서",
   newApplicationForm: {
     company: "회사",
@@ -69,12 +82,13 @@ export const WORKSPACE_COPY = {
     detail: "자세히 보기",
     error: "이용권 정보를 불러오지 못했어요.",
     // 폰에서는 칸 두 개 대신 한 줄로 줄인다. 기업 분석이 꺼져 있으면 그 부분은 뺀다.
+    buyShort: "이용권 보기",
     compactLine: (essay: number, company: number | null) =>
       company === null ? `자소서 진단 ${essay}회` : `자소서 진단 ${essay}회 · 기업 분석 ${company}회`,
   },
   page: {
     title: "마이페이지",
-    subtitle: "지원서를 쓰고, 진단받고, 내 경험을 모아 두는 곳이에요.",
+    subtitle: "지원서를 쓰고, 분석받고, 내 경험을 모아 두는 곳이에요.",
   },
   draft: {
     button: "내 경험으로 초안 쓰기",
