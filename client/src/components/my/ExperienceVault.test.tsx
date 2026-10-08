@@ -142,6 +142,50 @@ describe("내 경험", () => {
     expect(onCountChange).toHaveBeenLastCalledWith(2);
   });
 
+  it("새로 적기는 자유 양식이 기본 — 글 한 칸만 있고, 저장하면 body 로 보내고 칸은 비운다", async () => {
+    mocks.createExperience.mockImplementation(async (input) => ({ ...input, id: "e9", updatedAt: "" }));
+    render(<ExperienceVault />);
+    fireEvent.click(await screen.findByRole("button", { name: "+ 직접 적기" }));
+    expect(screen.queryByLabelText("어떤 상황이었나요")).toBeNull();
+    fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "오답 노트 습관" } });
+    fireEvent.change(screen.getByLabelText("어떤 경험이었나요"), { target: { value: "틀린 문제를 유형별로 정리했다." } });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(mocks.createExperience).toHaveBeenCalledWith(expect.objectContaining({
+      title: "오답 노트 습관", body: "틀린 문제를 유형별로 정리했다.", situation: "", action: "", result: "",
+    })));
+    // 자세히에는 글 그대로(칸 이름 없이)
+    await waitFor(() => expect(within(detail()).getByText("틀린 문제를 유형별로 정리했다.")).toBeTruthy());
+    expect(within(detail()).queryByText("내가 한 일")).toBeNull();
+  });
+
+  it("'칸 나눠 쓰기'로 바꾸면 쓴 글이 '내가 한 일'로 옮겨지고, 다시 바꾸면 채운 칸을 이어 붙인다", async () => {
+    mocks.createExperience.mockImplementation(async (input) => ({ ...input, id: "e9", updatedAt: "" }));
+    render(<ExperienceVault />);
+    fireEvent.click(await screen.findByRole("button", { name: "+ 직접 적기" }));
+    fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "학회 리서치" } });
+    fireEvent.change(screen.getByLabelText("어떤 경험이었나요"), { target: { value: "설문 120건을 정리했다." } });
+    fireEvent.click(screen.getByRole("button", { name: "칸 나눠 쓰기" }));
+    expect((screen.getByLabelText("나는 무엇을 판단하고 했나요") as HTMLTextAreaElement).value).toBe("설문 120건을 정리했다.");
+    fireEvent.change(screen.getByLabelText("어떤 상황이었나요"), { target: { value: "응답이 흩어져 있었다." } });
+    fireEvent.click(screen.getByRole("button", { name: "한 칸에 자유롭게 쓰기" }));
+    expect((screen.getByLabelText("어떤 경험이었나요") as HTMLTextAreaElement).value).toBe("응답이 흩어져 있었다.\n\n설문 120건을 정리했다.");
+    fireEvent.click(screen.getByRole("button", { name: "칸 나눠 쓰기" }));
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(mocks.createExperience).toHaveBeenCalledWith(expect.objectContaining({ body: "" })));
+  });
+
+  it("칸으로 쓴 경험을 고치면 칸으로, 자유 글로 쓴 경험은 자유 양식으로 열린다", async () => {
+    mocks.listExperiences.mockResolvedValue([EXP, { ...EXP2, situation: "", action: "", result: "", body: "자유 글" }]);
+    render(<ExperienceVault />);
+    fireEvent.click(await screen.findByRole("button", { name: "카페 발주 개선 고치기" }));
+    expect((screen.getByLabelText("나는 무엇을 판단하고 했나요") as HTMLTextAreaElement).value).toBe("판매 데이터로 발주 조정");
+    fireEvent.click(screen.getByRole("button", { name: "취소" }));
+    fireEvent.click(within(list()).getAllByRole("button")[1]);
+    expect(within(detail()).getByText("자유 글")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "학회 카드뉴스 저장 수 분석 고치기" }));
+    expect((screen.getByLabelText("어떤 경험이었나요") as HTMLTextAreaElement).value).toBe("자유 글");
+  });
+
   it("빈 금고의 '직접 적기'로 적고, 이름이 비면 저장하지 않는다", async () => {
     mocks.listExperiences.mockResolvedValue([]);
     render(<ExperienceVault />);

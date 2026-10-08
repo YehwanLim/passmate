@@ -35,18 +35,25 @@ function createDb() {
 describe("normalizeExperience", () => {
   it("제목은 필수, 태그는 다듬고 중복을 지운다", () => {
     expect(normalizeExperience({ title: " 발주 개선 ", tags: [" 데이터", "데이터", "실행력"] }, { partial: false }))
-      .toEqual({ title: "발주 개선", period: null, situation: "", action: "", result: "", tags: ["데이터", "실행력"] });
+      .toEqual({ title: "발주 개선", period: null, situation: "", action: "", result: "", body: "", tags: ["데이터", "실행력"] });
     expect(() => normalizeExperience({}, { partial: false })).toThrow(ApiError);
   });
 
   it("너무 긴 본문, 태그 6개, 모르는 키는 400", () => {
     for (const bad of [
       { title: "t", situation: "가".repeat(1501) },
+      { title: "t", body: "가".repeat(4501) },
       { title: "t", tags: ["a", "b", "c", "d", "e", "f"] },
       { title: "t", owner: "x" },
     ]) {
       expect(() => normalizeExperience(bad, { partial: false })).toThrow(ApiError);
     }
+  });
+
+  it("자유 양식 글(body)을 받는다 — 칸 셋을 합친 만큼(4500자)까지", () => {
+    expect(normalizeExperience({ title: "t", body: " 오답 노트를 만들었다 " }, { partial: false }).body).toBe("오답 노트를 만들었다");
+    expect(normalizeExperience({ title: "t", body: "가".repeat(4500) }, { partial: false }).body).toHaveLength(4500);
+    expect(normalizeExperience({ body: "새 글", situation: "" }, { partial: true })).toEqual({ body: "새 글", situation: "" });
   });
 
   it("partial 은 보낸 키만 돌려주되 빈 본문은 400", () => {

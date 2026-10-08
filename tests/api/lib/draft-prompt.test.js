@@ -20,6 +20,16 @@ describe("buildDraftPrompt", () => {
     expect(prompt).toContain("CJ");
   });
 
+  it("자유 양식으로 쓴 경험은 '내용' 한 줄로, 빈 칸 셋은 넣지 않는다", () => {
+    const free = { id: "e2", title: "오답 노트 습관", period: null, situation: "", action: "", result: "", body: "틀린 문제를 유형별로 정리했다.\n두 번째 시험에 합격했다.", tags: [] };
+    const prompt = buildDraftPrompt({ ...base, experiences: [free] });
+    expect(prompt).toContain("내용: 틀린 문제를 유형별로 정리했다. 두 번째 시험에 합격했다.");
+    expect(prompt).not.toContain("상황:");
+    // 칸으로 쓴 경험(body 없음)은 그대로 칸
+    expect(buildDraftPrompt(base)).toContain("상황: 카페 리뷰 2.8점");
+    expect(buildDraftPrompt(base)).not.toContain("내용:");
+  });
+
   it("회사 이름은 빈칸으로 두지 않고 그대로 쓰게 한다", () => {
     expect(buildDraftPrompt(base)).toContain("회사 이름 'CJ'은 그대로 쓴다");
     expect(buildDraftPrompt({ ...base, company: null })).not.toContain("회사 이름");
