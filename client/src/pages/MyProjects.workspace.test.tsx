@@ -45,12 +45,12 @@ const rowsOf = async () => screen.findAllByTestId("application-row");
 const nameOf = (el: HTMLElement) => within(el).getAllByRole("button")[0].getAttribute("aria-label");
 
 describe("마이페이지 · 내 지원서", () => {
-  it("탭은 종류 셋(내 지원서·내 경험·기업 분석)이고 숫자를 단다", async () => {
+  it("탭은 종류 셋(내 지원서·내 경험·내 기업)이고 숫자를 단다", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json([row("a", null), row("corp", null, { kind: "COMPANY", latest_analysis_id: "c1", latest_status: "SUCCESS" })])));
     render(<MyProjects />);
     await rowsOf();
     const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
-    expect(tabs).toEqual(["내 지원서1", "내 경험2", "기업 분석1"]);
+    expect(tabs).toEqual(["내 지원서1", "내 경험2", "내 기업1"]);
   });
 
   it("작성 중을 위로, 마감 가까운 순 — 상태는 '작성 중'만(문항 수·막대 없음)", async () => {
@@ -105,14 +105,14 @@ describe("마이페이지 · 내 지원서", () => {
     expect(mocks.navigate).toHaveBeenCalledWith("/my/p-new");
   });
 
-  it("기업 분석 탭은 기업 분석만 보여 주고, 누르면 리포트로 바로 간다", async () => {
+  it("내 기업 탭은 기업 분석만 보여 주고, 누르면 리포트로 바로 간다", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json([
       row("draft", null),
       row("corp", null, { kind: "COMPANY", latest_analysis_id: "c1", summary: "회사 요약", latest_status: "SUCCESS" }),
     ])));
     render(<MyProjects />);
     expect((await rowsOf()).map(nameOf)).toEqual(["draft 열기"]);
-    fireEvent.click(screen.getByRole("tab", { name: /^기업 분석/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^내 기업/ }));
     const rows = await screen.findAllByTestId("company-row");
     expect(rows).toHaveLength(1);
     expect(within(rows[0]).getByText("회사 요약")).toBeTruthy();
