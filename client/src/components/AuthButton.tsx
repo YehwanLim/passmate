@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, ChevronDown, User, FileText, Ticket } from "lucide-react";
+import { LogOut, ChevronDown, User, FileText, Ticket, CircleHelp } from "lucide-react";
 import { readStoredProfile, useAuth } from "@/contexts/AuthContext";
 import { useCreditSummary } from "@/hooks/useCreditSummary";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
@@ -12,7 +12,7 @@ import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
  * Header에서 사용하는 인증 상태 버튼 컴포넌트.
  * - 비로그인: "로그인" 버튼 → /login 이동. 랜딩(/)에서 누르면 로그인 뒤 분석 폼(/analyze)으로 보낸다 —
  *   랜딩으로 되돌려 보내면 가입하고도 다음 할 일을 못 찾고 나갔다(10-01 실사례).
- * - 로그인: 프로필 이미지 + 이름 + 드롭다운 (남은 이용권 · 마이페이지 · 내 이용권 · 로그아웃)
+ * - 로그인: 프로필 이미지 + 이름 + 드롭다운 (남은 이용권 · 마이페이지 · 내 이용권 · 고객센터 · 로그아웃)
  */
 export function loginPathFrom(currentPath: string): string {
   return currentPath === "/" ? "/login?redirect=%2Fanalyze" : "/login";
@@ -64,7 +64,7 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
     }
   };
 
-  const handleNavigate = (path: "/my" | "/my/entitlements") => {
+  const handleNavigate = (path: "/my" | "/my/entitlements" | "/help") => {
     setDropdownOpen(false);
     navigate(path);
   };
@@ -188,6 +188,14 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
               >
                 <Ticket className={menuIcon} />
                 내 이용권
+              </button>
+              <button
+                id="header-help-btn"
+                onClick={() => handleNavigate("/help")}
+                className={menuItem}
+              >
+                <CircleHelp className={menuIcon} />
+                고객센터
               </button>
             </div>
 
