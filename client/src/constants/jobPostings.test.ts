@@ -35,6 +35,8 @@ describe("JOB_POSTINGS", () => {
       // 기업 분석 폼(CompanyAnalyze)의 채용공고 칸 상한도 넘지 않는다.
       expect(text.length, posting.slug).toBeLessThanOrEqual(4000);
       expect(detail.process.length, posting.slug).toBeGreaterThan(0);
+      const apply = detail.facts.find(fact => fact.label === "접수처");
+      expect(apply?.href, `${posting.slug} 접수처 링크`).toMatch(/^https:\/\//);
       expect(detail.facts.some(fact => fact.label === "전형 절차"), posting.slug).toBe(false);
       expect(detail.facts.some(fact => typeof fact.value !== "string"), posting.slug).toBe(true);
       expect(detail.source.url, posting.slug).toMatch(/^https:\/\//);

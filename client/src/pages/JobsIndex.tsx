@@ -4,7 +4,7 @@ import { jobPostingPath, JOB_POSTINGS, type JobPostingListing } from "@/constant
 import { useNow } from "@/hooks/useNow";
 import { closedPostings, dDayLabel, formatDeadline, openPostings } from "@/lib/jobPostingDates";
 
-const ROW_GRID = "md:grid-cols-[150px_minmax(0,1.1fr)_minmax(0,1fr)_72px] md:items-center md:gap-6";
+const ROW_GRID = "md:grid-cols-[170px_minmax(0,1.1fr)_minmax(0,1fr)_72px] md:items-center md:gap-6";
 
 /** 공고 표. now 가 없으면(프리렌더·하이드레이션 첫 화면) D-n 없이 날짜만 보인다. */
 function PostingTable({
@@ -31,15 +31,10 @@ function PostingTable({
               href={jobPostingPath(posting)}
               className={`grid gap-1.5 px-5 py-5 transition-colors hover:bg-fill-soft md:px-7 ${ROW_GRID}`}
             >
-              {/* 마감까지 남은 날이 먼저 눈에 들어오게 D-n 을 크게, 날짜는 그 아래 작게 */}
-              <span className="flex items-baseline gap-2 tabular-nums md:flex-col md:gap-1">
-                {now && !closed && (
-                  <b className="text-[22px] font-extrabold leading-none tracking-[-0.02em] text-danger">
-                    {dDayLabel(posting.closesAt, now)}
-                  </b>
-                )}
-                {closed && <span className="text-[16px] font-bold leading-none text-ink-4">마감</span>}
-                <span className="text-[13px] text-ink-4">{formatDeadline(posting.closesAt)}</span>
+              <span className="text-[14px] tabular-nums text-ink-3">
+                {now && !closed && <b className="mr-1.5 text-[15px] font-bold text-danger">{dDayLabel(posting.closesAt, now)}</b>}
+                {closed && <span className="mr-1.5 text-ink-4">마감</span>}
+                {formatDeadline(posting.closesAt)}
               </span>
               <span className="min-w-0">
                 <span className="block text-[17px] font-bold leading-snug text-ink [word-break:keep-all]">{posting.title}</span>

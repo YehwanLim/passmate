@@ -68,6 +68,20 @@ describe("JobPostingPage", () => {
     expect(document.querySelectorAll("dd ul li").length).toBeGreaterThanOrEqual(items);
   });
 
+  it("splits 지원 자격 into lines and links 접수처 to the site you apply on", () => {
+    mocks.slug = posting.slug;
+    const detail = JOB_POSTING_DETAILS[posting.slug];
+    render(<JobPostingPage />);
+    const apply = detail.facts.find(fact => fact.label === "접수처");
+    expect(apply?.href, "접수처에는 지원하는 사이트 주소가 있다").toMatch(/^https:\/\//);
+    const link = Array.from(document.querySelectorAll("dd a")).find(a => a.getAttribute("href") === apply?.href);
+    expect(link?.getAttribute("target")).toBe("_blank");
+
+    const qualification = detail.facts.find(fact => fact.label === "지원 자격");
+    const lines = typeof qualification?.value === "string" ? qualification.value.split(" · ") : [];
+    for (const line of lines) expect(screen.getByText(line, { exact: false }).closest("li"), line).toBeTruthy();
+  });
+
   it("marks a closed posting once the browser knows the time", () => {
     mocks.slug = posting.slug;
     vi.setSystemTime(new Date("2030-01-01T00:00:00+09:00"));

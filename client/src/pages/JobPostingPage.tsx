@@ -19,30 +19,47 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** 여러 개를 나열하는 칸(모집 회사·직무)은 한 줄씩. "회사: 직무"면 앞을 굵게 해 회사 단위로 끊어 읽히게 한다. */
-function FactValue({ value }: { value: string | readonly string[] }) {
-  if (typeof value === "string") return <>{value}</>;
+/** "회사: 직무" 꼴이면 앞을 굵게 해 회사 단위로 끊어 읽히게 한다. */
+function FactLine({ text }: { text: string }) {
+  const cut = text.indexOf(": ");
+  if (cut <= 0) return <>{text}</>;
+  return (
+    <>
+      <b className="font-semibold text-ink">{text.slice(0, cut)}</b> {text.slice(cut + 2)}
+    </>
+  );
+}
+
+/**
+ * 핵심 정보 값. 여러 개를 나열하는 칸(배열, 또는 " · " 로 이어 쓴 문장)은 한 줄씩 목록으로 끊는다.
+ * href 가 있으면(접수처) 첫 줄을 실제로 지원하는 사이트로 건다.
+ */
+function FactValue({ value, href }: { value: string | readonly string[]; href?: string }) {
+  const lines = typeof value === "string" ? value.split(" · ") : value;
+  const render = (line: string, index: number) =>
+    href && index === 0 ? (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-brand-ink underline underline-offset-4 hover:text-brand"
+      >
+        {line} ↗
+      </a>
+    ) : (
+      <FactLine text={line} />
+    );
+  if (lines.length === 1) return render(lines[0], 0);
   return (
     <ul className="grid gap-1.5">
-      {value.map(item => {
-        const cut = item.indexOf(": ");
-        return (
-          <li key={item} className="flex gap-2">
-            <span className="text-ink-5" aria-hidden="true">
-              ·
-            </span>
-            <span>
-              {cut > 0 ? (
-                <>
-                  <b className="font-semibold text-ink">{item.slice(0, cut)}</b> {item.slice(cut + 2)}
-                </>
-              ) : (
-                item
-              )}
-            </span>
-          </li>
-        );
-      })}
+      {lines.map((line, index) => (
+        <li key={line} className="flex gap-2">
+          <span className="text-ink-5" aria-hidden="true">
+            ·
+          </span>
+          <span>{render(line, index)}</span>
+        </li>
+      ))}
     </ul>
   );
 }
@@ -120,7 +137,7 @@ function PostingBody({ detail }: { detail: JobPostingDetail }) {
             <div key={fact.label} className="contents">
               <dt className="pt-3 text-ink-4 sm:border-b sm:border-line-soft sm:py-3">{fact.label}</dt>
               <dd className="border-b border-line-soft pb-3 pt-1 text-ink-2 [word-break:keep-all] sm:py-3">
-                <FactValue value={fact.value} />
+                <FactValue value={fact.value} href={fact.href} />
               </dd>
             </div>
           ))}

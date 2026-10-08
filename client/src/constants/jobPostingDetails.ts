@@ -15,8 +15,11 @@ export type JobPostingDetail = {
   keywords: string;
   /** 제목 아래 한 문단: 이번 공고에서 제일 눈에 띄는 점 */
   highlight: string;
-  /** 값이 배열이면 한 줄씩 목록으로 보인다(모집 회사·직무처럼 여러 개를 나열하는 칸) */
-  facts: readonly { label: string; value: string | readonly string[] }[];
+  /**
+   * 값이 배열이거나 " · " 로 이어 쓴 문자열이면 한 줄씩 목록으로 보인다.
+   * href 가 있으면 첫 줄을 그 주소로 건다(접수처 → 실제로 지원하는 사이트).
+   */
+  facts: readonly { label: string; value: string | readonly string[]; href?: string }[];
   /** 전형 절차. 부문마다 다르면 여러 줄(name 이 부문 이름) */
   process: readonly { name: string | null; steps: readonly string[] }[];
   /** 전형 절차 아래 한 줄 덧붙임 */
@@ -63,7 +66,7 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
         label: "올리브영 글로벌 인사이트 전형",
         value: "외국어 말하기 성적, 4년 이상 해외 거주, 해외 학위 중 하나가 필수 · 이번에 PT 과제가 새로 들어갔어요",
       },
-      { label: "접수처", value: "CJ그룹 채용 홈페이지(recruit.cj.net)" },
+      { label: "접수처", value: "CJ그룹 채용 홈페이지(recruit.cj.net)", href: "https://recruit.cj.net" },
     ],
     process: [
       { name: null, steps: ["서류·테스트 전형", "계열사별 전형", "최종 합격"] },
@@ -120,7 +123,7 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
         value:
           "DB손해보험 영업관리는 전국(지방 거점 도시 근무 가능자 우대) · DB생명 종합직은 서울/전주/대구/부산(입문교육 뒤 직무 배치) · DB증권은 여의도 · DB하이텍은 부천/음성이 같이 적힌 직무면 근무지 선택 불가(음성 사업장 기숙사 제공)",
       },
-      { label: "접수처", value: "DB그룹 채용 홈페이지(dbgroup.recruiter.co.kr)" },
+      { label: "접수처", value: "DB그룹 채용 홈페이지(dbgroup.recruiter.co.kr)", href: "https://dbgroup.recruiter.co.kr" },
     ],
     process: [
       { name: null, steps: ["서류", "인적성(AI역량검사)", "1단계 면접(실무진)", "2단계 면접(임원)", "최종 합격(채용검진 포함)"] },
@@ -161,7 +164,7 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
         label: "근무 조건",
         value: "본사 부문은 정규직(5급), 급여는 내규에 따름 · 지점영업은 인턴 기간 계약직, 월 250만원(세전)",
       },
-      { label: "접수처", value: "교보증권 채용 홈페이지(iprovest.recruiter.co.kr)" },
+      { label: "접수처", value: "교보증권 채용 홈페이지(iprovest.recruiter.co.kr)", href: "https://iprovest.recruiter.co.kr" },
     ],
     process: [
       { name: "본사영업·본사지원", steps: ["서류", "실무면접(10.20~10.23)", "심층면접(11.11~11.12)", "최종면접(11.18)"] },
@@ -203,7 +206,11 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
           "4년제 학사 기졸업 또는 2027년 2월 졸업예정 · 병역필 또는 면제, 해외여행·근무 결격사유 없는 분 · 2027년 1월 인턴 입사부터 정규직까지 풀타임 근무 가능 · 한화비전은 석사, 한화세미텍은 석사·박사도 지원 가능",
       },
       { label: "정규직 전환", value: "아워홈·한화갤러리아 2월 · 한화비전·한화세미텍·한화모멘텀 3월 · 한화호텔앤드리조트 2~3월" },
-      { label: "접수처", value: "회사별 채용 사이트에서 따로 지원 · 7개사 공고가 한화M&S 인재채용 페이지에 모여 있어요" },
+      {
+        label: "접수처",
+        value: "한화M&S 인재채용 페이지(7개사 공고 모음) · 지원은 회사별 채용 사이트에서 따로 해요",
+        href: "https://www.hanwhamachinerynserviceholdings.co.kr/page/recruit_list.html",
+      },
     ],
     process: [
       { name: null, steps: ["서류(10월)", "1차 면접(11월)", "인성검사·2차 면접(12월)", "채용검진·인턴십(2027년 1~2월)", "최종 면접", "정규직 전환"] },
@@ -244,7 +251,11 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
         value:
           "학사 이상, 기졸업 또는 2027년 2월 이전 졸업예정 · 2026년 12월 입사 가능 · 병역필 또는 면제, 해외여행 결격사유 없는 분 · 드림버스 컴퍼니 우수 수료자, 대학생 AI 숏폼 공모전 수상자는 서류 가산점",
       },
-      { label: "접수처", value: "한솔그룹 채용 홈페이지(hansol.careerlink.kr)에서 회사별 공고로 지원" },
+      {
+        label: "접수처",
+        value: "한솔그룹 채용 홈페이지(hansol.careerlink.kr) · 회사별 공고를 눌러 지원해요",
+        href: "https://hansol.careerlink.kr",
+      },
     ],
     process: [
       { name: null, steps: ["서류", "AI면접(10월 중)", "실무면접(11월 중)", "임원면접(11월 중)", "최종합격(11.23 예정)"] },
@@ -285,6 +296,7 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
       { label: "지원 자격", value: "학사 이상 기졸업 또는 2027년 8월 이전 졸업(예정), 2027년 1월 또는 7월 입사 가능" },
       { label: "일정", value: "서류 합격 발표 10월 말 · 면접 11~12월 · 입사 2027년 1월(졸업 시기에 따라 7월)" },
       { label: "직군", value: "계열사마다 달라요. 이마트는 MD(상품 기획·운영, 해외 소싱)와 경영지원(재무·개발·마케팅·인사·물류·IT) 중 하나를 골라 지원해요." },
+      { label: "접수처", value: "신세계그룹 채용 홈페이지(job.shinsegae.com)", href: "https://job.shinsegae.com" },
     ],
     process: [
       { name: null, steps: ["서류전형", "면접(1~3차)", "채용검진", "입사"] },
@@ -328,7 +340,11 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
           "필수사항 외에는 모두 우대사항(필수 아님)",
         ],
       },
-      { label: "접수처", value: "이수그룹 채용 홈페이지(recruit.isu.co.kr) 온라인 지원 · 문의는 마이페이지 Q&A" },
+      {
+        label: "접수처",
+        value: "이수그룹 채용 홈페이지(recruit.isu.co.kr) · 문의는 마이페이지 Q&A",
+        href: "https://recruit.isu.co.kr",
+      },
     ],
     process: [
       { name: null, steps: ["서류전형", "실무진면접", "임원면접", "채용검진", "최종합격"] },
@@ -368,7 +384,7 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
         label: "배치",
         value: "직군 단위 채용 · 공고의 주요 업무와 직무 지망 순위는 참고 사항이고, 담당 업무와 배치 조직은 전형 결과와 내부 상황을 보고 정해요",
       },
-      { label: "접수처", value: "SK그룹 채용 홈페이지 SK Careers 직군별 공고" },
+      { label: "접수처", value: "SK그룹 채용 홈페이지 SK Careers(skcareers.com) · 직군별 공고로 지원해요", href: "https://www.skcareers.com" },
     ],
     process: [
       { name: null, steps: ["서류", "필기전형(SKCT, 10.17 또는 10.18)", "1차면접(11월 중순)", "2차면접(12월)", "입사(2027년 1월)"] },
@@ -384,7 +400,7 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
   },
   "soil-2026": {
     description:
-      "에쓰오일(S-OIL) 2026 사무직 신입 채용(서울 본사 경영·영업·재무, 울산 공장 공정·설비·안전환경) 접수 일정·지원 자격·전형을 정리했어요. 10월 14일(수) 23:59 마감.",
+      "S-OIL(에쓰오일) 2026 사무직 신입 채용(서울 본사 경영·영업·재무, 울산 공장 공정·설비·안전환경) 접수 일정·지원 자격·전형을 정리했어요. 10월 14일(수) 23:59 마감.",
     keywords: "에쓰오일 채용, S-OIL 채용, 에쓰오일 신입, 정유사 채용, 에쓰오일 공채",
     highlight:
       "이름은 사무직 채용이지만 울산 공장 엔지니어 직무도 공고에서는 사무직(엔지니어, 공장)으로 묶여 있어요. 제목만 보고 문과 채용이라고 생각하면 놓치기 쉬워요. 희망 직무는 2지망까지 고를 수 있어요.",
@@ -415,7 +431,7 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
         value:
           "대학(원) 기졸업 또는 2027년 2월 이내 졸업예정, 2027년 1월 입사 가능 · 마감일 기준 유효한 공인영어성적(TOEIC, TOEFL, TOEIC Speaking, OPIc 등) · 병역필 또는 면제, 해외여행 결격사유 없는 분 · 영어 회화 능통자, 엔지니어 직무는 관련 자격증 소지자 우대",
       },
-      { label: "접수처", value: "에쓰오일 채용 홈페이지(s-oil.recruiter.co.kr) 온라인 지원서" },
+      { label: "접수처", value: "S-OIL 채용 홈페이지(s-oil.recruiter.co.kr)", href: "https://s-oil.recruiter.co.kr" },
     ],
     process: [
       { name: null, steps: ["서류", "인적성검사(10월 말)", "AI 역량검사(11월 초)", "1차 면접(11월 중)", "2차 면접(12월 중)", "채용 검진", "최종합격(12월 말)", "입사(2027년 1월)"] },
@@ -457,7 +473,8 @@ export const JOB_POSTING_DETAILS: Readonly<Record<string, JobPostingDetail>> = {
       },
       {
         label: "접수처",
-        value: "career.koreainvestment.com에서 FY2026 한국투자증권 일반 공채(신입사원 5급)로 지원 · 이메일·우편·방문 접수 불가",
+        value: "한국투자증권 채용 홈페이지(career.koreainvestment.com) · 'FY2026 한국투자증권 일반 공채(신입사원 5급)'로 지원 · 이메일·우편·방문 접수 불가",
+        href: "https://career.koreainvestment.com",
       },
     ],
     process: [
