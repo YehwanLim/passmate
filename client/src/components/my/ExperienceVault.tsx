@@ -298,7 +298,7 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
   // 폰에서는 목록 대신 자세히 칸만 남으니, 긴 목록 아래쪽에서 눌렀어도 칸 머리로 올려 준다.
   const showDetailOnPhone = () => {
     setMobileDetail(true);
-    if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 767px)").matches) {
+    if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 639px)").matches) {
       requestAnimationFrame(() => detailRef.current?.scrollIntoView({ block: "start" }));
     }
   };
@@ -403,7 +403,7 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
   return (
     <div>
       {/* ── 위: 찾기 + 버튼 / 키워드 거르기 (폰에서 자세히를 볼 땐 숨김) ── */}
-      <div className={mobileDetail ? "hidden md:block" : undefined}>
+      <div className={mobileDetail ? "hidden sm:block" : undefined}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <label className="flex h-[42px] items-center gap-2 rounded-xl border border-line bg-surface px-3.5 focus-within:border-brand sm:w-[300px]">
             <Search className="size-4 shrink-0 text-ink-5" aria-hidden="true" />
@@ -456,8 +456,9 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
       {deleteError && <p role="alert" className="mt-3 text-[13px] text-danger">{deleteError}</p>}
 
       {/* ── 아래: 왼쪽 목록(좁게) + 오른쪽 자세히(넓게) ── */}
-      <div className="mt-5 grid items-start gap-4 md:grid-cols-[272px_minmax(0,1fr)]">
-        <div className={mobileDetail ? "hidden md:block" : undefined}>
+      {/* 640px 이상이면 왼쪽은 사이드바처럼 좁게(220~272px), 오른쪽 자세히가 본문. 폰만 목록 → 자세히 */}
+      <div className="mt-5 grid items-start gap-3 sm:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[272px_minmax(0,1fr)] lg:gap-4">
+        <div className={mobileDetail ? "hidden sm:block" : undefined}>
           <p className="mb-2.5 px-0.5 text-[13px] font-semibold text-ink-4">{COPY.count(visible.length)}</p>
           {visible.length === 0 ? (
             <p className="rounded-[14px] bg-surface px-4 py-6 text-center text-[13.5px] text-ink-4">{COPY.noMatch}</p>
@@ -494,12 +495,12 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
           )}
         </div>
 
-        <div ref={detailRef} className={`scroll-mt-20 rounded-[18px] bg-surface p-5 sm:p-7 ${mobileDetail ? "" : "hidden md:block"}`}>
+        <div ref={detailRef} className={`scroll-mt-20 rounded-[18px] bg-surface p-5 sm:p-7 ${mobileDetail ? "" : "hidden sm:block"}`}>
           {mobileDetail && (
             <button
               type="button"
               onClick={() => { setMobileDetail(false); if (editing === "new") setEditing(null); }}
-              className="-ml-1.5 mb-4 inline-flex items-center gap-0.5 rounded-lg px-1.5 py-1 text-[13.5px] font-semibold text-ink-3 hover:bg-fill md:hidden"
+              className="-ml-1.5 mb-4 inline-flex items-center gap-0.5 rounded-lg px-1.5 py-1 text-[13.5px] font-semibold text-ink-3 hover:bg-fill sm:hidden"
             >
               <ChevronLeft className="size-4" aria-hidden="true" />
               {COPY.back}
