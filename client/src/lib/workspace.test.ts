@@ -10,6 +10,9 @@ import {
   sortApplications,
   applicationStatus,
   formatPeriod,
+  parsePeriod,
+  buildPeriod,
+  isPeriodReversed,
   updateApplicationMeta,
 } from "./workspace";
 
@@ -114,7 +117,35 @@ describe("formatPeriod", () => {
     expect(formatPeriod("2025.01 ~ 2025.06.")).toBe("25.01 – 25.06");
     expect(formatPeriod("2024.7")).toBe("24.07");
     expect(formatPeriod("2024 여름 (8주)")).toBe("2024 여름 (8주)");
+    expect(formatPeriod("2024.03 ~ 진행 중")).toBe("24.03 – 진행 중");
     expect(formatPeriod(null)).toBe("");
     expect(formatPeriod("  ")).toBe("");
+  });
+});
+
+describe("parsePeriod · buildPeriod", () => {
+  it("저장 형식과 옛 숫자 형식을 연·월로 읽고, 모르는 형식은 null", () => {
+    expect(parsePeriod("2024.03 ~ 2024.12")).toEqual({ start: { year: 2024, month: 3 }, end: { year: 2024, month: 12 }, ongoing: false });
+    expect(parsePeriod("2023.3-2023.12")).toEqual({ start: { year: 2023, month: 3 }, end: { year: 2023, month: 12 }, ongoing: false });
+    expect(parsePeriod("2025.01 ~ 진행 중")).toEqual({ start: { year: 2025, month: 1 }, end: null, ongoing: true });
+    expect(parsePeriod("2024.7")).toEqual({ start: { year: 2024, month: 7 }, end: null, ongoing: false });
+    expect(parsePeriod("")).toEqual({ start: null, end: null, ongoing: false });
+    expect(parsePeriod("2024 여름 (8주)")).toBeNull();
+    expect(parsePeriod("2024.13")).toBeNull();
+  });
+
+  it("고른 값을 정해진 형식으로 만들고, 시작이 없으면 null", () => {
+    const start = { year: 2024, month: 3 };
+    expect(buildPeriod({ start, end: { year: 2024, month: 12 }, ongoing: false })).toBe("2024.03 ~ 2024.12");
+    expect(buildPeriod({ start, end: null, ongoing: true })).toBe("2024.03 ~ 진행 중");
+    expect(buildPeriod({ start, end: null, ongoing: false })).toBe("2024.03");
+    expect(buildPeriod({ start: null, end: { year: 2024, month: 12 }, ongoing: false })).toBeNull();
+    expect(parsePeriod(buildPeriod({ start, end: { year: 2025, month: 1 }, ongoing: false }))).toEqual({ start, end: { year: 2025, month: 1 }, ongoing: false });
+  });
+
+  it("끝이 시작보다 앞서면 알아챈다", () => {
+    expect(isPeriodReversed({ start: { year: 2024, month: 5 }, end: { year: 2024, month: 3 }, ongoing: false })).toBe(true);
+    expect(isPeriodReversed({ start: { year: 2024, month: 5 }, end: { year: 2024, month: 5 }, ongoing: false })).toBe(false);
+    expect(isPeriodReversed({ start: { year: 2024, month: 5 }, end: null, ongoing: true })).toBe(false);
   });
 });
