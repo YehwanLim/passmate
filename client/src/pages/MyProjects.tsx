@@ -9,7 +9,6 @@ import SkeletonCard from "@/components/my/SkeletonCard";
 import SiteHeader from "@/components/SiteHeader";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
-import NewApplicationForm from "@/components/my/NewApplicationForm";
 import ExperienceVault from "@/components/my/ExperienceVault";
 import MyCreditsPanel from "@/components/my/MyCreditsPanel";
 import { applicationStatus, listExperiences, sortApplications } from "@/lib/workspace";
@@ -33,7 +32,6 @@ export default function MyProjects() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [experienceCount, setExperienceCount] = useState<number | null>(null);
 
@@ -219,17 +217,12 @@ export default function MyProjects() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setCreating(true)}
+                  onClick={() => navigate("/my/new")}
                   className="h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover"
                 >
                   + {WORKSPACE_COPY.newApplication}
                 </button>
               </div>
-              {creating && (
-                <div className="mb-4 rounded-[18px] bg-surface p-5">
-                  <NewApplicationForm onCreated={(id) => navigate(`/my/${id}`)} onCancel={() => setCreating(false)} />
-                </div>
-              )}
               {loadingOrError ??
                 (applications.length === 0 ? (
                   <EmptyState

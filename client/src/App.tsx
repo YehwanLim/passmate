@@ -19,6 +19,7 @@ const CompanyAnalyze = lazy(() => import("./pages/CompanyAnalyze"));
 const CompanyReport = lazy(() => import("./pages/CompanyReport"));
 const ReportResult = lazy(() => import("./pages/ReportResult"));
 const MyProjects = lazy(() => import("./pages/MyProjects"));
+const NewApplication = lazy(() => import("./pages/NewApplication"));
 const Entitlements = lazy(() => import("./pages/Entitlements"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const MyEntitlements = lazy(() => import("./pages/MyEntitlements"));
@@ -56,8 +57,9 @@ function Router() {
         <Route path={"/entitlements"} component={Entitlements} />
         <Route path={"/checkout"} component={Checkout} />
         <Route path={"/my"} component={MyProjects} />
-        {/* /my/:projectId 보다 먼저 선언해야 "entitlements"가 projectId로 잡히지 않는다 */}
+        {/* /my/:projectId 보다 먼저 선언해야 "entitlements"·"new"가 projectId로 잡히지 않는다 */}
         <Route path={"/my/entitlements"} component={MyEntitlements} />
+        <Route path={"/my/new"} component={NewApplication} />
         <Route path={"/my/:projectId"} component={MyAnalyses} />
         {/* 취업 가이드(client/content/guides). 빌드 때 프리렌더되고 sitemap·RSS 에 오른다 */}
         <Route path={"/guide"} component={GuideIndex} />
