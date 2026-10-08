@@ -24,7 +24,8 @@ const sameQuestions = (a: ApplicationQuestionDraft[], b: ApplicationQuestionDraf
 
 /**
  * /my/new — 새 지원서도 작성 화면과 같은 편집기(A안)로 빈 채로 연다.
- * 회사를 적고 칸을 벗어나거나 공고에서 회사가 채워지면 지원서를 만들고, 그 사이 친 글까지 저장한 뒤 /my/:id 로 바꿔 끼운다.
+ * 다 적고 "지원서 만들기"를 누르면 지원서를 만들고, 그 사이 친 글까지 저장한 뒤 /my/:id 로 바꿔 끼운다.
+ * 공고를 붙이면 회사·직무를 채우기만 한다 — 만들기는 사람이 정한다(10-08).
  */
 export default function NewApplication() {
   const [, navigate] = useLocation();
@@ -72,15 +73,13 @@ export default function NewApplication() {
   const attachPosting = (record: JobPostingRecord | null) => {
     setPosting(record);
     if (!record) return;
-    // 직접 적은 값은 덮어쓰지 않는다. 공고에서 회사가 채워지면 바로 만든다.
+    // 직접 적은 값은 덮어쓰지 않는다.
     const next = {
       ...info,
       company: info.company.trim() ? info.company : record.summary.company.trim().slice(0, 100),
       jobKeyword: info.jobKeyword.trim() ? info.jobKeyword : record.summary.role.trim().slice(0, 100),
     };
     setInfo(next);
-    latest.current = { questions, posting: record };
-    if (next.company.trim()) void create(next);
   };
 
   const updateQuestion = (index: number, patch: Partial<ApplicationQuestionDraft>) =>
@@ -102,7 +101,24 @@ export default function NewApplication() {
             </button>
             <h1 className="truncate text-[16px] font-bold tracking-[-0.02em] text-ink">{COPY.pageTitle}</h1>
           </div>
-          <span className="text-[12.5px] text-ink-4" aria-live="polite">{creating ? COPY.creating : COPY.saveHintShort}</span>
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="hidden text-[12.5px] text-ink-4 sm:inline" aria-live="polite">{creating ? COPY.creating : COPY.saveHintShort}</span>
+            {/* 좁은 화면에선 지원 정보 칸이 원고지 아래로 내려가서, 위 막대에도 만들기 버튼을 둔다 */}
+            <button
+              type="button"
+              onClick={() => {
+                if (info.company.trim()) void create();
+                else {
+                  setError(COPY.companyRequired);
+                  companyRef.current?.focus();
+                }
+              }}
+              disabled={creating}
+              className="h-9 rounded-[10px] bg-brand px-3.5 text-[13.5px] font-bold text-white transition-colors hover:bg-brand-hover disabled:opacity-40"
+            >
+              {COPY.submit}
+            </button>
+          </div>
         </div>
       </div>
 
