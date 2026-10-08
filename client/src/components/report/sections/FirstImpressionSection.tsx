@@ -25,7 +25,7 @@ function ReadingStep({ time, label, tone, last, children }: { time: string; labe
 
 /**
  * 01 첫인상(리포트 표지): 위는 이름표 띠(이니셜·읽히는 모습 | 지원자 프로필·키워드),
- * 아래는 채용 담당자가 읽는 순서대로 3초(총평) · 10초(기억할 모습 ✓) · 30초(남는 질문 △) 세 칸.
+ * 아래는 채용 담당자가 읽는 순서대로 10초(총평) · 1분(기억할 모습 ✓) · 3분(남는 질문 △) 세 칸.
  */
 export function FirstImpressionSection({
   index,
@@ -97,10 +97,10 @@ export function FirstImpressionSection({
       <div className="mt-8 border-t border-line-soft pt-7">
         <p className="text-[16px] font-bold text-ink">채용 담당자가 읽는 순서대로</p>
         <div className="mt-4 grid gap-6 md:grid-cols-3 md:gap-5">
-          <ReadingStep time="3초" label="처음 보이는 것" tone="ok">
+          <ReadingStep time="10초" label="처음 보이는 것" tone="ok">
             <p className="rounded-2xl bg-fill-soft px-5 py-4 text-[16px] font-bold leading-[1.6] text-ink text-pretty">{renderCleanText(heroSummary)}</p>
           </ReadingStep>
-          <ReadingStep time="10초" label={UI_LABELS.HIRING_MEMORY_SHORT} tone="ok">
+          <ReadingStep time="1분" label={UI_LABELS.HIRING_MEMORY_SHORT} tone="ok">
             <ul className="flex flex-col gap-2" aria-label={UI_LABELS.HIRING_MEMORY}>
               {remembered.map((item) => (
                 <li key={item.text} className="flex items-center gap-3 rounded-[14px] bg-fill-soft px-3.5 py-3 text-[15px] font-bold leading-[1.45] text-ink">
@@ -112,7 +112,7 @@ export function FirstImpressionSection({
               ))}
             </ul>
           </ReadingStep>
-          <ReadingStep time="30초" label="다 읽고 남는 질문" tone="fix" last>
+          <ReadingStep time="3분" label="다 읽고 남는 질문" tone="fix" last>
             {questions.map((item) => (
               <div key={item.text} className="flex flex-col gap-2.5 rounded-2xl bg-blank-soft px-5 py-4">
                 <AlertTriangle aria-hidden="true" className="size-5 text-blank" strokeWidth={2.2} />

@@ -508,7 +508,7 @@ function SceneDiagnose({ t }: { t: number }) {
       </div>
       {!onLine ? (
         // 리포트 01 첫인상과 같은 짜임: 위는 이름표 띠(이니셜·읽히는 모습 | 지원자 프로필·키워드),
-        // 아래는 채용 담당자가 읽는 순서(3초·10초·30초). 넓은 칸은 세 칸 가로, 좁은 칸은 위아래로 쌓는다.
+        // 아래는 채용 담당자가 읽는 순서(10초·1분·3분). 넓은 칸은 세 칸 가로, 좁은 칸은 위아래로 쌓는다.
         <div className="flex min-h-0 flex-1 flex-col gap-4 px-[22px] pb-3 pt-4">
           <div className="grid flex-none items-center gap-4 @xl:grid-cols-[minmax(0,1fr)_200px]">
             <div className="flex items-center gap-3">
@@ -546,7 +546,7 @@ function SceneDiagnose({ t }: { t: number }) {
             <div className="grid min-h-0 gap-3 @xl:grid-cols-3 @xl:gap-3.5">
               {at(REPORT + 400) && (
                 <div className="hero-msg-in flex flex-col gap-2">
-                  <ReadingTime time="3초" label="처음 보이는 것" tone="ok" />
+                  <ReadingTime time="10초" label="처음 보이는 것" tone="ok" />
                   <p className="m-0 rounded-[12px] bg-fill-soft px-3.5 py-2.5 text-[12.5px] font-medium leading-[1.6] text-ink-2 @xl:py-3">
                     로그 3,000건과 2주 단위 실험이 무기인 자소서, 이제 그 시선이 차 안의 고객에게 닿으면 완성됩니다
                   </p>
@@ -554,7 +554,7 @@ function SceneDiagnose({ t }: { t: number }) {
               )}
               {at(REPORT + 1000) && (
                 <div className="hero-msg-in flex flex-col gap-2">
-                  <ReadingTime time="10초" label="기억에 남는 것" tone="ok" />
+                  <ReadingTime time="1분" label="기억에 남는 것" tone="ok" />
                   {REMEMBERED.map(
                     (item, index) =>
                       at(REPORT + 1000 + index * 250) && (
@@ -573,7 +573,7 @@ function SceneDiagnose({ t }: { t: number }) {
               )}
               {at(REPORT + 2200) && (
                 <div className="hero-msg-in flex flex-col gap-2">
-                  <ReadingTime time="30초" label="다 읽고 남는 질문" tone="fix" last />
+                  <ReadingTime time="3분" label="다 읽고 남는 질문" tone="fix" last />
                   <div className="flex items-center gap-2.5 rounded-[12px] bg-blank-soft px-3 py-2.5 @xl:flex-col @xl:items-start @xl:gap-2 @xl:px-3.5 @xl:py-3">
                     <AlertTriangle aria-hidden="true" className="h-4 w-4 flex-none text-blank" strokeWidth={2.2} />
                     <span className="text-[12.5px] font-semibold leading-[1.5] text-ink">차량 서비스로 옮겨 올 근거는 아직 얇다</span>
@@ -671,7 +671,7 @@ function SceneDiagnose({ t }: { t: number }) {
   );
 }
 
-/** 첫인상의 3초·10초·30초 머리. 넓은 칸에서는 실제 리포트처럼 점과 선으로 읽는 순서를 잇는다. */
+/** 첫인상의 10초·1분·3분 머리. 넓은 칸에서는 실제 리포트처럼 점과 선으로 읽는 순서를 잇는다. */
 function ReadingTime({ time, label, tone, last = false }: { time: string; label: string; tone: "ok" | "fix"; last?: boolean }) {
   return (
     <div className="flex flex-col gap-2">
