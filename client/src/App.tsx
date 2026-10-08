@@ -4,6 +4,7 @@ import { lazy, Suspense } from "react";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { RouteMeta } from "./components/RouteMeta";
+import { SiteNotices } from "./components/SiteNotices";
 import { VisitTracker } from "./components/VisitTracker";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -96,6 +97,8 @@ function App() {
             <RouteMeta />
             {/* 분석을 돌리지 않아도 사이트에 들어오면 관리자 대시보드 방문자에 잡히게 한다 */}
             <VisitTracker />
+            {/* 관리자가 켠 팝업·상단 배너(관리자 화면에서는 안 뜸) */}
+            <SiteNotices />
             <Router />
           </TooltipProvider>
         </AuthProvider>

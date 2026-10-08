@@ -129,3 +129,11 @@ export function estimatedAmountFor(product: PurchaseProduct | null): number | nu
   const key = product ? PRODUCT_KEY_BY_PRODUCT[product] : undefined;
   return key ? PRICING[key].salePrice : null;
 }
+
+/** 상품별 결제 건수를 현재 판매가로 되짚은 추정 매출. 상품을 모르는 결제(UNKNOWN)는 뺀다. */
+export function estimateRevenue(byProduct: Partial<Record<PurchaseProduct | "UNKNOWN", number>>): number {
+  return Object.entries(byProduct).reduce((sum, [product, count]) => {
+    if (product === "UNKNOWN") return sum;
+    return sum + (count ?? 0) * (estimatedAmountFor(product as PurchaseProduct) ?? 0);
+  }, 0);
+}

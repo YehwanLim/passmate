@@ -15,34 +15,35 @@ import type { BreadcrumbSegment } from "@/types/admin";
 // ============================================================
 
 const SEGMENT_LABELS: Record<string, string> = {
-  admin: "Dashboard",
-  users: "Users",
-  "resume-analysis": "Resume Analysis",
-  "ai-usage": "AI Usage",
-  "ai-settings": "AI Settings",
-  prompts: "Prompts",
-  analytics: "Analytics",
-  payments: "Payments",
-  feedback: "Feedback",
-  logs: "Logs",
-  settings: "Settings",
+  admin: "홈",
+  behavior: "사용 행동",
+  users: "사용자",
+  "resume-analysis": "분석 기록",
+  logs: "실패 로그",
+  "ai-usage": "AI 사용량",
+  "ai-models": "AI 모델",
+  prompts: "프롬프트",
+  feedback: "피드백",
+  mentoring: "멘토링",
+  notices: "공지",
+  settings: "설정",
 };
 
 /**
  * wouter의 현재 경로를 파싱하여 BreadcrumbSegment 배열로 변환합니다.
  *
  * 예시:
- * - /admin                 → [{ label: 'Dashboard' }]
- * - /admin/users           → [{ label: 'Dashboard', href: '/admin' }, { label: 'Users' }]
- * - /admin/users/123       → [{ label: 'Dashboard', href: '/admin' }, { label: 'Users', href: '/admin/users' }, { label: '123' }]
+ * - /admin                 → [{ label: '홈' }]
+ * - /admin/users           → [{ label: '홈', href: '/admin' }, { label: '사용자' }]
+ * - /admin/users/123       → [{ label: '홈', href: '/admin' }, { label: '사용자', href: '/admin/users' }, { label: '123' }]
  */
 function parseSegments(location: string): BreadcrumbSegment[] {
-  // /admin 또는 /admin/ → Dashboard만
+  // /admin 또는 /admin/ → 홈만
   const normalized = location.replace(/\/$/, "") || "/admin";
   const parts = normalized.split("/").filter(Boolean); // ['admin', 'users', ...]
 
   if (parts.length === 0 || parts[0] !== "admin") {
-    return [{ label: "Dashboard" }];
+    return [{ label: "홈" }];
   }
 
   const segments: BreadcrumbSegment[] = [];

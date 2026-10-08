@@ -92,7 +92,7 @@ export default function FeedbackPage() {
   return (
     <div className="space-y-5">
       <AdminPageHeader
-        title="Feedback"
+        title="피드백"
         description="리포트 만족도 설문 응답을 확인합니다."
         actions={
           <div className="flex items-center gap-2">

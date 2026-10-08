@@ -736,6 +736,31 @@ model ClientEvent {
   @@map("client_events")
 }
 
+// ── 사이트 공지 ──────────────────────────────────────────────────
+// 관리자가 만드는 팝업(들어오면 뜨는 창)·배너(화면 맨 위 띠). 켜져 있고 기간 안인 것 중 종류별 최신 하나만 보인다.
+// 누구나 읽는 공개 API(/api/notices)로 나가므로 개인정보를 담지 않는다.
+model SiteNotice {
+  id        String    @id @default(uuid()) @db.Uuid
+  /// POPUP | BANNER
+  kind      String    @db.VarChar(16)
+  title     String    @db.VarChar(100)
+  body      String    @default("") @db.Text
+  /// 버튼 링크. 사이트 안 경로(/...) 또는 https 주소.
+  linkUrl   String?   @map("link_url") @db.VarChar(500)
+  linkLabel String?   @map("link_label") @db.VarChar(30)
+  /// 팝업 이미지. CSP(img-src) 때문에 사이트 안 경로나 Supabase 저장소 주소만 받는다.
+  imageUrl  String?   @map("image_url") @db.VarChar(500)
+  active    Boolean   @default(false)
+  /// 비어 있으면 켜는 즉시 / 끌 때까지.
+  startsAt  DateTime? @map("starts_at") @db.Timestamptz
+  endsAt    DateTime? @map("ends_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([kind, active])
+  @@map("site_notices")
+}
+
 // ── 커피챗·모의면접 예약 ──────────────────────────────────────────
 // 관리자가 가능한 시간을 슬롯으로 열고, 로그인한 사용자가 슬롯 하나를 골라 신청한다.
 // 결제(모의면접)는 사이트 밖(Groble)이라 여기엔 없고, 관리자가 입금 확인 뒤 CONFIRMED 로 바꾼다.

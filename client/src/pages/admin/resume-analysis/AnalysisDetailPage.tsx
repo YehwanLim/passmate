@@ -66,7 +66,7 @@ export default function AnalysisDetailPage() {
 
       {/* 헤더 */}
       <AdminPageHeader
-        title={`Resume Analysis 상세`}
+        title="분석 상세"
         description={`ID: ${detail.id}`}
         actions={
           <div className="flex items-center gap-2">

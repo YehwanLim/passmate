@@ -1,4 +1,4 @@
-import { Bell, LogOut, Menu, User } from "lucide-react";
+import { LogOut, Menu, User } from "lucide-react";
 import { useLocation } from "wouter";
 
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AdminBreadcrumb } from "./AdminBreadcrumb";
+import { AdminNotificationsMenu } from "./AdminNotificationsMenu";
 import { useAuth } from "@/contexts/AuthContext";
 
 // ============================================================
@@ -62,15 +63,8 @@ export function AdminHeader() {
 
       {/* 우측 액션 영역 */}
       <div className="flex items-center gap-1">
-        {/* 알림 버튼 (추후 알림 기능과 연동) */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8 text-muted-foreground hover:text-foreground"
-          aria-label="알림"
-        >
-          <Bell className="size-4" />
-        </Button>
+        {/* 알림함: 멘토링 확정 대기·새 결제·새 실패 분석 */}
+        <AdminNotificationsMenu />
 
         {/* 관리자 프로필 드롭다운 */}
         <DropdownMenu>

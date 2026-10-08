@@ -40,6 +40,24 @@ function sessionToProfile(session: Session): UserProfile {
   };
 }
 
+/**
+ * 저장소에 남아 있는 Supabase 세션으로 만든 "임시" 프로필. 헤더가 지연 청크·토큰 갱신을 기다리지 않고
+ * 프로필을 바로 그리는 데만 쓴다 — 권한 판단(isAuthenticated·가드)에는 쓰지 않는다.
+ * 키 형식은 supabase-js 기본값 `sb-<프로젝트 ref>-auth-token`(userStorage 미사용이라 user 가 세션 안에 있다).
+ */
+export function readStoredProfile(): UserProfile | null {
+  try {
+    const ref = new URL(import.meta.env.VITE_SUPABASE_URL as string).hostname.split(".")[0];
+    const raw = window.localStorage.getItem(`sb-${ref}-auth-token`);
+    if (!raw) return null;
+    const session = JSON.parse(raw) as Session | null;
+    if (!session?.user?.id || !session.refresh_token) return null;
+    return sessionToProfile(session);
+  } catch {
+    return null;
+  }
+}
+
 // ============================================================
 // Provider
 // ============================================================

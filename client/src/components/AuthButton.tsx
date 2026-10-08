@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, ChevronDown, User, FileText, Ticket } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { readStoredProfile, useAuth } from "@/contexts/AuthContext";
 import { useCreditSummary } from "@/hooks/useCreditSummary";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 
@@ -30,6 +30,12 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // 세션 확인(지연 청크 + 만료 토큰 갱신)이 1~2초 걸려도 프로필이 바로 보이도록 저장된 세션을 먼저 읽는다.
+  // 프리렌더 HTML 과 하이드레이션 첫 패스는 빈 자리여야 하므로 useState 초기값이 아니라 첫 페인트 전 레이아웃 이펙트에서 읽는다.
+  const [storedUser, setStoredUser] = useState<ReturnType<typeof readStoredProfile>>(null);
+  useLayoutEffect(() => {
+    setStoredUser(readStoredProfile());
+  }, []);
   // 남은 이용권은 메뉴를 열 때만 읽는다(헤더는 모든 화면에 있으니 매번 부르지 않는다).
   const { summary: credits, failed: creditsFailed } = useCreditSummary(dropdownOpen && isAuthenticated);
 
@@ -63,13 +69,14 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
     navigate(path);
   };
 
-  // 세션 로딩 중에는 빈 자리 유지 (레이아웃 흔들림 방지)
-  if (isLoading) {
+  // 세션 로딩 중에는 저장된 프로필을 먼저 보여 주고, 없으면 빈 자리 유지 (레이아웃 흔들림 방지)
+  const shownUser = isLoading ? storedUser : user;
+  if (isLoading && !shownUser) {
     return <div className="w-16 h-8" />;
   }
 
   // ── 비로그인 상태 ──
-  if (!isAuthenticated) {
+  if (!isLoading && !isAuthenticated) {
     return (
       <button
         id="header-login-btn"
@@ -82,8 +89,8 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
   }
 
   // ── 로그인 상태 ──
-  const displayName = user?.name ?? user?.email?.split("@")[0] ?? "사용자";
-  const avatarUrl = user?.profile_image;
+  const displayName = shownUser?.name ?? shownUser?.email?.split("@")[0] ?? "사용자";
+  const avatarUrl = shownUser?.profile_image;
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -142,7 +149,7 @@ export default function AuthButton({ tone = "dark" }: { tone?: "dark" | "light" 
                 {displayName}
               </p>
               <p className={`text-[11px] truncate mt-0.5 ${light ? "text-ink-4" : "text-gray-500"}`}>
-                {user?.email}
+                {shownUser?.email}
               </p>
             </div>
 

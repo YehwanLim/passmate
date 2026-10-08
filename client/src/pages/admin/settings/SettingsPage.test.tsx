@@ -1,50 +1,34 @@
 // @vitest-environment jsdom
 
-import { createElement, type ReactNode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 
-vi.mock("@/components/ui/tabs", async () => {
-  const { createElement: element } = await import("react");
-  const Container = ({ children }: { children?: ReactNode }) => element("div", null, children);
+vi.mock("@/lib/admin-entitlements", () => ({
+  fetchPremiumSalesSettings: vi.fn(async () => ({ premiumEnabled: true, companyAnalysisEnabled: false })),
+  updatePremiumSalesEnabled: vi.fn(),
+  updateCompanyAnalysisEnabled: vi.fn(),
+}));
 
-  return {
-    Tabs: Container,
-    TabsContent: Container,
-    TabsList: Container,
-    TabsTrigger: Container,
-  };
-});
+vi.mock("@/lib/admin-product-settings", () => ({
+  fetchProductSettings: vi.fn(async () => []),
+  updateProductSetting: vi.fn(),
+}));
 
 import SettingsPage from "./SettingsPage";
 
-const storage = new Map<string, string>();
-
-describe("SettingsPage feature flags", () => {
-  beforeEach(() => {
-    storage.clear();
-    vi.stubGlobal("localStorage", {
-      clear: () => storage.clear(),
-      getItem: (key: string) => storage.get(key) ?? null,
-      key: (index: number) => Array.from(storage.keys())[index] ?? null,
-      get length() {
-        return storage.size;
-      },
-      removeItem: (key: string) => storage.delete(key),
-      setItem: (key: string, value: string) => storage.set(key, value),
-    });
-  });
-
+describe("SettingsPage", () => {
   afterEach(() => {
     cleanup();
-    vi.unstubAllGlobals();
   });
 
-  it("does not offer a local payment-module switch in Feature Flag settings", async () => {
+  it("서버에 실제 반영되는 판매 스위치만 보여 주고 모형 설정은 없다", () => {
     render(createElement(SettingsPage));
 
-    expect(screen.getByText("AI 상세 피드백 Beta")).toBeTruthy();
-    expect(screen.getByText("AI 리라이트(Rewrite) 개선 엔진 v2")).toBeTruthy();
+    expect(screen.getByText("프리미엄 크레딧 판매")).toBeTruthy();
+    expect(screen.getByText("기업 분석 리포트")).toBeTruthy();
+    expect(screen.queryByText("AI 상세 피드백 Beta")).toBeNull();
     expect(screen.queryByText("결제 모듈 활성화")).toBeNull();
+    expect(screen.queryByText(/read-only/)).toBeNull();
   });
 });

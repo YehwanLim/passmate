@@ -89,6 +89,8 @@ describe("beta deployment security configuration", () => {
       { source: "/api/account/:path*", destination: "/api/account/[...route]?route=:path*" },
       // 익명 방문 핑. Hobby 함수 제한 때문에 auth/me 함수에 쿼리로 얹는다(api/auth/me.js 참고).
       { source: "/api/visits", destination: "/api/auth/me?visit=1" },
+      // 공개 공지(팝업·배너). 같은 이유로 auth/me 함수에 얹는다.
+      { source: "/api/notices", destination: "/api/auth/me?notices=1" },
       { source: "/api/webhooks/groble", destination: "/api/entitlements?grobleWebhook=1" },
       { source: "/api/entitlements/purchase-intents", destination: "/api/entitlements?purchaseIntent=1" },
       { source: "/api/analyze/split", destination: "/api/analyze?split=1" },

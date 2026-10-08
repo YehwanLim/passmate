@@ -40,7 +40,7 @@ export default function UsersPage() {
     <div className="space-y-5">
       {/* 헤더 */}
       <AdminPageHeader
-        title="Users"
+        title="사용자"
         description="가입 사용자 목록을 조회하고 관리합니다."
       />
 

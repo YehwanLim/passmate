@@ -4,6 +4,7 @@ import { Link } from "wouter";
 
 import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminSectionTabs, AI_SECTION_TABS } from "@/components/admin/shared/AdminSectionTabs";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -143,9 +144,10 @@ export default function PromptsPage() {
   return (
     <div className="space-y-5">
       <AdminPageHeader
-        title="Prompts"
+        title="프롬프트"
         description="AI 프롬프트를 버전별로 검토하고 운영 버전을 관리합니다."
       />
+      <AdminSectionTabs tabs={AI_SECTION_TABS} />
 
       <AdminErrorAlert message={error} />
 

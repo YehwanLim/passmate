@@ -2,9 +2,9 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import { AuthProvider, useAuth } from "./AuthContext";
+import { AuthProvider, readStoredProfile, useAuth } from "./AuthContext";
 
 const mocks = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
@@ -107,5 +107,60 @@ describe("AuthProvider", () => {
 
     unmount();
     expect(mocks.unsubscribe).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("readStoredProfile", () => {
+  const key = "sb-abcdefgh-auth-token";
+
+  beforeEach(() => {
+    const map = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (k: string) => map.get(k) ?? null,
+      setItem: (k: string, v: string) => void map.set(k, v),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  // 헤더가 지연 청크·토큰 갱신을 기다리지 않고 프로필을 바로 그리도록, supabase-js 가 남긴 세션을 직접 읽는다.
+  it("reads the profile from the session supabase-js stored for this project", () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://abcdefgh.supabase.co");
+    window.localStorage.setItem(
+      key,
+      JSON.stringify({
+        access_token: "expired",
+        refresh_token: "refresh",
+        user: {
+          id: "user-1",
+          email: "someone@example.com",
+          user_metadata: { full_name: "홍길동", avatar_url: "https://img.example/a.png" },
+          app_metadata: { provider: "kakao" },
+          created_at: "2026-01-01T00:00:00.000Z",
+        },
+      })
+    );
+
+    expect(readStoredProfile()).toMatchObject({
+      id: "user-1",
+      email: "someone@example.com",
+      name: "홍길동",
+      profile_image: "https://img.example/a.png",
+      provider: "kakao",
+    });
+  });
+
+  it("returns null when nothing usable is stored", () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://abcdefgh.supabase.co");
+    expect(readStoredProfile()).toBeNull();
+
+    window.localStorage.setItem(key, "not json");
+    expect(readStoredProfile()).toBeNull();
+
+    window.localStorage.setItem(key, JSON.stringify({ user: { id: "user-1" } }));
+    expect(readStoredProfile()).toBeNull();
   });
 });
