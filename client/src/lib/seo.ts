@@ -60,6 +60,7 @@ const SITE_DESCRIPTION =
 export const COMPANY_REPORT_SAMPLE_PATH = "/company-report?sample=1";
 
 export const GUIDE_INDEX_PATH = "/guide";
+export const JOBS_INDEX_PATH = "/jobs";
 export const GUIDE_INDEX_TITLE = "취업 가이드 - 채용 담당자가 진짜 보는 것 | Pre:View";
 export const GUIDE_INDEX_DESCRIPTION =
   "채용 담당자가 자소서에서 실제로 확인하는 것을 첫인상·문항별·수정 순서로 정리했습니다. 자소서 첨삭이나 AI 피드백을 받기 전에 읽어 두면 어디부터 고칠지 보입니다.";
