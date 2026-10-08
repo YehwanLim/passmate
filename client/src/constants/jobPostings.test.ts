@@ -20,6 +20,11 @@ describe("JOB_POSTINGS", () => {
     }
   });
 
+  it("is written in deadline order (the prerendered list relies on it)", () => {
+    const deadlines = JOB_POSTINGS.map(posting => new Date(posting.closesAt).getTime());
+    expect(deadlines).toEqual([...deadlines].sort((a, b) => a - b));
+  });
+
   it("gives the posting reader enough text and cites an official https source", () => {
     for (const posting of JOB_POSTINGS) {
       const detail = JOB_POSTING_DETAILS[posting.slug];
