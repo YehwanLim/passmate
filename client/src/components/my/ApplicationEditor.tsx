@@ -64,6 +64,8 @@ export default function ApplicationEditor({
   experienceTitles,
   experienceCount,
   draftLimitReached,
+  showDraft = true,
+  answerPlaceholder = COPY.answerPlaceholder,
 }: {
   questions: ApplicationQuestionDraft[];
   activeIndex: number;
@@ -82,6 +84,9 @@ export default function ApplicationEditor({
   experienceCount: number | null;
   /** 오늘 무료 초안을 다 썼다(새로고침 전까지 화면이 기억한다) */
   draftLimitReached: boolean;
+  /** 저장된 지원서가 있어야 초안을 쓸 수 있다 — 자소서 분석(/analyze) 화면은 끈다. */
+  showDraft?: boolean;
+  answerPlaceholder?: string;
 }) {
   const active = questions[activeIndex];
   const counts = countChars(active?.answer ?? "");
@@ -168,6 +173,7 @@ export default function ApplicationEditor({
             </div>
           </div>
 
+          {showDraft && (
           <div className="border-t border-line-soft px-5 pt-4 sm:px-7">
             <DraftControls
               question={active}
@@ -181,15 +187,16 @@ export default function ApplicationEditor({
               limitReached={draftLimitReached}
             />
           </div>
+          )}
 
           {/* 답변 — 원고지처럼 테두리 없이 넓게 */}
           <textarea
             value={active.answer}
             onChange={(e) => onChange(activeIndex, { answer: e.target.value })}
-            placeholder={COPY.answerPlaceholder}
+            placeholder={answerPlaceholder}
             aria-label={COPY.answerLabel}
             maxLength={6000}
-            className="min-h-[360px] w-full flex-1 resize-y border-0 bg-transparent px-5 py-4 text-[15.5px] leading-[1.9] text-ink placeholder:text-ink-5 focus:outline-none sm:px-7"
+            className={`min-h-[360px] w-full flex-1 resize-y border-0 bg-transparent px-5 py-4 ${showDraft ? "" : "border-t border-line-soft"} text-[15.5px] leading-[1.9] text-ink placeholder:text-ink-5 focus:outline-none sm:px-7`}
           />
 
           {/* 아래: 큰 글자 수 + 막대(제한이 있을 때) */}

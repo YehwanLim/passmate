@@ -2,6 +2,8 @@ export interface QuestionItem {
   id: string;
   question: string;
   answer: string;
+  /** 편집기의 글자 수 제한 칩(화면 표시용). 서버로는 보내지 않는다. */
+  charLimit?: number | null;
 }
 
 export interface SavedAnalysisDetail {

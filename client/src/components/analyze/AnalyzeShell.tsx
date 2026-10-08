@@ -7,14 +7,6 @@ import { Button } from "@/components/ui/button";
 
 /** 자소서 분석·기업 분석 폼이 함께 쓰는 껍데기: 등장 모션, 하단 바, 에러 모달. 상단 메뉴는 components/SiteHeader.tsx. */
 
-export const ANALYZE_CONTAINER_VARIANTS = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-  },
-};
-
 export const ANALYZE_ITEM_VARIANTS = {
   hidden: { opacity: 0, y: 16 },
   visible: {
@@ -24,13 +16,14 @@ export const ANALYZE_ITEM_VARIANTS = {
   },
 };
 
-export const ANALYZE_SUBMIT_BUTTON_CLASS =
-  "bg-brand hover:bg-brand-hover text-white px-6 py-3 text-[15px] font-semibold rounded-xl transition-colors disabled:opacity-40 whitespace-nowrap flex-shrink-0";
+/** 편집기 틀(자소서·기업 분석) 하단의 큰 분석 버튼. 폰은 막대 폭을 꽉 채운다. */
+export const ANALYZE_BIG_SUBMIT_BUTTON_CLASS =
+  "h-14 flex-1 rounded-2xl bg-brand px-8 text-[17px] font-bold text-white transition-colors hover:bg-brand-hover disabled:opacity-40 whitespace-nowrap sm:flex-none sm:min-w-[260px]";
 
-export function AnalyzeBottomBar({ children }: { children: ReactNode }) {
+export function AnalyzeBottomBar({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/95 backdrop-blur">
-      <div className="container max-w-3xl mx-auto px-4 flex flex-col">
+      <div className={`container ${wide ? "max-w-6xl" : "max-w-3xl"} mx-auto px-4 flex flex-col`}>
         {children}
       </div>
     </div>
