@@ -96,9 +96,9 @@ export default function JobPostingSection({
   const [mode, setMode] = useState<Mode>(initialListed ? "listed" : "url");
   const [listedSlug, setListedSlug] = useState<string | null>(initialListed?.slug ?? null);
   const now = useNow();
-  // 접수 중 공고 + 쿼리로 넘어온 공고(마감됐어도 그 공고로 준비하러 온 것이라 남긴다)
-  const listedOptions = now ? openPostings(JOB_POSTINGS, now) : [];
-  if (initialListed && !listedOptions.some(posting => posting.slug === initialListed.slug)) listedOptions.unshift(initialListed);
+  // 접수 중 공고. 쿼리로 넘어온 공고는 마감됐어도(그 공고로 준비하러 온 것이라) 남기고, 골라진 채로 보이게 맨 위에 둔다.
+  const listedOptions = (now ? openPostings(JOB_POSTINGS, now) : []).filter(posting => posting.slug !== initialListed?.slug);
+  if (initialListed) listedOptions.unshift(initialListed);
   const listed = findJobPosting(listedSlug);
   const listedDetail = listed ? JOB_POSTING_DETAILS[listed.slug] : undefined;
   const [url, setUrl] = useState("");
