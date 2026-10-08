@@ -188,38 +188,50 @@ describe("내 경험", () => {
     expect((screen.getByLabelText("어떤 경험이었나요") as HTMLTextAreaElement).value).toBe("자유 글");
   });
 
-  it("기간은 년·월 드롭다운으로 고르고 정해진 형식으로 저장한다(진행 중 포함)", async () => {
+  it("기간은 숫자로 바로 칠 수 있다 — 202403 → 2024.03, 저장은 정해진 형식", async () => {
     mocks.createExperience.mockImplementation(async (input) => ({ ...input, id: "e9", updatedAt: "" }));
     render(<ExperienceVault />);
     fireEvent.click(await screen.findByRole("button", { name: "+ 직접 추가" }));
     fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "학회 리서치" } });
-    fireEvent.change(screen.getByLabelText("시작 연도"), { target: { value: "2024" } });
-    fireEvent.change(screen.getByLabelText("시작 월"), { target: { value: "3" } });
-    fireEvent.change(screen.getByLabelText("끝 연도"), { target: { value: "2024" } });
-    fireEvent.change(screen.getByLabelText("끝 월"), { target: { value: "12" } });
+    fireEvent.change(screen.getByLabelText("시작"), { target: { value: "202403" } });
+    expect((screen.getByLabelText("시작") as HTMLInputElement).value).toBe("2024.03");
+    fireEvent.change(screen.getByLabelText("끝"), { target: { value: "2024.12" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
     await waitFor(() => expect(mocks.createExperience).toHaveBeenCalledWith(expect.objectContaining({ period: "2024.03 ~ 2024.12" })));
   });
 
-  it("진행 중을 고르면 끝은 고를 수 없고 '~ 진행 중'으로, 끝이 시작보다 빠르면 저장하지 않는다", async () => {
+  it("칸을 누르면 연도 캡슐 → 월 캡슐로 고른다", async () => {
     mocks.createExperience.mockImplementation(async (input) => ({ ...input, id: "e9", updatedAt: "" }));
     render(<ExperienceVault />);
     fireEvent.click(await screen.findByRole("button", { name: "+ 직접 추가" }));
     fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "학회 리서치" } });
-    fireEvent.change(screen.getByLabelText("시작 연도"), { target: { value: "2024" } });
-    fireEvent.change(screen.getByLabelText("시작 월"), { target: { value: "5" } });
-    fireEvent.change(screen.getByLabelText("끝 연도"), { target: { value: "2024" } });
-    fireEvent.change(screen.getByLabelText("끝 월"), { target: { value: "2" } });
+    fireEvent.click(screen.getByLabelText("시작"));
+    const picker = screen.getByRole("dialog", { name: "시작 연·월 고르기" });
+    fireEvent.click(within(picker).getByRole("button", { name: String(new Date().getFullYear() - 1) }));
+    fireEvent.click(within(picker).getByRole("button", { name: "7월" }));
+    expect(screen.queryByRole("dialog", { name: "시작 연·월 고르기" })).toBeNull();
+    expect((screen.getByLabelText("시작") as HTMLInputElement).value).toBe(`${new Date().getFullYear() - 1}.07`);
+  });
+
+  it("진행 중이면 끝 칸이 막히고 '~ 진행 중', 끝이 시작보다 빠르거나 형식이 틀리면 저장하지 않는다", async () => {
+    mocks.createExperience.mockImplementation(async (input) => ({ ...input, id: "e9", updatedAt: "" }));
+    render(<ExperienceVault />);
+    fireEvent.click(await screen.findByRole("button", { name: "+ 직접 추가" }));
+    fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "학회 리서치" } });
+    fireEvent.change(screen.getByLabelText("시작"), { target: { value: "2024.5" } });
+    fireEvent.change(screen.getByLabelText("끝"), { target: { value: "202402" } });
     expect(screen.getByText("끝이 시작보다 빨라요. 다시 골라 주세요.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("끝"), { target: { value: "2024" } });
+    expect(screen.getByText("2024.03 처럼 연도 4자리와 월을 적어 주세요.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
     expect(mocks.createExperience).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("checkbox", { name: "진행 중" }));
-    expect((screen.getByLabelText("끝 연도") as HTMLSelectElement).disabled).toBe(true);
+    expect((screen.getByLabelText("끝") as HTMLInputElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
     await waitFor(() => expect(mocks.createExperience).toHaveBeenCalledWith(expect.objectContaining({ period: "2024.05 ~ 진행 중" })));
   });
 
-  it("옛 자유 형식 기간은 고르기 전까지 그대로 두고, 저장된 형식은 드롭다운에 채워 연다", async () => {
+  it("옛 자유 형식 기간은 고르기 전까지 그대로 두고, 저장된 형식은 칸에 채워 연다", async () => {
     mocks.updateExperience.mockImplementation(async (id, input) => ({ ...EXP, ...input, id, updatedAt: "" }));
     mocks.listExperiences.mockResolvedValue([{ ...EXP, period: "2024 여름 (8주)" }]);
     render(<ExperienceVault />);
@@ -233,8 +245,8 @@ describe("내 경험", () => {
     render(<ExperienceVault />);
     fireEvent.click(await screen.findByRole("button", { name: "카페 발주 개선 더보기" }));
     fireEvent.click(screen.getByRole("button", { name: "수정" }));
-    expect((screen.getByLabelText("시작 연도") as HTMLSelectElement).value).toBe("2025");
-    expect((screen.getByLabelText("끝 월") as HTMLSelectElement).value).toBe("8");
+    expect((screen.getByLabelText("시작") as HTMLInputElement).value).toBe("2025.03");
+    expect((screen.getByLabelText("끝") as HTMLInputElement).value).toBe("2025.08");
   });
 
   it("빈 금고의 '직접 추가'로 적고, 이름이 비면 저장하지 않는다", async () => {
