@@ -234,6 +234,7 @@ export const CANVAS_BY_ROUTE = {
   "/company-report?sample=1": { style: SAMPLE_COMPANY_REPORT_CANVAS_STYLE },
   "/terms": { style: STAGE_CANVAS_STYLE },
   "/privacy": { style: STAGE_CANVAS_STYLE },
+  "/help": { style: STAGE_CANVAS_STYLE },
   "/mentoring": { style: STAGE_CANVAS_STYLE },
   "/entitlements": { style: STAGE_CANVAS_STYLE },
   "/jobs": { style: STAGE_CANVAS_STYLE },

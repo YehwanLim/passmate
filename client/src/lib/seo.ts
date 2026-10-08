@@ -136,6 +136,13 @@ export const SEO_ROUTES: Record<string, RouteMeta> = {
     canonical: absolute("/privacy"),
     updated: "2026-09-01",
   },
+  "/help": {
+    title: "고객센터 · 자주 묻는 질문 | Pre:View",
+    description:
+      "Pre:View 무료 분석, 이용권과 환불, 분석 소요 시간, 개인정보 처리에 대해 자주 묻는 질문과 문의 방법을 안내합니다.",
+    canonical: absolute("/help"),
+    updated: "2026-10-09",
+  },
   "/login": {
     title: "로그인 | Pre:View",
     description: SITE_DESCRIPTION,
@@ -173,6 +180,7 @@ export const PRERENDER_ROUTES: readonly PrerenderRoute[] = [
   { key: COMPANY_REPORT_SAMPLE_PATH, path: "/company-report", search: "sample=1", file: "company-sample-report.html" },
   { key: "/terms", path: "/terms", search: "", file: "terms.html" },
   { key: "/privacy", path: "/privacy", search: "", file: "privacy.html" },
+  { key: "/help", path: "/help", search: "", file: "help.html" },
   { key: "/mentoring", path: "/mentoring", search: "", file: "mentoring.html" },
   { key: "/entitlements", path: "/entitlements", search: "", file: "entitlements.html" },
   // 가이드 글(/guide/<slug>)은 content/guides 에서 나오므로 entry-server.tsx 의 getPrerenderPages() 가 덧붙인다.

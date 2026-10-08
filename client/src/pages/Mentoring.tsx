@@ -220,6 +220,10 @@ export default function Mentoring() {
               &middot;{" "}
               <Link href="/terms" className="text-ink-3 transition-colors hover:text-ink">
                 이용약관
+              </Link>{" "}
+              &middot;{" "}
+              <Link href="/help" className="text-ink-3 transition-colors hover:text-ink">
+                고객센터
               </Link>
             </p>
           </div>

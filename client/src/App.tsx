@@ -28,6 +28,7 @@ const MyAnalyses = lazy(() => import("./pages/MyAnalyses"));
 const Login = lazy(() => import("./pages/Login"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const Help = lazy(() => import("./pages/Help"));
 const Mentoring = lazy(() => import("./pages/Mentoring"));
 const AccountDeletion = lazy(() => import("./pages/AccountDeletion"));
 const GuideIndex = lazy(() => import("./pages/GuideIndex"));
@@ -48,6 +49,7 @@ function Router() {
         <Route path={"/login"} component={Login} />
         <Route path={"/terms"} component={Terms} />
         <Route path={"/privacy"} component={Privacy} />
+        <Route path={"/help"} component={Help} />
         {/* 커피챗·모의면접 소개와 예약. 소개는 프리렌더되고, 슬롯·신청은 마운트 후 fetch한다(BookingSection) */}
         <Route path={"/mentoring"} component={Mentoring} />
         <Route path={"/account/deletion"} component={AccountDeletion} />

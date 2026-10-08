@@ -215,6 +215,13 @@ export default function FounderSection() {
                 이용약관
               </Link>{" "}
               &middot;{" "}
+              <Link
+                href="/help"
+                className="text-ink-3 hover:text-ink transition-colors"
+              >
+                고객센터
+              </Link>{" "}
+              &middot;{" "}
               <a
                 href="mailto:hansitoring@gmail.com"
                 className="text-ink-3 hover:text-ink transition-colors"
