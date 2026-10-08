@@ -214,7 +214,8 @@ function ReportContent({
       </div>
       <MiniNavigator sections={navSections} activeSection={activeSection} tone="light" />
 
-      <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-6 px-4 pb-24 pt-10 sm:px-6 lg:px-0">
+      {/* 1040px 은 눈에 잘 안 들어와 조금 좁혔다(10-08) */}
+      <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6 px-4 pb-24 pt-10 sm:px-6 lg:px-0">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="text-[14px] font-semibold text-ink-4">{UI_LABELS.REPORT_EYEBROW}</p>

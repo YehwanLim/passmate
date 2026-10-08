@@ -66,7 +66,8 @@ export function FirstImpressionSection({
           </span>
           <div className="min-w-0">
             <p className="text-[15px] font-semibold text-ink-4">{displayName}님은 채용 담당자에게 이렇게 읽혀요</p>
-            <h1 className="mt-1.5 text-[26px] font-bold leading-[1.3] tracking-[-0.03em] text-navy sm:text-[34px]">
+            {/* 낱말 가운데서 끊기지 않게(break-keep) 하고, 반으로 나눈 줄이 칸보다 길면 줄 길이를 고르게(text-balance) */}
+            <h1 className="mt-1.5 break-keep text-[26px] font-bold leading-[1.3] tracking-[-0.03em] text-navy text-balance sm:text-[32px]">
               {heroPersonaLines.map((line) => (
                 <span key={line} className="block">
                   {line}
@@ -77,7 +78,7 @@ export function FirstImpressionSection({
         </div>
         <div>
           <p className="text-[13px] font-bold text-ink-5">{UI_LABELS.APPLICANT_PROFILE}</p>
-          <p className="mt-1.5 text-[14px] leading-[1.7] text-ink-2">
+          <p className="mt-1.5 break-keep text-[14px] leading-[1.7] text-ink-2 text-pretty">
             {profileNote?.trim()
               ? renderCleanText(profileNote)
               : `${heroPersona}라는 인상이 먼저 남습니다. 경험의 흐름은 문제를 발견하고 근거를 모아 실행으로 옮기는 방향으로 읽힙니다.`}
@@ -98,12 +99,12 @@ export function FirstImpressionSection({
         <p className="text-[16px] font-bold text-ink">채용 담당자가 읽는 순서대로</p>
         <div className="mt-4 grid gap-6 md:grid-cols-3 md:gap-5">
           <ReadingStep time="10초" label="처음 보이는 것" tone="ok">
-            <p className="rounded-2xl bg-fill-soft px-5 py-4 text-[16px] font-bold leading-[1.6] text-ink text-pretty">{renderCleanText(heroSummary)}</p>
+            <p className="break-keep rounded-2xl bg-fill-soft px-5 py-4 text-[16px] font-semibold leading-[1.6] text-ink text-pretty">{renderCleanText(heroSummary)}</p>
           </ReadingStep>
           <ReadingStep time="1분" label={UI_LABELS.HIRING_MEMORY_SHORT} tone="ok">
             <ul className="flex flex-col gap-2" aria-label={UI_LABELS.HIRING_MEMORY}>
               {remembered.map((item) => (
-                <li key={item.text} className="flex items-center gap-3 rounded-[14px] bg-fill-soft px-3.5 py-3 text-[15px] font-bold leading-[1.45] text-ink">
+                <li key={item.text} className="flex items-center gap-3 break-keep rounded-[14px] bg-fill-soft px-3.5 py-3 text-[15px] font-semibold leading-[1.45] text-ink text-pretty">
                   <span aria-hidden="true" className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-full bg-ok-soft text-ok">
                     <Check className="size-3" strokeWidth={3.2} />
                   </span>
@@ -116,7 +117,7 @@ export function FirstImpressionSection({
             {questions.map((item) => (
               <div key={item.text} className="flex flex-col gap-2.5 rounded-2xl bg-blank-soft px-5 py-4">
                 <AlertTriangle aria-hidden="true" className="size-5 text-blank" strokeWidth={2.2} />
-                <p className="text-[17px] font-bold leading-[1.45] text-ink">{item.text}</p>
+                <p className="break-keep text-[17px] font-semibold leading-[1.45] text-ink text-pretty">{item.text}</p>
                 <p className="text-[14px] leading-[1.6] text-ink-3">면접에서 먼저 물어볼 수 있는 부분이에요. 아래 핵심 진단에서 채우는 법을 봐요.</p>
               </div>
             ))}
