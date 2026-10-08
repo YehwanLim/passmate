@@ -478,12 +478,9 @@ function SceneDiagnose({ t }: { t: number }) {
   const focused = t >= HL_CLICK + 150 ? 2 : 1;
   return (
     <div className="hero-msg-in relative flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-none items-center justify-between px-[22px] pt-4">
-        <span className="flex items-center gap-[7px] text-[13px] text-ink-4">
-          <b className="font-bold text-ink">자소서 진단 리포트</b>
-          <span className="hidden @xl:inline">현대자동차 서비스 기획</span>
-        </span>
-        <span className="text-[12px] text-ink-4">김민지님 · 문항 2개</span>
+      <div className="flex flex-none items-center gap-[7px] px-[22px] pt-4 text-[13px] text-ink-4">
+        <b className="font-bold text-ink">자소서 진단 리포트</b>
+        <span>현대자동차 서비스 기획</span>
       </div>
       {/* 리포트 목차(폰에서 보이는 칩 줄과 같은 모양). 넘치는 칩은 잘린다. */}
       <div className="flex flex-none gap-1.5 overflow-hidden whitespace-nowrap border-b border-line-soft px-[22px] pb-3 pt-3">
