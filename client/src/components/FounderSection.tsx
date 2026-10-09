@@ -17,8 +17,10 @@ const SHOW_NEWSLETTER_FORM = false;
 const founderSignals = [
   "200회+ 커피챗/멘토링에서 반복된 탈락 패턴 정리",
   "현직 PM 관점의 JD-경험 연결 기준 반영",
-  "좋은 문장보다 면접에서 방어 가능한 논리 우선",
-  "첫 분석은 무료, 이후 필요한 만큼만 이용",
+  "무조건 잘 쓴 문장보다 나의 스토리를 완성시켜주는 논리 우선",
+  "지원 공고 문구와 하나씩 맞대어 보기",
+  "없는 경험을 부풀리지 않고, 있는 경험에서 찾아내기",
+  "면접관이 파고들 만한 질문까지 미리 짚기",
 ];
 
 export function FounderNoteSection() {
@@ -34,16 +36,17 @@ export function FounderNoteSection() {
                 <BrandName decorative variant="default" />를 만들었나요?
               </h2>
               <p className="mb-5 text-[16px] leading-[1.8] text-ink-2 md:text-[17px]">
-                커피챗에서 만난 취준생들은 대부분 좋은 경험을 가지고 있었습니다.
-                그런데 자소서에는 그 모습이 담기지 않았고, 탈락 메일은 이유를
-                말해주지 않았습니다.
+                커피챗에서 만난 취준생들은 대부분 이미 좋은 경험을 가지고
+                있었어요. 그런데 자소서에는 그 모습이 충분히 담기지 않는 경우가
+                많았고, 기업들은 불합격한 이유를 알려주지 않습니다.
               </p>
               <p className="mb-6 text-[15px] leading-[1.85] text-ink-3">
-                200번 넘는 멘토링에서 같은 장면을 반복해서 봤습니다. 경험은
-                있는데 직무와 연결되지 않고, 성과는 있는데 본인의 판단이 보이지
-                않는 상태. 옆에서 30분만 같이 읽으면 메울 수 있는 빈틈인데, 그
-                30분이 없어서 계속 떨어지는 사람들이 있었습니다. 모든 취준생
-                옆에 앉을 수는 없기에, 그 시선을 대신 전하려고 <BrandName variant="default" />를
+                200번 넘는 멘토링에서는 비슷한 케이스들이 계속 보였어요. 경험은
+                많은데 직무와 연결되지 않고 흩어져 있거나, 성과는 있지만 본인의
+                판단과 깨달음이 보이지 않는 경우요. 옆에서 30분 정도 함께
+                수정하면 충분히 메울 수 있는 부분들인데, 그 30분이 부족해서 계속
+                불합격하는 분들이 보였습니다. 매번 제가 취준생 분들과 함께할 수는
+                없기 때문에, 저의 시선을 대신 전달해줄 <BrandName variant="default" />를
                 만들었습니다.
               </p>
 
@@ -53,19 +56,19 @@ export function FounderNoteSection() {
                 </span>
                 <blockquote className="text-[16px] font-medium leading-[1.8] text-ink">
                   “떨어진 이유를 아무도 말해주지 않는 시간이 얼마나 막막한지
-                  압니다. 그 막막함 앞에 같이 앉아, 당신의 경험이 회사의
-                  기준에서 어떻게 읽히는지 짚어주는 한 사람이 되고 싶었습니다.”
+                  압니다. 그 막막함 옆에 같이 앉아, 여러분의 경험이 채용 담당자
+                  입장에서 어떻게 읽히는지 짚어드리고 싶었습니다.”
                 </blockquote>
               </div>
             </div>
 
             <div className="rounded-[28px] bg-ink p-8 text-white md:rounded-[32px] md:p-11">
               <p className="text-[22px] font-extrabold tracking-[-0.02em] text-white md:text-[24px]">
-                이 기준이 나온 곳
+                분석 기준은 어떻게 정해졌나요?
               </p>
               <p className="mb-6 mt-3 text-[15px] leading-[1.7] text-[#B0B8C1]">
-                <BrandName />가 자소서를 읽는 기준은 위 리포트 미리보기에서
-                보신 그대로입니다. 그 기준은 여기서 나왔습니다.
+                <BrandName />가 자소서를 분석하는 기준은 ‘리포트 미리보기’에서
+                보신 그대로예요. 그 기준은 이렇게 정해졌습니다.
               </p>
               <ul className="space-y-4">
                 {founderSignals.map(signal => (
@@ -80,14 +83,6 @@ export function FounderNoteSection() {
                   </li>
                 ))}
               </ul>
-              {/* 리포트가 아니라 사람과 직접 이야기하고 싶은 방문자는 다른 니즈다. 커피챗은 /mentoring 에서 따로 받는다. */}
-              <Link
-                href="/mentoring"
-                className="mt-6 inline-flex items-center gap-1.5 border-t border-ink-2 pt-5 text-[15px] font-bold text-white transition-colors hover:text-[#B0B8C1]"
-              >
-                직접 이야기하고 싶다면 커피챗·모의면접
-                <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </Link>
             </div>
           </div>
         </div>
