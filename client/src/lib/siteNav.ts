@@ -28,8 +28,8 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
     type: "route",
     target: "/analyze",
     children: [
-      { label: "자소서 분석", target: "/analyze", description: "자소서를 채용 담당자의 눈으로 분석해 드려요" },
-      { label: "기업 분석", target: "/company-analysis", description: "지원할 회사의 사업·이슈·직무를 정리해 드려요" },
+      { label: "자소서 분석", target: "/analyze", description: "채용 담당자의 눈으로 보는 자소서 분석" },
+      { label: "기업 분석", target: "/company-analysis", description: "지원할 회사의 사업·이슈·직무 정리" },
     ],
   },
   { label: "취업 가이드", type: "route", target: "/guide" },
@@ -42,10 +42,10 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
     type: "route",
     target: "/my",
     children: [
-      { label: "자기소개서", target: "/my" },
-      { label: "경험 카드", target: "/my#experiences" },
-      { label: "기업 리포트", target: "/my#company" },
-      { label: "내 이용권", target: "/my/entitlements" },
+      { label: "자기소개서", target: "/my", description: "채용 공고별로 쓴 자소서와 분석 리포트" },
+      { label: "경험 카드", target: "/my#experiences", description: "경험 관리하고 자소서 초안 쓰기" },
+      { label: "기업 리포트", target: "/my#company", description: "분석한 회사 리포트 모아 보기" },
+      { label: "내 이용권", target: "/my/entitlements", description: "남은 분석 이용권 확인 및 구매" },
     ],
   },
 ];

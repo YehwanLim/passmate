@@ -418,6 +418,64 @@
   font-weight: 600;
 }
 
+/* 데스크톱 메뉴의 회색 칸 하나(SiteHeader 의 .nav-hover-pill)가 마우스를 따라 미끄러진다.
+   칸이 준비되면 링크마다 깔던 회색 바탕은 끈다. 준비 전(프리렌더)엔 위 규칙이 그대로 보인다. */
+.nav-hover-pill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 2rem;
+  border-radius: 0.375rem;
+  background-color: #f2f4f6;
+  pointer-events: none;
+  transition:
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    width 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
+}
+
+.nav-hover-pill[data-instant] {
+  transition: opacity 180ms ease;
+}
+
+.site-header-light [data-nav-pill-ready] .landing-nav-link,
+.site-header-light [data-nav-pill-ready] .landing-nav-link:hover,
+.site-header-light [data-nav-pill-ready] .landing-nav-link:focus-visible,
+.site-header-light [data-nav-pill-ready] .landing-nav-link[aria-current="page"] {
+  background-color: transparent;
+}
+
+/* 데스크톱 메뉴 이름: 마우스를 올리면 600 으로 굵어진다(가변 폰트라 서서히).
+   ::after 에 같은 글자를 600 으로 숨겨 깔아 폭을 미리 잡으므로 굵어져도 옆 메뉴가 밀리지 않는다. */
+.nav-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  transition: font-weight 200ms ease;
+}
+
+.nav-label::after {
+  content: attr(data-label);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
+.site-header-light .landing-nav-link:hover .nav-label,
+.site-header-light .landing-nav-link:focus-visible .nav-label,
+.site-header-light .group:hover > .landing-nav-link .nav-label {
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-hover-pill {
+    transition: opacity 180ms ease;
+  }
+}
+
 .site-header-light .mobile-nav-toggle {
   color: #333d4b;
   background: #f2f4f6;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FocusEvent, type SyntheticEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -19,7 +19,20 @@ import { cn } from "@/lib/utils";
  * 항목은 실제 <a> 라 지연 하이드레이션 전에도 동작하고 크롤러가 따라간다. 현재 페이지는 aria-current 로 표시한다.
  * 768px 미만에서는 햄버거 메뉴로 바꾼다(landing.css 의 미디어쿼리도 같은 기준). 메뉴가 다섯 개라 640px 에선 넘친다.
  * 하위 항목(siteNav children)이 있는 칸은 데스크톱에선 마우스를 올리면 펼치고, 폰 메뉴에선 들여 쓴 채 늘 보인다.
+ * 밝은 헤더의 데스크톱 메뉴는 회색 칸 하나가 마우스를 따라 미끄러지고, 마우스가 떠나면 현재 페이지로 돌아간다(없으면 사라진다).
+ * 칸을 처음 재기 전(프리렌더·하이드레이션 전)에는 링크마다 회색 바탕을 까는 기존 CSS 가 그대로 동작한다.
  */
+// 마우스를 올리면 글자가 굵어진다. 굵은 글자 폭을 미리 잡아 둬서(landing.css .nav-label::after) 옆 메뉴가 밀리지 않는다.
+function NavLabel({ label }: { label: string }) {
+  return (
+    <span className="nav-label" data-label={label}>
+      {label}
+    </span>
+  );
+}
+
+type NavPill = { x: number; width: number; visible: boolean; instant: boolean };
+
 type SiteHeaderProps = {
   variant?: "transparent" | "solid" | "light" | "floating";
 };
@@ -34,8 +47,10 @@ const SURFACE_CLASS: Record<NonNullable<SiteHeaderProps["variant"]>, string> = {
 export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navRef = useRef<HTMLDivElement>(null);
+  const [pill, setPill] = useState<NavPill | null>(null);
 
-  const renderItem = (item: SiteNavItem, className: string) => {
+  const renderItem = (item: SiteNavItem, className: string, navSlot = false) => {
     const current = isCurrentNavItem(item, location);
     return (
       <Link
@@ -43,9 +58,10 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
         href={item.target}
         className={className}
         aria-current={current ? "page" : undefined}
+        data-nav-slot={navSlot || undefined}
         onClick={() => setIsMobileMenuOpen(false)}
       >
-        {item.label}
+        {navSlot ? <NavLabel label={item.label} /> : item.label}
       </Link>
     );
   };
@@ -53,15 +69,55 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
   const isLight = variant === "light" || variant === "floating";
   const isFloating = variant === "floating";
 
+  // 회색 칸을 link 위치로 옮긴다. link 가 없으면 감춘다. 감춰져 있다가 나타날 땐 미끄러지지 않고 그 자리에서 떠오른다.
+  const movePill = useCallback((link: HTMLElement | null) => {
+    const nav = navRef.current;
+    if (!nav) return;
+    if (!link) {
+      setPill(prev => (prev ? { ...prev, visible: false } : { x: 0, width: 0, visible: false, instant: true }));
+      return;
+    }
+    const navRect = nav.getBoundingClientRect();
+    const rect = link.getBoundingClientRect();
+    setPill(prev => ({
+      x: rect.left - navRect.left,
+      width: rect.width,
+      visible: true,
+      instant: !prev?.visible,
+    }));
+  }, []);
+
+  const restPill = useCallback(() => {
+    movePill(navRef.current?.querySelector<HTMLElement>('.landing-nav-link[aria-current="page"]') ?? null);
+  }, [movePill]);
+
+  useEffect(() => {
+    if (!isLight) return;
+    restPill();
+    window.addEventListener("resize", restPill);
+    return () => window.removeEventListener("resize", restPill);
+  }, [isLight, location, restPill]);
+
+  // 하위 메뉴 안으로 들어가도 부모 칸에 머물도록, 링크가 아니라 칸(data-nav-slot) 단위로 찾는다.
+  const handleNavEnter = (event: SyntheticEvent) => {
+    const slot = (event.target as HTMLElement).closest<HTMLElement>("[data-nav-slot]");
+    if (!slot) return;
+    movePill(slot.matches(".landing-nav-link") ? slot : slot.querySelector<HTMLElement>(".landing-nav-link"));
+  };
+
+  const handleNavBlur = (event: FocusEvent) => {
+    if (!navRef.current?.contains(event.relatedTarget as Node | null)) restPill();
+  };
+
   // 하위 항목이 있는 칸: 부모 링크는 그대로 누를 수 있고, 마우스를 올리거나 키보드로 들어가면(focus-within) 아래로 펼친다.
   // JS 상태 없이 CSS 로만 열어 프리렌더 HTML 에서도 같은 모양이고, 하위 링크도 크롤러가 따라간다.
   const renderDesktopItem = (item: SiteNavItem) => {
-    if (!item.children) return renderItem(item, "landing-nav-link");
+    if (!item.children) return renderItem(item, "landing-nav-link", true);
     const current = isCurrentNavItem(item, location);
     return (
-      <div key={item.label} className="group relative">
+      <div key={item.label} className="group relative" data-nav-slot>
         <Link href={item.target} className="landing-nav-link gap-1" aria-current={current ? "page" : undefined} aria-haspopup="true">
-          {item.label}
+          <NavLabel label={item.label} />
           <ChevronDown className="size-3 opacity-60 transition-transform group-hover:rotate-180" aria-hidden="true" />
         </Link>
         <div className="invisible absolute left-0 top-full z-50 pt-2 opacity-0 transition-opacity duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
@@ -106,7 +162,23 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
           <Logo className="h-5 w-auto" variant={isLight ? "default" : "inverse"} />
         </Link>
 
-        <div className="hidden md:flex items-center gap-4 lg:gap-7">
+        <div
+          ref={navRef}
+          className="relative hidden md:flex items-center gap-4 lg:gap-7"
+          data-nav-pill-ready={isLight && pill ? "" : undefined}
+          onPointerOver={isLight ? handleNavEnter : undefined}
+          onPointerLeave={isLight ? restPill : undefined}
+          onFocus={isLight ? handleNavEnter : undefined}
+          onBlur={isLight ? handleNavBlur : undefined}
+        >
+          {isLight && pill && (
+            <span
+              aria-hidden="true"
+              className="nav-hover-pill"
+              data-instant={pill.instant ? "" : undefined}
+              style={{ width: pill.width, transform: `translate(${pill.x}px, -50%)`, opacity: pill.visible ? 1 : 0 }}
+            />
+          )}
           {SITE_NAV_ITEMS.map(renderDesktopItem)}
         </div>
 
