@@ -13,8 +13,6 @@ export type PricingPlan = {
   listPrice: number;
   /** 판매가(원) */
   salePrice: number;
-  /** 할인·절약 배지 문구. 빈 문자열이면 배지 없음 */
-  discountLabel: string;
   /** 자소서 분석 횟수 */
   uses: number;
   /** 기업 분석 횟수 */
@@ -26,7 +24,6 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     label: "자소서 진단 1회",
     listPrice: 3_900,
     salePrice: 3_900,
-    discountLabel: "",
     uses: 1,
     companyUses: 0,
   },
@@ -34,7 +31,6 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     label: "기업 분석 1회",
     listPrice: 3_900,
     salePrice: 3_900,
-    discountLabel: "",
     uses: 0,
     companyUses: 1,
   },
@@ -42,7 +38,6 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     label: "스탠다드",
     listPrice: 11_700,
     salePrice: 9_900,
-    discountLabel: "1,800원 절약",
     uses: 2,
     companyUses: 1,
   },
@@ -50,7 +45,6 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     label: "프리미엄",
     listPrice: 23_400,
     salePrice: 16_900,
-    discountLabel: "6,500원 절약",
     uses: 3,
     companyUses: 3,
   },
@@ -59,7 +53,6 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     label: "3회권(구)",
     listPrice: 29_700,
     salePrice: 14_900,
-    discountLabel: "약 50% 할인",
     uses: 3,
     companyUses: 0,
   },

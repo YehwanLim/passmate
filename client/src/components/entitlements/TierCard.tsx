@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import type { PurchaseProductKey } from "@/lib/entitlements";
 import { PRICING, TIERS, formatKrw } from "@/lib/pricing";
 import {
-  PLAN_ACCENT_TEXT,
   RECOMMENDED_TIER,
   TIER_COPY,
   type BasicChoice,
@@ -110,12 +109,6 @@ export function TierCard({
             <span className="font-semibold text-ink-2">
               {formatKrw(Math.round(plan.salePrice / totalUses))}
             </span>
-          </span>
-        )}
-        {totalUses > 0 && hasStrike && <span className="text-ink-5">·</span>}
-        {hasStrike && (
-          <span className={`font-extrabold ${PLAN_ACCENT_TEXT[product]}`}>
-            {plan.discountLabel}
           </span>
         )}
       </p>

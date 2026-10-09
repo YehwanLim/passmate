@@ -32,7 +32,7 @@ export default function ProcessSection() {
         {/* Heading */}
         <div className="mb-14 text-center md:mb-[72px]">
           <h2 className="mb-4 text-[30px] font-extrabold leading-[1.3] tracking-[-0.035em] text-ink md:text-[46px]">
-            리포트까지, 3단계면 충분합니다
+            리포트까지, 3단계면 끝나요
           </h2>
           <p className="mx-auto max-w-lg text-[16px] leading-[1.7] text-ink-3 md:text-[17px]">
             붙여넣고, 회사를 알려주고, 1분 기다리면 됩니다. 예약도 견적도 필요

@@ -23,9 +23,7 @@ describe("pricing constants", () => {
     // 단품은 정가 표기 없이 판매가 그대로 — 끝나는 날 없는 할인은 정가를 못 믿게 만든다(10-05).
     expect(PRICING.single.listPrice).toBe(PRICING.single.salePrice);
     expect(savingsFor(PRICING.single)).toBe(0);
-    expect(PRICING.single.discountLabel).toBe("");
     expect(tripleDiscount).toBe(50);
-    expect(PRICING.triple.discountLabel).toContain("50%");
   });
 
   it("keeps the per-use price in sync with the standard plan sale price", () => {
@@ -88,15 +86,12 @@ describe("tier pricing", () => {
     expect(PRICING.premium.listPrice).toBe(basic * (PRICING.premium.uses + PRICING.premium.companyUses));
     expect(savingsFor(PRICING.standard)).toBe(1_800);
     expect(savingsFor(PRICING.premium)).toBe(6_500);
-    expect(PRICING.standard.discountLabel).toBe("1,800원 절약");
-    expect(PRICING.premium.discountLabel).toBe("6,500원 절약");
   });
 
   it("prices the company single like the resume single", () => {
     expect(PRICING.company.listPrice).toBe(PRICING.single.listPrice);
     expect(PRICING.company.salePrice).toBe(PRICING.single.salePrice);
     expect(savingsFor(PRICING.company)).toBe(0);
-    expect(PRICING.company.discountLabel).toBe("");
   });
 
   it("maps server product keys to pricing keys and labels", () => {

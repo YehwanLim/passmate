@@ -72,8 +72,6 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
   const intro = TIER_INTRO[tier.key];
   const highlighted = tier.key === "standard";
   const totalUses = plan.uses + plan.companyUses;
-  // 번들 상품(자소서+기업 크레딧을 함께 담은 상품)은 "따로 사면"으로, 단일 상품은 "정가"로 표기한다.
-  const listPricePrefix = plan.uses + plan.companyUses > 1 && plan.companyUses > 0 ? "따로 사면" : "정가";
 
   return (
     <div
@@ -94,15 +92,11 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
           / {totalUses}회
         </span>
       </p>
-      {plan.listPrice > plan.salePrice ? (
-        <>
-          <p className="mt-3 text-[14px] text-ink-4 line-through">
-            {listPricePrefix} {formatKrw(plan.listPrice)}
-          </p>
-          <p className="mt-1 text-[15px] font-extrabold text-brand-ink">
-            {plan.discountLabel}
-          </p>
-        </>
+      {/* 묶음 상품은 할인액 대신 1회당 가격으로 — 많이 살수록 내려가는 게 보이게 */}
+      {totalUses > 1 ? (
+        <p className="mt-3 text-[15px] font-extrabold text-brand-ink">
+          1회당 {formatKrw(Math.round(plan.salePrice / totalUses))}
+        </p>
       ) : null}
       <p
         className="mt-1 text-[13px] text-ink-3"

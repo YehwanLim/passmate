@@ -36,15 +36,6 @@ export const TIER_COPY: Record<TierKey, { when: string; what: Partial<Record<Pur
   },
 };
 
-/** 티어별 강조 글자색 — 밝은 디자인은 강조색이 파랑 하나라 모든 티어가 같다. */
-export const PLAN_ACCENT_TEXT: Record<PurchaseProductKey, string> = {
-  single: "text-brand-ink",
-  company: "text-brand-ink",
-  standard: "text-brand-ink",
-  premium: "text-brand-ink",
-  triple: "text-brand-ink",
-};
-
 /**
  * 티어별 구매 버튼 — 추천 티어(스탠다드)만 주 버튼(파랑), 나머지는 옅은 파랑 보조 버튼.
  * 상품 키 기준이라 베이직은 자소서·기업 어느 쪽을 골라도 같은 모양이다.
