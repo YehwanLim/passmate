@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MAX_POSTING_CHARS, MIN_POSTING_CHARS } from "@/lib/jobPosting";
 import { findJobPosting, jobPostingPath, JOB_POSTINGS } from "./jobPostings";
@@ -44,6 +46,13 @@ describe("JOB_POSTINGS", () => {
       expect(detail.facts.length, posting.slug).toBeGreaterThan(0);
       // 모집 직무는 공고마다 꼭 보인다.
       expect(detail.facts.some(fact => /직무|직군|부문|분야/.test(fact.label)), posting.slug).toBe(true);
+    }
+  });
+
+  it("points each logo at a file in client/public/company-logos", () => {
+    for (const posting of JOB_POSTINGS) {
+      if (!posting.logo) continue;
+      expect(existsSync(resolve(process.cwd(), "client/public", posting.logo.slice(1))), posting.slug).toBe(true);
     }
   });
 

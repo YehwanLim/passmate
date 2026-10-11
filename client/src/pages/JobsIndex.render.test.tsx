@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
 vi.mock("wouter", () => ({
   useLocation: () => ["/jobs", vi.fn()],
@@ -39,6 +39,20 @@ describe("JobsIndex", () => {
     }
   });
 
+  it("shows the company logo left of the title, or the first letter when there is none", () => {
+    render(<JobsIndex />);
+    const withLogo = JOB_POSTINGS.find(posting => posting.logo);
+    expect(withLogo).toBeTruthy();
+    const logoRow = screen.getByText(withLogo!.title).closest("a") as HTMLElement;
+    expect(logoRow.querySelector("img")?.getAttribute("src")).toBe(withLogo!.logo);
+
+    const withoutLogo = JOB_POSTINGS.find(posting => !posting.logo);
+    if (!withoutLogo) return;
+    const letterRow = screen.getByText(withoutLogo.title).closest("a") as HTMLElement;
+    expect(letterRow.querySelector("img")).toBeNull();
+    expect(within(letterRow).getByText(withoutLogo.company.charAt(0))).toBeTruthy();
+  });
+
   it("puts open postings first with D-n and closed ones under their own heading", () => {
     render(<JobsIndex />);
     const open = openPostings(JOB_POSTINGS, NOW);
@@ -55,6 +69,27 @@ describe("JobsIndex", () => {
     expect(closedSection).toBeTruthy();
     for (const posting of closed) expect(within(closedSection as HTMLElement).getByText(posting.title)).toBeTruthy();
     for (const posting of open) expect(within(closedSection as HTMLElement).queryByText(posting.title)).toBeNull();
+  });
+
+  it("narrows the list by company or role, ignoring spaces and case", () => {
+    render(<JobsIndex />);
+    const search = screen.getByRole("searchbox", { name: "회사나 직무로 찾기" });
+    const target = JOB_POSTINGS.find(posting => posting.slug === "skbioscience-2026h2");
+    expect(target).toBeTruthy();
+
+    fireEvent.change(search, { target: { value: "sk 바이오" } });
+    expect(screen.getByText(target!.title)).toBeTruthy();
+    for (const posting of JOB_POSTINGS) {
+      if (!/sk바이오/i.test(`${posting.company}${posting.title}`.replace(/\s+/g, ""))) {
+        expect(screen.queryByText(posting.title), posting.slug).toBeNull();
+      }
+    }
+
+    fireEvent.change(search, { target: { value: "없는회사이름" } });
+    expect(screen.getByText(/'없는회사이름'에 맞는 공고가 없어요/)).toBeTruthy();
+
+    fireEvent.change(search, { target: { value: "" } });
+    for (const posting of JOB_POSTINGS) expect(screen.getByText(posting.title), posting.slug).toBeTruthy();
   });
 
   it("says so when nothing is open", () => {

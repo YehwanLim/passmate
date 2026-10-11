@@ -26,6 +26,11 @@ export type JobPostingListing = {
   closesAt: string;
   /** 페이지 내용을 고친 날(sitemap lastmod) */
   updated: string;
+  /**
+   * 목록 제목 왼쪽 로고. 그룹·계열사 통합 공고는 그룹 로고를 쓴다.
+   * 파일은 client/public/company-logos 에 두고 출처를 SOURCES.md 에 적는다. 없으면 회사 이름 첫 글자가 보인다.
+   */
+  logo?: `/company-logos/${string}.svg`;
 };
 
 export const JOB_POSTINGS: readonly JobPostingListing[] = [
@@ -39,6 +44,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-16",
     closesAt: "2026-09-30T17:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/cj-group.svg",
   },
   {
     slug: "db-2026h2",
@@ -50,6 +56,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-01",
     closesAt: "2026-10-02T17:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/db-group.svg",
   },
   {
     slug: "kyobo-securities-2026h2",
@@ -61,6 +68,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-21",
     closesAt: "2026-10-05T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/kyobo.svg",
   },
   {
     slug: "hanwha-techlife-2026",
@@ -72,6 +80,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-21",
     closesAt: "2026-10-11T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/hanwha.svg",
   },
   {
     slug: "hansol-2026h2",
@@ -83,6 +92,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-21",
     closesAt: "2026-10-11T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/hansol-group.svg",
   },
   {
     slug: "hyundai-autoever-2026q4",
@@ -94,6 +104,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-30",
     closesAt: "2026-10-12T13:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/hyundai-autoever-color.svg",
   },
   {
     slug: "koreanre-2026",
@@ -105,6 +116,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-29",
     closesAt: "2026-10-12T17:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/korean-re.svg",
   },
   {
     slug: "nh-bank-2026-grade6",
@@ -116,6 +128,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-02",
     closesAt: "2026-10-12T17:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/nonghyup.svg",
   },
   {
     slug: "shinsegae-2027",
@@ -127,6 +140,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-18",
     closesAt: "2026-10-12T18:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/shinsegae-group.svg",
   },
   {
     slug: "dongsuh-foods-2026",
@@ -138,6 +152,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-28",
     closesAt: "2026-10-12T18:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/dongsuh.svg",
   },
   {
     slug: "kdb-capital-2026h2",
@@ -149,6 +164,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-01",
     closesAt: "2026-10-12T22:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/kdb-capital.svg",
   },
   {
     slug: "wonik-2026-newgrad",
@@ -160,6 +176,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-22",
     closesAt: "2026-10-12T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/wonik.svg",
   },
   {
     slug: "isu-2026h2",
@@ -171,6 +188,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-22",
     closesAt: "2026-10-13T10:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/isu-group.svg",
   },
   {
     slug: "skb-junior-talent-2026",
@@ -182,6 +200,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-30",
     closesAt: "2026-10-13T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/sk.svg",
   },
   {
     slug: "hanwha-solutions-chemical-2026h2",
@@ -193,6 +212,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-28",
     closesAt: "2026-10-14T15:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/hanwha.svg",
   },
   {
     slug: "samchully-2027",
@@ -204,6 +224,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-02",
     closesAt: "2026-10-14T18:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/samchully.svg",
   },
   {
     slug: "soil-2026",
@@ -215,6 +236,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-30",
     closesAt: "2026-10-14T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/s-oil.svg",
   },
   {
     slug: "spc-2026h2",
@@ -226,6 +248,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-01",
     closesAt: "2026-10-14T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/spc.svg",
   },
   {
     slug: "ottogi-2026h2",
@@ -237,6 +260,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-07",
     closesAt: "2026-10-15T22:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/ottogi.svg",
   },
   {
     slug: "xisnd-2026h2",
@@ -248,6 +272,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-01",
     closesAt: "2026-10-15T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/xisnd.svg",
   },
   {
     slug: "shinhanlife-2026",
@@ -259,6 +284,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-07",
     closesAt: "2026-10-16T17:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/shinhan-life.svg",
   },
   {
     slug: "bnk-savings-bank-2026",
@@ -270,6 +296,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-05",
     closesAt: "2026-10-16T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/bnk.svg",
   },
   {
     slug: "bnk-capital-2026",
@@ -281,6 +308,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-08",
     closesAt: "2026-10-18T17:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/bnk.svg",
   },
   {
     slug: "woori-asset-management-2026h2",
@@ -292,6 +320,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-01",
     closesAt: "2026-10-18T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/woori.svg",
   },
   {
     slug: "hanmi-group-2026h2",
@@ -303,6 +332,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-28",
     closesAt: "2026-10-18T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/hanmi.svg",
   },
   {
     slug: "kis-fy2026",
@@ -314,6 +344,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-09-15",
     closesAt: "2026-10-19T17:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/kis.svg",
   },
   {
     slug: "hanjin-2027",
@@ -325,6 +356,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-01",
     closesAt: "2026-10-21T14:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/hanjin.svg",
   },
   {
     slug: "dn-solutions-2026h2",
@@ -336,6 +368,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-08",
     closesAt: "2026-10-21T14:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/dn-solutions.svg",
   },
   {
     slug: "skbioscience-2026h2",
@@ -347,6 +380,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-08",
     closesAt: "2026-10-21T18:00:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/sk.svg",
   },
   {
     slug: "sk-citygas-g3-2026h2",
@@ -358,6 +392,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-07",
     closesAt: "2026-10-21T23:59:00+09:00",
     updated: "2026-10-09",
+    logo: "/company-logos/sk.svg",
   },
 ];
 
