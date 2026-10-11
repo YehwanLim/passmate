@@ -5,7 +5,7 @@ category: 자소서
 coverStyle: quote
 coverLabel: 자소서 문항 · 삼성전자
 coverQuestion: 몇 년째 그대로인\n삼성전자 에세이 네 문항
-coverAnswer: 세 문항은 그대로,\n4번만 제품 사용 경험이 붙었어요
+coverAnswer: 세 문항은 그대로,\n마지막 문항은 바뀌었어요
 date: 2026-10-09
 updated: 2026-10-09
 keywords: 삼성전자 자소서, 삼성전자 자소서 문항, 삼성전자 에세이 문항, 삼성전자 사회이슈 문항, 삼성전자 성장과정
