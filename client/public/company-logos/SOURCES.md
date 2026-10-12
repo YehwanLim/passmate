@@ -57,3 +57,6 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `xisnd.svg` | 자이에스앤디 | [자이에스앤디 홈페이지](https://www.xisnd.com/resource/frontend/images/logo1.png) | PNG를 SVG 래퍼에 |
 | `shinhan-life.svg` | 신한라이프 | [신한라이프 홈페이지](https://www.shinhanlife.co.kr/resources/images/cdh/common/footer_sh_logo.svg) | |
 | `kdb-capital.svg` | 산은캐피탈 | [산은캐피탈 홈페이지](https://www.kdbc.co.kr/images/ci-logo-big.jpg) | JPG를 SVG 래퍼에 |
+| `happynarae.svg` | 행복나래 | [행복나래 홈페이지](https://www.happynarae.com/happy2/resources/img/logo.png) | PNG를 SVG 래퍼에 |
+| `ktds.svg` | kt ds | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:KTDS_Logo.svg) | |
+| `fasoo.svg` | 파수AI | [파수 AI 채용사이트](https://recruit.fasoo.com/wp-content/uploads/2026/04/CI_Fasoo-AI-scaled.png) | PNG를 줄여 SVG 래퍼에 |
