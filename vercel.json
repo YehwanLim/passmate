@@ -80,6 +80,10 @@
       "destination": "/api/analyze?extract=1"
     },
     {
+      "source": "/api/analyze/keywords",
+      "destination": "/api/analyze?keywords=1"
+    },
+    {
       "source": "/api/analyze/company",
       "destination": "/api/analyze?kind=company"
     },

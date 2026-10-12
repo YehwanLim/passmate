@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, PenLine, Search, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, Loader2, PenLine, Search, Trash2, X } from "lucide-react";
 import {
   buildPeriod,
   createExperience,
@@ -15,6 +15,7 @@ import {
   type YearMonth,
 } from "@/lib/workspace";
 import { parseTags } from "@/lib/experienceImport";
+import { KEYWORD_TEXT_MIN, requestKeywordSuggestions } from "@/lib/experienceKeywords";
 import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
 import ExperienceImportDialog from "./ExperienceImportDialog";
 import KebabMenu from "./KebabMenu";
@@ -24,53 +25,138 @@ const field = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 tex
 const label = "block space-y-1.5 text-[13px] font-semibold text-ink-4";
 const EMPTY: ExperienceInput = { title: "", period: null, situation: "", action: "", result: "", body: "", tags: [] };
 const SECTIONS = ["situation", "action", "result"] as const;
-/** 위 거르기 줄에 먼저 꺼내 두는 키워드 수. 나머지는 "더 보기"로 접는다. */
-const TOP_KEYWORDS = 5;
+/** 키워드 입력 칸 아래에 꺼내 두는 기존 키워드 수 */
+const KNOWN_KEYWORDS_SHOWN = 8;
+
+// 키워드마다 연한 색 하나. 이름으로 정해져서 어느 화면에서든 같은 키워드는 같은 색이다(저장하지 않음).
+const TAG_TONES = [
+  "bg-brand-soft text-brand-ink",
+  "bg-emerald-50 text-emerald-700",
+  "bg-amber-50 text-amber-800",
+  "bg-rose-50 text-rose-700",
+  "bg-violet-50 text-violet-700",
+  "bg-teal-50 text-teal-700",
+] as const;
+
+function tagTone(tag: string): string {
+  let hash = 0;
+  for (const ch of tag) hash = (hash * 31 + ch.codePointAt(0)!) >>> 0;
+  return TAG_TONES[hash % TAG_TONES.length];
+}
 
 function Capsule({ children, small = false }: { children: string; small?: boolean }) {
   return (
-    <span className={`inline-flex items-center whitespace-nowrap rounded-full bg-fill font-semibold text-ink-3 ${small ? "h-[22px] px-2 text-[11.5px]" : "h-[26px] px-2.5 text-[12.5px]"}`}>
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full font-semibold ${tagTone(children)} ${small ? "h-[22px] px-2 text-[11.5px]" : "h-[26px] px-2.5 text-[12.5px]"}`}>
       {children}
     </span>
   );
 }
 
-/** 키워드 입력: 캡슐로 쌓고 Enter·쉼표로 더한다. 최대 5개·20자(parseTags 와 같은 규칙). */
-function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
+/**
+ * 키워드 입력: 캡슐로 쌓고 Enter·쉼표로 더한다. 최대 5개·20자(parseTags 와 같은 규칙).
+ * 아래에 이미 쓴 키워드(자주 쓴 순)를 꺼내 두어, 같은 뜻을 다르게 적지 않고 눌러서 고르게 한다.
+ */
+function TagInput({ tags, onChange, known = [] }: { tags: string[]; onChange: (tags: string[]) => void; known?: string[] }) {
   const [text, setText] = useState("");
   const add = () => {
     if (!text.trim()) return;
     onChange(parseTags([...tags, text].join(",")));
     setText("");
   };
+  const q = text.trim().toLowerCase();
+  const picks = tags.length < 5 ? known.filter((tag) => !tags.includes(tag) && (!q || tag.toLowerCase().includes(q))).slice(0, KNOWN_KEYWORDS_SHOWN) : [];
   return (
-    <div className="flex min-h-[46px] flex-wrap items-center gap-1.5 rounded-xl border border-line bg-surface px-2.5 py-2 focus-within:border-brand">
-      {tags.map((tag) => (
-        <span key={tag} className="inline-flex h-[26px] items-center gap-1 rounded-full bg-fill pl-2.5 pr-1.5 text-[12.5px] font-semibold text-ink-3">
-          {tag}
-          <button type="button" aria-label={COPY.tagRemove(tag)} onClick={() => onChange(tags.filter((t) => t !== tag))} className="rounded-full p-0.5 text-ink-5 hover:text-ink-2">
-            <X className="size-3" aria-hidden="true" />
+    <div className="space-y-2">
+      <div className="flex min-h-[46px] flex-wrap items-center gap-1.5 rounded-xl border border-line bg-surface px-2.5 py-2 focus-within:border-brand">
+        {tags.map((tag) => (
+          <span key={tag} className={`inline-flex h-[26px] items-center gap-1 rounded-full pl-2.5 pr-1.5 text-[12.5px] font-semibold ${tagTone(tag)}`}>
+            {tag}
+            <button type="button" aria-label={COPY.tagRemove(tag)} onClick={() => onChange(tags.filter((t) => t !== tag))} className="rounded-full p-0.5 opacity-60 hover:opacity-100">
+              <X className="size-3" aria-hidden="true" />
+            </button>
+          </span>
+        ))}
+        {tags.length < 5 && (
+          <input
+            aria-label={COPY.fields.tags}
+            value={text}
+            placeholder={COPY.tagPlaceholder}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing) return; // 한글 조합 중 Enter 는 글자 확정용
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                add();
+              } else if (e.key === "Backspace" && !text && tags.length > 0) {
+                onChange(tags.slice(0, -1));
+              }
+            }}
+            onBlur={add}
+            className="min-w-[120px] flex-1 bg-transparent px-1 text-[14px] text-ink placeholder:text-ink-5 focus:outline-none"
+          />
+        )}
+      </div>
+      {picks.length > 0 && (
+        <div role="group" aria-label={COPY.knownKeywords} className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-0.5 text-[12.5px] font-medium text-ink-5">{COPY.knownKeywords}</span>
+          {picks.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              // 입력칸 포커스를 뺏지 않아야 칸에 적던 글자가 따로 키워드로 들어가지 않는다
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { onChange(parseTags([...tags, tag].join(","))); setText(""); }}
+              className="inline-flex h-[26px] items-center rounded-full border border-dashed border-line px-2.5 text-[12.5px] font-semibold text-ink-3 hover:border-ink-5 hover:text-ink"
+            >
+              + {tag}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 찾기 칸 옆 키워드 거르기: 고른 키워드를 버튼에 보이고, 펼치면 자주 쓴 순으로 전부 */
+function KeywordFilter({ keywords, value, onChange }: { keywords: string[]; value: string | null; onChange: (keyword: string | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const pick = (keyword: string | null) => { onChange(keyword); setOpen(false); };
+  const option = "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[13.5px] hover:bg-fill";
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex h-[42px] max-w-[200px] items-center gap-1.5 rounded-xl border px-3.5 text-[14px] font-semibold transition-colors ${value ? "border-ink bg-surface text-ink" : "border-line bg-surface text-ink-3 hover:bg-fill-soft"}`}
+      >
+        <span className="shrink-0 text-ink-4">{COPY.keywordLabel}</span>
+        <span className="truncate">{value ?? COPY.allKeywords}</span>
+        <ChevronDown className="size-4 shrink-0 text-ink-4" aria-hidden="true" />
+      </button>
+      {open && (
+        <div role="listbox" aria-label={COPY.keywordLabel} className="absolute left-0 top-full z-40 mt-1.5 max-h-72 w-56 overflow-y-auto rounded-xl border border-line bg-surface p-1.5 shadow-[0_12px_32px_rgba(18,32,90,0.12)]">
+          <button type="button" role="option" aria-selected={value === null} onClick={() => pick(null)} className={`${option} font-semibold text-ink-2`}>
+            {COPY.allKeywords}
+            {value === null && <Check className="size-4 text-brand" aria-hidden="true" />}
           </button>
-        </span>
-      ))}
-      {tags.length < 5 && (
-        <input
-          aria-label={COPY.fields.tags}
-          value={text}
-          placeholder={COPY.tagPlaceholder}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.nativeEvent.isComposing) return; // 한글 조합 중 Enter 는 글자 확정용
-            if (e.key === "Enter" || e.key === ",") {
-              e.preventDefault();
-              add();
-            } else if (e.key === "Backspace" && !text && tags.length > 0) {
-              onChange(tags.slice(0, -1));
-            }
-          }}
-          onBlur={add}
-          className="min-w-[120px] flex-1 bg-transparent px-1 text-[14px] text-ink placeholder:text-ink-5 focus:outline-none"
-        />
+          {keywords.map((tag) => (
+            <button key={tag} type="button" role="option" aria-selected={value === tag} onClick={() => pick(tag)} className={option}>
+              <Capsule>{tag}</Capsule>
+              {value === tag && <Check className="size-4 text-brand" aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -256,17 +342,45 @@ function ExperienceForm({
   initial,
   onSubmit,
   onCancel,
+  onTitleChange,
+  knownKeywords,
 }: {
   heading: string;
   initial: ExperienceInput;
   onSubmit: (input: ExperienceInput) => Promise<void>;
   onCancel: () => void;
+  /** 새 경험일 때 왼쪽 목록의 새 카드 제목을 따라 바꾼다. */
+  onTitleChange?: (title: string) => void;
+  /** 이 사용자가 이미 쓴 키워드(자주 쓴 순). 입력칸 아래에서 눌러 고른다. */
+  knownKeywords: string[];
 }) {
   const [draft, setDraft] = useState<ExperienceInput>({ ...initial, body: initial.body ?? "" });
   const [mode, setMode] = useState<WriteMode>(() => modeOf(initial));
   const [periodError, setPeriodError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestNote, setSuggestNote] = useState<{ text: string; error: boolean } | null>(null);
+
+  // 적은 글에서 키워드 2개까지 뽑아 바로 넣는다(빼고 싶으면 ✕). 이미 쓰는 키워드와 같은 뜻이면 서버가 그 표기로 맞춘다.
+  const suggestKeywords = async () => {
+    const text = mode === "free" ? draft.body ?? "" : SECTIONS.map((key) => draft[key]).join("\n");
+    if ((draft.title.trim() + text.trim()).length < KEYWORD_TEXT_MIN) {
+      setSuggestNote({ text: COPY.suggest.needText, error: true });
+      return;
+    }
+    setSuggesting(true);
+    setSuggestNote(null);
+    const result = await requestKeywordSuggestions({ title: draft.title, text, tags: draft.tags });
+    setSuggesting(false);
+    if (result.kind === "ok") {
+      setDraft((current) => ({ ...current, tags: parseTags([...current.tags, ...result.keywords].join(",")) }));
+      setSuggestNote({ text: COPY.suggest.added(result.keywords.length, result.remainingToday), error: false });
+    } else if (result.kind === "empty") setSuggestNote({ text: COPY.suggest.empty, error: true });
+    else if (result.kind === "rate_limited") setSuggestNote({ text: COPY.suggest.rateLimited, error: true });
+    else if (result.kind === "invalid") setSuggestNote({ text: COPY.suggest.needText, error: true });
+    else setSuggestNote({ text: COPY.suggest.failed, error: true });
+  };
 
   // 방식을 바꿔도 쓴 글은 잃지 않는다: 칸 → 자유는 채운 칸을 줄바꿈으로 잇고, 자유 → 칸은 글을 "내가 한 일"에 옮긴다.
   const switchMode = (next: WriteMode) => {
@@ -314,7 +428,7 @@ function ExperienceForm({
       <p className="text-[17px] font-bold text-ink">{heading}</p>
       <label className={label}>
         <span>{COPY.fields.title}</span>
-        <input aria-label={COPY.fields.title} placeholder={COPY.fields.titlePlaceholder} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} maxLength={100} className={`${field} font-bold`} />
+        <input aria-label={COPY.fields.title} placeholder={COPY.fields.titlePlaceholder} value={draft.title} onChange={(e) => { setDraft({ ...draft, title: e.target.value }); onTitleChange?.(e.target.value); }} maxLength={100} className={`${field} font-bold`} />
       </label>
       <div className={label}>
         <span>{COPY.fields.period} {COPY.optional}</span>
@@ -328,8 +442,21 @@ function ExperienceForm({
         {periodError && <p className="text-[12.5px] font-medium text-danger">{periodError}</p>}
       </div>
       <div className={label}>
-        <span>{COPY.fields.tags}</span>
-        <TagInput tags={draft.tags} onChange={(tags) => setDraft({ ...draft, tags })} />
+        <span className="flex items-center justify-between gap-3">
+          {COPY.fields.tags}
+          {draft.tags.length < 5 && (
+            <button type="button" disabled={suggesting} onClick={() => void suggestKeywords()} className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand-ink underline-offset-4 hover:underline disabled:cursor-wait disabled:opacity-60">
+              {suggesting && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
+              {suggesting ? COPY.suggest.busy : COPY.suggest.button}
+            </button>
+          )}
+        </span>
+        <TagInput tags={draft.tags} onChange={(tags) => setDraft({ ...draft, tags })} known={knownKeywords} />
+        {suggestNote && (
+          <p role={suggestNote.error ? "alert" : "status"} className={`text-[12.5px] font-medium ${suggestNote.error ? "text-danger" : "text-ink-4"}`}>
+            {suggestNote.text}
+          </p>
+        )}
       </div>
       {mode === "free" ? (
         <div className="space-y-1.5">
@@ -438,9 +565,9 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
   const [mobileDetail, setMobileDetail] = useState(false);
   const [query, setQuery] = useState("");
   const [keyword, setKeyword] = useState<string | null>(null);
-  const [showAllKeywords, setShowAllKeywords] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
   const detailRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -489,6 +616,7 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
     showDetailOnPhone();
   };
   const startNew = () => {
+    setNewTitle("");
     setEditing("new");
     showDetailOnPhone();
   };
@@ -524,6 +652,8 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
       heading={COPY.newTitle}
       initial={EMPTY}
       onCancel={() => { setEditing(null); setMobileDetail(false); }}
+      onTitleChange={setNewTitle}
+      knownKeywords={keywords}
       onSubmit={async (input) => {
         const created = await createExperience(input);
         setItems((current) => [created, ...(current ?? [])]);
@@ -537,6 +667,7 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
     <ExperienceForm
       key={editingItem.id}
       heading={COPY.editTitle}
+      knownKeywords={keywords}
       initial={{ title: editingItem.title, period: editingItem.period, situation: editingItem.situation, action: editingItem.action, result: editingItem.result, body: editingItem.body ?? "", tags: editingItem.tags }}
       onCancel={() => setEditing(null)}
       onSubmit={async (input) => {
@@ -575,28 +706,26 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
     );
   }
 
-  const shownKeywords = showAllKeywords ? keywords : keywords.slice(0, TOP_KEYWORDS);
-  const capsuleButton = (active: boolean) =>
-    `inline-flex h-[30px] items-center whitespace-nowrap rounded-full px-3 text-[13px] font-semibold transition-colors ${
-      active ? "bg-ink text-white" : "bg-surface text-ink-3 hover:bg-fill"
-    }`;
-
   return (
     <div>
       {/* ── 위: 찾기 + 버튼 / 키워드 거르기 (폰에서 자세히를 볼 땐 숨김) ── */}
       <div className={mobileDetail ? "hidden sm:block" : undefined}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label className="flex h-[42px] items-center gap-2 rounded-xl border border-line bg-surface px-3.5 focus-within:border-brand sm:w-[300px]">
-            <Search className="size-4 shrink-0 text-ink-5" aria-hidden="true" />
-            <input
-              type="search"
-              aria-label={COPY.search}
-              placeholder={COPY.search}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-5 focus:outline-none"
-            />
-          </label>
+          {/* 찾기 칸 옆에 키워드 거르기를 붙인다(10-09) — 키워드가 늘어도 위쪽은 한 줄 */}
+          <div className="flex gap-2">
+            <label className="flex h-[42px] min-w-0 flex-1 items-center gap-2 rounded-xl border border-line bg-surface px-3.5 focus-within:border-brand sm:w-[300px] sm:flex-none">
+              <Search className="size-4 shrink-0 text-ink-5" aria-hidden="true" />
+              <input
+                type="search"
+                aria-label={COPY.search}
+                placeholder={COPY.search}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="min-w-0 flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-5 focus:outline-none"
+              />
+            </label>
+            {keywords.length > 0 && <KeywordFilter keywords={keywords} value={keyword} onChange={setKeyword} />}
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -610,28 +739,6 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
             </button>
           </div>
         </div>
-        {keywords.length > 0 && (
-          <div role="group" aria-label={COPY.keywordLabel} className="mt-3.5 flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-[13px] font-semibold text-ink-4">{COPY.keywordLabel}</span>
-            <button type="button" aria-pressed={keyword === null} onClick={() => setKeyword(null)} className={capsuleButton(keyword === null)}>
-              {COPY.allKeywords}
-            </button>
-            {shownKeywords.map((tag) => (
-              <button key={tag} type="button" aria-pressed={keyword === tag} onClick={() => setKeyword(keyword === tag ? null : tag)} className={capsuleButton(keyword === tag)}>
-                {tag}
-              </button>
-            ))}
-            {keywords.length > TOP_KEYWORDS && (
-              <button
-                type="button"
-                onClick={() => setShowAllKeywords((v) => !v)}
-                className="inline-flex h-[30px] items-center rounded-full border border-dashed border-line px-3 text-[13px] font-semibold text-ink-4 hover:text-ink-2"
-              >
-                {showAllKeywords ? COPY.lessKeywords : COPY.moreKeywords(keywords.length - TOP_KEYWORDS)}
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       {deleteError && <p role="alert" className="mt-3 text-[13px] text-danger">{deleteError}</p>}
@@ -641,6 +748,15 @@ export default function ExperienceVault({ onCountChange }: { onCountChange?: (co
       <div className="mt-5 grid items-start gap-3 sm:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[272px_minmax(0,1fr)] lg:gap-4">
         <div className={mobileDetail ? "hidden sm:block" : undefined}>
           <p className="mb-2.5 px-0.5 text-[13px] font-semibold text-ink-4">{COPY.count(visible.length)}</p>
+          {/* 직접 추가를 누르면 저장 전이라도 맨 위에 새 카드가 바로 생기고, 적는 이름을 따라간다 */}
+          {editing === "new" && (
+            <div aria-current="true" className="mb-2 rounded-[14px] border-[1.5px] border-ink bg-surface px-4 py-3.5">
+              <span className={`line-clamp-2 text-[14.5px] font-bold leading-[1.45] [text-wrap:balance] break-keep ${newTitle.trim() ? "text-ink" : "text-ink-5"}`}>
+                {newTitle.trim() || COPY.newTitle}
+              </span>
+              <span className="mt-1 block text-[12px] text-ink-4">{COPY.unsaved}</span>
+            </div>
+          )}
           {visible.length === 0 ? (
             <p className="rounded-[14px] bg-surface px-4 py-6 text-center text-[13.5px] text-ink-4">{COPY.noMatch}</p>
           ) : (

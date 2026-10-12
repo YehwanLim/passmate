@@ -24,6 +24,8 @@ function apiRoute(pathname: string) {
     return { file: "api/analyze.js", query: { draft: "1" } };
   if (pathname === "/api/analyze/extract")
     return { file: "api/analyze.js", query: { extract: "1" } };
+  if (pathname === "/api/analyze/keywords")
+    return { file: "api/analyze.js", query: { keywords: "1" } };
   if (pathname === "/api/entitlements") return { file: "api/entitlements.js", query: {} };
   if (pathname === "/api/entitlements/purchase-intents")
     return { file: "api/entitlements.js", query: { purchaseIntent: "1" } };

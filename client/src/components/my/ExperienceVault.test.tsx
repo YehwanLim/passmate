@@ -13,6 +13,11 @@ vi.mock("@/lib/workspace", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/workspace")>()),
   ...mocks,
 }));
+const keywordMocks = vi.hoisted(() => ({ requestKeywordSuggestions: vi.fn() }));
+vi.mock("@/lib/experienceKeywords", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/experienceKeywords")>()),
+  requestKeywordSuggestions: keywordMocks.requestKeywordSuggestions,
+}));
 const importMocks = vi.hoisted(() => ({ requestExperienceCandidates: vi.fn() }));
 vi.mock("@/lib/experienceImport", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/experienceImport")>()),
@@ -46,7 +51,12 @@ describe("내 경험", () => {
     expect(buttons).toHaveLength(1);
     fireEvent.click(buttons[0]);
     const dialog = screen.getByRole("dialog", { name: "이력서·자소서로 자동 추가" });
+    // 예시는 길어서 접어 두고, 도움말 버튼을 눌러야 펼친다
+    expect(within(dialog).queryByRole("region", { name: "예시" })).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "어떻게 정리되나요?" }));
     expect(within(dialog).getByRole("region", { name: "예시" })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "예시 닫기" }));
+    expect(within(dialog).queryByRole("region", { name: "예시" })).toBeNull();
   });
 
   it("왼쪽 목록은 이름·짧은 기간·키워드 앞 2개(+나머지 수), 기간이 없으면 기간 줄이 없다", async () => {
@@ -76,29 +86,54 @@ describe("내 경험", () => {
     expect(within(detail()).queryByText("결과")).toBeNull();
   });
 
-  it("키워드 캡슐과 찾기로 거른다", async () => {
+  it("찾기 칸 옆 키워드 드롭다운과 찾기로 거른다", async () => {
     mocks.listExperiences.mockResolvedValue([EXP, EXP2]);
     render(<ExperienceVault />);
     await screen.findByRole("list", { name: "경험 목록" });
-    const group = screen.getByRole("group", { name: "키워드" });
+    const trigger = screen.getByRole("button", { name: /^키워드/ });
+    expect(trigger.textContent).toContain("전체");
+    expect(screen.queryByRole("listbox")).toBeNull();
+    fireEvent.click(trigger);
     // 자주 쓴 키워드가 먼저
-    expect(within(group).getAllByRole("button").map((b) => b.textContent)).toEqual(["전체", "데이터", "운영", "카페", "콘텐츠"]);
-    fireEvent.click(within(group).getByRole("button", { name: "콘텐츠" }));
+    expect(within(screen.getByRole("listbox")).getAllByRole("option").map((o) => o.textContent)).toEqual(["전체", "데이터", "운영", "카페", "콘텐츠"]);
+    fireEvent.click(screen.getByRole("option", { name: "콘텐츠" }));
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(trigger.textContent).toContain("콘텐츠");
     expect(listTitles()).toEqual(["학회 카드뉴스 저장 수 분석"]);
-    fireEvent.click(within(group).getByRole("button", { name: "전체" }));
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole("option", { name: "전체" }));
     fireEvent.change(screen.getByLabelText("경험 이름이나 내용으로 찾기"), { target: { value: "폐기" } });
     expect(listTitles()).toEqual(["카페 발주 개선"]);
     fireEvent.change(screen.getByLabelText("경험 이름이나 내용으로 찾기"), { target: { value: "없는 말" } });
     expect(screen.getAllByText("찾는 경험이 없어요.").length).toBeGreaterThan(0);
   });
 
-  it("키워드가 5개를 넘으면 나머지는 '더 보기'로 접는다", async () => {
-    mocks.listExperiences.mockResolvedValue([{ ...EXP, tags: ["가", "나", "다", "라", "마"] }, { ...EXP2, tags: ["바", "사"] }]);
+  it("같은 키워드는 어디서든 같은 색이다(이름으로 정해짐)", async () => {
+    mocks.listExperiences.mockResolvedValue([EXP, EXP2]);
     render(<ExperienceVault />);
-    const group = await screen.findByRole("group", { name: "키워드" });
-    expect(within(group).queryByRole("button", { name: "사" })).toBeNull();
-    fireEvent.click(within(group).getByRole("button", { name: "+2 더 보기" }));
-    expect(within(group).getByRole("button", { name: "사" })).toBeTruthy();
+    await screen.findByRole("list", { name: "경험 목록" });
+    const chips = within(list()).getAllByText("데이터");
+    expect(chips).toHaveLength(2);
+    expect(chips[0].className).toBe(chips[1].className);
+    expect(chips[0].className).not.toContain("bg-fill ");
+  });
+
+  it("키워드 칸 아래에 이미 쓴 키워드를 꺼내 두고, 누르면 들어가며 적는 글자로 좁혀진다", async () => {
+    mocks.createExperience.mockImplementation(async (input) => ({ ...input, id: "e9", updatedAt: "" }));
+    mocks.listExperiences.mockResolvedValue([EXP, EXP2]);
+    render(<ExperienceVault />);
+    fireEvent.click(await screen.findByRole("button", { name: "+ 직접 추가" }));
+    const known = () => screen.getByRole("group", { name: "쓴 키워드" });
+    expect(within(known()).getAllByRole("button").map((b) => b.textContent)).toEqual(["+ 데이터", "+ 운영", "+ 카페", "+ 콘텐츠"]);
+    fireEvent.click(within(known()).getByRole("button", { name: "+ 데이터" }));
+    expect(screen.getByRole("button", { name: "데이터 키워드 빼기" })).toBeTruthy();
+    expect(within(known()).queryByRole("button", { name: "+ 데이터" })).toBeNull();
+    fireEvent.change(screen.getByLabelText("키워드 (최대 5개)"), { target: { value: "카" } });
+    expect(within(known()).getAllByRole("button").map((b) => b.textContent)).toEqual(["+ 카페"]);
+    fireEvent.click(within(known()).getByRole("button", { name: "+ 카페" }));
+    fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "발주 실험" } });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(mocks.createExperience).toHaveBeenCalledWith(expect.objectContaining({ tags: ["데이터", "카페"] })));
   });
 
   it("가져와 저장한 경험이 목록 맨 위에 붙는다", async () => {
@@ -140,6 +175,44 @@ describe("내 경험", () => {
     await waitFor(() => expect(listTitles()[0]).toBe("학회 리서치"));
     expect(within(detail()).getByRole("heading", { name: "학회 리서치" })).toBeTruthy();
     expect(onCountChange).toHaveBeenLastCalledWith(2);
+  });
+
+  it("직접 추가를 누르면 저장 전에도 왼쪽 맨 위에 새 카드가 생기고, 적는 이름을 따라간다", async () => {
+    render(<ExperienceVault />);
+    fireEvent.click(await screen.findByRole("button", { name: "+ 직접 추가" }));
+    const card = screen.getByText("작성 중 · 저장 전").parentElement!;
+    expect(within(card).getByText("새 경험")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "동아리 회계 정리" } });
+    expect(within(card).getByText("동아리 회계 정리")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "취소" }));
+    expect(screen.queryByText("작성 중 · 저장 전")).toBeNull();
+  });
+
+  it("추천 키워드 뽑기: 이름·글을 보내 받은 키워드를 바로 넣고, 글이 짧으면 부르지 않는다", async () => {
+    keywordMocks.requestKeywordSuggestions.mockResolvedValue({ kind: "ok", keywords: ["데이터", "운영 개선"], remainingToday: 19 });
+    render(<ExperienceVault />);
+    fireEvent.click(await screen.findByRole("button", { name: "+ 직접 추가" }));
+    fireEvent.click(screen.getByRole("button", { name: "추천 키워드 뽑기" }));
+    expect(await screen.findByText("경험 내용을 조금 더 적으면 뽑을 수 있어요.")).toBeTruthy();
+    expect(keywordMocks.requestKeywordSuggestions).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "카페 발주 개선" } });
+    fireEvent.change(screen.getByLabelText("어떤 경험이었나요"), { target: { value: "판매 데이터를 보고 발주량을 조정했다" } });
+    fireEvent.click(screen.getByRole("button", { name: "추천 키워드 뽑기" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "운영 개선 키워드 빼기" })).toBeTruthy());
+    expect(screen.getByRole("button", { name: "데이터 키워드 빼기" })).toBeTruthy();
+    expect(keywordMocks.requestKeywordSuggestions).toHaveBeenCalledWith({ title: "카페 발주 개선", text: "판매 데이터를 보고 발주량을 조정했다", tags: [] });
+    expect(screen.getByText(/추천 키워드 2개를 넣었어요/)).toBeTruthy();
+  });
+
+  it("추천 키워드: 하루 횟수를 다 쓰면 알려 주고 키워드는 그대로", async () => {
+    keywordMocks.requestKeywordSuggestions.mockResolvedValue({ kind: "rate_limited" });
+    render(<ExperienceVault />);
+    fireEvent.click(await screen.findByRole("button", { name: "+ 직접 추가" }));
+    fireEvent.change(screen.getByLabelText("경험 이름"), { target: { value: "카페 발주를 판매 데이터로 고쳐 폐기를 줄인 일" } });
+    fireEvent.click(screen.getByRole("button", { name: "추천 키워드 뽑기" }));
+    expect(await screen.findByText(/오늘 추천 키워드를 다 썼어요/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /키워드 빼기/ })).toBeNull();
   });
 
   it("새로 적기는 자유 양식이 기본 — 글 한 칸만 있고, 저장하면 body 로 보내고 칸은 비운다", async () => {
