@@ -1,4 +1,4 @@
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 import { BrandName } from "@/components/BrandName";
 import {
@@ -154,29 +154,25 @@ export default function PricingSection() {
           ))}
         </div>
 
-        {/* 리포트 구성 — 자소서·기업 두 리포트를 나란히. 이용권 페이지와 같은 문구 */}
-        <div
-          className="mt-5 max-w-5xl mx-auto grid gap-8 rounded-[28px] bg-surface px-7 py-8 md:grid-cols-2 md:gap-10 md:px-12 md:py-11"
-        >
-          <div>
-            <p className="inline-flex h-[26px] items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-bold text-ink-3">자소서 진단 리포트</p>
-            <p className="mt-3 text-[18px] font-extrabold tracking-[-0.02em] text-ink">어떤 이용권을 선택하든, 이 모든 게 담깁니다</p>
-            <ul className="mt-4 space-y-2.5">
+        {/* 리포트 구성 — 자소서·기업 두 리포트를 흰 카드 두 장으로. 이용권 페이지와 같은 모양·문구 */}
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <div className="rounded-[28px] bg-surface px-7 py-8 md:px-10 md:py-10">
+            <h3 className="text-[22px] font-extrabold tracking-[-0.02em] text-ink">자소서 진단 리포트</h3>
+            <p className="mt-1 text-[15px] text-ink-4">어떤 이용권이든 내용은 같아요</p>
+            <ul className="mt-5 divide-y divide-line-soft border-t border-line-soft">
               {REPORT_INCLUDED_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-2.5 text-[15px] text-ink-2">
-                  <Check className="h-4 w-4 shrink-0 text-brand" strokeWidth={2.6} />
+                <li key={feature} className="py-3 text-[15px] text-ink-2">
                   {feature}
                 </li>
               ))}
             </ul>
           </div>
-          <div>
-            <p className="inline-flex h-[26px] items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-bold text-ink-3">기업 분석 리포트</p>
-            <p className="mt-3 text-[18px] font-extrabold tracking-[-0.02em] text-ink">스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요</p>
-            <ul className="mt-4 space-y-2.5">
+          <div className="rounded-[28px] bg-surface px-7 py-8 md:px-10 md:py-10">
+            <h3 className="text-[22px] font-extrabold tracking-[-0.02em] text-ink">기업 분석 리포트</h3>
+            <p className="mt-1 text-[15px] text-ink-4">스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요</p>
+            <ul className="mt-5 divide-y divide-line-soft border-t border-line-soft">
               {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-2.5 text-[15px] text-ink-2">
-                  <Check className="h-4 w-4 shrink-0 text-brand" strokeWidth={2.6} />
+                <li key={feature} className="py-3 text-[15px] text-ink-2">
                   {feature}
                 </li>
               ))}
@@ -189,10 +185,7 @@ export default function PricingSection() {
           className="mt-16 text-center md:mt-20"
         >
           <p className="text-[24px] font-extrabold tracking-[-0.03em] text-ink md:text-[30px]">
-            가입하면 <span className="text-brand">첫 분석 1회는 무료</span>입니다
-          </p>
-          <p className="mt-3 text-[16px] text-ink-3">
-            카드 등록 없이, 유료와 똑같은 리포트 전체를 받아볼 수 있어요.
+            첫 분석은 <span className="text-brand">무료</span>예요
           </p>
         </div>
 

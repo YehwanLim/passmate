@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, RefreshCw } from "lucide-react";
+import { ArrowRight, RefreshCw } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import { PlanPurchaseButton } from "@/components/entitlements/PlanPurchaseButton";
 import { TierCard } from "@/components/entitlements/TierCard";
@@ -175,11 +175,7 @@ export default function Entitlements() {
           <div className="space-y-6">
             {/* 무료 체험은 파는 물건이 아니라 입구다 — 카드 열에서 빼서 한 줄로. */}
             <div className="flex flex-col gap-3 rounded-[20px] bg-surface px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[15px] text-ink-3">
-                <span className="font-semibold text-ink">첫 분석 1회는 무료</span>
-                <span className="text-ink-5"> · </span>
-                가입만 하면 바로, 카드 등록 없이. 리포트는 유료와 똑같아요.
-              </p>
+              <p className="text-[15px] font-semibold text-ink">첫 분석은 무료예요</p>
               <button
                 type="button"
                 onClick={() => navigate("/analyze")}
@@ -215,35 +211,33 @@ export default function Entitlements() {
               })}
             </div>
 
-            {/* 리포트 구성 — 카드처럼 보이지 않게 상자 대신 구분선으로. */}
-            <div className="grid gap-8 border-t border-line pt-8 md:grid-cols-2 md:gap-10">
-              <div>
-                <p className="text-[13px] font-semibold text-brand-ink">
+            {/* 리포트 구성 — 체크 목록은 배경에 묻혀서, 가격 카드와 같은 흰 카드에 제목을 크게 두고 항목은 줄로 나눈다. */}
+            <div className="grid gap-5 pt-5 md:grid-cols-2">
+              <div className="rounded-[20px] bg-surface px-6 py-7 md:px-8">
+                <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">
                   자소서 진단 리포트
+                </h2>
+                <p className="mt-1 text-[14px] text-ink-4">
+                  어떤 이용권이든 내용은 같아요
                 </p>
-                <p className="mt-1.5 text-[16px] font-bold text-ink">
-                  어떤 이용권을 선택하든, 이 모든 게 담깁니다
-                </p>
-                <ul className="mt-4 space-y-2.5">
+                <ul className="mt-5 divide-y divide-line-soft border-t border-line-soft">
                   {REPORT_INCLUDED_FEATURES.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2.5 text-[15px] text-ink-2">
-                      <Check className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+                    <li key={feature} className="py-3 text-[15px] text-ink-2">
                       {feature}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div>
-                <p className="text-[13px] font-semibold text-brand-ink">
+              <div className="rounded-[20px] bg-surface px-6 py-7 md:px-8">
+                <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">
                   기업 분석 리포트
-                </p>
-                <p className="mt-1.5 text-[16px] font-bold text-ink">
+                </h2>
+                <p className="mt-1 text-[14px] text-ink-4">
                   스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요
                 </p>
-                <ul className="mt-4 space-y-2.5">
+                <ul className="mt-5 divide-y divide-line-soft border-t border-line-soft">
                   {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2.5 text-[15px] text-ink-2">
-                      <Check className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+                    <li key={feature} className="py-3 text-[15px] text-ink-2">
                       {feature}
                     </li>
                   ))}
