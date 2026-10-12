@@ -5,7 +5,10 @@ import { Link } from "wouter";
 
 import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
 
-import { REPORT_PREVIEW_SCENES } from "./reportShowcaseSampleData";
+import {
+  REPORT_PREVIEW_MORE_SECTIONS,
+  REPORT_PREVIEW_SCENES,
+} from "./reportShowcaseSampleData";
 
 // 실제 리포트 섹션 + 예시 데이터(약 100KB)는 첫 화면 아래라 랜딩 본 번들과 따로 받는다.
 // 프리렌더(entry-server)는 lazy 가 준비될 때까지 다시 그리므로 HTML 에는 그대로 구워진다.
@@ -30,7 +33,7 @@ function MiniReportNavigator({
             <button
               key={scene.id}
               type="button"
-              className={`flex h-10 w-full items-center rounded-[10px] px-3 text-left text-[14px] transition-colors ${
+              className={`flex h-9 w-full items-center rounded-[10px] px-3 text-left text-[13px] transition-colors ${
                 active
                   ? "bg-brand-soft font-bold text-brand-ink"
                   : "font-semibold text-ink-4 hover:bg-fill hover:text-ink-2"
@@ -41,6 +44,15 @@ function MiniReportNavigator({
             </button>
           );
         })}
+        {REPORT_PREVIEW_MORE_SECTIONS.map(section => (
+          <span
+            key={section.indexLabel}
+            className="flex h-9 w-full cursor-default items-center px-3 text-[13px] font-semibold text-ink-5"
+            title="예시 리포트 전체 보기에서 볼 수 있어요"
+          >
+            {section.indexLabel}. {section.tab}
+          </span>
+        ))}
       </div>
     </nav>
   );
@@ -101,8 +113,9 @@ export function ReportPreviewFrame({
   const isFirstScene = activeIndex === 0;
   const isLastScene = activeIndex === REPORT_PREVIEW_SCENES.length - 1;
 
+  // 폭 960px: 목차를 빼고 남는 칸이 0.78배 축소 기준 약 1,020px — 실제 리포트 본문(960px)과 비슷해 섹션 가운데가 비지 않는다.
   return (
-    <div className="relative mx-auto w-full min-w-0 max-w-7xl lg:h-[min(44rem,calc(100svh-11.5rem))]">
+    <div className="relative mx-auto w-full min-w-0 max-w-[960px] lg:h-[min(44rem,calc(100svh-11.5rem))]">
       {/* 화살표는 흰 카드 양 끝에 붙도록 이 래퍼를 기준으로 띄운다 */}
       <button
         type="button"
@@ -150,6 +163,14 @@ export function ReportPreviewFrame({
                 {scene.indexLabel}. {scene.tab}
               </button>
             ))}
+            {REPORT_PREVIEW_MORE_SECTIONS.map(section => (
+              <span
+                key={section.indexLabel}
+                className="inline-flex h-8 items-center rounded-[8px] px-3 text-[13px] font-semibold text-ink-5"
+              >
+                {section.indexLabel}. {section.tab}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -161,7 +182,11 @@ export function ReportPreviewFrame({
           {/* 실제 리포트 섹션은 이 칸보다 길다. 아래를 흐리게 잘라 "미리보기"로 두고, 끝까지는 예시 리포트에서 본다.
               모바일은 칸 높이를 고정하지 않아 max-h 로 같은 효과를 낸다. */}
           <div className="relative min-w-0 flex-1 overflow-hidden max-lg:max-h-[34rem] lg:min-h-0">
-            <ActiveReportScene activeIndex={activeIndex} />
+            {/* 실제 리포트 섹션을 1:1 로 넣으면 이 칸에선 확대된 것처럼 보여 구성이 한눈에 안 들어온다.
+                데스크톱에선 축소해 실제 리포트 화면을 줄여 보는 느낌으로 둔다(폰은 원래 크기). */}
+            <div className="h-full lg:[zoom:0.78]">
+              <ActiveReportScene activeIndex={activeIndex} />
+            </div>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-surface to-transparent" />
             <div className="absolute inset-x-0 bottom-4 flex justify-center">
               <Link

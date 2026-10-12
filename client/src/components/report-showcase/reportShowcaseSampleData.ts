@@ -17,3 +17,9 @@ export const REPORT_PREVIEW_SCENES: PreviewScene[] = [
   { id: "line", indexLabel: "05", tab: "문장별 코멘트" },
   { id: "interview", indexLabel: "06", tab: "예상 질문" },
 ];
+
+// 미리보기 장면은 없지만 실제 리포트 목차에 있는 섹션. 목차에 흐리게만 보여, 리포트 구성을 끝까지 알 수 있게 한다.
+export const REPORT_PREVIEW_MORE_SECTIONS: Array<Omit<PreviewScene, "id">> = [
+  { indexLabel: "07", tab: "다음 단계" },
+  { indexLabel: "08", tab: "실무자 코멘트" },
+];
