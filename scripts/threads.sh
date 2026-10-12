@@ -115,7 +115,7 @@ case "$cmd" in
     print -r -- "$body"; echo "──────────────"
     [ -n "${THREADS_CONFIRM:-}" ] || { echo "미리보기만 했습니다. 실제로 올리려면 THREADS_CONFIRM=1 을 붙이세요." >&2; exit 2; }
     c="$(curl -sS -X POST "${GRAPH}/me/threads" --data-urlencode "media_type=TEXT" \
-      --data-urlencode "text=${body}" ${parent:+--data-urlencode "reply_to_id=${parent}"} \
+      --data-urlencode "text=${body}" ${parent:+--data-urlencode} ${parent:+"reply_to_id=${parent}"} \
       -H "Authorization: Bearer ${THREADS_ACCESS_TOKEN}")"
     die_on_error "$c"
     cid="$(print -r -- "$c" | jq -r '.id // empty')"
