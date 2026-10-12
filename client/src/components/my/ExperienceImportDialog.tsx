@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FileUp, Loader2 } from "lucide-react";
+import { Check, CircleHelp, FileUp, Loader2 } from "lucide-react";
 
 import {
   EXPERIENCE_PER_USER,
@@ -56,6 +56,7 @@ export default function ExperienceImportDialog({
   const [message, setMessage] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
@@ -70,6 +71,7 @@ export default function ExperienceImportDialog({
     setItems([]);
     setStep("input");
     setMessage(null);
+    setShowHelp(false);
     onClose();
   };
 
@@ -142,7 +144,10 @@ export default function ExperienceImportDialog({
         <div className="flex items-start justify-between gap-4 border-b border-line-soft px-5 py-5 sm:px-8">
           <div>
             <h2 className="text-[18px] font-bold text-ink">{COPY.title}</h2>
-            <p className="mt-1 text-[14px] leading-relaxed text-ink-4">{step === "review" ? COPY.found(items.length) : COPY.intro}</p>
+            {/* 두 문장을 줄마다 나눠, 폰에서도 단어 중간에서 끊기지 않게 */}
+            <p className="mt-1 text-[14px] leading-relaxed text-ink-4 break-keep">
+              {step === "review" ? COPY.found(items.length) : COPY.intro.map((line) => <span key={line} className="block">{line}</span>)}
+            </p>
           </div>
           <button type="button" onClick={close} className="shrink-0 rounded-lg px-2 py-1 text-[14px] font-semibold text-ink-3 hover:bg-fill">
             {COPY.close}
@@ -174,15 +179,27 @@ export default function ExperienceImportDialog({
                 className="w-full resize-y rounded-xl border border-line bg-surface px-4 py-3 text-[15px] leading-[1.8] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none"
               />
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <button
-                  type="button"
-                  disabled={reading}
-                  onClick={() => fileRef.current?.click()}
-                  className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-line bg-surface px-4 text-[14px] font-semibold text-ink-2 hover:bg-fill-soft disabled:cursor-wait"
-                >
-                  {reading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <FileUp className="size-4" aria-hidden="true" />}
-                  {reading ? COPY.reading : COPY.upload}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={reading}
+                    onClick={() => fileRef.current?.click()}
+                    className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-line bg-surface px-4 text-[14px] font-semibold text-ink-2 hover:bg-fill-soft disabled:cursor-wait"
+                  >
+                    {reading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <FileUp className="size-4" aria-hidden="true" />}
+                    {reading ? COPY.reading : COPY.upload}
+                  </button>
+                  {/* 예시는 길어서 접어 두고, 궁금할 때만 펼친다 */}
+                  <button
+                    type="button"
+                    aria-expanded={showHelp}
+                    onClick={() => setShowHelp((v) => !v)}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-[10px] px-3 text-[14px] font-semibold text-ink-3 hover:bg-fill"
+                  >
+                    <CircleHelp className="size-4" aria-hidden="true" />
+                    {showHelp ? COPY.example.hide : COPY.example.show}
+                  </button>
+                </div>
                 <input
                   ref={fileRef}
                   type="file"
@@ -193,7 +210,7 @@ export default function ExperienceImportDialog({
                 />
                 <span className="text-[13px] tabular-nums text-ink-4">{COPY.chars(length)}</span>
               </div>
-              {length === 0 && <ImportExample />}
+              {showHelp && <ImportExample />}
             </>
           )}
           {message && <p role="alert" className="text-[14px] leading-relaxed text-danger">{message}</p>}
@@ -231,38 +248,105 @@ export default function ExperienceImportDialog({
   );
 }
 
-/** 빈 입력칸 아래 고정 예시: 무엇을 넣으면 무엇이 나오는지. 모델을 부르지 않아 횟수를 쓰지 않는다. */
+type Mark = keyof typeof COPY.example.legend;
+
+// 원문 조각과 카드 칸이 같은 색을 써서 어느 문장이 어디로 갔는지 보이게 한다.
+const MARK_TONE: Record<Mark, string> = {
+  s: "bg-brand-soft text-brand-ink",
+  a: "bg-ok-soft text-ok",
+  r: "bg-violet-50 text-violet-700",
+  x: "text-ink-5 line-through decoration-ink-5/60",
+};
+
+/** 빈 입력칸 아래 고정 예시: 이력서·자소서를 넣으면 무엇이 어떻게 뽑히는지. 모델을 부르지 않아 횟수를 쓰지 않는다. */
 function ImportExample() {
   const example = COPY.example;
+  const [tabKey, setTabKey] = useState<string>(example.tabs[0].key);
+  const tab = example.tabs.find((t) => t.key === tabKey) ?? example.tabs[0];
+
   return (
-    <section aria-label={example.label} className="rounded-2xl border border-line-soft p-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <p className="text-[13px] font-semibold text-ink-4">
-            {example.label} · {example.input}
-          </p>
-          <div className="mt-2 space-y-1 rounded-xl bg-fill-soft px-3.5 py-3 text-[13px] leading-relaxed text-ink-3">
-            {example.source.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="text-[13px] font-semibold text-ink-4">{example.output}</p>
-          <div className="mt-2 space-y-2 rounded-xl border border-line px-3.5 py-3">
-            <p className="text-[14px] font-bold text-ink">
-              {example.title}
-              <span className="ml-2 text-[12px] font-medium text-ink-5">{example.period}</span>
-            </p>
-            {example.rows.map(([label, value]) => (
-              <p key={label} className="text-[13px] leading-relaxed text-ink-3">
-                <span className="mr-1.5 font-semibold text-ink-4">{label}</span>
-                {value}
-              </p>
-            ))}
-          </div>
+    <section aria-label={example.label} className="space-y-3 rounded-2xl border border-line-soft p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[13px] font-semibold text-ink-4">{example.label}</p>
+        <div role="tablist" aria-label={example.label} className="inline-flex rounded-lg bg-fill p-0.5">
+          {example.tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={t.key === tab.key}
+              onClick={() => setTabKey(t.key)}
+              className={`h-8 rounded-md px-3 text-[13px] font-semibold ${t.key === tab.key ? "bg-surface text-ink shadow-sm" : "text-ink-4 hover:text-ink-2"}`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
+
+      <div className="rounded-xl bg-fill-soft px-3.5 py-3 text-[13px] leading-[1.9] text-ink-3">
+        {"question" in tab && <p className="mb-1 text-[12.5px] font-semibold text-ink-4">{tab.question}</p>}
+        {tab.source.map((line, i) => (
+          <p key={i}>
+            {line.map(([text, mark], j) =>
+              mark === "h" ? (
+                <span key={j} className="font-semibold text-ink-2">
+                  {text}
+                </span>
+              ) : mark ? (
+                <span key={j} className={`box-decoration-clone rounded px-0.5 ${MARK_TONE[mark as Mark]}`}>
+                  {text}
+                </span>
+              ) : (
+                <span key={j}>{text}</span>
+              ),
+            )}
+          </p>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-4">
+        <span className="font-semibold">↓ {example.flow}</span>
+        {(Object.keys(example.legend) as Mark[]).map((mark) => (
+          <span key={mark} className={`rounded px-1.5 py-0.5 font-semibold ${MARK_TONE[mark]}`}>
+            {example.legend[mark]}
+          </span>
+        ))}
+      </div>
+
+      <div className={`grid gap-2 ${tab.cards.length > 1 ? "sm:grid-cols-2" : ""}`}>
+        {tab.cards.map((card) => (
+          <div key={card.title} className="space-y-2 rounded-xl border border-line px-3.5 py-3">
+            <div>
+              <p className="text-[14px] font-bold leading-snug text-ink">{card.title}</p>
+              <p className="text-[12px] text-ink-5">{card.period}</p>
+            </div>
+            {card.rows.map(([mark, value]) => (
+              <div key={mark} className="grid grid-cols-[3.25rem_1fr] items-start gap-2 text-[13px] leading-relaxed text-ink-3">
+                <span className={`rounded px-1.5 py-0.5 text-center text-[12px] font-semibold ${MARK_TONE[mark as Mark]}`}>
+                  {example.legend[mark as Mark]}
+                </span>
+                {value ? (
+                  <span>{value}</span>
+                ) : (
+                  <span>
+                    <span className="rounded bg-blank-soft px-1.5 py-0.5 text-[12px] font-semibold text-blank">{COPY.blank}</span>
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <ul className="space-y-1 text-[13px] leading-relaxed text-ink-3">
+        {[tab.summary, example.blankNote].map((note) => (
+          <li key={note} className="flex gap-2">
+            <Check className="mt-0.5 size-4 shrink-0 text-ink-4" aria-hidden="true" />
+            {note}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

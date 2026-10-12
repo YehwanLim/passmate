@@ -97,10 +97,12 @@ describe("buildExtractPrompt", () => {
     expect(prompt).toContain("최대 8개");
   });
 
-  it("상황·한 일·결과는 원문 핵심 문장 1~3개를 원문 말투 그대로 고르게 한다(통째 복사·메모체 방지)", () => {
+  it("상황·한 일·결과는 원문 핵심 내용 1~3개를 명사형 개조식으로 줄이게 한다(통째 복사 방지, 원문 사실만)", () => {
     const prompt = buildExtractPrompt({ text: SOURCE });
-    expect(prompt.match(/핵심 문장 1~3개/g)).toHaveLength(3);
-    expect(prompt).toContain("원문 말투 그대로");
+    expect(prompt.match(/핵심 내용 1~3개/g)).toHaveLength(3);
+    expect(prompt.match(/명사형 개조식/g)).toHaveLength(3);
+    expect(prompt).toContain("원문 사실·숫자만");
+    expect(prompt).not.toContain("원문 말투 그대로");
   });
 
   it("지원 동기 문항 안의 겪은 일은 경험으로 넣고, 다짐·포부만 뺀다", () => {
