@@ -8,7 +8,7 @@ vi.mock("@/hooks/useRequireAuth", () => ({ useRequireAuth: () => ({ user: { id: 
 vi.mock("@/components/SiteHeader", () => ({ default: () => null }));
 vi.mock("@/components/SubtleBackground", () => ({ default: () => null }));
 vi.mock("@/components/my/ExperienceVault", () => ({ default: () => <div>경험 탭 내용</div> }));
-vi.mock("@/components/my/MyCreditsPanel", () => ({ default: () => <aside>이용권 칸</aside> }));
+vi.mock("@/components/my/MyCreditsPanel", () => ({ default: ({ kind }: { kind: string }) => <aside data-testid="credits">{kind}</aside> }));
 vi.mock("@/lib/apiAuth", () => ({
   getAuthorizationHeader: async () => ({}),
   AuthenticationRequiredError: class extends Error {},
@@ -44,12 +44,13 @@ const rowsOf = async () => screen.findAllByTestId("application-row");
 const nameOf = (el: HTMLElement) => within(el).getAllByRole("button")[0].getAttribute("aria-label");
 
 describe("마이페이지 · 자기소개서", () => {
-  it("탭은 종류 셋(자기소개서·경험 카드·기업 리포트)이고 숫자를 단다", async () => {
+  it("머리말은 지금 보는 칸 이름과 숫자 하나뿐 — '마이페이지' 제목과 탭 줄은 없다(칸 바꾸기는 상단 메뉴)", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json([row("a", null), row("corp", null, { kind: "COMPANY", latest_analysis_id: "c1", latest_status: "SUCCESS" })])));
     render(<MyProjects />);
     await rowsOf();
-    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
-    expect(tabs).toEqual(["자기소개서1", "경험 카드2", "기업 리포트1"]);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("자기소개서1");
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByText("마이페이지")).toBeNull();
   });
 
   it("작성 중을 위로, 마감 가까운 순 — 상태는 '작성 중'만(문항 수·막대 없음)", async () => {
@@ -104,7 +105,8 @@ describe("마이페이지 · 자기소개서", () => {
     ])));
     render(<MyProjects />);
     expect((await rowsOf()).map(nameOf)).toEqual(["draft 열기"]);
-    fireEvent.click(screen.getByRole("tab", { name: /^기업 리포트/ }));
+    act(() => window.history.pushState(null, "", "/my#company"));
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("기업 리포트1");
     const rows = await screen.findAllByTestId("company-row");
     expect(rows).toHaveLength(1);
     expect(within(rows[0]).getByText("회사 요약")).toBeTruthy();
@@ -113,18 +115,12 @@ describe("마이페이지 · 자기소개서", () => {
     expect(window.location.hash).toBe("#company");
   });
 
-  it("내 경험 탭으로 바꿀 수 있다", async () => {
-    render(<MyProjects />);
-    fireEvent.click(await screen.findByRole("tab", { name: /^경험 카드/ }));
-    expect(screen.getByText("경험 탭 내용")).toBeTruthy();
-  });
-
   it("이 화면에 있을 때 주소가 /my#experiences 로 바뀌면(편집기의 경험 링크 등) 탭이 바로 바뀐다", async () => {
     render(<MyProjects />);
-    await screen.findByRole("tab", { name: /^자기소개서/, selected: true });
+    await rowsOf();
     act(() => window.history.pushState(null, "", "/my#experiences"));
     expect(await screen.findByText("경험 탭 내용")).toBeTruthy();
-    expect(screen.getByRole("tab", { name: /^경험 카드/ }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("경험 카드");
   });
 
   it("회원 탈퇴는 마이페이지에 두지 않는다(내 이용권 화면 맨 아래로 옮김)", async () => {
@@ -133,10 +129,13 @@ describe("마이페이지 · 자기소개서", () => {
     expect(screen.queryByRole("button", { name: "회원 탈퇴" })).toBeNull();
   });
 
-  it("어느 탭에서든 남은 이용권 한 줄이 머리말에 보인다", async () => {
+  it("이용권 띠는 그 칸에서 쓰는 것만 — 자기소개서는 자소서 진단, 기업 리포트는 기업 분석, 경험 카드는 없음", async () => {
     render(<MyProjects />);
-    expect(await screen.findByText("이용권 칸")).toBeTruthy();
-    fireEvent.click(await screen.findByRole("tab", { name: /^경험 카드/ }));
-    expect(screen.getByText("이용권 칸")).toBeTruthy();
+    expect((await screen.findByTestId("credits")).textContent).toBe("essay");
+    act(() => window.history.pushState(null, "", "/my#company"));
+    expect(screen.getByTestId("credits").textContent).toBe("company");
+    act(() => window.history.pushState(null, "", "/my#experiences"));
+    expect(await screen.findByText("경험 탭 내용")).toBeTruthy();
+    expect(screen.queryByTestId("credits")).toBeNull();
   });
 });

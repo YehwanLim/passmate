@@ -55,7 +55,7 @@ export const WORKSPACE_COPY = {
     promptLabel: "문항 원문",
     answerLabel: "답변",
     removeQuestion: "문항 삭제",
-    promptPlaceholder: "예: 1. 우리 회사에 지원한 동기를 작성해 주세요.",
+    promptPlaceholder: "예: 지원 동기와 입사 후 이루고 싶은 목표를 구체적으로 작성해 주세요.",
     answerPlaceholder: "답변을 직접 써 보세요. 쓰는 동안 자동으로 저장돼요.",
     charCount: (withSpaces: number, withoutSpaces: number) =>
       `공백 포함 ${withSpaces.toLocaleString()}자 / 제외 ${withoutSpaces.toLocaleString()}자`,
@@ -74,12 +74,8 @@ export const WORKSPACE_COPY = {
     dismiss: "보관본 지우기",
   },
   meta: {
-    edit: "수정",
-    save: "저장",
-    cancel: "취소",
     failed: "저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
   },
-  seeded: "지난 진단의 문항을 불러왔어요. 고치면 이 지원서에 저장돼요.",
   diagnose: "자소서 분석하기",
   history: "지난 진단",
   viewReport: "리포트 보기",
@@ -105,14 +101,16 @@ export const WORKSPACE_COPY = {
     buy: "이용권 사기",
     detail: "자세히 보기",
     error: "이용권 정보를 불러오지 못했어요.",
-    // 폰에서는 칸 두 개 대신 한 줄로 줄인다. 기업 분석이 꺼져 있으면 그 부분은 뺀다.
     buyShort: "이용권 보기",
+    // 프로필 메뉴(AuthButton)의 한 줄 요약. 기업 분석이 꺼져 있으면 그 부분은 뺀다.
     compactLine: (essay: number, company: number | null) =>
       company === null ? `자소서 진단 ${essay}회` : `자소서 진단 ${essay}회 · 기업 분석 ${company}회`,
+    // 마이페이지 칸별 띠(MyCreditsPanel)
+    essayLine: (n: number) => `자소서 진단 ${n}회`,
+    companyLine: (n: number) => `기업 분석 ${n}회`,
   },
   page: {
     title: "마이페이지",
-    subtitle: "지원서를 쓰고, 분석받고, 내 경험을 모아 두는 곳이에요.",
   },
   draft: {
     button: "내 경험으로 초안 쓰기",

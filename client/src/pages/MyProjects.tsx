@@ -11,14 +11,13 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import ExperienceVault from "@/components/my/ExperienceVault";
 import MyCreditsPanel from "@/components/my/MyCreditsPanel";
-import { applicationStatus, listExperiences, sortApplications } from "@/lib/workspace";
+import { applicationStatus, sortApplications } from "@/lib/workspace";
 import { WORKSPACE_COPY } from "./workspaceCopy";
 
 type Tab = "applications" | "experiences" | "company";
 type Filter = "all" | "draft" | "done";
 const TAB_BY_HASH: Record<string, Tab> = { "#experiences": "experiences", "#company": "company" };
 const HASH_BY_TAB: Record<Tab, string> = { applications: "", experiences: "#experiences", company: "#company" };
-const TABS: Tab[] = ["applications", "experiences", "company"];
 
 // =============================================================================
 // Page Component
@@ -33,15 +32,8 @@ export default function MyProjects() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
+  // 경험 카드 제목 옆 숫자. 금고(ExperienceVault)가 불러오고 바뀔 때마다 알려 준다.
   const [experienceCount, setExperienceCount] = useState<number | null>(null);
-
-  // 내 경험 탭 숫자. 금고를 열기 전에도 보이게 한 번 센다(못 세면 숫자만 뺀다).
-  useEffect(() => {
-    if (authLoading || !user?.id) return;
-    let alive = true;
-    listExperiences().then((items) => { if (alive) setExperienceCount(items.length); }).catch(() => {});
-    return () => { alive = false; };
-  }, [authLoading, user?.id]);
 
   useEffect(() => {
     if (authLoading || !user?.id) return;
@@ -131,39 +123,18 @@ export default function MyProjects() {
       <SiteHeader variant="light" />
 
       <div className="container pt-10">
-        {/* ════════ 머리말: 제목 | 남은 이용권 한 줄 ════════ */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink">{WORKSPACE_COPY.page.title}</h1>
-            <p className="mt-1.5 text-[15px] text-ink-4">{WORKSPACE_COPY.page.subtitle}</p>
-          </div>
-          <div className="sm:pt-2.5">
-            <MyCreditsPanel />
-          </div>
+        {/* ════════ 머리말: 지금 보는 칸 이름 | 남은 이용권 한 줄 ════════ */}
+        {/* 칸 바꾸기는 상단 '마이페이지' 펼침 메뉴가 맡는다(10-09). 여기엔 제목 하나만 둔다. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-[26px] font-bold tracking-[-0.03em] text-ink sm:text-[28px]">
+            {WORKSPACE_COPY.tabs[tab]}
+            {counts[tab] !== null && <span className="ml-2 text-brand">{counts[tab]}</span>}
+          </h1>
+          {/* 경험 카드 칸은 이용권을 쓰지 않아 띠를 두지 않는다(무료 횟수는 각 창 안에서 보인다) */}
+          {tab !== "experiences" && <MyCreditsPanel kind={tab === "company" ? "company" : "essay"} />}
         </div>
 
-        {/* ════════ 큰 탭: 내 지원서 · 내 경험 · 기업 분석 ════════ */}
-        <div role="tablist" className="mt-7 flex gap-5 border-b border-line sm:gap-7">
-          {TABS.map((key) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={tab === key}
-              type="button"
-              onClick={() => window.history.replaceState(null, "", HASH_BY_TAB[key] || window.location.pathname)}
-              className={`-mb-px border-b-[3px] pb-3 text-[17px] font-bold tracking-[-0.02em] transition-colors sm:text-[22px] ${
-                tab === key ? "border-ink text-ink" : "border-transparent text-ink-5 hover:text-ink-3"
-              }`}
-            >
-              {WORKSPACE_COPY.tabs[key]}
-              {counts[key] !== null && (
-                <span className={`ml-1.5 text-[15px] sm:text-[18px] ${tab === key ? "text-brand" : "text-ink-5"}`}>{counts[key]}</span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        <div className="pt-5">
+        <div className="pt-6">
           {tab === "experiences" ? (
             <ExperienceVault onCountChange={setExperienceCount} />
           ) : tab === "company" ? (

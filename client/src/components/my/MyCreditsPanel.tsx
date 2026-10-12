@@ -7,11 +7,15 @@ const COPY = WORKSPACE_COPY.credits;
 
 /**
  * 마이페이지 머리말 오른쪽 위의 남은 이용권 띠(10-08 C안을 오른쪽에 아주 작게).
- * 한 줄짜리 얇은 띠라 제목·탭보다 앞에 나서지 않는다. 띠 전체가 내 이용권 화면으로 가는 버튼.
+ * 한 줄짜리 얇은 띠라 제목보다 앞에 나서지 않는다. 띠 전체가 내 이용권 화면으로 가는 버튼.
+ * 지금 보는 칸에서 쓰는 이용권 하나만 보인다(10-09): 자기소개서 → 자소서 진단, 기업 리포트 → 기업 분석.
  */
-export default function MyCreditsPanel() {
+export default function MyCreditsPanel({ kind }: { kind: "essay" | "company" }) {
   const [, navigate] = useLocation();
   const { summary, failed } = useCreditSummary();
+
+  // 기업 분석이 꺼져 있으면 기업 리포트 칸에서는 띠를 아예 두지 않는다.
+  if (kind === "company" && summary && !summary.companyAnalysisEnabled) return null;
 
   return (
     <button
@@ -26,9 +30,9 @@ export default function MyCreditsPanel() {
       ) : summary ? (
         <>
           <b className="font-bold text-ink">
-            {COPY.compactLine(summary.remaining, summary.companyAnalysisEnabled ? summary.companyRemaining : null)}
+            {kind === "essay" ? COPY.essayLine(summary.remaining) : COPY.companyLine(summary.companyRemaining)}
           </b>
-          {summary.freeRemaining > 0 && <span className="font-semibold text-brand-ink">{COPY.freeShort}</span>}
+          {kind === "essay" && summary.freeRemaining > 0 && <span className="font-semibold text-brand-ink">{COPY.freeShort}</span>}
         </>
       ) : (
         <span className="h-3 w-28 animate-pulse rounded bg-fill" aria-hidden="true" />

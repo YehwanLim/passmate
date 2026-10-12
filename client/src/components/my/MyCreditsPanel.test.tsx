@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ fetchEntitlementSummary: vi.fn(), navigate: vi.fn() }));
@@ -20,28 +20,38 @@ const summary = (extra = {}) => ({
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe("MyCreditsPanel", () => {
-  it("남은 자소서·기업 분석 횟수를 작은 띠 한 줄로 보여 준다", async () => {
+  it("자기소개서 칸에서는 자소서 진단 횟수만 작은 띠로 보여 준다", async () => {
     mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 3, premiumRemaining: 3, companyRemaining: 1 }));
-    render(<MyCreditsPanel />);
-    expect(await screen.findByText("자소서 진단 3회 · 기업 분석 1회")).toBeTruthy();
+    render(<MyCreditsPanel kind="essay" />);
+    expect(await screen.findByText("자소서 진단 3회")).toBeTruthy();
+    expect(screen.queryByText(/기업 분석/)).toBeNull();
     expect(mocks.fetchEntitlementSummary).toHaveBeenCalledWith("t");
+  });
+
+  it("기업 리포트 칸에서는 기업 분석 횟수만 — 무료 진단 안내는 붙이지 않는다", async () => {
+    mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 3, freeRemaining: 1, companyRemaining: 1 }));
+    render(<MyCreditsPanel kind="company" />);
+    expect(await screen.findByText("기업 분석 1회")).toBeTruthy();
+    expect(screen.queryByText(/자소서 진단/)).toBeNull();
+    expect(screen.queryByText("무료 1회 포함")).toBeNull();
   });
 
   it("무료 1회가 남아 있으면 알려 준다", async () => {
     mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 1, freeRemaining: 1 }));
-    render(<MyCreditsPanel />);
+    render(<MyCreditsPanel kind="essay" />);
     expect(await screen.findByText("무료 1회 포함")).toBeTruthy();
   });
 
-  it("기업 분석이 꺼져 있으면 그 부분을 뺀다", async () => {
+  it("기업 분석이 꺼져 있으면 기업 리포트 칸에는 띠를 두지 않는다", async () => {
     mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 2, companyAnalysisEnabled: false }));
-    render(<MyCreditsPanel />);
-    expect(await screen.findByText("자소서 진단 2회")).toBeTruthy();
+    render(<MyCreditsPanel kind="company" />);
+    await waitFor(() => expect(mocks.fetchEntitlementSummary).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole("button")).toBeNull());
   });
 
   it("띠를 누르면 내 이용권 화면으로 간다", async () => {
     mocks.fetchEntitlementSummary.mockResolvedValue(summary({ remaining: 2 }));
-    render(<MyCreditsPanel />);
+    render(<MyCreditsPanel kind="essay" />);
     await screen.findByText(/자소서 진단 2회/);
     screen.getByRole("button", { name: /이용권 보기/ }).click();
     expect(mocks.navigate).toHaveBeenCalledWith("/my/entitlements");
@@ -49,7 +59,7 @@ describe("MyCreditsPanel", () => {
 
   it("못 불러오면 조용히 한 줄로 알린다", async () => {
     mocks.fetchEntitlementSummary.mockRejectedValue(new Error("x"));
-    render(<MyCreditsPanel />);
+    render(<MyCreditsPanel kind="essay" />);
     expect(await screen.findByText("이용권 정보를 불러오지 못했어요.")).toBeTruthy();
     expect(screen.queryByText(/자소서 진단 \d+회/)).toBeNull();
   });
