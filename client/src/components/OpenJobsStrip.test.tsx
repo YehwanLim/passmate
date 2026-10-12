@@ -26,13 +26,15 @@ describe("OpenJobsStrip", () => {
     vi.useRealTimers();
   });
 
-  it("links up to six open postings by nearest deadline, with D-n, and the full list", () => {
+  it("says how many companies are open and links the nearest deadline, plus the full list", () => {
     render(<OpenJobsStrip />);
-    const expected = openPostings(JOB_POSTINGS, NOW).slice(0, 6);
-    const links = Array.from(document.querySelectorAll("li a"));
-    expect(links.map(link => link.getAttribute("href"))).toEqual(expected.map(posting => `/jobs/${posting.slug}`));
-    expect(links[0].textContent).toContain(dDayLabel(expected[0].closesAt, NOW));
-    expect(screen.getByText(/전체 보기/).closest("a")?.getAttribute("href")).toBe("/jobs");
+    const open = openPostings(JOB_POSTINGS, NOW);
+    const companyCount = new Set(open.map(posting => posting.shortName)).size;
+    expect(screen.getByText(`${companyCount}개 기업`)).toBeTruthy();
+    const soonest = screen.getByText(open[0].shortName, { exact: false }).closest("a");
+    expect(soonest?.getAttribute("href")).toBe(`/jobs/${open[0].slug}`);
+    expect(soonest?.textContent).toContain(dDayLabel(open[0].closesAt, NOW));
+    expect(screen.getByText(/공고 보기/).closest("a")?.getAttribute("href")).toBe("/jobs");
   });
 
   it("renders nothing when every posting has closed", () => {

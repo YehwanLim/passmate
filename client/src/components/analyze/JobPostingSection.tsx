@@ -35,7 +35,6 @@ const STYLE = {
       "h-11 shrink-0 rounded-xl border-line bg-surface px-4 sm:flex-1 text-[15px] text-ink placeholder:text-ink-5 focus-visible:border-brand focus-visible:ring-0",
     textarea:
       "min-h-[160px] border-line bg-surface text-ink placeholder:text-ink-5 rounded-xl text-[15px] focus:border-brand focus:ring-0",
-    hint: "mt-2 text-[13px] text-ink-4 break-keep",
     tooShort: "text-[13px] text-danger",
     count: "text-[13px] text-ink-4 tabular-nums",
     error: "text-danger",
@@ -286,7 +285,6 @@ export default function JobPostingSection({
               </label>
             ))}
           </div>
-          <p className={t.hint}>고르면 회사 이름이 채워지고, 문항이 공개된 공고는 문항도 채워져요.</p>
           <div className="mt-3 flex justify-end">
             <FetchButton isLoading={isLoading} disabled={!canFetch} onClick={handleFetch} className={t.fetch} />
           </div>
