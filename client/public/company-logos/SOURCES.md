@@ -60,3 +60,5 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `happynarae.svg` | 행복나래 | [행복나래 홈페이지](https://www.happynarae.com/happy2/resources/img/logo.png) | PNG를 SVG 래퍼에 |
 | `ktds.svg` | kt ds | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:KTDS_Logo.svg) | |
 | `fasoo.svg` | 파수AI | [파수 AI 채용사이트](https://recruit.fasoo.com/wp-content/uploads/2026/04/CI_Fasoo-AI-scaled.png) | PNG를 줄여 SVG 래퍼에 |
+| `nice-infra.svg` | NICE인프라 | 사용자 제공 이미지(NICE인프라 로고) | PNG를 잘라 SVG 래퍼에 |
+| `hyundai-motor.svg` | 현대그린푸드 공고에도 사용 | 위 hyundai-motor 항목과 동일 | 현대 로고로 대체(사용자 지시) |

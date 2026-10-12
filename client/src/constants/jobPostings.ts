@@ -440,6 +440,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-12",
     closesAt: "2026-10-25T23:59:00+09:00",
     updated: "2026-10-12",
+    logo: "/company-logos/hyundai-motor.svg",
   },
   {
     slug: "nice-infra-2027",
@@ -451,6 +452,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-12",
     closesAt: "2026-10-25T23:59:00+09:00",
     updated: "2026-10-12",
+    logo: "/company-logos/nice-infra.svg",
   },
   {
     slug: "bnk-securities-2026",
