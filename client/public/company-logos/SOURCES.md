@@ -62,3 +62,12 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `fasoo.svg` | 파수AI | [파수 AI 채용사이트](https://recruit.fasoo.com/wp-content/uploads/2026/04/CI_Fasoo-AI-scaled.png) | PNG를 줄여 SVG 래퍼에 |
 | `nice-infra.svg` | NICE인프라 | 사용자 제공 이미지(NICE인프라 로고) | PNG를 잘라 SVG 래퍼에 |
 | `hyundai-greenfood.svg` | 현대그린푸드 | 사용자 제공 이미지(현대그린푸드 로고) | PNG를 잘라 SVG 래퍼에 |
+| `krafton.svg` | 크래프톤 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:KRAFTON_Logo_New.svg) | |
+| `akis.svg` | AK아이에스 | [AK아이에스 채용 사이트(나인하이어)](https://image.ninehire.com/brand/f0b20760-5dce-11ef-abb5-bb2d99900145/9ee318a0-91a1-11ef-a8d1-b5be2926ec7c.png) | PNG를 줄여 SVG 래퍼에 |
+| `korea-petrochem.svg` | 대한유화 | [대한유화 홈페이지](https://www.kpic.co.kr/hp/kr/web/images/comm/kpic_ci_kr.png) | PNG를 SVG 래퍼에(원본 200px로 작음) |
+| `jeilfeed.svg` | 천하제일사료 | [하림 채용 사이트(천하제일사료)](https://dutma2j4ak2ca.cloudfront.net/static/img/company/jeilfeed/logo.png) | PNG를 SVG 래퍼에 |
+| `kyungshin.svg` | 경신 | [경신 홈페이지](http://www.kyungshin.co.kr/images/logo-blue-m.png) | PNG를 SVG 래퍼에 |
+| `i-sens.svg` | 아이센스 | [아이센스 홈페이지](https://i-sens.co.kr/wp-content/uploads/2024/10/logo-isens.svg) | 아래 여백만 잘라 냄 |
+| `pucore.svg` | 피유코어 | [피유코어 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/01/22/d4a449db-53e6-4b24-8f9f-1e64e2cb048a.jpg) | JPG를 잘라 SVG 래퍼에(흰 바탕) |
+| `ezcaretech.svg` | 이지케어텍 | [이지케어텍 홈페이지](https://www.ezcaretech.com/wp-content/uploads/2018/12/logo.svg) | 주석·빈 사각형만 뺌 |
+| `coex.svg` | 코엑스 | [코엑스 CI 페이지](https://www.coex.co.kr/about/ci/) | CI 묶음의 Basic PNG를 SVG 래퍼에 |
