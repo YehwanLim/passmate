@@ -56,6 +56,23 @@ export function buildCompanyReportFixture(overrides: Partial<CompanyReportData> 
       questions: [{ question: "우리 회사의 가장 큰 숙제는?", direction: "관세와 전동화 전환을 연결해 답한다." }],
       primarySources: [{ label: "사업보고서", url: "https://dart.fss.or.kr" }],
     },
+    competitorComparison: {
+      summary: "내연기관과 전기차 두 시장에서 동시에 맞붙는다.",
+      items: [
+        { name: "토요타", overlap: "하이브리드 중심의 글로벌 판매", difference: "전기차보다 하이브리드에 무게를 둔다.", sourceIds: [1] },
+        { name: "폭스바겐", overlap: "유럽 전기차 시장", difference: "유럽 생산 기지가 많다.", sourceIds: [2] },
+      ],
+      whyHere: "**전기차 전환을 소프트웨어 조직 개편과 함께 밀고 있다는 점이 다르다.**",
+    },
+    leadershipMessages: {
+      items: [
+        { occasion: "2026년 신년사", speaker: "홍길동 대표이사", when: "2026-01", keywords: ["전동화", "품질"], quote: "고객이 먼저 체감하는 변화를 만들자", meaning: "지원동기에 고객 체감 변화를 연결할 수 있다.", sourceIds: [1] },
+      ],
+    },
+    glossary: [
+      { term: "SDV", plain: "소프트웨어로 기능을 바꾸고 더하는 자동차(Software Defined Vehicle)." },
+      { term: "플릿", plain: "회사가 업무용으로 한꺼번에 사는 차량 묶음." },
+    ],
     sources: [
       { id: 1, title: "hyundai.com", url: "https://redirect/1", publisher: "redirect" },
       { id: 2, title: "dart.fss.or.kr", url: "https://redirect/2", publisher: "redirect" },

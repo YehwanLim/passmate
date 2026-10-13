@@ -81,13 +81,14 @@ export const REPORT_INCLUDED_FEATURES = [
   "합격 확률을 높이는 액션 플랜",
 ];
 
-/** 기업 분석 리포트 구성(companyReportNavigation.ts 의 9섹션과 일치해야 한다 — 과장 금지). */
+/** 기업 분석 리포트 구성(companyReportNavigation.ts 의 기본 구성·표지 아래 용어 풀이와 일치해야 한다 — 과장 금지). */
 export const COMPANY_REPORT_INCLUDED_FEATURES = [
   "무엇을 팔아 돈을 버는지와 요즘 힘을 싣는 사업",
+  "경쟁사와 다른 점과 경영진이 최근 강조한 말",
   "매출·이익·주가 흐름과 최근 1년 주요 이슈",
   "지원 직무가 하는 일과 직무 관련 최신 소식",
   "자소서에 쓸 사업 소재와 면접 예상 질문",
-  "출처 링크가 붙은 부록",
+  "업계 용어 풀이와 출처 링크가 붙은 부록",
 ];
 
 export function formatKrw(amount: number): string {

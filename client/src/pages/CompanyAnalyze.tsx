@@ -222,7 +222,7 @@ export default function CompanyAnalyze() {
       {/* ════════ BOTTOM BAR ════════ */}
       <AnalyzeBottomBar wide>
         <div className="flex h-[84px] items-center justify-between gap-4">
-          <p className="hidden text-xs text-ink-4 break-keep sm:block">검색과 정리에 1분 정도 걸려요. 실패하면 이용권은 차감되지 않아요.</p>
+          <p className="hidden text-xs text-ink-4 break-keep sm:block">검색과 정리에 1~2분 걸려요. 실패하면 이용권은 차감되지 않아요.</p>
           <button
             type="button"
             onClick={() => void handleSubmit()}

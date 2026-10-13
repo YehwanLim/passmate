@@ -44,7 +44,8 @@ describe("PricingSection", () => {
   it("lists the company report contents next to the essay report contents", () => {
     render(<PricingSection />);
     expect(screen.getByText("기업 분석 리포트")).toBeTruthy();
-    expect(screen.getByText("출처 링크가 붙은 부록")).toBeTruthy();
+    expect(screen.getByText("경쟁사와 다른 점과 경영진이 최근 강조한 말")).toBeTruthy();
+    expect(screen.getByText("업계 용어 풀이와 출처 링크가 붙은 부록")).toBeTruthy();
   });
 
   it("takes every price from lib/pricing and iterates TIERS", () => {

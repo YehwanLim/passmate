@@ -1,17 +1,22 @@
-import { useState } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useMemo, useState } from "react";
+import { Link, useLocation, useSearch } from "wouter";
 import { ArrowLeft, ArrowRight, Check, ExternalLink, X } from "lucide-react";
 
 import { COMPANY_REPORT_SAMPLE } from "@/constants/companyReportSample";
+import { jobPostingPath } from "@/constants/jobPostings";
 import SiteHeader from "@/components/SiteHeader";
+import { ProcessSteps } from "@/components/jobs/ProcessSteps";
 import { AccordionQuestionRow } from "@/components/report/AccordionQuestionRow";
 import { MiniNavigator } from "@/components/report/MiniNavigator";
 import { ReportAuthGate } from "@/components/report/ReportAuthGate";
 import { ReportHeroFrame } from "@/components/report/ReportHeroFrame";
 import { useAnalysisReport } from "@/hooks/useAnalysisReport";
+import { useNow } from "@/hooks/useNow";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
+import { findCompanyJobPosting } from "@/lib/companyJobPosting";
+import { dDayLabel, formatDeadline, isOpen } from "@/lib/jobPostingDates";
 import { isRenderableCompanyReport, type CompanyReportData } from "@/types/companyReport";
-import { COMPANY_HERO_ID, COMPANY_REPORT_NAV_SECTIONS } from "./companyReportNavigation";
+import { COMPANY_HERO_ID, buildCompanyReportNavSections } from "./companyReportNavigation";
 import {
   COMPANY_REPORT_DISCLAIMER,
   CompanySectionHeading,
@@ -95,7 +100,22 @@ function AuthenticatedCompanyReport() {
 
 function CompanyReportContent({ company, jobRole, report, sample = false }: LoadedReport) {
   const [, navigate] = useLocation();
-  const activeSection = useScrollSpy(COMPANY_REPORT_NAV_SECTIONS);
+  const now = useNow();
+  const competitors = report.competitorComparison;
+  const competitorItems = competitors?.items ?? [];
+  const leadership = report.leadershipMessages;
+  // 최신 발언이 위로. 모델이 기념사(전년 가을)를 신년사보다 먼저 내놓는 경우가 있다.
+  const leadershipItems = [...(leadership?.items ?? [])].sort((a, b) => String(b.when ?? "").localeCompare(String(a.when ?? "")));
+  const glossary = report.glossary ?? [];
+  // 전형 안내는 리포트에 저장하지 않고, 저장해 둔 공고에서 매번 찾는다(공고 내용이 고쳐지면 리포트도 따라간다).
+  const posting = useMemo(() => findCompanyJobPosting(company), [company]);
+  const navSections = useMemo(() => buildCompanyReportNavSections({
+    hasCompetitors: competitorItems.length > 0,
+    hasLeadership: leadership !== undefined && leadership !== null,
+    hasProcess: posting !== null,
+  }), [competitorItems.length, leadership, posting]);
+  const indexOf = (id: string) => navSections.find((section) => section.id === id)?.indexLabel ?? "";
+  const activeSection = useScrollSpy(navSections);
   const [openQuestionIndex, setOpenQuestionIndex] = useState<number | null>(0);
   const asOf = report.reportMeta?.asOf || report.brief.asOf || "";
   const numbers = report.financialSnapshot;
@@ -131,7 +151,7 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
       <div className="print:hidden">
         <SiteHeader variant="light" />
       </div>
-      <MiniNavigator sections={COMPANY_REPORT_NAV_SECTIONS} activeSection={activeSection} tone="light" />
+      <MiniNavigator sections={navSections} activeSection={activeSection} tone="light" />
 
       <article className="mx-auto flex w-full max-w-[1040px] flex-col gap-6 px-4 pb-24 pt-8 sm:px-6 lg:px-0">
         <div className="flex items-center justify-between gap-3 print:hidden">
@@ -178,9 +198,24 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           </ReportHeroFrame>
         </header>
 
+        {/* 용어 풀이: 목차에 넣지 않고 표지 바로 아래에 둔다(비전공 지원자가 본문 전에 본다) */}
+        {glossary.length > 0 ? (
+          <section aria-labelledby="company-glossary-title" className="rounded-3xl bg-surface px-5 py-6 sm:px-10 sm:py-7">
+            <h2 id="company-glossary-title" className={labelClass}>먼저 알아 둘 용어</h2>
+            <dl className="mt-4 grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">
+              {glossary.map((entry, index) => (
+                <div key={`${entry.term}-${index}`} className="text-[15px] leading-[1.7]">
+                  <dt className="font-bold text-ink">{entry.term}</dt>
+                  <dd className="text-ink-3">{entry.plain}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
+
         {/* 01 돈 버는 구조 */}
         <section id="company-business" className={sectionClass}>
-          <CompanySectionHeading index="01" title="무엇을 팔아 돈을 버나" deck={report.businessMap.summary} />
+          <CompanySectionHeading index={indexOf("company-business")} title="무엇을 팔아 돈을 버나" deck={report.businessMap.summary} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {segments.map((segment, index) => (
               <div key={`${segment.name}-${index}`} className={cardClass}>
@@ -199,9 +234,34 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <SourceNote />
         </section>
 
-        {/* 02 밀고 있는 사업 */}
+        {/* 경쟁사 비교 */}
+        {competitorItems.length > 0 ? (
+          <section id="company-competitors" className={sectionClass}>
+            <CompanySectionHeading index={indexOf("company-competitors")} title="경쟁사와 무엇이 다른가" deck={competitors?.summary} />
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 ${competitorItems.length === 3 ? "lg:grid-cols-3" : ""}`}>
+              {competitorItems.map((item, index) => (
+                <div key={`${item.name}-${index}`} className={cardClass}>
+                  <p className="mb-3 text-[17px] font-bold text-ink">{item.name}</p>
+                  <p className={`mb-1 ${smallLabelClass}`}>맞붙는 곳</p>
+                  <p className="text-[15px] leading-[1.8] text-ink-3">{renderCompanyText(item.overlap)}</p>
+                  <p className={`mb-1 mt-4 ${smallLabelClass}`}>다른 점</p>
+                  <p className="text-[15px] leading-[1.8] text-ink-2">{renderCompanyText(item.difference)}</p>
+                </div>
+              ))}
+            </div>
+            {competitors?.whyHere ? (
+              <div className={`mt-8 ${panelClass}`}>
+                <p className={`mb-3 ${labelClass}`}>&lsquo;왜 경쟁사 말고 여기인가&rsquo;에 답할 때</p>
+                <p className="text-[15px] leading-[1.85] text-ink-2">{renderCompanyText(competitors.whyHere, true)}</p>
+              </div>
+            ) : null}
+            <SourceNote />
+          </section>
+        ) : null}
+
+        {/* 밀고 있는 사업 */}
         <section id="company-focus" className={sectionClass}>
-          <CompanySectionHeading index="02" title="요즘 힘을 싣는 사업" />
+          <CompanySectionHeading index={indexOf("company-focus")} title="요즘 힘을 싣는 사업" />
           {report.focusBusinesses.statedDirection ? (
             <blockquote className="mb-8 rounded-2xl bg-fill-soft px-5 py-4 text-[15px] leading-[1.85] text-ink-3">
               {renderCompanyText(report.focusBusinesses.statedDirection)}
@@ -237,9 +297,43 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <SourceNote />
         </section>
 
-        {/* 03 숫자로 보는 회사 */}
+        {/* 경영진 메시지(신년사·창립기념사) */}
+        {leadership ? (
+          <section id="company-leadership" className={sectionClass}>
+            <CompanySectionHeading index={indexOf("company-leadership")} title="경영진이 최근 강조한 말" deck="신년사와 창립기념사에서 고른 말이에요. 지원동기와 면접 답변의 방향을 맞출 때 쓰세요." />
+            {leadershipItems.length > 0 ? (
+              <div className="grid grid-cols-1 gap-5">
+                {leadershipItems.map((message, index) => (
+                  <div key={`${message.occasion}-${index}`} className="rounded-2xl border border-line-soft bg-fill-soft p-6 sm:p-7">
+                    <p className="text-[14px] font-semibold text-ink-4">
+                      {[message.occasion, message.speaker, message.when].filter(Boolean).join(" · ")}
+                    </p>
+                    {(message.keywords ?? []).length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {(message.keywords ?? []).map((keyword, keywordIndex) => (
+                          <span key={`${keyword}-${keywordIndex}`} className="inline-flex min-h-7 items-center rounded-[8px] bg-surface px-2.5 py-0.5 text-[14px] font-bold text-ink">{keyword}</span>
+                        ))}
+                      </div>
+                    ) : null}
+                    {message.quote ? (
+                      <blockquote className="mt-5 text-[17px] font-semibold leading-[1.7] text-ink-2">&ldquo;{message.quote}&rdquo;</blockquote>
+                    ) : null}
+                    {message.meaning ? (
+                      <p className="mt-4 text-[15px] leading-[1.85] text-ink-3">{renderCompanyText(message.meaning)}</p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[15px] leading-[1.85] text-ink-3">공개된 신년사·창립기념사를 찾지 못했어요. 회사 뉴스룸에서 대표이사 메시지를 직접 확인해 보세요.</p>
+            )}
+            <SourceNote />
+          </section>
+        ) : null}
+
+        {/* 숫자로 보는 회사 */}
         <section id="company-numbers" className={sectionClass}>
-          <CompanySectionHeading index="03" title="매출·이익·주가 한눈에" />
+          <CompanySectionHeading index={indexOf("company-numbers")} title="매출·이익·주가 한눈에" />
           {keyFigures.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {keyFigures.slice(0, 4).map((figure, index) => (
@@ -289,9 +383,9 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <SourceNote />
         </section>
 
-        {/* 04 최근 1년의 국면 */}
+        {/* 최근 1년의 국면 */}
         <section id="company-issues" className={sectionClass}>
-          <CompanySectionHeading index="04" title="최근 1년 주요 이슈" />
+          <CompanySectionHeading index={indexOf("company-issues")} title="최근 1년 주요 이슈" />
           <Timeline
             entries={issues.map((issue) => ({
               when: issue.when,
@@ -308,9 +402,9 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <SourceNote />
         </section>
 
-        {/* 05 이 직무의 자리 */}
+        {/* 이 직무의 자리 */}
         <section id="company-role" className={sectionClass}>
-          <CompanySectionHeading index="05" title={`지원 직무가 하는 일${jobRole ? ` · ${jobRole}` : ""}`} deck={role.whereItSits} />
+          <CompanySectionHeading index={indexOf("company-role")} title={`지원 직무가 하는 일${jobRole ? ` · ${jobRole}` : ""}`} deck={role.whereItSits} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div>
               <p className={`mb-4 ${labelClass}`}>이 직무가 지금 푸는 문제</p>
@@ -350,9 +444,9 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <SourceNote />
         </section>
 
-        {/* 06 기회와 리스크 */}
+        {/* 기회와 리스크 */}
         <section id="company-risks" className={sectionClass}>
-          <CompanySectionHeading index="06" title="회사의 기회와 걱정거리" deck="지원자의 시선으로 골랐어요. 면접에서 '우리 회사의 숙제가 뭐라고 보나요'에 답할 재료입니다." />
+          <CompanySectionHeading index={indexOf("company-risks")} title="회사의 기회와 걱정거리" deck="지원자의 시선으로 골랐어요. 면접에서 '우리 회사의 숙제가 뭐라고 보나요'에 답할 재료입니다." />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
             <div>
               <p className="mb-5 flex items-center gap-2 text-[15px] font-bold text-ok"><Check className="w-4 h-4 text-ok" strokeWidth={3} />기회</p>
@@ -370,9 +464,9 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <SourceNote />
         </section>
 
-        {/* 07 맡고 싶은 사업 */}
+        {/* 맡고 싶은 사업 */}
         <section id="company-candidates" className={sectionClass}>
-          <CompanySectionHeading index="07" title="자소서에 쓸 사업 소재" deck="자소서에 쓸 만한 사업과 각도입니다. 문장이 아니라 방향이니, 본인 경험으로 채워 주세요." />
+          <CompanySectionHeading index={indexOf("company-candidates")} title="자소서에 쓸 사업 소재" deck="자소서에 쓸 만한 사업과 각도입니다. 문장이 아니라 방향이니, 본인 경험으로 채워 주세요." />
           <div className="grid grid-cols-1 gap-5">
             {candidates.map((candidate, index) => (
               <div key={`${candidate.name}-${index}`} className="rounded-2xl border border-line-soft bg-fill-soft p-6 sm:p-7">
@@ -437,9 +531,9 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <SourceNote />
         </section>
 
-        {/* 08 면접 전 체크리스트 */}
+        {/* 면접 전 체크리스트 */}
         <section id="company-interview" className={sectionClass}>
-          <CompanySectionHeading index="08" title="면접 예상 질문과 읽을 자료" />
+          <CompanySectionHeading index={indexOf("company-interview")} title="면접 예상 질문과 읽을 자료" />
           <div>
             {questions.map((item, index) => (
               <AccordionQuestionRow
@@ -473,9 +567,31 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
           <SourceNote />
         </section>
 
-        {/* 09 부록: 출처와 기준일 */}
+        {/* 전형 안내: AI 생성이 아니라 저장해 둔 공고(공식 채용 페이지로 확인한 것)와 회사 이름이 같을 때만 */}
+        {posting ? (
+          <section id="company-process" className={sectionClass}>
+            <CompanySectionHeading index={indexOf("company-process")} title="이번 공고 전형" deck={`${posting.listing.title} · ${formatDeadline(posting.listing.closesAt)} 마감`} />
+            {now ? (
+              <p className={`mb-5 text-[14px] font-bold ${isOpen(posting.listing.closesAt, now) ? "text-danger" : "text-ink-4"}`}>
+                {isOpen(posting.listing.closesAt, now) ? `접수 중 · ${dDayLabel(posting.listing.closesAt, now)}` : "접수 마감 · 다음 공고에서는 전형이 바뀔 수 있어요"}
+              </p>
+            ) : null}
+            <ProcessSteps detail={posting.detail} />
+            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-[15px] font-semibold">
+              <Link href={jobPostingPath(posting.listing)} className="inline-flex items-center gap-1.5 text-ink-2 hover:text-brand-ink">
+                공고 자세히 보기<ArrowRight className="w-4 h-4" />
+              </Link>
+              <ExternalSourceLink href={posting.detail.source.url} className="inline-flex items-center gap-1.5 text-ink-3 hover:text-brand-ink">
+                <ExternalLink className="w-3.5 h-3.5 text-ink-5" />{posting.detail.source.label}
+              </ExternalSourceLink>
+            </div>
+            <p className="mt-8 text-[12px] text-ink-4">Pre:View가 공식 채용 페이지에서 확인해 정리한 공고예요({posting.listing.updated} 기준). AI가 만든 내용이 아니에요.</p>
+          </section>
+        ) : null}
+
+        {/* 부록: 출처와 기준일 */}
         <section id="company-sources" className={sectionClass}>
-          <CompanySectionHeading index="09" title="출처와 기준일" />
+          <CompanySectionHeading index={indexOf("company-sources")} title="출처와 기준일" />
           <p className="text-[14px] leading-[1.8] text-ink-3 mb-2">기준일 {asOf}. {COMPANY_REPORT_DISCLAIMER}</p>
           <p className="text-[12px] text-ink-4 mb-8">링크는 검색 제공자의 리다이렉트 주소라 시간이 지나면 열리지 않을 수 있어요. 제목과 발행처로 원문을 찾아 주세요.</p>
           <ol className="space-y-3">

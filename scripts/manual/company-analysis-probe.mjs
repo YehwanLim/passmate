@@ -25,7 +25,9 @@ const startedAt = Date.now();
 
 const SOURCE_ID_SECTIONS = [
   ["businessMap", "segments"],
+  ["competitorComparison", "items"],
   ["focusBusinesses", "items"],
+  ["leadershipMessages", "items"],
   ["financialSnapshot", "keyFigures"],
   ["financialSnapshot", "recentDisclosures"],
   ["currentIssues"],
@@ -90,6 +92,9 @@ try {
     sectionKeys: Object.keys(result).filter((key) => !["sources", "reportMeta", "analysisMeta"].includes(key)),
     counts: {
       segments: result.businessMap?.segments?.length ?? 0,
+      competitors: result.competitorComparison?.items?.length ?? 0,
+      leadershipMessages: result.leadershipMessages?.items?.length ?? 0,
+      glossary: result.glossary?.length ?? 0,
       focusItems: result.focusBusinesses?.items?.length ?? 0,
       keyFigures: result.financialSnapshot?.keyFigures?.length ?? 0,
       issues: result.currentIssues?.length ?? 0,

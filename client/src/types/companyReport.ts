@@ -24,6 +24,34 @@ export interface CompanyBusinessMap {
   customersAndCompetitors: string;
 }
 
+export interface CompanyCompetitor {
+  name: string;
+  overlap: string;
+  difference: string;
+  sourceIds?: number[];
+}
+
+export interface CompanyCompetitorComparison {
+  summary: string;
+  items: CompanyCompetitor[];
+  whyHere: string;
+}
+
+export interface CompanyLeadershipMessage {
+  occasion: string;
+  speaker: string;
+  when: string;
+  keywords: string[];
+  quote: string;
+  meaning: string;
+  sourceIds?: number[];
+}
+
+export interface CompanyGlossaryEntry {
+  term: string;
+  plain: string;
+}
+
 export interface CompanyFocusItem {
   name: string;
   whatChanged: string;
@@ -131,6 +159,10 @@ export interface CompanyReportData {
   opportunitiesAndRisks: { opportunities: CompanyHeadlineText[]; risks: CompanyHeadlineText[] };
   businessCandidates: CompanyBusinessCandidate[];
   interviewPrep: CompanyInterviewPrep;
+  /** 10-12 추가. 그 전에 생성된 리포트·샘플에는 없다 — 없으면 화면이 섹션을 뺀다. */
+  competitorComparison?: CompanyCompetitorComparison;
+  leadershipMessages?: { items: CompanyLeadershipMessage[] };
+  glossary?: CompanyGlossaryEntry[];
   sources: CompanySource[];
   reportMeta?: CompanyReportMeta;
 }

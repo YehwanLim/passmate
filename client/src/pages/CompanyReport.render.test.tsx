@@ -2,6 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
+import { JOB_POSTINGS } from "@/constants/jobPostings";
+import { JOB_POSTING_DETAILS } from "@/constants/jobPostingDetails";
 import { buildCompanyReportFixture } from "./companyReportFixture";
 
 const mocks = vi.hoisted(() => ({
@@ -55,7 +57,7 @@ describe("CompanyReport", () => {
   });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
-  it("renders the eight sections, the appendix with every source, and the disclaimers", async () => {
+  it("renders every section, the appendix with every source, and the disclaimers", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({
       id: "analysis-1", kind: "COMPANY", ai_response_json: buildCompanyReportFixture(),
       company_name: "현대자동차", job_role: "전략기획",
@@ -64,13 +66,23 @@ describe("CompanyReport", () => {
     render(<CompanyReport />);
 
     await waitFor(() => expect(screen.getByText("전동화로 체급을 바꾸는 완성차")).toBeTruthy());
-    for (const heading of ["무엇을 팔아 돈을 버나", "요즘 힘을 싣는 사업", "매출·이익·주가 한눈에", "최근 1년 주요 이슈", "지원 직무가 하는 일 · 전략기획", "회사의 기회와 걱정거리", "자소서에 쓸 사업 소재", "면접 예상 질문과 읽을 자료", "출처와 기준일"]) {
+    for (const heading of ["무엇을 팔아 돈을 버나", "경쟁사와 무엇이 다른가", "요즘 힘을 싣는 사업", "경영진이 최근 강조한 말", "매출·이익·주가 한눈에", "최근 1년 주요 이슈", "지원 직무가 하는 일 · 전략기획", "회사의 기회와 걱정거리", "자소서에 쓸 사업 소재", "면접 예상 질문과 읽을 자료", "출처와 기준일"]) {
       expect(screen.getAllByText(heading, { exact: false }).length).toBeGreaterThan(0);
     }
     // 목차(미니 내비)는 짧은 키워드형 라벨을 쓴다.
-    for (const label of ["사업 구조", "집중 사업", "실적과 주가", "최근 이슈", "직무의 역할", "기회와 위험", "자소서 소재", "면접 준비"]) {
+    for (const label of ["사업 구조", "경쟁사 비교", "집중 사업", "경영진 메시지", "실적과 주가", "최근 이슈", "직무의 역할", "기회와 위험", "자소서 소재", "면접 준비"]) {
       expect(screen.getAllByText(label, { exact: false }).length).toBeGreaterThan(0);
     }
+    // 경쟁사 카드·'왜 여기' 답, 신년사 키워드·원문 구절, 표지 아래 용어 풀이
+    expect(screen.getByText("토요타")).toBeTruthy();
+    expect(screen.getByText(/전기차 전환을 소프트웨어 조직 개편과 함께/)).toBeTruthy();
+    expect(screen.getByText("2026년 신년사 · 홍길동 대표이사 · 2026-01")).toBeTruthy();
+    expect(screen.getByText(/고객이 먼저 체감하는 변화를 만들자/)).toBeTruthy();
+    expect(screen.getByText("먼저 알아 둘 용어")).toBeTruthy();
+    expect(screen.getByText("플릿")).toBeTruthy();
+    // 저장된 공고가 없는 회사는 전형 안내가 없다.
+    expect(screen.queryByText("이번 공고 전형")).toBeNull();
+    expect(screen.queryByText("전형 안내")).toBeNull();
     expect(screen.getByText("hyundai.com")).toBeTruthy();
     expect(screen.getByText("dart.fss.or.kr")).toBeTruthy();
     expect(screen.getByText(/투자 조언이 아닙니다/)).toBeTruthy();
@@ -138,6 +150,50 @@ describe("CompanyReport", () => {
 
     await waitFor(() => expect(screen.getByText("전동화로 체급을 바꾸는 완성차")).toBeTruthy());
     expect(screen.getAllByText("출처와 기준일", { exact: false }).length).toBeGreaterThan(0);
+  });
+
+  it("hides the sections an older report never had and renumbers the rest", async () => {
+    const { competitorComparison: _competitors, leadershipMessages: _leadership, glossary: _glossary, ...older } = buildCompanyReportFixture();
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ id: "analysis-5", kind: "COMPANY", ai_response_json: older, company_name: "현대자동차", job_role: "전략기획" })));
+
+    const { container } = render(<CompanyReport />);
+
+    await waitFor(() => expect(screen.getByText("전동화로 체급을 바꾸는 완성차")).toBeTruthy());
+    expect(screen.queryByText("경쟁사와 무엇이 다른가")).toBeNull();
+    expect(screen.queryByText("경영진이 최근 강조한 말")).toBeNull();
+    expect(screen.queryByText("먼저 알아 둘 용어")).toBeNull();
+    expect(container.querySelector("#company-focus h3")?.textContent).toContain("02");
+    expect(container.querySelector("#company-sources h3")?.textContent).toContain("09");
+  });
+
+  it("says the speeches were not found instead of hiding the leadership section", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({
+      id: "analysis-6", kind: "COMPANY", company_name: "현대자동차", job_role: "전략기획",
+      ai_response_json: buildCompanyReportFixture({ leadershipMessages: { items: [] } }),
+    })));
+
+    render(<CompanyReport />);
+
+    await waitFor(() => expect(screen.getByText("경영진이 최근 강조한 말")).toBeTruthy());
+    expect(screen.getByText(/신년사·창립기념사를 찾지 못했어요/)).toBeTruthy();
+  });
+
+  it("adds the hiring process from a saved posting when the company name matches", async () => {
+    const listing = JOB_POSTINGS.find((posting) => (JOB_POSTING_DETAILS[posting.slug]?.process.length ?? 0) > 0);
+    expect(listing).toBeDefined();
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({
+      id: "analysis-7", kind: "COMPANY", company_name: listing!.company, job_role: "전략기획",
+      ai_response_json: buildCompanyReportFixture(),
+    })));
+
+    const { container } = render(<CompanyReport />);
+
+    await waitFor(() => expect(screen.getByText("이번 공고 전형")).toBeTruthy());
+    expect(screen.getAllByText("전형 안내").length).toBeGreaterThan(0);
+    expect(screen.getByText("공고 자세히 보기")).toBeTruthy();
+    const firstStep = JOB_POSTING_DETAILS[listing!.slug].process[0].steps[0];
+    expect(container.querySelector("#company-process")?.textContent).toContain(firstStep);
+    expect(screen.getByText(/AI가 만든 내용이 아니에요/)).toBeTruthy();
   });
 
   it("asks unauthenticated visitors to log in", async () => {

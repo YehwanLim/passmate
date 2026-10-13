@@ -24,18 +24,21 @@ describe("company report prompt single source", () => {
     expect(companyAnalysis).not.toContain("const COMPANY_REPORT_SYSTEM_PROMPT = `");
   });
 
-  it("keeps the runtime JSON example valid with the eight report sections", () => {
+  it("keeps the runtime JSON example valid with every report section", () => {
     const parsed = JSON.parse(extractOutputJsonExample(COMPANY_REPORT_SYSTEM_PROMPT));
     expect(Object.keys(parsed)).toEqual([
       "brief",
       "businessMap",
+      "competitorComparison",
       "focusBusinesses",
+      "leadershipMessages",
       "financialSnapshot",
       "currentIssues",
       "roleInContext",
       "opportunitiesAndRisks",
       "businessCandidates",
       "interviewPrep",
+      "glossary",
     ]);
     expect(parsed.financialSnapshot.keyFigures).toHaveLength(1);
     expect(parsed.roleInContext.recentNewsForRole).toHaveLength(1);
@@ -75,5 +78,23 @@ describe("company report prompt single source", () => {
     expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("입 밖에 낼 수 없는 사건");
     // 04 는 02·05 와 다른 사건이되 직무와 관계있는 변화. 홍보성 사건으로 채우지 않는다(병렬 2단 프로브에서 ESG·포럼이 04 를 채운 사례)
     expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("홍보성 사건");
+  });
+
+  it("keeps the rules for the competitor, leadership, and glossary sections added on 10-12", () => {
+    // 경쟁사는 차이로 쓰고 깎아내리지 않는다. 계열사는 경쟁사가 아니다. '왜 여기' 답 재료.
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("# [경쟁사 비교 규칙]");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("경쟁사를 깎아내리지 않는다");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("같은 그룹의 계열사는 경쟁사로 쓰지 않는다");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("왜 경쟁사가 아니라 우리 회사인가");
+    // 신년사·창립기념사만, 15개월 이내, 못 찾으면 빈 배열, 원문 구절은 따옴표 인용만
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("# [경영진 메시지 규칙]");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("15개월");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("따옴표로 인용된 원문 구절");
+    // 용어 풀이는 본문에 나온 업계 용어만, 쉬운 한 문장
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("# [용어 풀이 규칙]");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("본문에 없는 말은 넣지 않는다");
+    // 한 사실 한 자리: 경쟁사 차이와 신년사 발언의 자리를 정한다
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("경쟁사와의 차이 → competitorComparison");
+    expect(COMPANY_REPORT_SYSTEM_PROMPT).toContain("신년사·창립기념사 발언 → leadershipMessages");
   });
 });
