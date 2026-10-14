@@ -71,3 +71,9 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `pucore.svg` | 피유코어 | [피유코어 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/01/22/d4a449db-53e6-4b24-8f9f-1e64e2cb048a.jpg) | JPG를 잘라 SVG 래퍼에(흰 바탕) |
 | `ezcaretech.svg` | 이지케어텍 | [이지케어텍 홈페이지](https://www.ezcaretech.com/wp-content/uploads/2018/12/logo.svg) | 주석·빈 사각형만 뺌 |
 | `coex.svg` | 코엑스 | [코엑스 CI 페이지](https://www.coex.co.kr/about/ci/) | CI 묶음의 Basic PNG를 SVG 래퍼에 |
+| `moorim.svg` | 무림그룹 | [무림 채용 사이트](https://recruit.moorim.co.kr/resources/images/header_logo.png) | PNG를 잘라 SVG 래퍼에 |
+| `kpac.svg` | 한국폴리아세탈 | [한국폴리아세탈 CI 페이지](https://www.gpac-kpac.com/img/logo_kpac_bl.png) | PNG를 SVG 래퍼에 |
+| `aekyung-chemical.svg` | 애경케미칼 | [애경케미칼 채용 사이트](https://www.saraminimage.co.kr/dyms/dev/189/homepage/61bbc8af69f71.jpeg) | JPEG를 잘라 SVG 래퍼에(작음) |
+| `shinyoung-asset.svg` | 신영자산운용 | [신영자산운용 홈페이지](https://www.syfund.co.kr/user/images/common/logo.svg) | |
+| `stx-engine.svg` | STX엔진 | [STX엔진 채용 사이트](https://d1ao0isg0n9tl8.cloudfront.net/static/img/user/logo.png) | PNG를 SVG 래퍼에 |
+| `dongkook-pharm.svg` | 동국제약 | [동국제약 홈페이지](https://www.dkpharm.co.kr/images/common/w-gnb-logo.png) | PNG를 SVG 래퍼에(작음) |
