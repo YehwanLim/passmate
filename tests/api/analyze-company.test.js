@@ -39,6 +39,7 @@ function createDatabase({ analysisEnabled = true, companyAnalysisEnabled = true,
     $transaction: async (work) => work(db),
     $queryRaw: vi.fn(async () => []),
     analysis: {
+      count: vi.fn(async () => 0),
       create: vi.fn(async ({ data }) => ({ id: "analysis-1", ...data })),
       findFirst: vi.fn(async ({ where }) => (ownedResumeAnalysis && where.id === RESUME_ANALYSIS_ID ? { id: where.id } : null)),
       update: vi.fn(async ({ data, where }) => ({ id: where.id, ...data })),

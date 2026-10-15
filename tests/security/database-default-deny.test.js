@@ -85,4 +85,17 @@ describe("application tables default to deny", () => {
     const revoked = revokedTables(sources);
     expect(tables.filter((table) => !revoked.has(table))).toEqual([]);
   });
+
+  it("removes the Supabase default grants so a table a future migration forgets to lock is still closed", () => {
+    const all = sources.join("\n");
+    for (const role of ["anon", "authenticated"]) {
+      for (const kind of ["TABLES", "SEQUENCES", "FUNCTIONS"]) {
+        const pattern = new RegExp(
+          `ALTER\\s+DEFAULT\\s+PRIVILEGES\\s+FOR\\s+ROLE\\s+postgres\\s+IN\\s+SCHEMA\\s+public\\s+REVOKE\\s+ALL\\s+ON\\s+${kind}\\s+FROM\\s+${role}\\b`,
+          "i",
+        );
+        expect(pattern.test(all), `${kind} default grant for ${role}`).toBe(true);
+      }
+    }
+  });
 });

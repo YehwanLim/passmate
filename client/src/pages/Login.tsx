@@ -126,9 +126,15 @@ export default function Login({
   );
 }
 
-function getSafeRedirectPath() {
+export function getSafeRedirectPath() {
   const redirect = new URLSearchParams(window.location.search).get("redirect");
-  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
+  // `/\evil.com`·`/\t/evil.com` 처럼 브라우저가 다른 사이트로 읽는 모양도 막는다 — 같은 출처 경로만 통과.
+  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//") || /[\\\s]/.test(redirect)) {
+    return "/";
+  }
+  try {
+    if (new URL(redirect, window.location.origin).origin !== window.location.origin) return "/";
+  } catch {
     return "/";
   }
 

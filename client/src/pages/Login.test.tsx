@@ -9,7 +9,7 @@ vi.mock("@/lib/googleIdentity", () => ({
   loadGoogleIdentity: vi.fn().mockRejectedValue(new Error("no network")),
 }));
 
-import Login from "./Login";
+import Login, { getSafeRedirectPath } from "./Login";
 
 describe("Login page", () => {
   beforeEach(() => {
@@ -35,5 +35,30 @@ describe("Login page", () => {
     expect(screen.getByText(/네이버 앱 안의 브라우저예요/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "카카오로 계속하기" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Google로 계속하기" })).toBeNull();
+  });
+});
+
+describe("getSafeRedirectPath", () => {
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  function withRedirect(value: string) {
+    window.history.replaceState(null, "", `/login?redirect=${encodeURIComponent(value)}`);
+    return getSafeRedirectPath();
+  }
+
+  it.each(["/analyze", "/my/new?x=1", "/account/deletion?pending=1"])("keeps the same-origin path %s", (path) => {
+    expect(withRedirect(path)).toBe(path);
+  });
+
+  it.each(["https://evil.com", "//evil.com", "/\\evil.com", "/\t/evil.com", "/ /evil.com", "evil.com"])(
+    "falls back to / for %s",
+    (value) => {
+      expect(withRedirect(value)).toBe("/");
+    },
+  );
+
+  it("decodes %5C before checking, so an encoded backslash is refused too", () => {
+    window.history.replaceState(null, "", "/login?redirect=/%5Cevil.com");
+    expect(getSafeRedirectPath()).toBe("/");
   });
 });

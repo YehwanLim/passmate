@@ -19,6 +19,7 @@ function createDb() {
   const db = {
     mentoringSlot: { findMany: vi.fn(), updateMany: vi.fn() },
     mentoringBooking: { findMany: vi.fn(), count: vi.fn(), create: vi.fn() },
+    $queryRaw: vi.fn(async () => []),
   };
   db.$transaction = vi.fn(async (work) => work(db));
   return db;
@@ -109,6 +110,11 @@ describe("POST /api/account/mentoring/bookings", () => {
     await handler({ method: "POST", headers: {}, body }, res);
     expect(res.statusCode).toBe(409);
     expect(res.body.error).toBe("BOOKING_LIMIT_REACHED");
+    // 상한 검사는 계정 행을 잠근 같은 트랜잭션 안에서 하고, 슬롯은 건드리지 않는다.
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(db.$queryRaw.mock.calls[0][0].join("?")).toContain("FOR UPDATE");
+    expect(db.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(db.mentoringBooking.count.mock.invocationCallOrder[0]);
+    expect(db.mentoringSlot.updateMany).not.toHaveBeenCalled();
     expect(db.mentoringSlot.updateMany).not.toHaveBeenCalled();
   });
 

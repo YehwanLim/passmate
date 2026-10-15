@@ -121,6 +121,10 @@ export function createProjectDetailHandler({
         }
 
         const savedAt = await db.$transaction(async (tx) => {
+          // 위 검사와 이 쓰기 사이에 분석이 끝났을 수 있어 트랜잭션 안에서 한 번 더 본다.
+          if (await findAnalyzedReport(tx, owned.id, applicationUser.id, { id: true })) {
+            throw new ApiError("APPLICATION_LOCKED", 409);
+          }
           const before = await tx.applicationQuestion.aggregate({
             where: { projectId: owned.id },
             _max: { updatedAt: true },

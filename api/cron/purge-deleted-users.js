@@ -5,6 +5,7 @@ import { purgeExpiredAuditEvents } from "../../lib/audit-log.js";
 import { getSupabaseAdminClient } from "../../lib/auth.js";
 import { ApiError, sendJson, withApiHandler } from "../../lib/api-handler.js";
 import prisma from "../../lib/prisma.js";
+import { purgeExpiredRateLimitBuckets } from "../../lib/rate-limit.js";
 
 function authorizedCronRequest(req, cronSecret) {
   const authorization = req.headers?.authorization ?? req.headers?.Authorization;
@@ -53,6 +54,7 @@ export function createPurgeDeletedAccountsHandler({
         },
       });
       await purgeExpiredAuditEvents({ db });
+      await purgeExpiredRateLimitBuckets({ db });
       return sendJson(res, 200, { purged: result.purged }, requestId);
     });
   };

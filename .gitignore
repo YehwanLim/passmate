@@ -125,6 +125,14 @@ temp/
 .agents/threads-*.json
 .agents/threads/
 
+# 경쟁사 조사·블로그 초안·표지 원본 — 같은 이유로 공개 저장소에 올리지 않는다
+# (이미 추적 중인 초안 몇 편은 그대로 남는다)
+competitor-profiles/
+.agents/blog-job-posts/drafts/
+.agents/blog-job-posts/covers/
+.agents/blog-job-posts/backlog.md
+groble-cover-*.png
+
 # 일회성 점검·디버깅 스크립트
 tmp-*
 

@@ -88,8 +88,11 @@ describe("CompanyReport", () => {
     expect(screen.getByText(/투자 조언이 아닙니다/)).toBeTruthy();
     // 기준일은 표지와 부록 두 곳에 나온다.
     expect(screen.getAllByText(/기준일 2026-09-06/).length).toBeGreaterThan(0);
-    // 검색 제안 칩은 그대로 렌더된다(Google 약관).
-    expect(document.querySelector('a[href="https://vertexaisearch.cloud.google.com/x"]')).toBeTruthy();
+    // 검색 제안 칩은 그대로 렌더되되(Google 약관) 스크립트 없는 sandbox iframe 안에 격리된다.
+    const chips = document.querySelector<HTMLIFrameElement>('iframe[title="Google 검색 제안"]');
+    expect(chips?.getAttribute("sandbox")).toBe("allow-popups allow-popups-to-escape-sandbox");
+    expect(chips?.getAttribute("srcdoc")).toContain('href="https://vertexaisearch.cloud.google.com/x"');
+    expect(document.querySelector('a[href="https://vertexaisearch.cloud.google.com/x"]')).toBeNull();
     // 항목별 각주 칩은 없다(스펙 §7-1).
     expect(screen.queryByText("[1]")).toBeNull();
     // 화면 조회 전용: 다운로드·인쇄 없음.

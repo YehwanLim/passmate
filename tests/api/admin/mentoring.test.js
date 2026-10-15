@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   prisma: {
-    mentoringSlot: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    mentoringSlot: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), updateMany: vi.fn(), delete: vi.fn() },
     mentoringBooking: { update: vi.fn(), deleteMany: vi.fn() },
-    $transaction: vi.fn(async (writes) => Promise.all(writes)),
+    // 배열(일괄)과 함수(대화형) 둘 다 받는다. 대화형은 같은 목을 tx 로 넘긴다.
+    $transaction: vi.fn(async (work) => (typeof work === "function" ? work(mocks.prisma) : Promise.all(work))),
   },
   requireAdministrator: vi.fn(),
 }));
@@ -28,6 +29,7 @@ describe("admin mentoring — 슬롯·신청 관리", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requireAdministrator.mockResolvedValue({ applicationUser: { id: "admin", role: "admin" } });
+    mocks.prisma.mentoringSlot.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it("비관리자는 403 이고 아무것도 읽지 않는다", async () => {
@@ -68,14 +70,31 @@ describe("admin mentoring — 슬롯·신청 관리", () => {
     await mentoringDetailHandler({ method: "PATCH", query: { id: SLOT_ID }, body: { action: "confirm" } }, res);
     expect(res.statusCode).toBe(200);
     expect(mocks.prisma.mentoringBooking.update).toHaveBeenCalledWith({ where: { id: "b1" }, data: { status: "CONFIRMED" } });
-    expect(mocks.prisma.mentoringSlot.update).toHaveBeenCalledWith({ where: { id: SLOT_ID }, data: { status: "BOOKED" } });
+    expect(mocks.prisma.mentoringSlot.updateMany).toHaveBeenCalledWith({ where: { id: SLOT_ID, status: "BOOKED" }, data: { status: "BOOKED" } });
 
     vi.clearAllMocks();
+    mocks.prisma.mentoringSlot.updateMany.mockResolvedValue({ count: 1 });
     mocks.prisma.mentoringSlot.findUnique.mockResolvedValueOnce(bookedSlot()).mockResolvedValueOnce(openSlot());
     const cancel = createResponse();
     await mentoringDetailHandler({ method: "PATCH", query: { id: SLOT_ID }, body: { action: "cancel" } }, cancel);
     expect(mocks.prisma.mentoringBooking.update).toHaveBeenCalledWith({ where: { id: "b1" }, data: { status: "CANCELLED" } });
-    expect(mocks.prisma.mentoringSlot.update).toHaveBeenCalledWith({ where: { id: SLOT_ID }, data: { status: "OPEN" } });
+    expect(mocks.prisma.mentoringSlot.updateMany).toHaveBeenCalledWith({ where: { id: SLOT_ID, status: "BOOKED" }, data: { status: "OPEN" } });
+  });
+
+  it("확인한 뒤 사용자가 먼저 슬롯을 잡았으면 close·삭제는 409 이고 신청을 건드리지 않는다", async () => {
+    mocks.prisma.mentoringSlot.findUnique.mockResolvedValue(openSlot());
+    mocks.prisma.mentoringSlot.updateMany.mockResolvedValue({ count: 0 });
+
+    const close = createResponse();
+    await mentoringDetailHandler({ method: "PATCH", query: { id: SLOT_ID }, body: { action: "close" } }, close);
+    expect(close.statusCode).toBe(409);
+    expect(mocks.prisma.mentoringSlot.updateMany).toHaveBeenCalledWith({ where: { id: SLOT_ID, status: "OPEN" }, data: { status: "CLOSED" } });
+
+    const del = createResponse();
+    await mentoringDetailHandler({ method: "DELETE", query: { id: SLOT_ID } }, del);
+    expect(del.statusCode).toBe(409);
+    expect(mocks.prisma.mentoringBooking.deleteMany).not.toHaveBeenCalled();
+    expect(mocks.prisma.mentoringSlot.delete).not.toHaveBeenCalled();
   });
 
   it("신청이 붙은 슬롯은 close·삭제가 409, 신청 없는 슬롯에 confirm 도 409", async () => {

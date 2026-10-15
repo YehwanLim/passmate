@@ -56,6 +56,7 @@ function createDatabase({ existingRequest = null, analysisEnabled = true } = {})
     $transaction: async (work) => work(db),
     $queryRaw: vi.fn(async () => []),
     analysis: {
+      count: vi.fn(async () => 0),
       create: vi.fn(async ({ data }) => ({ id: "analysis-1", ...data })),
       update: vi.fn(async ({ data, where }) => ({ id: where.id, ...data })),
       updateMany: vi.fn(async () => ({ count: 1 })),
@@ -567,6 +568,51 @@ describe("atomic analyze API", () => {
     expect(res.body.error).toBe("RATE_LIMITED");
     expect(res.headers["Retry-After"]).toBe("900");
     expect(model).not.toHaveBeenCalled();
+  });
+
+  it("refuses with 429 after the daily model-failure cap without consuming a rate slot, reserving, or calling the model", async () => {
+    const db = createDatabase();
+    const failedAt = new Date(Date.now() - 60 * 60 * 1000);
+    db.analysis.count = vi.fn(async () => 5);
+    db.analysis.findFirst = vi.fn(async () => ({ createdAt: failedAt }));
+    const consumeRateLimit = vi.fn(rateAllowed);
+    const reserveAnalysis = vi.fn(async () => ({ reservationId: "reservation-1" }));
+    const model = vi.fn();
+    const handler = createAnalyzeHandler({ db, model, requireUser: activeUser, consumeRateLimit, reserveAnalysis });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(429);
+    expect(res.body.error).toBe("RATE_LIMITED");
+    expect(Number(res.headers["Retry-After"])).toBeGreaterThan(22 * 60 * 60);
+    expect(db.analysis.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        status: "FAILED",
+        errorCode: { in: ["PARSE_ERROR", "CONTEXT_IRRELEVANT"] },
+      }),
+    });
+    expect(consumeRateLimit).not.toHaveBeenCalled();
+    expect(reserveAnalysis).not.toHaveBeenCalled();
+    expect(model).not.toHaveBeenCalled();
+  });
+
+  it("still accepts an analysis below the daily model-failure cap", async () => {
+    const db = createDatabase();
+    db.analysis.count = vi.fn(async () => 4);
+    const handler = createAnalyzeHandler({
+      db,
+      enqueueBackgroundWork: () => {},
+      model: vi.fn(),
+      requireUser: activeUser,
+      reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+      consumeRateLimit: rateAllowed,
+    });
+    const res = response();
+
+    await handler(request(), res);
+
+    expect(res.statusCode).toBe(202);
   });
 
   it("rejects a second distinct free analysis without consuming a rate slot or calling the model", async () => {

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   requireActiveApplicationUser: vi.fn(),
   requireAuthenticatedUser: vi.fn(),
-  prisma: { siteVisit: { create: vi.fn() } },
+  prisma: { siteVisit: { create: vi.fn() }, apiRateLimitBucket: { upsert: vi.fn(async () => ({ requestCount: 1 })) } },
 }));
 
 vi.mock("../../../lib/auth.js", () => ({

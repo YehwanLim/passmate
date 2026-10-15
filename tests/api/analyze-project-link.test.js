@@ -36,14 +36,14 @@ describe("분석 요청 ↔ 지원서 연결", () => {
 });
 
 describe("allocateAnalysisRequest 와 projectId", () => {
-  function createTx({ ownedProject }) {
+  function createTx({ ownedProject, analyzed = null }) {
     const tx = {
       analysisRequest: { findUnique: vi.fn(async () => null), findFirst: vi.fn(async () => null), count: vi.fn(async () => 0), create: vi.fn(async () => ({ id: "req-1" })) },
       project: {
         findFirst: vi.fn(async () => ownedProject),
         create: vi.fn(async () => ({ id: "p-created" })),
       },
-      analysis: { create: vi.fn(async () => ({ id: "a-1" })) },
+      analysis: { count: vi.fn(async () => 0), findFirst: vi.fn(async () => analyzed), create: vi.fn(async () => ({ id: "a-1" })) },
     };
     return { $transaction: vi.fn(async (work) => work(tx)), tx };
   }
@@ -70,6 +70,20 @@ describe("allocateAnalysisRequest 와 projectId", () => {
     expect(tx.project.create).not.toHaveBeenCalled();
     expect(tx.analysis.create.mock.calls[0][0].data.projectId).toBe(PROJECT_ID);
     expect(result.project.id).toBe(PROJECT_ID);
+  });
+
+  it("분석이 이미 성공한(잠긴) 지원서면 크레딧을 예약하지 않고 409 APPLICATION_LOCKED", async () => {
+    const { $transaction, tx } = createTx({ ownedProject: { id: PROJECT_ID }, analyzed: { id: "a-old" } });
+    const reserve = vi.fn();
+    await expect(allocateAnalysisRequest({
+      ...base, db: { $transaction }, reserve,
+      request: { company: "A", jobKeyword: null, projectId: PROJECT_ID },
+    })).rejects.toMatchObject({ code: "APPLICATION_LOCKED", statusCode: 409 });
+    expect(tx.analysis.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { projectId: PROJECT_ID, userId: "owner", status: "SUCCESS" },
+    }));
+    expect(reserve).not.toHaveBeenCalled();
+    expect(tx.analysis.create).not.toHaveBeenCalled();
   });
 
   it("그 사이 지원서가 지워졌으면 크레딧을 예약하지 않고 404", async () => {

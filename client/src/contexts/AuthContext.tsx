@@ -114,6 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null);
           trackedSessionId = null; // 로그아웃 시 초기화
+          // 세션 만료·다른 탭 로그아웃도 SIGNED_OUT 으로 온다. 이 기기에 남은 지원서 백업을 다음 사람이 보지 않게 지운다.
+          if (event === "SIGNED_OUT") clearPassMateStorage();
         }
 
         // 최초 resolved 처리 (INITIAL_SESSION 또는 SIGNED_IN으로)

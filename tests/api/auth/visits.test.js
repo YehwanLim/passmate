@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   CLIENT_EVENT_NAMES,
+  clientIpSubjectKey,
   createSiteVisitHandler,
   normalizeReferrer,
   readClientEventBody,
@@ -24,6 +25,7 @@ function createDb() {
     user: { findUnique: vi.fn() },
     siteVisit: { create: vi.fn(async ({ data }) => ({ id: "visit-1", ...data })) },
     clientEvent: { create: vi.fn(async ({ data }) => ({ id: "event-1", ...data })) },
+    apiRateLimitBucket: { upsert: vi.fn(async () => ({ requestCount: 1 })) },
   };
 }
 
@@ -191,5 +193,75 @@ describe("POST /api/visits — 방문 핑", () => {
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/", extra: 1 })).toBeNull();
     expect(readVisitBody({ visitorId: "not valid!", path: "/" })).toBeNull();
     expect(readVisitBody(null)).toBeNull();
+  });
+});
+
+describe("POST /api/visits — IP 상한", () => {
+  const blocked = vi.fn(async () => ({ allowed: false }));
+
+  it("상한을 넘은 방문은 저장하지 않고 recorded:false 로 끝낸다", async () => {
+    const db = createDb();
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null, consumeRateLimit: blocked });
+    const res = response();
+
+    await handler({ method: "POST", headers: { "x-real-ip": "203.0.113.5" }, body: { visitorId: VISITOR_ID, path: "/" } }, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ recorded: false });
+    expect(db.siteVisit.create).not.toHaveBeenCalled();
+  });
+
+  it("상한을 넘은 클라이언트 이벤트도 저장하지 않는다", async () => {
+    const db = createDb();
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null, consumeRateLimit: blocked });
+    const res = response();
+
+    await handler({ method: "POST", headers: {}, body: { visitorId: VISITOR_ID, event: "landing_cta_click" } }, res);
+
+    expect(res.body).toEqual({ recorded: false });
+    expect(db.clientEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("방문과 이벤트는 서로 다른 버킷을 IP 해시 키로 쓴다", async () => {
+    const db = createDb();
+    const consumeRateLimit = vi.fn(async () => ({ allowed: true }));
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null, consumeRateLimit });
+    const headers = { "x-forwarded-for": "198.51.100.7, 10.0.0.1" };
+
+    await handler({ method: "POST", headers, body: { visitorId: VISITOR_ID, path: "/" } }, response());
+    await handler({ method: "POST", headers, body: { visitorId: VISITOR_ID, event: "landing_cta_click" } }, response());
+
+    const [visitCall, eventCall] = consumeRateLimit.mock.calls.map((call) => call[1]);
+    expect(visitCall.policy.route).toBe("site-visit");
+    expect(eventCall.policy.route).toBe("client-event");
+    expect(visitCall.subjectKey).toBe(eventCall.subjectKey);
+    expect(visitCall.subjectKey).toMatch(/^ip:[0-9a-f]{32}$/);
+    expect(visitCall.subjectKey).not.toContain("198.51.100.7");
+  });
+
+  it("잘못된 본문은 상한을 쓰기 전에 400 으로 거절한다", async () => {
+    const db = createDb();
+    const consumeRateLimit = vi.fn(async () => ({ allowed: true }));
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null, consumeRateLimit });
+    const res = response();
+
+    await handler({ method: "POST", headers: {}, body: { visitorId: "x", path: "/" } }, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(consumeRateLimit).not.toHaveBeenCalled();
+  });
+});
+
+describe("clientIpSubjectKey", () => {
+  it("x-real-ip 를 x-forwarded-for 보다 먼저 쓴다", () => {
+    const a = clientIpSubjectKey({ headers: { "x-real-ip": "203.0.113.5", "x-forwarded-for": "198.51.100.7" } });
+    const b = clientIpSubjectKey({ headers: { "x-real-ip": "203.0.113.5" } });
+    expect(a).toBe(b);
+  });
+
+  it("x-forwarded-for 는 첫 값만 쓴다", () => {
+    const a = clientIpSubjectKey({ headers: { "x-forwarded-for": "198.51.100.7, 10.0.0.1" } });
+    const b = clientIpSubjectKey({ headers: { "x-forwarded-for": "198.51.100.7" } });
+    expect(a).toBe(b);
   });
 });

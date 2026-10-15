@@ -102,6 +102,18 @@ describe("분석이 끝난 지원서 잠금", () => {
     expect(db.applicationQuestion.createMany).not.toHaveBeenCalled();
   });
 
+  it("PUT: 검사 뒤 저장 직전에 분석이 끝났으면 트랜잭션 안에서 409 로 막는다", async () => {
+    const db = createDb();
+    // 바깥 검사 때는 아직 분석이 없고, 트랜잭션 안에서 다시 볼 때는 성공한 분석이 생겼다.
+    db.analysis.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "a1" });
+    const res = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(
+      req({ method: "PUT", body: { questions: [{ prompt: "지원 동기", answer: "고친 글" }], baseUpdatedAt: T1.toISOString() } }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe("APPLICATION_LOCKED");
+    expect(db.applicationQuestion.deleteMany).not.toHaveBeenCalled();
+  });
+
   it("PATCH: 잠긴 지원서도 지원 정보(마감)는 고칠 수 있다", async () => {
     const db = createDb();
     db.analysis.findFirst.mockResolvedValue({ id: "a1" });

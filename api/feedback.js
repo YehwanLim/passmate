@@ -42,12 +42,12 @@ export function createFeedbackHandler({
         return sendError(res, 405, "METHOD_NOT_ALLOWED", requestId);
       }
 
+      const { applicationUser } = await requireUser(req, db);
       const survey = readSurveyBody(req.body);
       if (!survey) {
         throw new ApiError("INVALID_REQUEST", 400);
       }
 
-      const { applicationUser } = await requireUser(req, db);
       const { analysisId, scores, comment } = survey;
       const analysis = await db.analysis.findFirst({
         where: { id: analysisId, userId: applicationUser.id },

@@ -610,8 +610,16 @@ function CompanyReportContent({ company, jobRole, report, sample = false }: Load
             ))}
           </ol>
           {report.reportMeta?.searchEntryPointHtml ? (
-            // Google 검색 그라운딩 약관: 검색 제안 칩을 그대로 표시한다. 스크립트가 없는 마크업임을 프로브로 확인했다.
-            <div className="mt-8 rounded-2xl border border-line bg-surface p-3 text-ink" dangerouslySetInnerHTML={{ __html: report.reportMeta.searchEntryPointHtml }} />
+            // Google 검색 그라운딩 약관: 검색 제안 칩을 그대로 표시한다. 남이 만든 HTML 이라 앱 문서에 섞지 않고
+            // 스크립트·같은 출처 권한이 없는 sandbox iframe 에 그린다 — 칩 CSS(.container·.chip)가 앱 스타일을 덮지도 않는다.
+            <div className="mt-8 rounded-2xl border border-line bg-surface p-3 text-ink">
+              <iframe
+                title="Google 검색 제안"
+                sandbox="allow-popups allow-popups-to-escape-sandbox"
+                srcDoc={`<base target="_blank"><style>html,body{margin:0}</style>${report.reportMeta.searchEntryPointHtml}`}
+                className="block h-[50px] w-full border-0"
+              />
+            </div>
           ) : null}
         </section>
 

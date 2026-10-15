@@ -4,6 +4,7 @@ import { ApiError } from "../../../lib/api-handler.js";
 import {
   assertSafeUrl,
   fetchPostingText,
+  guardedLookup,
   htmlToText,
   isPrivateAddress,
 } from "../../../lib/job-posting-fetch.js";
@@ -52,6 +53,24 @@ describe("isPrivateAddress", () => {
     "::ffff:192.168.0.9",
     "::ffff:7f00:1",
     "::ffff:a9fe:a9fe",
+    // 감사(10-15)에서 통과하던 우회 후보
+    "::7f00:1",
+    "::ffff:0:7f00:1",
+    "64:ff9b::7f00:1",
+    "fec0::1",
+    "ff02::1",
+    "2001:db8::1",
+    "2001::1",
+    "2002:7f00:1::1",
+    "192.0.0.192",
+    "192.0.2.1",
+    "198.18.0.1",
+    "198.51.100.7",
+    "203.0.113.9",
+    "224.0.0.1",
+    "239.255.255.250",
+    "255.255.255.255",
+    "not-an-ip",
   ])("treats %s as private", (ip) => {
     expect(isPrivateAddress(ip)).toBe(true);
   });
@@ -65,6 +84,7 @@ describe("isPrivateAddress", () => {
     "100.128.0.1",
     "192.169.0.1",
     "2606:4700::1111",
+    "2404:6800:4004:80a::200e",
     "::ffff:8.8.8.8",
     "::ffff:808:808",
   ])("treats %s as public", (ip) => {
@@ -93,6 +113,11 @@ describe("assertSafeUrl", () => {
     "http://[::1]/",
     "http://[fe80::1]/",
     "http://[::ffff:127.0.0.1]/",
+    "http://[::7f00:1]/",
+    "http://[64:ff9b::7f00:1]/",
+    "http://198.18.0.1/",
+    "https://jobs.example.com:8443/posting/1",
+    "http://jobs.example.com:22/",
   ])("rejects %s with INVALID_REQUEST", async (input) => {
     await expectApiError(assertSafeUrl(input, { lookup: publicLookup }), "INVALID_REQUEST", 400);
   });
@@ -312,5 +337,59 @@ describe("fetchPostingText", () => {
       400,
     );
     expect(called).toBe(false);
+  });
+});
+
+describe("guardedLookup", () => {
+  function run(resolved, options) {
+    const resolve = (_host, _opts, callback) => callback(null, resolved);
+    return new Promise((done) => {
+      guardedLookup("jobs.example.com", options, (error, address, family) => done({ error, address, family }), {
+        resolve,
+      });
+    });
+  }
+
+  it("blocks a connection when the name now resolves to a private address (DNS rebinding)", async () => {
+    const { error } = await run([{ address: "127.0.0.1", family: 4 }], {});
+    expect(error?.code).toBe("EBLOCKEDADDRESS");
+  });
+
+  it("blocks when any resolved address is private", async () => {
+    const { error } = await run(
+      [
+        { address: "93.184.216.34", family: 4 },
+        { address: "::1", family: 6 },
+      ],
+      { all: true },
+    );
+    expect(error?.code).toBe("EBLOCKEDADDRESS");
+  });
+
+  it("blocks an empty answer", async () => {
+    const { error } = await run([], {});
+    expect(error?.code).toBe("EBLOCKEDADDRESS");
+  });
+
+  it("returns the first public address in single-address form", async () => {
+    const result = await run([{ address: "93.184.216.34", family: 4 }], { family: 0 });
+    expect(result).toEqual({ error: null, address: "93.184.216.34", family: 4 });
+  });
+
+  it("returns the full list when the caller asks for all addresses", async () => {
+    const list = [{ address: "93.184.216.34", family: 4 }];
+    const result = await run(list, { all: true });
+    expect(result.error).toBeNull();
+    expect(result.address).toEqual(list);
+  });
+
+  it("passes resolver errors through", async () => {
+    const failure = Object.assign(new Error("ENOTFOUND"), { code: "ENOTFOUND" });
+    const error = await new Promise((done) => {
+      guardedLookup("missing.example.com", {}, (caught) => done(caught), {
+        resolve: (_h, _o, callback) => callback(failure),
+      });
+    });
+    expect(error).toBe(failure);
   });
 });
