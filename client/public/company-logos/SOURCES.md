@@ -77,3 +77,5 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `shinyoung-asset.svg` | 신영자산운용 | [신영자산운용 홈페이지](https://www.syfund.co.kr/user/images/common/logo.svg) | |
 | `stx-engine.svg` | STX엔진 | [STX엔진 채용 사이트](https://d1ao0isg0n9tl8.cloudfront.net/static/img/user/logo.png) | PNG를 SVG 래퍼에 |
 | `dongkook-pharm.svg` | 동국제약 | [동국제약 홈페이지](https://www.dkpharm.co.kr/images/common/w-gnb-logo.png) | PNG를 SVG 래퍼에(작음) |
+| `kyungdong-pharm.svg` | 경동제약 | [경동제약 홈페이지](https://kdpharma.co.kr/img/common/2024_redesign_logo_1.png) | PNG를 잘라 SVG 래퍼에 |
+| `ilhwa.svg` | 일화 | [일화 홈페이지](https://cdn.imweb.me/thumbnail/20240220/68739b7914a09.png) | PNG를 SVG 래퍼에(작음) |
