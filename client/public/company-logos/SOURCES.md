@@ -79,3 +79,8 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `dongkook-pharm.svg` | 동국제약 | [동국제약 홈페이지](https://www.dkpharm.co.kr/images/common/w-gnb-logo.png) | PNG를 SVG 래퍼에(작음) |
 | `kyungdong-pharm.svg` | 경동제약 | [경동제약 홈페이지](https://kdpharma.co.kr/img/common/2024_redesign_logo_1.png) | PNG를 잘라 SVG 래퍼에 |
 | `ilhwa.svg` | 일화 | [일화 홈페이지](https://cdn.imweb.me/thumbnail/20240220/68739b7914a09.png) | PNG를 SVG 래퍼에(작음) |
+| `boryeong-lng.svg` | 보령LNG터미널 | [보령LNG터미널 홈페이지](https://www.lng-tml.com/img/common/logo_h1.gif) | GIF를 PNG로 바꿔 SVG 래퍼에(작음) |
+| `ktis.svg` | kt is | [kt is 홈페이지](https://www.ktis.co.kr/img/ktis_logo.svg) | |
+| `kyowon.svg` | 교원그룹 | [교원 홈페이지 CI](https://www.kyowon.co.kr/resources/file/CI_KYOWON_KR.zip) | 국문 CI JPG를 줄여 SVG 래퍼에 |
+| `samjin-pharm.svg` | 삼진제약 | [삼진제약 홈페이지](https://www.samjinpharm.co.kr/front/kr/resources/img/common/logo.png) | PNG를 잘라 SVG 래퍼에 |
+| `kumho-express.svg` | 금호익스프레스 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%EA%B8%88%ED%98%B8%EA%B3%A0%EC%86%8DCI.png) | 금호고속 CI, 퍼블릭 도메인, PNG를 잘라 SVG 래퍼에 |
