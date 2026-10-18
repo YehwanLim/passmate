@@ -1,7 +1,7 @@
-import { finalizeAnalysisReservation } from "../../lib/analysis-entitlements.js";
+import { finalizeAnalysisReservation } from "../../lib/billing/analysis-entitlements.js";
 import {
   readOwnedAnalysisRequestStatus,
-} from "../../lib/analysis-request-lifecycle.js";
+} from "../../lib/analysis/analysis-request-lifecycle.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../../lib/auth.js";
 import prisma from "../../lib/prisma.js";

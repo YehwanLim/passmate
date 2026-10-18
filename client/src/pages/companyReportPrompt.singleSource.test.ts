@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { COMPANY_REPORT_SYSTEM_PROMPT } from "../../../shared/prompts/companyReportPrompt.js";
 
 const apiAnalyze = readFileSync(new URL("../../../api/analyze.js", import.meta.url), "utf8");
-const companyAnalysis = readFileSync(new URL("../../../lib/company-analysis.js", import.meta.url), "utf8");
+const companyAnalysis = readFileSync(new URL("../../../lib/analysis/company-analysis.js", import.meta.url), "utf8");
 const outputMarker = "# [출력: JSON만, 마크다운 코드 블록 없이]";
 const constraintsMarker = "# [제약 조건]";
 

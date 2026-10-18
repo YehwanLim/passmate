@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import analyzeHandler from "../../api/analyze.js";
 import { buildExtractPrompt } from "../../shared/prompts/extractPrompt.js";
-import { createExperienceExtractHandler, normalizeExtractOutput, normalizeExtractRequest } from "../../lib/experience-extract.js";
+import { createExperienceExtractHandler, normalizeExtractOutput, normalizeExtractRequest } from "../../lib/experience/experience-extract.js";
 import { createResponse } from "../helpers/http.js";
 
 const SOURCE = [

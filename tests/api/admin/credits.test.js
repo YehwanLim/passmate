@@ -18,7 +18,7 @@ vi.mock("../../../lib/prisma.js", () => ({
   default: mocks.prisma,
 }));
 
-vi.mock("../../../lib/analysis-entitlements.js", () => ({
+vi.mock("../../../lib/billing/analysis-entitlements.js", () => ({
   getEntitlementSummary: mocks.getEntitlementSummary,
   grantAdminCredits: mocks.grantAdminCredits,
 }));

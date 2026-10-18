@@ -1,7 +1,7 @@
 import {
   getEntitlementSummaryReadOnly,
   hasClaimedFeedbackReward,
-} from "../lib/analysis-entitlements.js";
+} from "../lib/billing/analysis-entitlements.js";
 import { AuthorizationError, requireActiveApplicationUser } from "../lib/auth.js";
 import {
   PRODUCT_QUERY_KEYS,
@@ -9,8 +9,8 @@ import {
   PURCHASE_PRODUCT_KEYS,
   parsePurchaseProductQuery,
   readPurchaseProductSettings,
-} from "../lib/entitlement-products.js";
-import grobleWebhookHandler from "../lib/groble-webhook-handler.js";
+} from "../lib/billing/entitlement-products.js";
+import grobleWebhookHandler from "../lib/billing/groble-webhook-handler.js";
 import prisma from "../lib/prisma.js";
 import { USER_RATE_LIMITS, peekUserRateLimit } from "../lib/rate-limit.js";
 import { handleRequestError, requestIdFor } from "../lib/request-errors.js";

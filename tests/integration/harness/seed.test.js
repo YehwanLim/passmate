@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { getEntitlementSummary } from "../../../lib/analysis-entitlements.js";
-import { getModelCallSequence, readAiModelSettings } from "../../../lib/ai-model-settings.js";
+import { getEntitlementSummary } from "../../../lib/billing/analysis-entitlements.js";
+import { getModelCallSequence, readAiModelSettings } from "../../../lib/analysis/ai-model-settings.js";
 import {
   createTestPrismaClient,
   prepareTestDatabase,

@@ -3,9 +3,9 @@ import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 
 import { AuthorizationError } from "../../lib/auth.js";
-import { EntitlementUnavailableError } from "../../lib/analysis-entitlements.js";
+import { EntitlementUnavailableError } from "../../lib/billing/analysis-entitlements.js";
 import { createAnalyzeHandler } from "../../api/analyze.js";
-import { runAllocatedAnalysis } from "../../lib/analysis-request-lifecycle.js";
+import { runAllocatedAnalysis } from "../../lib/analysis/analysis-request-lifecycle.js";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const IDEMPOTENCY_KEY = "analysis-request-key-1234";

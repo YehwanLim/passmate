@@ -1,4 +1,4 @@
-// 경험 → 자소서 초안 프롬프트의 단일 정의처. 서버 lib/experience-draft.js 만 쓴다.
+// 경험 → 자소서 초안 프롬프트의 단일 정의처. 서버 lib/experience/experience-draft.js 만 쓴다.
 // 지시는 규칙 나열보다 JSON 필드 설명에 둔다(모델이 스키마 설명을 더 잘 따른다). 예시 문장은 넣지 않는다 — 베낀다.
 
 const FIELD_MAX = 400;

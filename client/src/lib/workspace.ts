@@ -4,7 +4,7 @@ import type { ProjectSummary } from "@/types/my";
 
 /**
  * 내 지원서(작업실)·내 경험 API 클라이언트.
- * 서버: api/projects.js, api/projects/[projectId]/index.js, lib/experiences.js(계정 라우터 /api/account/experiences).
+ * 서버: api/projects.js, api/projects/[projectId]/index.js, lib/experience/experiences.js(계정 라우터 /api/account/experiences).
  */
 export type ApplicationQuestionDraft = {
   prompt: string;

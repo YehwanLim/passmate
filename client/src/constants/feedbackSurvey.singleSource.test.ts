@@ -8,7 +8,7 @@ const surveySource = readFileSync(
   "utf8"
 );
 const entitlementsSource = readFileSync(
-  new URL("../../../lib/analysis-entitlements.js", import.meta.url),
+  new URL("../../../lib/billing/analysis-entitlements.js", import.meta.url),
   "utf8"
 );
 const formSource = readFileSync(

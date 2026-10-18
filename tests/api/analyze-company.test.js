@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { AuthorizationError } from "../../lib/auth.js";
-import { EntitlementUnavailableError } from "../../lib/analysis-entitlements.js";
-import { companyRequestHash, normalizeCompanyRequest } from "../../lib/company-analysis.js";
+import { EntitlementUnavailableError } from "../../lib/billing/analysis-entitlements.js";
+import { companyRequestHash, normalizeCompanyRequest } from "../../lib/analysis/company-analysis.js";
 import analyzeHandler, {
   createAnalyzeHandler,
   createCompanyAnalyzeHandler,

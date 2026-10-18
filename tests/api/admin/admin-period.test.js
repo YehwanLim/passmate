@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { inPeriod, periodWhere, readPeriod, sumByBucket } from "../../../lib/admin-period.js";
+import { inPeriod, periodWhere, readPeriod, sumByBucket } from "../../../lib/admin-handlers/admin-period.js";
 
 // 2026-09-10(목) 15시 KST
 const NOW = new Date("2026-09-10T06:00:00.000Z");

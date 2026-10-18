@@ -1,4 +1,4 @@
-// 채용공고 맞춤 분석 — 서버(lib/job-posting.js)가 정리한 공고 요약과 그 레코드.
+// 채용공고 맞춤 분석 — 서버(lib/job-posting/job-posting.js)가 정리한 공고 요약과 그 레코드.
 // GET /api/analysis/:id 의 job_posting 과 분석 폼이 같은 형태를 쓴다.
 
 export interface JobPostingSummary {

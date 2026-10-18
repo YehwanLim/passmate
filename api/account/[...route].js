@@ -6,7 +6,7 @@ import {
   requireAuthenticatedUser,
 } from "../../lib/auth.js";
 import { ApiError, sendJson, withApiHandler } from "../../lib/api-handler.js";
-import { createExperienceDetailHandler, createExperiencesHandler } from "../../lib/experiences.js";
+import { createExperienceDetailHandler, createExperiencesHandler } from "../../lib/experience/experiences.js";
 import { createMentoringBookingsHandler, createMentoringSlotsHandler } from "../../lib/mentoring.js";
 import prisma from "../../lib/prisma.js";
 

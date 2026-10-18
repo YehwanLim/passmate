@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import analyzeHandler from "../../api/analyze.js";
-import { createExperienceDraftHandler, normalizeDraftOutput, normalizeDraftRequest } from "../../lib/experience-draft.js";
+import { createExperienceDraftHandler, normalizeDraftOutput, normalizeDraftRequest } from "../../lib/experience/experience-draft.js";
 import { createResponse } from "../helpers/http.js";
 
 const EXPS = [

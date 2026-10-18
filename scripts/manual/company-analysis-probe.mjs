@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { writeFileSync } from "node:fs";
 
-import { analyzeCompany } from "../../lib/company-analysis.js";
+import { analyzeCompany } from "../../lib/analysis/company-analysis.js";
 
 const args = process.argv.slice(2);
 const outFlagIndex = args.indexOf("--out");

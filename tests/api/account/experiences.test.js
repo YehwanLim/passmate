@@ -5,7 +5,7 @@ import {
   createExperienceDetailHandler,
   createExperiencesHandler,
   normalizeExperience,
-} from "../../../lib/experiences.js";
+} from "../../../lib/experience/experiences.js";
 import { createAccountRoutesHandler } from "../../../api/account/[...route].js";
 import { createResponse } from "../../helpers/http.js";
 

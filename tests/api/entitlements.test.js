@@ -28,7 +28,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("../../lib/analysis-entitlements.js", () => ({
+vi.mock("../../lib/billing/analysis-entitlements.js", () => ({
   getEntitlementSummaryReadOnly: mocks.getEntitlementSummaryReadOnly,
   hasClaimedFeedbackReward: mocks.hasClaimedFeedbackReward,
 }));
@@ -38,7 +38,7 @@ vi.mock("../../lib/auth.js", () => ({
   requireActiveApplicationUser: mocks.requireActiveApplicationUser,
 }));
 
-vi.mock("../../lib/groble-webhook-handler.js", () => ({
+vi.mock("../../lib/billing/groble-webhook-handler.js", () => ({
   default: mocks.grobleWebhookHandler,
 }));
 

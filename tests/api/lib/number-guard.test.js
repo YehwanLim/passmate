@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BLANK_NUMBER, guardNumbers, numberCores } from "../../../lib/number-guard.js";
+import { BLANK_NUMBER, guardNumbers, numberCores } from "../../../lib/experience/number-guard.js";
 
 describe("number-guard", () => {
   it("근거 글에 있는 숫자만 남기고 나머지는 [실제 수치]로 바꾼다(쉼표·앞자리 0 무시)", () => {

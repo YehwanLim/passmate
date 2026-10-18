@@ -6,7 +6,7 @@ import {
   createJobPostingHandler,
   normalizePostingRequest,
   normalizePostingSummary,
-} from "../../lib/job-posting.js";
+} from "../../lib/job-posting/job-posting.js";
 import { createResponse } from "../helpers/http.js";
 
 const VALID_TEXT = "수행 업무: 데이터 기반 서비스 기획. 자격요건: 고객 데이터 분석 경험. ".repeat(6);

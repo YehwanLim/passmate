@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../../lib/analysis-entitlements.js", () => ({
+vi.mock("../../lib/billing/analysis-entitlements.js", () => ({
   grantGroblePurchase: mocks.grantGroblePurchase,
 }));
 
@@ -25,7 +25,7 @@ vi.mock("../../lib/prisma.js", () => ({
   default: mocks.prisma,
 }));
 
-const { createGrobleWebhookHandler } = await import("../../lib/groble-webhook-handler.js");
+const { createGrobleWebhookHandler } = await import("../../lib/billing/groble-webhook-handler.js");
 
 const CONTENT_ID = "4SGBV5"; // 기존 상수 유지 — 이제 STANDARD 의 contentId
 const SINGLE_CONTENT_ID = "6HteWn"; // 기존 상수 유지(1회권)

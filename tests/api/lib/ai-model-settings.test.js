@@ -5,7 +5,7 @@ import {
   getModelCallSequence,
   readAiModelSettings,
   writeAiModelSettings,
-} from "../../../lib/ai-model-settings.js";
+} from "../../../lib/analysis/ai-model-settings.js";
 
 describe("getActiveModel", () => {
   it("returns the configured provider and model together", () => {

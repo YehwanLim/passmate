@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createAnalyzeHandler } from "../../api/analyze.js";
-import { getEntitlementSummary } from "../../lib/analysis-entitlements.js";
+import { getEntitlementSummary } from "../../lib/billing/analysis-entitlements.js";
 import { SUCCESS_REPORT_TEXT, installProviderFixture } from "./harness/provider-fixture.js";
 import {
   seedAiModelSettings,

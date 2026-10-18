@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../lib/api-handler.js";
-import { allocateAnalysisRequest } from "../../lib/analysis-request-lifecycle.js";
-import { normalizeRequest, requestHash, verifyResumeRequest } from "../../lib/resume-analysis.js";
+import { allocateAnalysisRequest } from "../../lib/analysis/analysis-request-lifecycle.js";
+import { normalizeRequest, requestHash, verifyResumeRequest } from "../../lib/analysis/resume-analysis.js";
 
 const PROJECT_ID = "22222222-2222-4222-8222-222222222222";
 const QUESTIONS = [{ question: "지원 동기", answer: "가".repeat(250) }];

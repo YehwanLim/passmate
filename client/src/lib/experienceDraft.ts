@@ -1,6 +1,6 @@
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 
-/** 경험 → 초안 API 클라이언트. 서버 lib/experience-draft.js 의 응답 필드명과 함께 움직인다. */
+/** 경험 → 초안 API 클라이언트. 서버 lib/experience/experience-draft.js 의 응답 필드명과 함께 움직인다. */
 export type DraftSentence = { text: string; kind: "job" | "experience" | "plan"; sourceIds: string[]; unsourced: boolean };
 export type DraftOk = {
   kind: "ok";

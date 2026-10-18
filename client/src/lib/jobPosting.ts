@@ -1,7 +1,7 @@
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import type { JobPostingRecord, JobPostingSummary } from "@/types/jobPosting";
 
-// 서버 lib/job-posting.js 와 같은 상한. 한쪽만 바꾸지 않는다(analyzeConstants.ts 와 같은 규칙).
+// 서버 lib/job-posting/job-posting.js 와 같은 상한. 한쪽만 바꾸지 않는다(analyzeConstants.ts 와 같은 규칙).
 export const MAX_POSTING_CHARS = 6000;
 export const MIN_POSTING_CHARS = 200;
 export const MAX_POSTING_URL_CHARS = 2048;

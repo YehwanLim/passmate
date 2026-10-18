@@ -4,7 +4,7 @@ import { requireActiveApplicationUser } from "../lib/auth.js";
 import {
   FEEDBACK_REWARD_CREDITS,
   grantFeedbackCredit,
-} from "../lib/analysis-entitlements.js";
+} from "../lib/billing/analysis-entitlements.js";
 import {
   SURVEY_MAX_COMMENT_LENGTH,
   SURVEY_MIN_COMMENT_LENGTH,

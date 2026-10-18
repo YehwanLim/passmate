@@ -1,9 +1,9 @@
 import prisma from "../lib/prisma.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../lib/auth.js";
-import { normalizeKeywords, stripEmphasis } from "../lib/report-fields.js";
+import { normalizeKeywords, stripEmphasis } from "../lib/analysis/report-fields.js";
 import { normalizeProjectCreate } from "../lib/application-drafts.js";
-import { buildProjectTitle } from "../lib/resume-analysis.js";
+import { buildProjectTitle } from "../lib/analysis/resume-analysis.js";
 
 // 무료 도구라 계정당 지원서 수에 상한을 둔다(남용 방지). 실사용 한 시즌에 수십 개 수준.
 const MAX_PROJECTS_PER_USER = 200;

@@ -1,7 +1,7 @@
 import prisma from "../../lib/prisma.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../../lib/auth.js";
-import { sanitizeAiResponse } from "../../lib/report-fields.js";
+import { sanitizeAiResponse } from "../../lib/analysis/report-fields.js";
 
 export function createAnalysisHandler({
   db = prisma,
