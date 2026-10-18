@@ -6,7 +6,6 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 
 | 파일                      | 기업             | 출처                                                                                                                                                                                                               |
 | ------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `cj.svg`                  | CJ               | [CompaniesLogo](https://companieslogo.com/cj-group/logo/)                                                                                                                                                          |
 | `kakao.svg`               | 카카오           | [CompaniesLogo](https://companieslogo.com/kakao/logo/)                                                                                                                                                             |
 | `naver.svg`               | NAVER            | [CompaniesLogo](https://companieslogo.com/naver/logo/)                                                                                                                                                             |
 | `lg.svg`                  | LG               | [CompaniesLogo](https://companieslogo.com/lg-corp/logo/)                                                                                                                                                           |
@@ -48,7 +47,7 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `kis.svg` | 한국투자증권 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Korea_Investment_%26_Securities_Logo_KR.png) | truefriend 를 빼고 한국투자 증권만 |
 | `hanjin.svg` | 한진 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hanjin_2025.svg) | |
 | `dn-solutions.svg` | DN솔루션즈 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DN_Solutions_logo.svg) | SOLUTIONS 글자를 빼고 DN만 |
-| `cj-group.svg` | CJ그룹 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:CJ_logo.svg) | 마키용 `cj.svg`는 어두운 배경용이라 따로 둠 |
+| `cj-group.svg` | CJ그룹 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:CJ_logo.svg) | |
 | `hyundai-autoever-color.svg` | 현대오토에버 | [현대오토에버 홈페이지](https://www.hyundai-autoever.com/common/images/typea-logo.svg) | 마키용 `hyundai-autoever.svg`는 흰색이라 따로 둠 |
 | `korean-re.svg` | 코리안리재보험 | [코리안리 홈페이지](https://www.koreanre.co.kr/images/com/f_logo.png) | PNG를 SVG 래퍼에 |
 | `dongsuh.svg` | 동서식품 | [동서식품 홈페이지](https://www.dongsuh.co.kr/images/common/logo_default.svg) | |

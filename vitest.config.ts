@@ -6,7 +6,7 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      exclude: [...configDefaults.exclude, "**/.worktrees/**", "tests/integration/**"],
+      exclude: [...configDefaults.exclude, "**/.worktrees/**", "**/.claude/**", "tests/integration/**"],
       env: {
         VITE_SUPABASE_URL: "https://unit-test.supabase.co",
         VITE_SUPABASE_ANON_KEY: "unit-test-anon-key",

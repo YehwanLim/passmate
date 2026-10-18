@@ -6,7 +6,6 @@ const mocks = vi.hoisted(() => ({ navigate: vi.fn(), listExperiences: vi.fn() })
 vi.mock("wouter", () => ({ useLocation: () => ["/my", mocks.navigate], Link: ({ children }: { children: unknown }) => children }));
 vi.mock("@/hooks/useRequireAuth", () => ({ useRequireAuth: () => ({ user: { id: "u1" }, isLoading: false }) }));
 vi.mock("@/components/SiteHeader", () => ({ default: () => null }));
-vi.mock("@/components/SubtleBackground", () => ({ default: () => null }));
 vi.mock("@/components/my/ExperienceVault", () => ({ default: () => <div>경험 탭 내용</div> }));
 vi.mock("@/components/my/MyCreditsPanel", () => ({ default: ({ kind }: { kind: string }) => <aside data-testid="credits">{kind}</aside> }));
 vi.mock("@/lib/apiAuth", () => ({
