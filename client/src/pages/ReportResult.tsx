@@ -18,6 +18,7 @@ import { MentorCommentSection } from "@/components/report/sections/MentorComment
 import { PostingFitSection } from "@/components/report/sections/PostingFitSection";
 import { ReportClosing } from "@/components/report/sections/ReportClosing";
 import { ReportBlock } from "@/components/report/sections/ReportBlock";
+import SaveExperiencesCard, { resumeTextForExtract } from "@/components/report/SaveExperiencesCard";
 import { UI_LABELS } from "@/constants/labels";
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
 import { useAuth } from "@/contexts/AuthContext";
@@ -77,6 +78,8 @@ interface LoadedReport {
   targetJobRole: string;
   /** 채용공고를 붙여 분석한 리포트에만 있다. 공고 적합도 섹션의 부제(회사 · 직무 · 출처)에 쓴다. */
   jobPosting?: JobPostingRecord | null;
+  /** 경험 저장 카드에 넘길 자소서 답변. 가져오기에 짧으면 "" 이고 카드를 숨긴다. */
+  resumeText?: string;
   /** 로그인 없이 보는 공개 예시(/report-new?sample=1). 잠금·피드백·업셀 대신 분석 시작 CTA를 둔다. */
   sample?: boolean;
 }
@@ -102,6 +105,7 @@ function AuthenticatedReport() {
         jobPosting: payload.job_posting
           ? { id: payload.job_posting.id, sourceUrl: payload.job_posting.source_url, summary: payload.job_posting.summary }
           : null,
+        resumeText: resumeTextForExtract(payload.input_text),
       };
     },
   });
@@ -131,6 +135,7 @@ function ReportContent({
   targetCompany,
   targetJobRole,
   jobPosting = null,
+  resumeText = "",
   displayName,
   sample = false,
 }: LoadedReport & { displayName: string }) {
@@ -371,6 +376,8 @@ function ReportContent({
                 analysisId={activeAnalysisId}
                 rewardAvailable={feedbackRewardAvailable}
               />
+
+              {resumeText ? <SaveExperiencesCard resumeText={resumeText} /> : null}
 
               <ReportClosing
                 targetCompany={targetCompany}

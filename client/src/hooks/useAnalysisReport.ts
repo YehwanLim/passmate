@@ -10,6 +10,8 @@ export interface AnalysisPayload {
   company_name?: string | null;
   job_role?: string | null;
   ai_response_json?: unknown;
+  /** 자소서 원문("[문항 N]" 표시로 합친 답변). 기업 리포트는 "" */
+  input_text?: string;
   /** 채용공고를 붙여 분석한 자소서 리포트에만 있다 */
   job_posting?: { id: string; source_url: string | null; summary: JobPostingSummary } | null;
 }

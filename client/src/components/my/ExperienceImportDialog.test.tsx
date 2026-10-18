@@ -92,4 +92,19 @@ describe("이력서·자소서로 자동 추가", () => {
     expect(await screen.findByText("경험은 100개까지 담을 수 있어요. 지금 1개 더 담을 수 있어요.")).toBeTruthy();
     expect(mocks.createExperiences).not.toHaveBeenCalled();
   });
+
+  it("채워 둔 글(initialText)이 있으면 붙여넣기 없이 열리자마자 한 번만 뽑는다", async () => {
+    mocks.requestExperienceCandidates.mockResolvedValue({ kind: "ok", remainingToday: 2, candidates: [cand("로그로 찾은 이탈 원인")] });
+    setup({ initialText: TEXT });
+    expect(await screen.findByText("경험 1개를 찾았어요. 저장할 것만 골라 주세요.")).toBeTruthy();
+    expect(mocks.requestExperienceCandidates).toHaveBeenCalledTimes(1);
+    expect(mocks.requestExperienceCandidates).toHaveBeenCalledWith(TEXT);
+  });
+
+  it("채워 둔 글로 뽑다 실패하면 그 글이 든 입력 화면으로 돌아간다", async () => {
+    mocks.requestExperienceCandidates.mockResolvedValue({ kind: "rate_limited" });
+    setup({ initialText: TEXT });
+    expect(await screen.findByText("오늘 가져오기를 다 썼어요. 내일 오전 9시에 다시 쓸 수 있어요.")).toBeTruthy();
+    expect((screen.getByLabelText("이력서·자소서 붙여넣기") as HTMLTextAreaElement).value).toBe(TEXT);
+  });
 });
