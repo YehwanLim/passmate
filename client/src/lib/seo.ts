@@ -55,7 +55,7 @@ function won(amount: number): string {
 }
 
 const SITE_DESCRIPTION =
-  "자소서, 어디서부터 써야 할지 막막하다면. 경험 정리부터 초안 작성, 자소서 분석 리포트까지 프리뷰에서 시작해보세요.";
+  "자소서, 어디서부터 써야 할지 막막하다면. 경험 정리부터 초안 작성, 자소서 분석 리포트까지 Pre:View에서 시작해보세요.";
 
 export const COMPANY_REPORT_SAMPLE_PATH = "/company-report?sample=1";
 

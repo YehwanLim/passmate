@@ -25,15 +25,16 @@ const founderSignals = [
 
 export function FounderNoteSection() {
   return (
-    <section className="bg-fill py-24 md:py-[120px]">
+    <section className="bg-fill py-20 md:py-[120px]">
       <div className="max-w-6xl mx-auto px-6 lg:px-10">
         <div>
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
-            <div className="rounded-[28px] bg-surface p-8 md:rounded-[32px] md:p-[52px]">
+            <div className="rounded-[28px] bg-surface p-6 md:rounded-[32px] md:p-[52px]">
               {/* 워드마크는 이미지라 헤딩 텍스트가 "왜 를 만들었나요?"로 추출된다. 이름을 sr-only 텍스트로 넣고 이미지는 장식으로 둔다. */}
               <h2 className="mb-5 text-[28px] font-extrabold leading-[1.3] tracking-[-0.035em] text-ink md:text-[44px]">
                 왜 <span className="sr-only">Pre:View</span>
-                <BrandName decorative variant="default" />를 만들었나요?
+                {/* 워드마크(이미지)와 조사 사이에서 줄이 끊기지 않게 묶는다. */}
+                <span className="whitespace-nowrap"><BrandName decorative variant="default" />를</span> 만들었나요?
               </h2>
               <p className="mb-5 text-[16px] leading-[1.8] text-ink-2 md:text-[17px]">
                 커피챗에서 만난 취준생들은 대부분 이미 좋은 경험을 가지고
@@ -50,7 +51,7 @@ export function FounderNoteSection() {
                 만들었습니다.
               </p>
 
-              <div className="flex flex-col gap-3 rounded-[20px] bg-fill-soft p-6 md:p-[26px]">
+              <div className="flex flex-col gap-3 rounded-[20px] bg-fill-soft p-5 md:p-[26px]">
                 <span className="inline-flex h-[26px] w-fit items-center rounded-[8px] bg-line px-2.5 text-[13px] font-bold text-ink-3">
                   Founder note
                 </span>
@@ -62,7 +63,7 @@ export function FounderNoteSection() {
               </div>
             </div>
 
-            <div className="rounded-[28px] bg-ink p-8 text-white md:rounded-[32px] md:p-11">
+            <div className="rounded-[28px] bg-ink p-6 text-white md:rounded-[32px] md:p-11">
               <p className="text-[22px] font-extrabold tracking-[-0.02em] text-white md:text-[24px]">
                 분석 기준은 어떻게 정해졌나요?
               </p>
@@ -111,7 +112,7 @@ export default function FounderSection() {
       {/* ══════════════════════════════════════════════════
           CTA
           ══════════════════════════════════════════════════ */}
-      <section className="bg-fill px-6 py-24 md:py-[120px] lg:px-10">
+      <section className="bg-fill px-6 py-20 md:py-[120px] lg:px-10">
         <div className="mx-auto max-w-7xl rounded-[28px] bg-surface px-6 py-16 text-center md:rounded-[32px] md:px-14 md:py-20">
           <h2
             className="mb-[18px] text-[28px] font-extrabold leading-[1.3] tracking-[-0.035em] text-ink md:text-[46px]"
@@ -196,33 +197,36 @@ export default function FounderSection() {
             </div>
             <p className="text-[13px] text-ink-3">
               &copy; 2026 <BrandName variant="default" />. All rights reserved.{" "}
-              <Link
-                href="/privacy"
-                className="text-ink-3 hover:text-ink transition-colors ml-1"
-              >
-                개인정보처리방침
-              </Link>{" "}
-              &middot;{" "}
-              <Link
-                href="/terms"
-                className="text-ink-3 hover:text-ink transition-colors"
-              >
-                이용약관
-              </Link>{" "}
-              &middot;{" "}
-              <Link
-                href="/help"
-                className="text-ink-3 hover:text-ink transition-colors"
-              >
-                고객센터
-              </Link>{" "}
-              &middot;{" "}
-              <a
-                href="mailto:hansitoring@gmail.com"
-                className="text-ink-3 hover:text-ink transition-colors"
-              >
-                문의 hansitoring@gmail.com
-              </a>
+              {/* 폰에선 링크 묶음을 한 줄 내려, "개인정보처리방침 ·"에서 어중간하게 끊기지 않게 한다. */}
+              <span className="mt-1.5 block sm:mt-0 sm:inline">
+                <Link
+                  href="/privacy"
+                  className="text-ink-3 hover:text-ink transition-colors sm:ml-1"
+                >
+                  개인정보처리방침
+                </Link>{" "}
+                &middot;{" "}
+                <Link
+                  href="/terms"
+                  className="text-ink-3 hover:text-ink transition-colors"
+                >
+                  이용약관
+                </Link>{" "}
+                &middot;{" "}
+                <Link
+                  href="/help"
+                  className="text-ink-3 hover:text-ink transition-colors"
+                >
+                  고객센터
+                </Link>{" "}
+                &middot;{" "}
+                <a
+                  href="mailto:hansitoring@gmail.com"
+                  className="whitespace-nowrap text-ink-3 hover:text-ink transition-colors"
+                >
+                  문의 hansitoring@gmail.com
+                </a>
+              </span>
             </p>
           </div>
         </div>

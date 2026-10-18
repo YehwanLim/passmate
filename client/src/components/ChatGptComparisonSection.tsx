@@ -278,7 +278,7 @@ export default function ChatGptComparisonSection() {
   const active = CASES[activeIndex];
 
   return (
-    <section className="relative overflow-hidden bg-ink py-24 text-white md:py-[120px]">
+    <section className="relative overflow-hidden bg-ink py-20 text-white md:py-[120px]">
       {/* 10월 밝은 디자인에서 유일하게 남긴 어두운 띠. 회색 무대 사이에서 "다른 도구와의 비교"를 끊어 보여준다. */}
       <div className="relative mx-auto max-w-6xl px-6 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">

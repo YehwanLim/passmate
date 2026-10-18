@@ -15,7 +15,7 @@ export default function GuideTeaserSection() {
   if (guides.length === 0) return null;
 
   return (
-    <section className="bg-fill-soft py-24 md:py-[120px]" aria-labelledby="guide-teaser-title">
+    <section className="bg-fill-soft py-20 md:py-[120px]" aria-labelledby="guide-teaser-title">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10">
           <div className="flex flex-col items-start gap-3.5">

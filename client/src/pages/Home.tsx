@@ -13,7 +13,7 @@ import FounderSection, {
 import HeroWorkflowDemo from "@/components/HeroWorkflowDemo";
 import SiteHeader from "@/components/SiteHeader";
 import { Check, X } from "lucide-react";
-import { useEffect, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 import { Link } from "wouter";
 import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
@@ -116,6 +116,28 @@ export default function Home() {
     return () => window.clearTimeout(id);
   }, []);
 
+  // 폰 첫 화면 맨 아래에 시연 윗부분이 걸쳐 보이다 바탕색으로 흐려져 "아래에 더 있다"를 알린다. 스크롤해 충분히 보이면 가림막을 걷는다.
+  const heroDemoRef = useRef<HTMLDivElement>(null);
+  const [heroDemoRevealed, setHeroDemoRevealed] = useState(false);
+  useEffect(() => {
+    const el = heroDemoRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setHeroDemoRevealed(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setHeroDemoRevealed(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   /* ─── Render ─── */
   return (
     <div
@@ -138,11 +160,13 @@ export default function Home() {
       <div className="bg-fill-soft">
         {/* 시연 칸은 폭 600px 안팎에서 짜여 있다. 좌우로 나누면 1280px 미만에선 시연이 400px 대로 좁아져 글자가 겹치므로,
             xl 부터만 좌우로 두고 그 아래는 문구 → 시연 순으로 쌓는다. */}
-        <section className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] items-center gap-12 px-6 pb-20 pt-14 lg:px-10 lg:pb-[120px] lg:pt-16 xl:grid-cols-[520px_minmax(0,1fr)] xl:gap-14">
-          <div className="flex flex-col items-start gap-6">
+        <section className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] items-center gap-4 px-6 pb-20 md:gap-12 md:pt-14 lg:px-10 lg:pb-[120px] lg:pt-16 xl:grid-cols-[520px_minmax(0,1fr)] xl:gap-14">
+          {/* 폰에선 첫 화면을 문구~버튼으로 채운다. 제목은 가운데쯤, 버튼은 아래쪽(아래 여백 40px), 맨 아래 112px 엔 시연이 보이다 흐려진다.
+              197px = 떠 있는 헤더가 흐름에서 차지하는 69px(nav sticky, 위 여백 12px + 바 57px) + 칸 사이 16px + 시연이 걸치는 112px. */}
+          <div className="flex min-h-[calc(100svh-197px)] flex-col items-center gap-6 pb-10 text-center md:min-h-0 md:items-start md:pb-0 md:text-left">
             {/* H1 */}
             <motion.h1
-              className="text-[36px] font-semibold leading-[1.3] tracking-[-0.03em] text-navy sm:text-[44px] xl:text-[50px]"
+              className="mt-auto text-[36px] font-semibold leading-[1.3] tracking-[-0.03em] text-navy sm:text-[44px] md:mt-0 xl:text-[50px]"
               {...HERO_TITLE_MOTION}
             >
               흩어진 경험을,
@@ -156,10 +180,12 @@ export default function Home() {
               style={{ "--rise-delay": "0.3s" } as CSSProperties}
             >
               <p className="text-[16px] leading-[1.75] text-ink-3 md:text-[18px]">
-                내 경험을 모아 두면 공고에 맞춰 초안을 잡아 드리고,
+                자소서, 어디서부터 써야 할지 막막하다면.
+                <br />
+                경험 정리부터 초안 작성, 자소서 분석 리포트까지
                 {/* JSX 는 요소와 붙은 줄바꿈 공백을 지운다. br 이 숨겨지는 모바일에서 붙지 않도록 공백을 명시한다. */}{" "}
                 <br className="hidden md:inline" />
-                다 쓰면 채용 담당자 눈으로 고칠 곳을 짚어 드려요.
+                Pre:View에서 시작해보세요.
               </p>
               <p className="text-[13px] leading-[1.6] text-ink-4">
                 대기업 현직 PM이 200번 넘는 커피챗에서 찾은 기준으로 만들었어요.
@@ -168,22 +194,34 @@ export default function Home() {
 
             {/* CTA */}
             <div
-              className="landing-rise mt-1.5 flex flex-wrap gap-2.5"
+              className="landing-rise mt-auto flex w-full flex-col md:mt-1.5 gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap"
               style={{ "--rise-delay": "0.45s", "--rise-y": "16px", "--rise-duration": "0.7s" } as CSSProperties}
             >
               {/* 일반 링크: 번들 평가가 첫 프레임 뒤로 미뤄져 있어(public/landing-boot.js) 그 사이 탭해도 이동해야 한다.
                   하이드레이션 뒤에는 wouter 가 클라이언트 라우팅으로 가로챈다. */}
-              <Link href="/analyze" className="landing-primary-cta" data-funnel-cta="hero">
+              <Link href="/analyze" className="landing-primary-cta w-full sm:w-auto" data-funnel-cta="hero">
                 내 자소서 무료로 분석하기
               </Link>
               {/* 로그인 없이 결과물부터 보고 싶은 방문자용 예시 리포트(ReportResult 의 ?sample=1, 가상의 지원자). */}
-              <Link href={RESUME_REPORT_SAMPLE_PATH} className="landing-secondary-cta" data-funnel-cta="sample">
+              <Link href={RESUME_REPORT_SAMPLE_PATH} className="landing-secondary-cta w-full sm:w-auto" data-funnel-cta="sample">
                 예시 리포트 보기
               </Link>
             </div>
           </div>
 
-          <HeroWorkflowDemo className="mx-auto w-full max-w-[640px] xl:max-w-none" />
+          <div
+            ref={heroDemoRef}
+            className="relative mx-auto w-full max-w-[640px] xl:max-w-none"
+          >
+            <HeroWorkflowDemo className="w-full" />
+            {/* 폰 전용 가림막: 위 24px 는 그대로 보이고 112px(첫 화면 아래 끝)까지 히어로 바탕색으로 흐려진 뒤 나머지를 덮는다. */}
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent_24px,var(--color-fill-soft)_112px)] transition-opacity duration-500 md:hidden ${
+                heroDemoRevealed ? "opacity-0" : "opacity-100"
+              }`}
+            />
+          </div>
         </section>
       </div>
 
@@ -191,7 +229,7 @@ export default function Home() {
       <ChatGptComparisonSection />
 
       {/* ── Before & After ── */}
-      <section className="bg-fill py-24 md:py-[120px]">
+      <section className="bg-fill py-20 md:py-[120px]">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <ScrollReveal className="text-center mb-12 md:mb-14">
             <h2 className="mb-4 text-[30px] font-extrabold leading-[1.3] tracking-[-0.035em] text-ink md:text-[46px]">
@@ -206,7 +244,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Before */}
             <ScrollReveal>
-              <div className="flex h-full flex-col gap-5 rounded-[28px] bg-surface p-8 md:p-11">
+              <div className="flex h-full flex-col gap-5 rounded-[28px] bg-surface p-6 md:p-11">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#FDECEE]">
                     <X className="h-[15px] w-[15px] text-[#C9252F]" strokeWidth={2.6} />
@@ -225,7 +263,7 @@ export default function Home() {
 
             {/* After */}
             <ScrollReveal>
-              <div className="flex h-full flex-col gap-5 rounded-[28px] bg-surface p-8 md:p-11">
+              <div className="flex h-full flex-col gap-5 rounded-[28px] bg-surface p-6 md:p-11">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-ok-soft">
                     <Check className="h-[15px] w-[15px] text-ok" strokeWidth={2.6} />

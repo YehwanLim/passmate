@@ -397,7 +397,7 @@ export default function ReportShowcase() {
   return (
     <section
       id="service-intro"
-      className="bg-fill py-24 md:py-[120px]"
+      className="bg-fill py-20 md:py-[120px]"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="text-center mb-10 md:mb-14">

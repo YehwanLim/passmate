@@ -18,12 +18,12 @@ export default function CompanyReportIntroSection() {
   return (
     <section
       id={COMPANY_REPORT_INTRO_ID}
-      className="bg-fill-soft py-24 md:py-[120px]"
+      className="bg-fill-soft py-20 md:py-[120px]"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-stretch">
           {/* 설명 */}
-          <div className="flex flex-col justify-center rounded-[28px] bg-surface p-8 md:rounded-[32px] md:p-[52px]">
+          <div className="flex flex-col justify-center rounded-[28px] bg-surface p-6 md:rounded-[32px] md:p-[52px]">
             <span className="inline-flex h-7 w-fit items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-bold text-ink-3">
               Company Brief
             </span>
@@ -40,11 +40,11 @@ export default function CompanyReportIntroSection() {
             </p>
             {/* 가격은 아래 가격 섹션이 맡는다. 두 버튼은 좌우로 나란히 두고, 라벨은 한 줄로 고정한다.
                 보조 버튼은 주 CTA 와 높이·모서리를 맞춘다. */}
-            <div className="mt-[26px] flex flex-wrap gap-2.5">
+            <div className="mt-[26px] flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => navigate("/company-analysis")}
-                className="landing-primary-cta group whitespace-nowrap"
+                className="landing-primary-cta group w-full whitespace-nowrap sm:w-auto"
               >
                 <span className="relative z-10">기업 분석 시작하기</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
@@ -52,7 +52,7 @@ export default function CompanyReportIntroSection() {
               <button
                 type="button"
                 onClick={() => navigate("/company-report?sample=1")}
-                className="landing-secondary-cta whitespace-nowrap"
+                className="landing-secondary-cta w-full whitespace-nowrap sm:w-auto"
               >
                 샘플 리포트 보기
               </button>
@@ -60,17 +60,17 @@ export default function CompanyReportIntroSection() {
           </div>
 
           {/* 리포트 목차 — 실제 리포트 섹션 순서 그대로 */}
-          <div className="flex flex-col gap-5 rounded-[28px] bg-surface p-8 md:rounded-[32px] md:p-11">
+          <div className="flex flex-col gap-5 rounded-[28px] bg-surface p-6 md:rounded-[32px] md:p-11">
             <span className="inline-flex h-7 w-fit items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-bold text-ink-3">
               리포트 목차
             </span>
-            <ol className="grid gap-x-3 gap-y-2.5 sm:grid-cols-2">
+            <ol className="grid grid-cols-2 gap-2 md:gap-x-3 md:gap-y-2.5">
               {COMPANY_REPORT_NAV_SECTIONS.map(section => (
                 <li
                   key={section.id}
-                  className="flex h-12 items-center gap-2.5 rounded-[14px] bg-fill-soft px-4 text-[15px] font-semibold text-ink"
+                  className="flex min-h-11 items-center gap-2 rounded-[12px] bg-fill-soft px-3 py-2 text-[14px] font-semibold leading-snug text-ink md:h-12 md:gap-2.5 md:rounded-[14px] md:px-4 md:py-0 md:text-[15px]"
                 >
-                  <span className="w-5 shrink-0 font-mono text-[13px] font-semibold text-brand-ink">
+                  <span className="w-[18px] shrink-0 font-mono text-[12px] font-semibold text-brand-ink md:w-5 md:text-[13px]">
                     {section.indexLabel}
                   </span>
                   {section.label}
