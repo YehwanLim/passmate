@@ -55,7 +55,7 @@ function won(amount: number): string {
 }
 
 const SITE_DESCRIPTION =
-  "자소서 첨삭 전에 채용 담당자 시선으로 먼저 읽어 봅니다. 첫인상, 핵심 진단, 문장 분석, 예상 면접 질문까지 담은 정성 리포트. 첫 분석은 무료.";
+  "자소서, 어디서부터 써야 할지 막막하다면. 경험 정리부터 초안 작성, 자소서 분석 리포트까지 프리뷰에서 시작해보세요.";
 
 export const COMPANY_REPORT_SAMPLE_PATH = "/company-report?sample=1";
 
