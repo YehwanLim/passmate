@@ -4,7 +4,8 @@ import { Calendar, Clock, Cpu, DollarSign, ExternalLink, Folder, User } from "lu
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { AnalysisDetail } from "@/hooks/admin/useAnalysisDetail";
-import { fmtCost, fmtMs, formatDate, type TokenTotals } from "@/pages/admin/resume-analysis/analysisDetailFormat";
+import { formatDate } from "@/lib/formatDate";
+import { fmtCost, fmtMs, type TokenTotals } from "@/pages/admin/resume-analysis/analysisDetailFormat";
 
 /** 상세 상단 3열: 대상 정보 · AI 모델 & 인프라 · 자원 사용량 및 비용. */
 export function AnalysisMetaCards({ detail, totals }: { detail: AnalysisDetail; totals: TokenTotals }) {
@@ -100,7 +101,7 @@ export function AnalysisMetaCards({ detail, totals }: { detail: AnalysisDetail; 
               <p className="font-medium">{fmtMs(detail.response_time_ms)}</p>
               <p className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
                 <Calendar className="size-3" />
-                {formatDate(detail.created_at)}
+                {formatDate(detail.created_at, "ymd-hms")}
               </p>
             </div>
           </div>

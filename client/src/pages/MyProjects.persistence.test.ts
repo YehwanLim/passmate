@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 
 const analyzeSource = readFileSync(new URL("./Analyze.tsx", import.meta.url), "utf8");
 const myProjectsSource = readFileSync(new URL("./MyProjects.tsx", import.meta.url), "utf8");
-const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.url), "utf8");
+const storageSource = readFileSync(new URL("../lib/storage.ts", import.meta.url), "utf8");
 const reportSource = readFileSync(new URL("./ReportResult.tsx", import.meta.url), "utf8");
 const myAnalysesSource = readFileSync(new URL("./MyAnalyses.tsx", import.meta.url), "utf8");
 const submitSource = readFileSync(new URL("../lib/analysisSubmit.ts", import.meta.url), "utf8");

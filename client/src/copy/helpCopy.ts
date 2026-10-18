@@ -1,4 +1,4 @@
-import { MAX_QUESTIONS, MAX_TOTAL_CHARS, MIN_TOTAL_CHARS } from "./analyzeConstants";
+import { MAX_QUESTIONS, MAX_TOTAL_CHARS, MIN_TOTAL_CHARS } from "@/lib/analyze/analyzeConstants";
 
 // 고객센터(/help) 문구. 답은 지어내지 않는다 — 이용약관·개인정보처리방침·서버 규칙(lib/analysis-entitlements.js)과 같은 내용만 쓴다.
 // 규칙이 바뀌면(무료 횟수·환불 조건·탈퇴 유예 등) 여기도 같이 고친다.

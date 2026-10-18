@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
+import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "@/lib/analyze/analyzeErrors";
 import { UI_LABELS } from "@/constants/labels";
 
 describe("getAnalyzeErrorMessage", () => {

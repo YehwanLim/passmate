@@ -16,7 +16,7 @@ import {
 } from "@/lib/workspace";
 import { parseTags } from "@/lib/experienceImport";
 import { KEYWORD_TEXT_MIN, requestKeywordSuggestions } from "@/lib/experienceKeywords";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 import ExperienceImportDialog from "./ExperienceImportDialog";
 import KebabMenu from "./KebabMenu";
 

@@ -12,7 +12,7 @@ import {
 } from "@/lib/experienceImport";
 import { extractTextFromFile, ResumeImportError } from "@/lib/resumeFileImport";
 import { createExperiences, WorkspaceApiError, type Experience, type ExperienceInput } from "@/lib/workspace";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 import ExperienceCandidateCard, { type EditableCandidate } from "./ExperienceCandidateCard";
 
 const COPY = WORKSPACE_COPY.experiences.import;

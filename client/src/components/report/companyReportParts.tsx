@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { MARKER_CLASS } from "@/components/report/richText";
-import { parseHighlightedText } from "./reportFirstImpression";
+import { parseHighlightedText } from "@/lib/report/reportFirstImpression";
 
 export const COMPANY_REPORT_DISCLAIMER =
   "AI가 공개 자료를 검색해 정리한 브리프입니다. 수치와 날짜는 부록의 출처 원문에서 확인하세요.";

@@ -30,9 +30,9 @@ import {
   type ApplicationMeta,
   type ApplicationQuestionDraft,
 } from "@/lib/workspace";
-import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
+import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "@/lib/analyze/analyzeErrors";
 import type { JobPostingRecord } from "@/types/jobPosting";
-import { WORKSPACE_COPY } from "./workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 const MAX_QUESTIONS = 5;
 const MAX_PROMPT_CHARS = 300;

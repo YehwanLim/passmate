@@ -10,7 +10,7 @@ import {
   resolveCoachPlacement,
   scrollChildIntoHorizontalView,
   tokenizeAnswerParagraph,
-} from "@/pages/reportLineAnalysis";
+} from "@/lib/report/reportLineAnalysis";
 import type { FeedbackCard, QuestionTab } from "@/types/report";
 import { renderRichText } from "../richText";
 

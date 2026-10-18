@@ -10,7 +10,7 @@ import type { AuthState, UserProfile } from "@/types/auth";
 import { trackLogin, trackSignUp } from "@/lib/analytics";
 import { sendFunnelEvent } from "@/lib/siteVisits";
 import { getGoogleOAuthOptions } from "@/lib/authOptions";
-import { clearPassMateStorage } from "@/utils/storage";
+import { clearPassMateStorage } from "@/lib/storage";
 
 // ============================================================
 // Context

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle, Check } from "lucide-react";
 
 import { UI_LABELS } from "@/constants/labels";
-import type { HiringMemoryItem } from "@/pages/reportFirstImpression";
+import type { HiringMemoryItem } from "@/lib/report/reportFirstImpression";
 import { renderCleanText } from "../richText";
 
 function ReadingStep({ time, label, tone, last, children }: { time: string; label: string; tone: "ok" | "fix"; last?: boolean; children: ReactNode }) {

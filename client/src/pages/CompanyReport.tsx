@@ -16,7 +16,7 @@ import { useScrollSpy } from "@/hooks/useScrollSpy";
 import { findCompanyJobPosting } from "@/lib/companyJobPosting";
 import { dDayLabel, formatDeadline, isOpen } from "@/lib/jobPostingDates";
 import { isRenderableCompanyReport, type CompanyReportData } from "@/types/companyReport";
-import { COMPANY_HERO_ID, buildCompanyReportNavSections } from "./companyReportNavigation";
+import { COMPANY_HERO_ID, buildCompanyReportNavSections } from "@/lib/report/companyReportNavigation";
 import {
   COMPANY_REPORT_DISCLAIMER,
   CompanySectionHeading,
@@ -28,7 +28,7 @@ import {
   SourceNote,
   Timeline,
   renderCompanyText,
-} from "./companyReportParts";
+} from "@/components/report/companyReportParts";
 
 /**
  * 표지 한 줄의 글자 크기. 프롬프트는 28자 이내를 요구하지만 모델이 30~45자를 자주 내놓는다.

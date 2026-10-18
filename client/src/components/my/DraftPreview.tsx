@@ -1,6 +1,6 @@
 import type { DraftOk } from "@/lib/experienceDraft";
 import { splitBlanks } from "@/lib/experienceDraft";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 const COPY = WORKSPACE_COPY.draft;
 

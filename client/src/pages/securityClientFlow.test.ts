@@ -9,7 +9,7 @@ const reportSource = readFileSync(new URL("./ReportResult.tsx", import.meta.url)
 const feedbackSource = readFileSync(new URL("../components/FeedbackSurveyForm.tsx", import.meta.url), "utf8");
 const feedbackTeaserSource = readFileSync(new URL("../components/FeedbackSection.tsx", import.meta.url), "utf8");
 const authSource = readFileSync(new URL("../contexts/AuthContext.tsx", import.meta.url), "utf8");
-const storageSource = readFileSync(new URL("../utils/storage.ts", import.meta.url), "utf8");
+const storageSource = readFileSync(new URL("../lib/storage.ts", import.meta.url), "utf8");
 const supabaseSource = readFileSync(new URL("../lib/supabase.ts", import.meta.url), "utf8");
 // 접수 POST 자체는 자소서·기업 분석이 함께 쓰는 lib/analysisSubmit.ts 가 한다.
 const submitSource = readFileSync(new URL("../lib/analysisSubmit.ts", import.meta.url), "utf8");

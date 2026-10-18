@@ -28,7 +28,7 @@ import { useScrollSpy } from "@/hooks/useScrollSpy";
 import { ReadingProgressBar } from "@/components/report/ReadingProgressBar";
 import type { JobPostingRecord } from "@/types/jobPosting";
 import type { ReportData } from "@/types/report";
-import { isReportSectionLocked } from "@/utils/reportAccess";
+import { isReportSectionLocked } from "@/lib/reportAccess";
 import {
   buildEditorialKeywords,
   getHeroIdentity,
@@ -38,9 +38,9 @@ import {
   resolveHiringMemoryItems,
   splitMentorComment,
   splitPersonaForHeroLines,
-} from "./reportFirstImpression";
-import { buildReportNavSections } from "./reportNavigation";
-import { isPostingFitRenderable } from "./reportPostingFit";
+} from "@/lib/report/reportFirstImpression";
+import { buildReportNavSections } from "@/lib/report/reportNavigation";
+import { isPostingFitRenderable } from "@/lib/report/reportPostingFit";
 
 function getFallbackDisplayName(user: { name?: string | null; email?: string | null } | null) {
   const authName = user?.name?.trim();

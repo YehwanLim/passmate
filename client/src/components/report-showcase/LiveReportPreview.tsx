@@ -17,8 +17,8 @@ import {
   normalizeDiagnosisEntries,
   resolveHiringMemoryItems,
   splitPersonaForHeroLines,
-} from "@/pages/reportFirstImpression";
-import { buildReportNavSections } from "@/pages/reportNavigation";
+} from "@/lib/report/reportFirstImpression";
+import { buildReportNavSections } from "@/lib/report/reportNavigation";
 import type { ReportData } from "@/types/report";
 
 import type { PreviewSceneId } from "./reportShowcaseSampleData";

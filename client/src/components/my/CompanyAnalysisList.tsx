@@ -1,7 +1,7 @@
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
 import { formatDate } from "@/lib/formatDate";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 function summaryOf(project: ProjectSummary): string | null {
   if (project.latest_status === "PENDING") return WORKSPACE_COPY.analyzingSummary;

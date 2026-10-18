@@ -5,7 +5,7 @@ import JobRoleCombobox from "@/components/analyze/JobRoleCombobox";
 import type { JobPostingListing } from "@/constants/jobPostings";
 import type { JobPostingDetail } from "@/constants/jobPostingDetails";
 import type { JobPostingRecord } from "@/types/jobPosting";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 const COPY = WORKSPACE_COPY.newApplicationForm;
 const field = "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[14.5px] text-ink placeholder:text-ink-5 focus:border-brand focus:outline-none";

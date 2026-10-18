@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import type { ReportNavSection } from "@/pages/reportNavigation";
+import type { ReportNavSection } from "@/lib/report/reportNavigation";
 
 /** 화면 상단 20%~40% 띠에 들어온 섹션을 활성 목차로 잡는다. */
 export function useScrollSpy(sections: ReportNavSection[]): string {

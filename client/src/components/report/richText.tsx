@@ -1,4 +1,4 @@
-import { parseHighlightedText } from "@/pages/reportFirstImpression";
+import { parseHighlightedText } from "@/lib/report/reportFirstImpression";
 
 type Segments = ReturnType<typeof parseHighlightedText>;
 

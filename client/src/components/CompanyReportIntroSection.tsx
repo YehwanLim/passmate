@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 
-import { COMPANY_REPORT_NAV_SECTIONS } from "@/pages/companyReportNavigation";
+import { COMPANY_REPORT_NAV_SECTIONS } from "@/lib/report/companyReportNavigation";
 
 /* ─────────────────────────────────────────────────────────
    CompanyReportIntroSection — 랜딩 기업 분석 리포트 소개

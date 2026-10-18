@@ -1,4 +1,4 @@
-import type { ReportNavSection } from "@/pages/reportNavigation";
+import type { ReportNavSection } from "@/lib/report/reportNavigation";
 
 /**
  * xl 이상에서 왼쪽에 고정되는 리포트 목차. 자소서·기업 리포트가 섹션 목록만 바꿔 쓴다.
