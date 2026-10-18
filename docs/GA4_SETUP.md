@@ -39,8 +39,8 @@ VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX   # 발급받은 실제 Measurement ID로 �
 
 | 환경 | 동작 |
 |------|------|
-| **개발** (`npm run dev`) | GA4 스크립트 로드 안 함. 브라우저 콘솔에 `[GA4 Dev] 이벤트명` 로그 출력 |
-| **프로덕션** (`npm run build`) | `VITE_GA_MEASUREMENT_ID`가 유효한 경우 gtag.js 자동 삽입 및 이벤트 전송 |
+| **개발** (`pnpm dev`) | GA4 스크립트 로드 안 함. 브라우저 콘솔에 `[GA4 Dev] 이벤트명` 로그 출력 |
+| **프로덕션** (`pnpm build`) | `VITE_GA_MEASUREMENT_ID`가 유효한 경우 gtag.js 자동 삽입 및 이벤트 전송. 단 관리자 권한으로 `/admin`에 들어간 적 있는 브라우저(`client/src/lib/internalTraffic.ts`)에서는 로드하지 않는다 |
 
 ---
 
@@ -48,13 +48,16 @@ VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX   # 발급받은 실제 Measurement ID로 �
 
 | 함수 | GA4 이벤트명 | 파라미터 | 호출 시점 |
 |------|-------------|----------|----------|
-| `trackSignUp()` | `sign_up` | `method: "google"` | 최초 Google 로그인(신규 가입) |
-| `trackLogin()` | `login` | `method: "google"` | Google 로그인 성공 |
+| `trackSignUp()` | `sign_up` | `method`: 로그인 제공자(`google`·`kakao` 등) | 신규 가입 |
+| `trackLogin()` | `login` | `method`: 로그인 제공자 | 로그인 성공 |
 | `trackResumeUpload()` | `resume_upload` | `file_type: "text"`, `resume_length: number` | 분석 제출 시 |
 | `trackAnalysisStart()` | `analysis_start` | `analysis_type: "cover_letter"`, `resume_length: number` | 분석 API 호출 직전 |
 | `trackAnalysisComplete()` | `analysis_complete` | `analysis_type`, `duration_ms`, `success: true` | 분석 성공 후 |
 | `trackAnalysisFailed()` | `analysis_failed` | `analysis_type`, `error_type`, `success: false` | 분석 실패 시 |
-| `trackPurchase()` | `purchase` | `value: number`, `currency: "KRW"` | 결제 성공 후 (결제 기능 구현 시 연결) |
+| `trackPageView()` | `page_view` | `page_path`, `page_location`, `page_title` | SPA 라우트 전환 시(첫 로드는 gtag config가 보냄) |
+| `trackLoginPrompt()` | `login_prompt` | `context` (예: `analyze_submit`, `job_posting`) | 로그인 없이 쓰던 화면에서 로그인 모달을 띄울 때 |
+
+> `trackPurchase`(구매 이벤트)는 현재 코드에 없다. 결제 집계는 GA4가 아니라 DB `payment_entitlements`와 관리자 화면을 본다.
 
 ### `error_type` 값 목록 (`trackAnalysisFailed`)
 
@@ -73,7 +76,7 @@ VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX   # 발급받은 실제 Measurement ID로 �
 ## 5. 개발 환경에서 이벤트 미리보기
 
 GA4 스크립트는 Production 빌드에서만 로드됩니다.
-개발 서버(`npm run dev`) 실행 중에는 브라우저 콘솔에서 이벤트를 확인할 수 있습니다.
+개발 서버(`pnpm dev`) 실행 중에는 브라우저 콘솔에서 이벤트를 확인할 수 있습니다.
 
 ```
 // 브라우저 개발자 도구 → Console 탭에서 확인
