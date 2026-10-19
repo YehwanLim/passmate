@@ -78,3 +78,8 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `dongkook-pharm.svg` | 동국제약 | [동국제약 홈페이지](https://www.dkpharm.co.kr/images/common/w-gnb-logo.png) | PNG를 SVG 래퍼에(작음) |
 | `kyungdong-pharm.svg` | 경동제약 | [경동제약 홈페이지](https://kdpharma.co.kr/img/common/2024_redesign_logo_1.png) | PNG를 잘라 SVG 래퍼에 |
 | `ilhwa.svg` | 일화 | [일화 홈페이지](https://cdn.imweb.me/thumbnail/20240220/68739b7914a09.png) | PNG를 SVG 래퍼에(작음) |
+| `meritz.svg` | 메리츠증권 | [Wikimedia Commons: Meritz Logo.svg](https://commons.wikimedia.org/wiki/File:Meritz_Logo.svg) | 퍼블릭 도메인 |
+| `gs.svg` | GS글로벌 | [Wikimedia Commons: GS logo (South Korean company).svg](https://commons.wikimedia.org/wiki/File:GS_logo_(South_Korean_company).svg) | 그룹 로고, 퍼블릭 도메인 |
+| `dining-brands.svg` | 다이닝브랜즈그룹 | [다이닝브랜즈그룹 홈페이지 CI](https://www.diningbrands.com/resource/home/assets/images/ci-logo.png) | PNG를 잘라 SVG 래퍼에 |
+| `logisall.svg` | 로지스올 | [로지스올 홈페이지](https://www.logisall.com/upload/g_image/logo-logisall.svg) | |
+| `sl-corp.svg` | 에스엘 | [에스엘 홈페이지](https://www.slworld.com/img/common/logo.png) | PNG를 SVG 래퍼에 |
