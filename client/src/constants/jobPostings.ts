@@ -815,6 +815,18 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     logo: "/company-logos/shinyoung-asset.svg",
   },
   {
+    slug: "daewoong-2026h2",
+    company: "대웅그룹",
+    shortName: "대웅그룹",
+    title: "대웅그룹 2026 하반기 신입 채용",
+    subtitle: "대웅제약·대웅바이오·대웅이엔지·시지바이오 계열 · 채용연계형 인턴십 후 정규직 전환 평가",
+    roles: "영업(제약·의료기기) · 생산(QA·QC·생산·설비·SCM) · 연구(바이오의약품) · 개발(임상·PV)",
+    opensAt: "2026-10-19",
+    closesAt: "2026-11-08T23:59:00+09:00",
+    updated: "2026-10-22",
+    logo: "/company-logos/daewoong.svg",
+  },
+  {
     slug: "nice-ratings-2026h2",
     company: "NICE신용평가",
     shortName: "NICE신용평가",
