@@ -87,3 +87,4 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `ls.svg` | LS MnM | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:LS_logo.svg) | 그룹 로고 "LS", Public domain |
 | `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
+| `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
