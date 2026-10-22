@@ -59,7 +59,7 @@
 | F1 | chatgpt-resume-prompt | ChatGPT 자소서 프롬프트 | 프롬프트보다 먼저 넣어야 하는 것(직무·공고·경험 원문) | 대기 |
 | F2 | ai-feedback-blindly | AI 자소서 첨삭 그대로 쓰면 | AI가 바꾼 문장 중 되돌려야 하는 것 | 대기 |
 | F3 | ai-plagiarism-check | AI 자소서 표절 검사, 자소서 유사도 | 검사기가 보는 것과 읽는 사람이 보는 것은 다르다 | 대기 |
-| F4 | resume-based-interview-questions | 자소서 기반 면접 질문 | 질문이 만들어지는 자리: 부풀린 곳, 한 줄로 쓴 경험 | 초안(10-22, PR 예정) |
+| F4 | resume-based-interview-questions | 자소서 기반 면접 질문 | 질문이 만들어지는 자리: 부풀린 곳, 한 줄로 쓴 경험 | 초안(10-22, PR #20) |
 | F5 | one-minute-intro | 면접 1분 자기소개 | 자소서의 한 문장 포지셔닝을 말로 옮기기 | 대기 |
 | F6 | last-words-interview | 면접 마지막 할 말 | 다짐 대신 확인하고 싶은 것 하나 | 대기 |
 | F7 | job-vs-executive-interview | 직무면접 임원면접 차이 | 직무면접=전문성, 임원면접=인성·간결 | 대기 |
