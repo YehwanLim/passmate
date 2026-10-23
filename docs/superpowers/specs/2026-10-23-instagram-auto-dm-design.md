@@ -34,6 +34,8 @@ ManyChat 대신 메타 공식 API(Instagram API with Instagram Login)로 직접 
 4. `messaging_postbacks`(버튼) 또는 `messages`(글자 답장) 수신 → IGSID 로 7일 안의 최신 `GATE_SENT` 기록을 찾는다(버튼이면 payload 의 id 우선).
 5. `is_user_follow_business` 조회 → true 면 자료 DM(이름 + 공개 링크) 보내고 `LINK_SENT`. false 면 재안내 + 같은 버튼, `followChecks += 1`. 5회를 넘으면 더 답하지 않는다.
 
+자료별 문구(10-23 추가): 노션 행의 `첫 DM 문구`·`링크 DM 문구`(글자, 500자까지)를 쓰면 그 자료는 그 문구를 쓴다. 링크는 링크 문구 다음 줄에 자동으로 붙고, 비어 있으면 아래 기본 문구를 쓴다.
+
 DM 문구 초안(계정 주인 검수 필요):
 
 - 첫 DM: "안녕하세요! 한시예요 🙌 댓글 고마워요. '{자료 이름}' 바로 보내 드릴게요. @hansionair 팔로우하고 아래 버튼만 눌러 주세요!" / 버튼 "팔로우했어요 ✅"
