@@ -106,7 +106,11 @@ describe("account deletion API", () => {
 describe("deleted account purge cron", () => {
   it("does not purge accounts without the protected cron credential", async () => {
     const purgeAccounts = vi.fn();
-    const handler = createPurgeDeletedAccountsHandler({ cronSecret: "cron-secret", purgeAccounts });
+    const handler = createPurgeDeletedAccountsHandler({
+      cronSecret: "cron-secret",
+      purgeAccounts,
+      instagramMaintenance: vi.fn(async () => ({})),
+    });
     const res = response();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
@@ -141,6 +145,7 @@ describe("deleted account purge cron", () => {
       cronSecret: "cron-secret",
       getAdminClient: () => ({ auth: { admin: { deleteUser } } }),
       purgeAccounts,
+      instagramMaintenance: vi.fn(async () => ({})),
     });
     const res = response();
 
@@ -165,5 +170,28 @@ describe("deleted account purge cron", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ purged: 1 });
     expect(instagramMaintenance).toHaveBeenCalledTimes(1);
+  });
+
+  it("still answers 200 when instagram maintenance throws", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const handler = createPurgeDeletedAccountsHandler({
+      cronSecret: "cron-secret",
+      purgeAccounts: vi.fn(async () => ({ purged: 1 })),
+      instagramMaintenance: vi.fn(async () => {
+        throw new Error("secret-token leaked");
+      }),
+    });
+    const res = response();
+
+    try {
+      await handler(request({ headers: { authorization: "Bearer cron-secret" }, method: "GET" }), res);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ purged: 1 });
+      expect(warn).toHaveBeenCalledWith("[instagram-dm] maintenance failed");
+      expect(JSON.stringify(warn.mock.calls)).not.toContain("secret-token");
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

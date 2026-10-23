@@ -59,7 +59,11 @@ export function createPurgeDeletedAccountsHandler({
       await purgeExpiredAuditEvents({ db });
       await purgeExpiredRateLimitBuckets({ db });
       // 인스타 자동 DM 토큰 갱신(30일마다)·발송 기록 1년 정리. 실패해도 계정 삭제 결과는 그대로 돌려준다.
-      await instagramMaintenance();
+      try {
+        await instagramMaintenance();
+      } catch {
+        console.warn("[instagram-dm] maintenance failed");
+      }
       return sendJson(res, 200, { purged: result.purged }, requestId);
     });
   };
