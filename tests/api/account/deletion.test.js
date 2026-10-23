@@ -150,4 +150,20 @@ describe("deleted account purge cron", () => {
     expect(res.body).toEqual({ purged: 1 });
     expect(deleteUser).toHaveBeenCalledWith(USER_ID);
   });
+
+  it("runs instagram maintenance after the purge without changing the response", async () => {
+    const instagramMaintenance = vi.fn(async () => ({ token: "skipped", purgedDeliveries: 0 }));
+    const handler = createPurgeDeletedAccountsHandler({
+      cronSecret: "cron-secret",
+      purgeAccounts: vi.fn(async () => ({ purged: 1 })),
+      instagramMaintenance,
+    });
+    const res = response();
+
+    await handler(request({ headers: { authorization: "Bearer cron-secret" }, method: "GET" }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ purged: 1 });
+    expect(instagramMaintenance).toHaveBeenCalledTimes(1);
+  });
 });
