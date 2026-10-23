@@ -37,6 +37,12 @@ describe("beta deployment security configuration", () => {
       source: "/api/webhooks/groble",
       destination: "/api/entitlements?grobleWebhook=1",
     });
+    // 인스타 자동 DM 웹훅도 같은 이유(12함수·원문 서명)로 entitlements 에 합류한다.
+    expect(existsSync(`${root}/api/webhooks/instagram.js`)).toBe(false);
+    expect(config.rewrites).toContainEqual({
+      source: "/api/webhooks/instagram",
+      destination: "/api/entitlements?instagramWebhook=1",
+    });
     expect(config.rewrites).toContainEqual({
       source: "/api/entitlements/purchase-intents",
       destination: "/api/entitlements?purchaseIntent=1",
@@ -92,6 +98,7 @@ describe("beta deployment security configuration", () => {
       // 공개 공지(팝업·배너). 같은 이유로 auth/me 함수에 얹는다.
       { source: "/api/notices", destination: "/api/auth/me?notices=1" },
       { source: "/api/webhooks/groble", destination: "/api/entitlements?grobleWebhook=1" },
+      { source: "/api/webhooks/instagram", destination: "/api/entitlements?instagramWebhook=1" },
       { source: "/api/entitlements/purchase-intents", destination: "/api/entitlements?purchaseIntent=1" },
       { source: "/api/analyze/split", destination: "/api/analyze?split=1" },
       { source: "/api/analyze/posting", destination: "/api/analyze?posting=1" },

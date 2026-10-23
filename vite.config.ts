@@ -32,6 +32,9 @@ function apiRoute(pathname: string) {
   // Groble 웹훅은 HMAC 서명을 원문으로 검증하므로 JSON 파싱 대신 원문을 전달한다
   if (pathname === "/api/webhooks/groble")
     return { file: "api/entitlements.js", query: { grobleWebhook: "1" }, raw: true };
+  // 인스타 웹훅도 서명을 원문으로 검증한다(lib/instagram-dm/webhook.js)
+  if (pathname === "/api/webhooks/instagram")
+    return { file: "api/entitlements.js", query: { instagramWebhook: "1" }, raw: true };
   if (pathname === "/api/auth/me") return { file: "api/auth/me.js", query: {} };
   if (pathname === "/api/visits") return { file: "api/auth/me.js", query: { visit: "1" } };
   if (pathname === "/api/notices") return { file: "api/auth/me.js", query: { notices: "1" } };

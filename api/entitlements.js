@@ -11,11 +11,12 @@ import {
   readPurchaseProductSettings,
 } from "../lib/billing/entitlement-products.js";
 import grobleWebhookHandler from "../lib/billing/groble-webhook-handler.js";
+import instagramWebhookHandler from "../lib/instagram-dm/webhook.js";
 import prisma from "../lib/prisma.js";
 import { USER_RATE_LIMITS, peekUserRateLimit } from "../lib/rate-limit.js";
 import { handleRequestError, requestIdFor } from "../lib/request-errors.js";
 
-// Groble 웹훅은 HMAC 서명을 원문(raw body)으로 검증하므로 파싱을 끈다.
+// Groble·인스타 웹훅은 HMAC 서명을 원문(raw body)으로 검증하므로 파싱을 끈다.
 // 이 함수의 나머지 경로(GET 요약, 구매 의도 생성)는 요청 본문을 읽지 않는다.
 export const config = {
   api: { bodyParser: false },
@@ -87,6 +88,13 @@ function isGrobleWebhookPath(req) {
     return true;
   }
   return pathnameOf(req) === "/api/webhooks/groble";
+}
+
+function isInstagramWebhookPath(req) {
+  if (req.query?.instagramWebhook === "1") {
+    return true;
+  }
+  return pathnameOf(req) === "/api/webhooks/instagram";
 }
 
 async function getAuthenticatedUser(req, res) {
@@ -194,6 +202,11 @@ async function createPurchaseIntent(req, res, user) {
 
 export default async function handler(req, res) {
   try {
+    // 인스타 웹훅도 메타 서버가 호출하므로 사용자 인증 대신 X-Hub-Signature-256 으로 검증한다.
+    if (isInstagramWebhookPath(req)) {
+      return await instagramWebhookHandler(req, res);
+    }
+
     // 웹훅은 Groble 서버가 호출하므로 사용자 인증 대신 HMAC 서명으로 검증한다.
     if (isGrobleWebhookPath(req)) {
       return await grobleWebhookHandler(req, res);

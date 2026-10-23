@@ -60,6 +60,10 @@
       "destination": "/api/entitlements?grobleWebhook=1"
     },
     {
+      "source": "/api/webhooks/instagram",
+      "destination": "/api/entitlements?instagramWebhook=1"
+    },
+    {
       "source": "/api/entitlements/purchase-intents",
       "destination": "/api/entitlements?purchaseIntent=1"
     },
