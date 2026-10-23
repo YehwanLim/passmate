@@ -36,6 +36,17 @@ export function extractCode(input) {
   return code.replace(/#_$/, "");
 }
 
+/** 이 스크립트가 직접 만든 오류. 메시지에 인스타 응답 코드만 담으므로 그대로 출력해도 안전하다. */
+class InstagramApiError extends Error {}
+
+/** /me 응답은 평평하게 오거나 {data:[...]} 로 감싸져 올 수 있다. 계정 ID 가 숫자가 아니면 null. */
+export function pickAccount(meBody) {
+  const me = meBody?.data?.[0] ?? meBody;
+  const accountId = String(me?.user_id ?? "");
+  if (!/^\d+$/.test(accountId)) return null;
+  return { accountId, username: typeof me.username === "string" ? me.username : "" };
+}
+
 function need(name) {
   const value = process.env[name];
   if (!value) {
@@ -50,7 +61,7 @@ async function requestJson(url, init) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.error) {
     const code = body?.error?.code ?? body?.error_type ?? response.status;
-    throw new Error(`인스타 API 실패(${code})`);
+    throw new InstagramApiError(`인스타 API 실패(${code})`);
   }
   return body;
 }
@@ -87,19 +98,29 @@ async function connect(input) {
   longUrl.searchParams.set("access_token", shortToken);
   const long = await requestJson(longUrl);
 
+  if (typeof long.access_token !== "string" || !long.access_token || !Number.isFinite(long.expires_in) || long.expires_in <= 0) {
+    console.error("장기 토큰 응답이 올바르지 않습니다. 저장하지 않고 중단합니다.");
+    process.exit(1);
+  }
+
   const auth = { Authorization: `Bearer ${long.access_token}` };
-  const me = await requestJson(`${GRAPH_HOST}/${GRAPH_VERSION}/me?fields=user_id,username`, { headers: auth });
-  await requestJson(`${GRAPH_HOST}/${GRAPH_VERSION}/me/subscribed_apps?subscribed_fields=${WEBHOOK_FIELDS}`, {
+  const meBody = await requestJson(`${GRAPH_HOST}/${GRAPH_VERSION}/me?fields=user_id,username`, { headers: auth });
+  const account = pickAccount(meBody);
+  if (!account) {
+    console.error("계정 정보 응답에 올바른 계정 ID 가 없습니다. 저장하지 않고 중단합니다.");
+    process.exit(1);
+  }
+  await requestJson(`${GRAPH_HOST}/${GRAPH_VERSION}/${account.accountId}/subscribed_apps?subscribed_fields=${WEBHOOK_FIELDS}`, {
     method: "POST",
     headers: auth,
   });
   await saveInstagramCredential({
     db: prisma,
-    accountId: String(me.user_id),
+    accountId: account.accountId,
     accessToken: long.access_token,
     expiresIn: long.expires_in,
   });
-  console.log(`연결 완료: @${me.username} (계정 ID ${me.user_id}), 웹훅 구독 ${WEBHOOK_FIELDS}`);
+  console.log(`연결 완료: @${account.username} (계정 ID ${account.accountId}), 웹훅 구독 ${WEBHOOK_FIELDS}`);
 }
 
 async function status() {
@@ -126,7 +147,8 @@ async function main([command, argument]) {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   main(process.argv.slice(2))
     .catch((error) => {
-      console.error(error.message);
+      // 토큰·응답 본문이 섞일 수 있는 원본 메시지는 찍지 않는다.
+      console.error(error instanceof InstagramApiError ? error.message : (error?.code ?? error?.name ?? "UNKNOWN"));
       process.exitCode = 1;
     })
     .finally(() => prisma.$disconnect?.());

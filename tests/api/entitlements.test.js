@@ -518,6 +518,21 @@ describe("entitlement APIs", () => {
     expect(mocks.requireActiveApplicationUser).not.toHaveBeenCalled();
   });
 
+  it("routes instagramWebhook=1 to the Instagram handler (unsigned POST -> 401), not Groble or user auth", async () => {
+    const response = await invokeEntitlements({
+      authorization: undefined,
+      body: { object: "instagram", entry: [] },
+      method: "POST",
+      path: "/api/entitlements?instagramWebhook=1",
+      query: { instagramWebhook: "1" },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body).toEqual({ error: "INSTAGRAM_WEBHOOK_SIGNATURE_INVALID" });
+    expect(mocks.grobleWebhookHandler).not.toHaveBeenCalled();
+    expect(mocks.requireActiveApplicationUser).not.toHaveBeenCalled();
+  });
+
   it("returns the documented JSON 405 for unsupported entitlement subpaths", async () => {
     const response = await invokeEntitlements({ path: "/api/entitlements/unknown" });
 
