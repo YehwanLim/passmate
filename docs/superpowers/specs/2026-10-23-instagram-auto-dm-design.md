@@ -29,7 +29,7 @@ ManyChat 대신 메타 공식 API(Instagram API with Instagram Login)로 직접 
 ## 흐름
 
 1. `comments` 웹훅 수신 → 서명 검증 → 내 계정 댓글이면 무시.
-2. 댓글 텍스트를 정규화(앞뒤 공백·문장부호·이모지 제거, 영문 대소문자 무시)해 노션 표의 `DM 키워드`와 **정확히 일치**하는 행을 찾는다. 대상은 `상태 = 공개·DM 연결` 이고 `공개 링크` 가 있는 행만.
+2. 댓글 텍스트를 정규화(앞뒤 공백·문장부호·이모지 제거, 영문 대소문자 무시)해 노션 표의 `DM 키워드`로 **댓글이 시작하거나 댓글의 한 낱말이 그 키워드로 시작**하면 그 행을 찾는다(10-24 변경: "PT 자료 주세요"도 됨, 여러 개 걸리면 가장 긴 키워드). 대상은 `상태 = 공개·DM 연결` 이고 `공개 링크` 가 있는 행만.
 3. 없으면 끝. 있으면 `comment_id` 로 첫 DM(팔로우 안내 + `[팔로우했어요 ✅]` 버튼, payload 에 발송 기록 id)을 보내고 `GATE_SENT` 로 기록. 응답의 `recipient_id`(IGSID)를 저장.
 4. `messaging_postbacks`(버튼) 또는 `messages`(글자 답장) 수신 → IGSID 로 7일 안의 최신 `GATE_SENT` 기록을 찾는다(버튼이면 payload 의 id 우선).
 5. `is_user_follow_business` 조회 → true 면 자료 DM(이름 + 공개 링크) 보내고 `LINK_SENT`. false 면 재안내 + 같은 버튼, `followChecks += 1`. 5회를 넘으면 더 답하지 않는다.
