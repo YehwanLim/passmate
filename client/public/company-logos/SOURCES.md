@@ -88,3 +88,8 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
 | `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
+| `hyundai-steel.svg` | 현대제철 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hyundai_Steel_logo.svg) | Public domain(상표 제한) |
+| `hyundai-lnc.svg` | 현대엘앤씨 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/Special:FilePath/Hyundai_L%26C_Logo.svg) | 라이선스 문구 미확인 |
+| `fanuc.svg` | 한국화낙 | [Wikimedia Commons](https://upload.wikimedia.org/wikipedia/commons/b/bb/Fanuc_logo.svg) | 영문 FANUC 워드마크, viewBox만 추가 |
+| `kb-insurance.svg` | KB손해보험 | [KB손해보험 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/01/28/5106923c-2fb2-4e30-ba70-5fca69e124cb.png) | PNG 여백을 잘라 SVG 래퍼에 |
+| `suhyup.svg` | 수협중앙회 | [수협중앙회 채용 사이트](https://raspfiles2.incruit.com/suhyup/data/101/SuccessData/addFile/수협중앙회_0000000_135x90.png) | PNG를 잘라 SVG 래퍼에 |
