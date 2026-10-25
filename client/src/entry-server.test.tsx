@@ -116,7 +116,8 @@ describe("entry-server renderRoute for every prerendered page", () => {
   it("renders a guide article body, not the 404 fallback", async () => {
     const guide = GUIDES[0];
     const html = await renderRoute(`/guide/${guide.slug}`, "");
-    expect(html).toContain(guide.title);
+    // 제목은 "앞부분," 을 span 으로 묶어 그리므로 태그를 걷어 낸 글자로 확인한다.
+    expect(html.replace(/<[^>]+>/g, "")).toContain(guide.title);
     expect(html).toContain('class="guide-prose');
     expect(html).not.toContain("Page Not Found");
   });

@@ -1,18 +1,19 @@
 ---
 title: 즐겨찾기 필수 취준 사이트 모음, 공고부터 기업분석까지
-description: 채용 공고, 기업분석, 자소서·면접 후기, 산업 통계까지 취준할 때 자주 여는 사이트를 용도별로 묶었어요. 면접 직전에 다시 훑을 곳도 같이 적었어요.
+description: 채용 공고, 기업분석, 자소서/면접 후기, 산업 통계까지 취준할 때 꼭 확인해야 하는 사이트를 모아두었어요.
 category: 자소서
 coverStyle: plain
 coverLabel: 취업 준비
 coverQuestion: 즐겨찾기 필수\n취준 사이트 모음
-coverAnswer: 공고·기업분석·자소서까지\n용도별로 정리
+coverAnswer: 공고·기업분석·자소서까지
 date: 2026-10-25
 keywords: 취업 준비 사이트, 취업 사이트 추천, 채용 공고 사이트, 기업분석 사이트, 취준 사이트
 ---
 
-AI도 잘 해 주지만, 여전히 직접 찾아봐야 하는 것들이 많아요.
+AI도 잘 알려주지만, 취준할 때는 여전히 직접 찾아봐야 하는 것들이 많은데요.
 
-자소서 쓸 때 열어 둘 사이트가 열 개가 넘기 십상이에요. 공고 확인, 회사 분석, 자소서 작성, 면접 준비 등 여러 사이트를 체계적으로 나눠 두면 어디부터 열어야 할지 고민하는 시간이 줄어들 수 있어요. 그렇게 용도별로 웹사이트를 구분하고 모았으니 취업 준비할 때 참고해 보세요!
+특히 자소서 처음 쓸 때는 열어 둘 사이트가 너무 많아서 정신 없어지기 쉬워요.
+공고 확인, 회사 분석, 자소서 작성, 면접 준비 등 여러 사이트를 체계적으로 나눠 두면 어디부터 열어야 할지 고민하는 시간이 줄어들 수 있어요. 용도별로 참고할 수 있는 사이트를 전부 다 모아봤습니다. 취업 준비할 때 참고해 보세요!
 
 ## 공채 공고 확인
 
@@ -47,7 +48,7 @@ Pre:View에도 [지금 접수 중인 채용 공고](/jobs)를 모아 두고 있�
 2. DART 사업보고서에서 회사가 공시한 사업 내용
 3. 뉴스 기사와 회사 뉴스룸에서 자꾸 반복되는 키워드
 
-뉴스는 회사 이름으로 검색해서 **10페이지쯤**까지 넘겨 보세요. 계속 눈에 걸리는 단어가 회사가 요즘 밀고 있는 거예요. 지원하는 회사 뉴스룸도 즐겨찾기해 두면 좋은데, 회사가 지금 뭘 미는지 회사 입으로 직접 써 둔 곳이라서요.
+뉴스는 회사 이름으로 검색해서 10페이지 정도까지 넘겨 보세요. 반복적으로 나오는 단어가 회사가 최근 밀고 있는 아이템입니다. 회사 뉴스룸 즐겨찾기도 필수!
 
 <div class="not-prose site-cards">
 <a class="site-card" href="https://dart.fss.or.kr" target="_blank" rel="noopener noreferrer"><img src="/guide/job-prep-websites/dart.png" alt="" width="44" height="44" loading="lazy"><span class="site-card__body"><span class="site-card__name">DART<span class="site-card__domain">dart.fss.or.kr</span></span><span class="site-card__desc">금융감독원 전자공시시스템이에요. 사업보고서의 '사업의 내용'에 회사가 직접 설명한 사업 구조가 나와요.</span></span></a>
@@ -79,11 +80,11 @@ Pre:View에도 [지금 접수 중인 채용 공고](/jobs)를 모아 두고 있�
 
 ## 면접 준비
 
-커피챗에서 면접 준비를 물어보시면 알려 드리는 곳이 일곱 군데 있어요. 직장 리뷰 사이트 두 곳, 링크드인에서 현직자가 쓴 업무 소개, 회사 홈페이지, 블로그 면접 후기, 포털 기사, 회사 유튜브 공식 채널이에요. 보다가 쓸 만한 건 키워드로만 스크랩해 두면 돼요.
+커피챗에서 면접 준비를 물어보시면 항상 알려 드리는 사이트가 있어요. 직장 리뷰 사이트 두 곳, 링크드인에서 현직자가 쓴 업무 소개, 회사 홈페이지, 블로그 면접 후기, 포털 기사, 회사 유튜브 공식 채널이에요. 보다가 쓸 만한 건 키워드만 적어둬도 충분해요.
 
-넓게 보더라도 숫자나 인재상까지 외울 필요는 없어요. 면접장에서 평가받는 건 결국 내 입에서 나오는 답변이거든요. 모아 둔 키워드 중에 면접에서 밀 건 한두 개만 들고 들어가세요.
+아무리 열심히 준비하더라도 디테일한 숫자나 인재상까지 외울 필요는 없어요. 면접에서 평가받는 건 결국 여러분의 입에서 나오는 답변이거든요. 모아 둔 키워드 중에 면접에서 답변으로 쓰기 좋은 것들은 따로 표시해두고, 답변에 어떻게 사용할지도 미리 연습해보세요.
 
-면접 후기는 이런 곳에 많이 올라와요.
+면접 후기는 여기에서 확인해보세요.
 
 <div class="not-prose site-cards">
 <a class="site-card" href="https://cafe.naver.com/specup" target="_blank" rel="noopener noreferrer"><img src="/guide/job-prep-websites/navercafe.png" alt="" width="44" height="44" loading="lazy"><span class="site-card__body"><span class="site-card__name">스펙업<span class="site-card__domain">cafe.naver.com/specup</span></span><span class="site-card__desc">취업 준비생이 모이는 네이버 카페예요. 기업별 면접 후기가 많이 올라와요.</span></span></a>
@@ -91,10 +92,11 @@ Pre:View에도 [지금 접수 중인 채용 공고](/jobs)를 모아 두고 있�
 <a class="site-card" href="https://everytime.kr" target="_blank" rel="noopener noreferrer"><img src="/guide/job-prep-websites/everytime.png" alt="" width="44" height="44" loading="lazy"><span class="site-card__body"><span class="site-card__name">에브리타임<span class="site-card__domain">everytime.kr</span></span><span class="site-card__desc">대학교 커뮤니티라 같은 학교 선배들의 합격 수기와 면접 후기를 찾아볼 수 있어요.</span></span></a>
 </div>
 
-제가 직접 본 면접 후기도 Pre:View [취업 가이드](/guide)에 올리고 있어요.
+제가 직접 본 면접 후기는 Pre:View [취업 가이드](/guide) 메뉴에 올리고 있어요.
 
 ---
 
-사이트에서 모은 회사 이야기를 이제 자소서로 옮길 차례라면, Pre:View [내 경험](/my)에 해 본 일을 먼저 적어 두세요. 문항을 넣으면 적어 둔 경험만으로 초안을 써 드려요. 경험에 없는 숫자는 지어내지 않고 빈칸으로 남겨요.
+여기저기서 모은 소재를 자소서로 옮길 차례라면, Pre:View [내 경험](/my)에 미리 적어 두세요.
+여러분이 적어 둔 경험만으로 자소서 초안을 써 드립니다.
 
-다 쓴 지원동기에 조사한 내용이 잘 녹았는지는 [자소서 분석](/analyze)에서 확인할 수 있어요. 첫 분석은 무료예요.
+완성된 자소서는 [자소서 분석](/analyze)을 통해 진단을 받아볼 수 있어요. 첫 1회는 무료입니다!

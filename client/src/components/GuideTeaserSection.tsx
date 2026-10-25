@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { GuideCover } from "@/components/guide/GuideCover";
-import { GUIDE_SUMMARIES, guideCoverTone, guidePath, readingMinutes } from "@/lib/guideSummaries";
+import { GUIDE_SUMMARIES, guideCoverTone, guidePath } from "@/lib/guideSummaries";
 import { GUIDE_INDEX_PATH } from "@/lib/seo";
 
 const TEASER_COUNT = 3;
@@ -54,7 +54,6 @@ export default function GuideTeaserSection() {
 
                 </h3>
 
-                <span className="px-2.5 text-[14px] text-ink-4">{readingMinutes(guide.bodyChars)}분 읽기</span>
               </Link>
             );
           })}

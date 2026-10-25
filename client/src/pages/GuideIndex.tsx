@@ -10,7 +10,6 @@ import {
   guideCategories,
   guideCoverTone,
   guidePath,
-  readingMinutes,
 } from "@/lib/guideSummaries";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +71,7 @@ export default function GuideIndex() {
               </h2>
             </Link>
             <span className="text-[13px] text-ink-4">
-              {formatDate(featured.guide.date, "ymd-dot")} · {readingMinutes(featured.guide.bodyChars)}분 읽기
+              {formatDate(featured.guide.date, "ymd-dot")}
             </span>
             <Link
               href={guidePath(featured.guide)}
@@ -99,7 +98,7 @@ export default function GuideIndex() {
                 {guide.title}
               </h3>
               <span className="px-1 text-[13px] text-ink-4">
-                {formatDate(guide.date, "ymd-dot")} · {readingMinutes(guide.bodyChars)}분 읽기
+                {formatDate(guide.date, "ymd-dot")}
               </span>
             </Link>
           ))}
