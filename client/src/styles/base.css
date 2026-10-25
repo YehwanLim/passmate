@@ -66,3 +66,13 @@
     }
   }
 }
+
+/* 가이드 본문의 사이트 소개 카드(client/content/guides/job-prep-websites.md). 마크다운 안 HTML 이라 prose 밖(not-prose)에서 직접 그린다. */
+.site-cards { display: grid; gap: 10px; margin: 20px 0 12px; }
+.site-card { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; border: 1px solid var(--color-line); border-radius: 16px; background: var(--color-surface); text-decoration: none; transition: background-color .15s ease, border-color .15s ease; }
+.site-card:hover { background: var(--color-fill-soft); border-color: #d1d6db; }
+.site-card img { flex: none; width: 44px; height: 44px; padding: 8px; border-radius: 12px; background: var(--color-fill); object-fit: contain; }
+.site-card__body { min-width: 0; }
+.site-card__name { display: block; font-size: 16px; font-weight: 700; line-height: 1.4; color: var(--color-ink); }
+.site-card__domain { margin-left: 6px; font-size: 13px; font-weight: 500; color: var(--color-ink-5); }
+.site-card__desc { display: block; margin-top: 4px; font-size: 14.5px; line-height: 1.65; color: var(--color-ink-3); word-break: keep-all; }
