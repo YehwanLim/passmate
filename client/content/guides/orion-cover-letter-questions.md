@@ -2,7 +2,7 @@
 title: 오리온 자소서 문항, 세 번의 공채 내내 같은 네 가지
 description: 2025 하반기부터 세 번의 오리온 신입 공채 문항을 나란히 놓았어요. 일반관리에 지원해 면접에서 받은 질문으로 네 문항을 풀었어요.
 category: 자소서
-coverStyle: plain
+coverStyle: chat
 coverLabel: 자소서 문항 · 오리온
 coverQuestion: 세 번 연속 같은\n오리온 자소서 네 문항
 coverAnswer: 지원동기는 면접에서\n"왜 제과업계냐"로 돌아와요
