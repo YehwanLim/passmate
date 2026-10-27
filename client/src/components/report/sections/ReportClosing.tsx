@@ -26,7 +26,7 @@ export function ReportClosing({
         <p className="mt-2.5 text-[15px] leading-relaxed text-ink-3 text-pretty">무엇을 팔아 돈을 버는지, 요즘 힘을 싣는 사업이 무엇인지, 이 직무가 어떤 문제를 푸는지를 출처와 함께 정리해 자소서에 쓸 사업 소재까지 이어 드려요.</p>
         <button
           onClick={() => navigate(`/company-analysis?company=${encodeURIComponent(targetCompany)}&jobKeyword=${encodeURIComponent(targetJobRole)}&resumeAnalysisId=${encodeURIComponent(activeAnalysisId ?? "")}`)}
-          className="mt-6 w-full sm:w-auto px-6 py-3.5 bg-brand text-white font-bold rounded-xl hover:bg-brand-hover transition-colors flex items-center justify-center gap-2"
+          className="mt-6 w-full sm:w-auto px-6 py-3.5 border border-brand bg-surface text-brand-ink font-bold rounded-xl hover:bg-brand-soft transition-colors flex items-center justify-center gap-2"
         >
           <span>기업 분석 리포트 받기</span>
           <ArrowRight className="w-4 h-4" />

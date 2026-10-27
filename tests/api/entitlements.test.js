@@ -28,7 +28,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("../../lib/analysis-entitlements.js", () => ({
+vi.mock("../../lib/billing/analysis-entitlements.js", () => ({
   getEntitlementSummaryReadOnly: mocks.getEntitlementSummaryReadOnly,
   hasClaimedFeedbackReward: mocks.hasClaimedFeedbackReward,
 }));
@@ -38,7 +38,7 @@ vi.mock("../../lib/auth.js", () => ({
   requireActiveApplicationUser: mocks.requireActiveApplicationUser,
 }));
 
-vi.mock("../../lib/groble-webhook-handler.js", () => ({
+vi.mock("../../lib/billing/groble-webhook-handler.js", () => ({
   default: mocks.grobleWebhookHandler,
 }));
 
@@ -515,6 +515,21 @@ describe("entitlement APIs", () => {
 
     expect(response.statusCode).toBe(200);
     expect(mocks.grobleWebhookHandler).toHaveBeenCalled();
+    expect(mocks.requireActiveApplicationUser).not.toHaveBeenCalled();
+  });
+
+  it("routes instagramWebhook=1 to the Instagram handler (unsigned POST -> 401), not Groble or user auth", async () => {
+    const response = await invokeEntitlements({
+      authorization: undefined,
+      body: { object: "instagram", entry: [] },
+      method: "POST",
+      path: "/api/entitlements?instagramWebhook=1",
+      query: { instagramWebhook: "1" },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body).toEqual({ error: "INSTAGRAM_WEBHOOK_SIGNATURE_INVALID" });
+    expect(mocks.grobleWebhookHandler).not.toHaveBeenCalled();
     expect(mocks.requireActiveApplicationUser).not.toHaveBeenCalled();
   });
 

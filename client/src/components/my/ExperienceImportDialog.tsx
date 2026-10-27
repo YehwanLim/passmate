@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, CircleHelp, FileUp, Loader2 } from "lucide-react";
 
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/lib/experienceImport";
 import { extractTextFromFile, ResumeImportError } from "@/lib/resumeFileImport";
 import { createExperiences, WorkspaceApiError, type Experience, type ExperienceInput } from "@/lib/workspace";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 import ExperienceCandidateCard, { type EditableCandidate } from "./ExperienceCandidateCard";
 
 const COPY = WORKSPACE_COPY.experiences.import;
@@ -35,19 +35,24 @@ function toInput(c: EditableCandidate): ExperienceInput {
   };
 }
 
-/** 이력서·자소서 → 경험 후보 → 골라 저장. 금고(ExperienceVault)가 연다. */
+/**
+ * 이력서·자소서 → 경험 후보 → 골라 저장. 금고(ExperienceVault)가 연다.
+ * 리포트 끝 카드처럼 글을 이미 가진 곳은 initialText 를 넘긴다 — 붙여넣기 없이 열리자마자 한 번 뽑는다.
+ */
 export default function ExperienceImportDialog({
   open,
   onClose,
   existingTitles,
   ownedCount,
   onSaved,
+  initialText,
 }: {
   open: boolean;
   onClose: () => void;
   existingTitles: string[];
   ownedCount: number;
   onSaved: (created: Experience[]) => void;
+  initialText?: string;
 }) {
   const [text, setText] = useState("");
   const [step, setStep] = useState<"input" | "loading" | "review">("input");
@@ -58,6 +63,21 @@ export default function ExperienceImportDialog({
   const [saving, setSaving] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // 열릴 때마다 한 번만 자동으로 뽑는다(StrictMode 의 이중 effect 로 두 번 차감되지 않게). 닫히면 다시 켠다.
+  const autoStarted = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      autoStarted.current = false;
+      return;
+    }
+    if (!initialText || autoStarted.current) return;
+    autoStarted.current = true;
+    setText(initialText);
+    void extract(initialText);
+    // extract 는 매 렌더 새로 만들어지지만 열림 한 번에 한 번만 부르면 된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialText]);
 
   if (!open) return null;
 
@@ -89,10 +109,10 @@ export default function ExperienceImportDialog({
     }
   };
 
-  const extract = async () => {
+  const extract = async (source: string = text) => {
     setStep("loading");
     setMessage(null);
-    const result = await requestExperienceCandidates(text);
+    const result = await requestExperienceCandidates(source);
     if (result.kind === "ok") {
       setItems(toEditable(result.candidates, existingTitles));
       setRemaining(result.remainingToday);

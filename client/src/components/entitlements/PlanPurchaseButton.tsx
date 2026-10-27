@@ -1,6 +1,6 @@
 import type { PurchaseProductKey, SalesAvailability } from "@/lib/entitlements";
 import { PRICING } from "@/lib/pricing";
-import { PLAN_BUTTON_CLASS } from "@/pages/entitlementsCopy";
+import { PLAN_BUTTON_CLASS } from "@/copy/entitlementsCopy";
 
 /**
  * 티어 카드의 구매 버튼. 로딩 → 비활성, 게스트 → 로그인, 서버가 결제 URL을 안 주면 "판매 준비 중".

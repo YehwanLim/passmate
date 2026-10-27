@@ -27,12 +27,12 @@ import { findJobPosting } from "@/constants/jobPostings";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
-import { sanitizeText } from "@/utils/sanitize";
+import { sanitizeText } from "@/lib/sanitize";
 import { supabase } from "@/lib/supabase";
 import { fetchEntitlementSummary } from "@/lib/entitlements";
 import { deviceClass, sendFunnelEvent } from "@/lib/siteVisits";
 import { RESUME_REPORT_SAMPLE_PATH } from "@/constants/resumeReportSampleMeta";
-import { checkDuplicateQuestions } from "@/utils/textSimilarity";
+import { checkDuplicateQuestions } from "@/lib/textSimilarity";
 import { UI_LABELS } from "@/constants/labels";
 import {
   trackResumeUpload,
@@ -61,19 +61,19 @@ import {
 import type { ProjectSummary } from "@/types/my";
 import type { ApplicationQuestionDraft } from "@/lib/workspace";
 import type { JobPostingRecord } from "@/types/jobPosting";
-import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "./analyzeErrors";
+import { getAnalyzeErrorMessage, getAnalyzeErrorTitle } from "@/lib/analyze/analyzeErrors";
 import {
   MAX_QUESTIONS,
   MAX_TOTAL_CHARS,
   MIN_TOTAL_CHARS,
   WARN_TOTAL_CHARS,
-} from "./analyzeConstants";
+} from "@/lib/analyze/analyzeConstants";
 import {
   createEmptyQuestion,
   parseSavedQuestions,
   type QuestionItem,
   type SavedAnalysisDetail,
-} from "./analyzeQuestions";
+} from "@/lib/analyze/analyzeQuestions";
 
 const EMPTY_TITLES = new Map<string, string>();
 

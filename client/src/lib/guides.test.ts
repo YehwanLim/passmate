@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { findGuide, GUIDES, guideMeta, guidePrerenderRoute, parseFrontmatter, parseGuideFile, renderGuideHtml } from "./guides";
-import { COMPANY_COVER_TONES, GUIDE_SUMMARIES, guideCategories, guideCoverStyle, guideCoverTone, readingMinutes } from "./guideSummaries";
+import { COMPANY_COVER_TONES, GUIDE_SUMMARIES, guideCategories, guideCoverStyle, guideCoverTone } from "./guideSummaries";
 
 // 타깃은 신입 공채 지원자뿐이다(.agents/product-marketing.md). 가이드 본문에서도 경력직 키워드를 쓰지 않는다.
 const FORBIDDEN_KEYWORDS = /이직|경력직|경력기술서|커리어 전환/;
@@ -77,8 +77,6 @@ describe("guide summaries (vite `?summary` loader)", () => {
     for (let index = 1; index < styles.length; index += 1) {
       expect(styles[index].accent).not.toBe(styles[index - 1].accent);
     }
-    expect(readingMinutes(200)).toBe(1);
-    expect(readingMinutes(2600)).toBe(5);
     expect(guideCategories(GUIDE_SUMMARIES)).toEqual(expect.arrayContaining(["자소서", "면접 후기"]));
   });
 

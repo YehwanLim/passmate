@@ -1,4 +1,4 @@
-// 서버(lib/admin-period.js 의 ADMIN_PERIODS)와 같은 목록. 밖의 값은 서버가 최근 7일로 되돌린다.
+// 서버(lib/admin-handlers/admin-period.js 의 ADMIN_PERIODS)와 같은 목록. 밖의 값은 서버가 최근 7일로 되돌린다.
 export const ADMIN_PERIOD_OPTIONS = [
   { key: "7d", label: "최근 7일" },
   { key: "lastWeek", label: "지난주" },

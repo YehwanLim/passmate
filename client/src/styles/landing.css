@@ -578,6 +578,18 @@ html.landing-canvas body {
   background-color: #f9fafb;
 }
 
+/* ── 랜딩 모바일 줄바꿈 ──
+   폰 폭에선 제목 끝 한 단어("다릅니다.", "리포트")나 문단 끝 한 어절만 다음 줄로 떨어지는 일이 잦다.
+   제목은 줄 길이를 고르게(balance), 문단·목록은 마지막 줄 외톨이만 막는다(pretty). 데스크톱 줄바꿈은 건드리지 않는다. */
+@media (max-width: 767px) {
+  html.landing-canvas :is(h1, h2, h3, blockquote) {
+    text-wrap: balance;
+  }
+  html.landing-canvas :is(p, li) {
+    text-wrap: pretty;
+  }
+}
+
 /* ── 랜딩 히어로 작업실 시연(components/HeroWorkflowDemo.tsx) ──
    장면 전환·말풍선 등장·깜빡이는 글자 커서·가짜 마우스 커서·클릭 물결. 모두 transform/opacity 만 움직인다. */
 @keyframes hero-scene-fade {

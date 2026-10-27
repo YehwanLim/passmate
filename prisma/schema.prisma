@@ -814,3 +814,51 @@ model MentoringBooking {
   @@index([userId])
   @@map("mentoring_bookings")
 }
+
+// =============================================================================
+// Instagram 자동 DM — 댓글 키워드 → 팔로우 확인 → 노션 자료 링크
+// =============================================================================
+
+enum InstagramDmStatus {
+  SENDING
+  GATE_SENT
+  LINK_SENT
+  FAILED
+
+  @@map("instagram_dm_status")
+}
+
+/// 댓글 하나당 한 줄. 댓글 본문·사용자 이름은 저장하지 않는다.
+model InstagramDmDelivery {
+  id            String            @id @default(uuid()) @db.Uuid
+  commentId     String            @unique @map("comment_id") @db.VarChar(64)
+  mediaId       String?           @map("media_id") @db.VarChar(64)
+  /// 첫 DM 응답의 recipient_id(인스타 앱 전용 사용자 ID). 보내기 전에는 null.
+  igsid         String?           @db.VarChar(64)
+  keyword       String            @db.VarChar(50)
+  notionPageId  String            @map("notion_page_id") @db.VarChar(64)
+  resourceTitle String            @map("resource_title") @db.VarChar(200)
+  resourceUrl   String            @map("resource_url") @db.VarChar(500)
+  status        InstagramDmStatus @default(SENDING)
+  followChecks  Int               @default(0) @map("follow_checks")
+  failureCode   String?           @map("failure_code") @db.VarChar(64)
+  linkSentAt    DateTime?         @map("link_sent_at") @db.Timestamptz
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([igsid, status, createdAt])
+  @@index([createdAt])
+  @@map("instagram_dm_deliveries")
+}
+
+/// @hansionair 인스타 API 장기 토큰(60일). 단일 행, 서버 전용.
+model InstagramCredential {
+  id          String   @id @default("singleton") @db.VarChar(16)
+  accountId   String   @map("account_id") @db.VarChar(64)
+  accessToken String   @map("access_token") @db.Text
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz
+  refreshedAt DateTime @map("refreshed_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("instagram_credentials")
+}

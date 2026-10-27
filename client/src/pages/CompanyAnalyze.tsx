@@ -22,7 +22,7 @@ import { fetchEntitlementSummary, type EntitlementSummary } from "@/lib/entitlem
 import { readQueryParam } from "@/lib/readQueryParam";
 import { supabase } from "@/lib/supabase";
 import type { ProjectSummary } from "@/types/my";
-import { getCompanyAnalyzeError, type CompanyAnalyzeErrorView } from "./companyAnalyzeErrors";
+import { getCompanyAnalyzeError, type CompanyAnalyzeErrorView } from "@/lib/analyze/companyAnalyzeErrors";
 
 // 서버 normalizeCompanyRequest 와 같은 상한.
 const MAX_POSTING_CHARS = 4000;

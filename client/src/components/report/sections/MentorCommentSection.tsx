@@ -1,5 +1,5 @@
 import { UI_LABELS } from "@/constants/labels";
-import type { MentorCommentBlock } from "@/pages/reportFirstImpression";
+import type { MentorCommentBlock } from "@/lib/report/reportFirstImpression";
 import { renderEmphasizedText } from "../richText";
 
 /** 실무자 코멘트를 이름 달린 글처럼 보여 준다. ReportBlock 안에 들어간다. */

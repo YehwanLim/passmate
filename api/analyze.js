@@ -6,7 +6,7 @@ import {
   finalizeAnalysisReservation,
   getEntitlementSummary,
   reserveAnalysis,
-} from "../lib/analysis-entitlements.js";
+} from "../lib/billing/analysis-entitlements.js";
 import {
   AnalysisConcurrencyLimitError,
   allocateAnalysisRequest,
@@ -19,14 +19,14 @@ import {
   idempotencyResult,
   recoverStagedRequest,
   runAllocatedAnalysis,
-} from "../lib/analysis-request-lifecycle.js";
+} from "../lib/analysis/analysis-request-lifecycle.js";
 import { ApiError, sendError, sendJson, sendRateLimited, withApiHandler } from "../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../lib/auth.js";
-import { COMPANY_HANDLER_DEFAULTS } from "../lib/company-analysis.js";
-import { createExperienceDraftHandler } from "../lib/experience-draft.js";
-import { createExperienceExtractHandler } from "../lib/experience-extract.js";
-import { createExperienceKeywordsHandler } from "../lib/experience-keywords.js";
-import { createJobPostingHandler } from "../lib/job-posting.js";
+import { COMPANY_HANDLER_DEFAULTS } from "../lib/analysis/company-analysis.js";
+import { createExperienceDraftHandler } from "../lib/experience/experience-draft.js";
+import { createExperienceExtractHandler } from "../lib/experience/experience-extract.js";
+import { createExperienceKeywordsHandler } from "../lib/experience/experience-keywords.js";
+import { createJobPostingHandler } from "../lib/job-posting/job-posting.js";
 import { consumeUserRateLimit, getAnalysisThroughputPolicy } from "../lib/rate-limit.js";
 import {
   analyzeCoverLetter,
@@ -36,8 +36,8 @@ import {
   requestHash,
   resumeAnalysisInput,
   verifyResumeRequest,
-} from "../lib/resume-analysis.js";
-import { createResumeSplitHandler } from "../lib/resume-split.js";
+} from "../lib/analysis/resume-analysis.js";
+import { createResumeSplitHandler } from "../lib/analysis/resume-split.js";
 import prisma from "../lib/prisma.js";
 
 export { attachRequestAnswers };

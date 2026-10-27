@@ -18,7 +18,7 @@ import {
   type ApplicationQuestionDraft,
 } from "@/lib/workspace";
 import type { JobPostingRecord } from "@/types/jobPosting";
-import { WORKSPACE_COPY } from "./workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 const COPY = WORKSPACE_COPY.newApplicationForm;
 const EMPTY_QUESTION: ApplicationQuestionDraft = { prompt: "", charLimit: null, answer: "" };

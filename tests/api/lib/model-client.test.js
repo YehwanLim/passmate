@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { callGeminiGenerate } from "../../../lib/model-client.js";
+import { callGeminiGenerate } from "../../../lib/analysis/model-client.js";
 
 describe("callGeminiGenerate", () => {
   it("sends the API key in a header, never in the URL", async () => {

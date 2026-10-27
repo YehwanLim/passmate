@@ -5,7 +5,7 @@ import DraftPreview from "@/components/my/DraftPreview";
 import type { AutosaveState } from "@/hooks/useDraftAutosave";
 import type { DraftResult } from "@/lib/experienceDraft";
 import { countChars, type ApplicationQuestionDraft } from "@/lib/workspace";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 const MAX_QUESTIONS = 5;
 const COPY = WORKSPACE_COPY.editor;

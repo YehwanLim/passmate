@@ -6,7 +6,6 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 
 | 파일                      | 기업             | 출처                                                                                                                                                                                                               |
 | ------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `cj.svg`                  | CJ               | [CompaniesLogo](https://companieslogo.com/cj-group/logo/)                                                                                                                                                          |
 | `kakao.svg`               | 카카오           | [CompaniesLogo](https://companieslogo.com/kakao/logo/)                                                                                                                                                             |
 | `naver.svg`               | NAVER            | [CompaniesLogo](https://companieslogo.com/naver/logo/)                                                                                                                                                             |
 | `lg.svg`                  | LG               | [CompaniesLogo](https://companieslogo.com/lg-corp/logo/)                                                                                                                                                           |
@@ -48,7 +47,7 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `kis.svg` | 한국투자증권 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Korea_Investment_%26_Securities_Logo_KR.png) | truefriend 를 빼고 한국투자 증권만 |
 | `hanjin.svg` | 한진 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hanjin_2025.svg) | |
 | `dn-solutions.svg` | DN솔루션즈 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DN_Solutions_logo.svg) | SOLUTIONS 글자를 빼고 DN만 |
-| `cj-group.svg` | CJ그룹 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:CJ_logo.svg) | 마키용 `cj.svg`는 어두운 배경용이라 따로 둠 |
+| `cj-group.svg` | CJ그룹 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:CJ_logo.svg) | |
 | `hyundai-autoever-color.svg` | 현대오토에버 | [현대오토에버 홈페이지](https://www.hyundai-autoever.com/common/images/typea-logo.svg) | 마키용 `hyundai-autoever.svg`는 흰색이라 따로 둠 |
 | `korean-re.svg` | 코리안리재보험 | [코리안리 홈페이지](https://www.koreanre.co.kr/images/com/f_logo.png) | PNG를 SVG 래퍼에 |
 | `dongsuh.svg` | 동서식품 | [동서식품 홈페이지](https://www.dongsuh.co.kr/images/common/logo_default.svg) | |
@@ -79,3 +78,13 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `dongkook-pharm.svg` | 동국제약 | [동국제약 홈페이지](https://www.dkpharm.co.kr/images/common/w-gnb-logo.png) | PNG를 SVG 래퍼에(작음) |
 | `kyungdong-pharm.svg` | 경동제약 | [경동제약 홈페이지](https://kdpharma.co.kr/img/common/2024_redesign_logo_1.png) | PNG를 잘라 SVG 래퍼에 |
 | `ilhwa.svg` | 일화 | [일화 홈페이지](https://cdn.imweb.me/thumbnail/20240220/68739b7914a09.png) | PNG를 SVG 래퍼에(작음) |
+| `gc-group.svg` | GC녹십자웰빙 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:GC%EB%85%B9%EC%8B%AD%EC%9E%90_kor.png) | 그룹 로고 "GC녹십자" PNG를 SVG 래퍼에, CC BY-SA 4.0 |
+| `aju.svg` | 아주산업 | [아주그룹 홈페이지](https://www.aju.co.kr/static/images/common/logo.svg) | 공식 SVG, 주석만 지움 |
+| `bgf-logis.svg` | BGF로지스 | [BGF로지스 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/03/16/b1583c2c-1985-4522-acf1-089bca3e3e9f.png) | PNG를 SVG 래퍼에 |
+| `gm.svg` | 한국GM | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:General_Motors_%282021%29.svg) | GM 로고 |
+| `hanon-systems.svg` | 한온시스템 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Logo_hanon.svg) | Public domain |
+| `kakaobank.svg` | 카카오뱅크 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:KakaoBank_logo.svg) | |
+| `ls.svg` | LS MnM | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:LS_logo.svg) | 그룹 로고 "LS", Public domain |
+| `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
+| `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
+| `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |

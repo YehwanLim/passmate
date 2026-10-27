@@ -7,8 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import { trackAnalysisComplete, trackAnalysisFailed } from "@/lib/analytics";
 import { parseAnalysisRequestStatus, type AnalysisKind } from "@/lib/analysisRequest";
-import { COMPANY_PENDING_STEPS, pickCompanyPendingStep } from "./companyPendingCopy";
-import { RESUME_PENDING_STEPS } from "./resumePendingCopy";
+import { COMPANY_PENDING_STEPS, pickCompanyPendingStep } from "@/copy/companyPendingCopy";
+import { RESUME_PENDING_STEPS } from "@/copy/resumePendingCopy";
 
 /** "1분 12초" — 기다린 시간을 작게 보여 준다. */
 function formatElapsed(ms: number): string {

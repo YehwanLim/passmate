@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowRight, Check } from "lucide-react";
 
 import { UI_LABELS } from "@/constants/labels";
-import type { DiagnosisDisplayItem, HighlightedTextSegment } from "@/pages/reportFirstImpression";
+import type { DiagnosisDisplayItem, HighlightedTextSegment } from "@/lib/report/reportFirstImpression";
 import type { Positioning } from "@/types/report";
 import { MARKER_CLASS, renderRichText, renderTextSegments } from "../richText";
 

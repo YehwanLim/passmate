@@ -2,9 +2,9 @@ import prisma from "../../../lib/prisma.js";
 import { ApiError, sendError, sendJson, withApiHandler } from "../../../lib/api-handler.js";
 import { requireActiveApplicationUser } from "../../../lib/auth.js";
 // 목록(api/projects.js)과 같은 규칙으로 요약을 읽는다. 예전엔 여기만 구버전 summary 필드만 봤다.
-import { extractSummary } from "../../../lib/report-fields.js";
+import { extractSummary } from "../../../lib/analysis/report-fields.js";
 import { normalizeProjectMeta, normalizeQuestionSave } from "../../../lib/application-drafts.js";
-import { buildProjectTitle } from "../../../lib/resume-analysis.js";
+import { buildProjectTitle } from "../../../lib/analysis/resume-analysis.js";
 
 const DETAIL_SELECT = {
   id: true,

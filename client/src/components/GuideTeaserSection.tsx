@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { GuideCover } from "@/components/guide/GuideCover";
-import { GUIDE_SUMMARIES, guideCoverTone, guidePath, readingMinutes } from "@/lib/guideSummaries";
+import { GUIDE_SUMMARIES, guideCoverTone, guidePath } from "@/lib/guideSummaries";
 import { GUIDE_INDEX_PATH } from "@/lib/seo";
 
 const TEASER_COUNT = 3;
@@ -15,7 +15,7 @@ export default function GuideTeaserSection() {
   if (guides.length === 0) return null;
 
   return (
-    <section className="bg-fill-soft py-24 md:py-[120px]" aria-labelledby="guide-teaser-title">
+    <section className="bg-fill-soft py-20 md:py-[120px]" aria-labelledby="guide-teaser-title">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10">
           <div className="flex flex-col items-start gap-3.5">
@@ -54,7 +54,6 @@ export default function GuideTeaserSection() {
 
                 </h3>
 
-                <span className="px-2.5 text-[14px] text-ink-4">{readingMinutes(guide.bodyChars)}분 읽기</span>
               </Link>
             );
           })}

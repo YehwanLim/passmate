@@ -2,18 +2,6 @@ import type { AnalysisDetail } from "@/hooks/admin/useAnalysisDetail";
 
 // 분석 상세 화면의 순수 포맷·정규화 헬퍼. 탭 컴포넌트들이 함께 쓴다.
 
-export function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
-
 export function fmtMs(ms: number | null): string {
   if (ms == null) return "–";
   return `${ms.toLocaleString("ko-KR")} ms (${(ms / 1000).toFixed(2)}s)`;

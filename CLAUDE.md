@@ -42,12 +42,14 @@ Prisma 7 + Supabase Postgres · Supabase Auth(Google) · Gemini · Vitest · **p
 | 경로 | 역할 |
 | --- | --- |
 | `client/src/pages` · `components` · `lib` | 화면 오케스트레이션 / 재사용 표현 / 클라이언트 유틸 |
+| `client/src/copy/` · `lib/{report,analyze}/` | 화면 문구(`*Copy`) / 리포트 계산·내비 · 분석 폼 상수·에러. **`pages/`에는 화면만 둔다** |
 | `client/src/components/{analyze,report,admin}` | 분석 폼 셸 · 두 리포트(자소서·기업)가 공유하는 내비/칩 바/섹션 · 관리자 공용 표(페이지네이션·새로고침·에러) |
 | `client/src/hooks/` · `hooks/admin/` | `useAnalysisReport`·`useScrollSpy` / `useAdminResource`·`useAdminPagedResource`(관리자 fetch 훅은 전부 이 둘 위에) |
 | `client/src/styles/` | `index.css`는 `@import` 진입점. `tokens`(테마 변수) → `base` → `landing` → `report` → `print` 순서가 캐스케이드다 |
 | `client/src/pages/admin/` | 관리자 UI와 라우팅. **클라이언트 가드는 권한 경계가 아니다.** |
 | `api/` | Vercel 핸들러(ESM JS). 파일 경로 = URL. `[...route].js`가 여러 경로를 한 함수로 묶음 |
-| `lib/` | 서버 공용: 인증, prisma, 엔타이틀먼트, 분석 라이프사이클, 레이트리밋, 감사로그. `model-client.js`(Gemini 호출·데드라인·JSON 파싱 단일 정의), `sanitize.js`(isRecord·positiveInt·sanitizeInput), `resume-analysis.js`↔`company-analysis.js`(kind별 정규화·해시·모델 호출) |
+| `lib/` | 서버 공용 핵심(루트): 인증 `auth.js`, `prisma.js`, `api-handler.js`, `sanitize.js`(isRecord·positiveInt·sanitizeInput), 레이트리밋, 감사로그, request-id/errors |
+| `lib/{analysis,billing,experience,job-posting}/` | 분석: `model-client.js`(Gemini 호출·데드라인·JSON 파싱 단일 정의), `resume-analysis.js`↔`company-analysis.js`(kind별 정규화·해시·모델 호출), 라이프사이클 · 결제: 엔타이틀먼트·상품·그로블 웹훅 · 경험·초안 · 채용공고 |
 | `lib/admin-handlers/` | 관리자 라우트 본문. 서문(requestId→관리자 인증→메서드→불투명 에러)은 `create-admin-handler.js` 하나 |
 | `tests/helpers/http.js` | 테스트용 `createResponse()`. 새 API 테스트는 손수 res 목을 만들지 말고 이걸 쓴다 |
 | `shared/prompts/reportPrompt.js` | 마스터 프롬프트 **단일 정의처** |
@@ -78,7 +80,7 @@ Prisma 7 + Supabase Postgres · Supabase Auth(Google) · Gemini · Vitest · **p
 **분석**: `POST /api/analyze`가 **202 접수증**만 주고, 클라이언트는 `/analysis-pending`에서
 `GET /api/analysis-requests/:id`를 폴링한다.
 상태: `PENDING → CALLING → PERSISTENCE_PENDING → SUCCEEDED | FAILED`
-(prisma · `lib/analysis-request-lifecycle.js` · `client/src/lib/analysisRequest.ts`가 같은 집합을 공유 — 하나만 바꾸지 말 것).
+(prisma · `lib/analysis/analysis-request-lifecycle.js` · `client/src/lib/analysisRequest.ts`가 같은 집합을 공유 — 하나만 바꾸지 말 것).
 멱등성 키 `(userId, idempotencyKey)` 유니크. 크레딧은 **선예약 → 성공 시 확정, 실패 시 취소**라 실패는 과금되지 않는다.
 처리량: 무료 동시 1건·15분 3회 / 프리미엄 동시 2건·15분 10회.
 

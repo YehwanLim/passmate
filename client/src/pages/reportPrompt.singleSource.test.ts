@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { MASTER_SYSTEM_PROMPT } from "../../../shared/prompts/reportPrompt.js";
 
 const apiAnalyze = readFileSync(new URL("../../../api/analyze.js", import.meta.url), "utf8");
-// 자소서 분석의 모델 호출은 lib/resume-analysis.js 가 한다. 프롬프트는 거기서만 import 한다.
-const resumeAnalysis = readFileSync(new URL("../../../lib/resume-analysis.js", import.meta.url), "utf8");
+// 자소서 분석의 모델 호출은 lib/analysis/resume-analysis.js 가 한다. 프롬프트는 거기서만 import 한다.
+const resumeAnalysis = readFileSync(new URL("../../../lib/analysis/resume-analysis.js", import.meta.url), "utf8");
 const sharedPrompt = readFileSync(new URL("../../../shared/prompts/reportPrompt.js", import.meta.url), "utf8");
 const outputMarker = "# [출력: JSON만, 마크다운 코드 블록 없이]";
 const constraintsMarker = "# [제약 조건]";
@@ -31,7 +31,7 @@ describe("report prompt single source", () => {
 
   it("uses the shared prompt from the only supported analysis implementation", () => {
     expect(resumeAnalysis).toContain("../shared/prompts/reportPrompt.js");
-    expect(apiAnalyze).toContain("../lib/resume-analysis.js");
+    expect(apiAnalyze).toContain("../lib/analysis/resume-analysis.js");
     expect(apiAnalyze).not.toContain("MASTER_SYSTEM_PROMPT");
     // 옛 Express 호스트(server/)는 제거됐다. 되살리지 않는다.
     expect(existsSync(new URL("../../../server", import.meta.url))).toBe(false);

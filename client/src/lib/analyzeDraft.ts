@@ -3,7 +3,7 @@
 // 떠나기 직전에 sessionStorage 에 넣고, /analyze 가 다시 마운트될 때 한 번 꺼내 쓰고 지운다.
 // sessionStorage 라 탭을 닫으면 사라지고, 다른 탭·기기와 공유되지 않는다.
 // 키는 passmate_ 접두사라 로그아웃 시 clearPassMateStorage 가 같이 지운다.
-import type { QuestionItem } from "@/pages/analyzeQuestions";
+import type { QuestionItem } from "@/lib/analyze/analyzeQuestions";
 import type { JobPostingRecord } from "@/types/jobPosting";
 
 export const ANALYZE_DRAFT_KEY = "passmate_analyze_draft";

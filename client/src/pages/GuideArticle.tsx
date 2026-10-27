@@ -7,7 +7,7 @@ import { GuideLayout } from "@/components/guide/GuideLayout";
 import { formatDate } from "@/lib/formatDate";
 import { hasGuideBody, readGuideHtml } from "@/lib/guideBodies";
 import { guideMeta } from "@/lib/guideMeta";
-import { GUIDE_SUMMARIES, guideCoverTone, guideIndexOf, guidePath, readingMinutes } from "@/lib/guideSummaries";
+import { GUIDE_SUMMARIES, guideCoverTone, guideIndexOf, guidePath } from "@/lib/guideSummaries";
 import { applyDocumentMeta, GUIDE_INDEX_PATH, SEO_ROUTES } from "@/lib/seo";
 import NotFound from "./NotFound";
 
@@ -48,7 +48,9 @@ export default function GuideArticle() {
     ...others.filter(({ summary }) => summary.category === guide.category),
     ...others.filter(({ summary }) => summary.category !== guide.category),
   ].slice(0, RELATED_COUNT);
-  const metaLine = `${formatDate(guide.updated, "ymd-dot")} · ${readingMinutes(guide.bodyChars)}분 읽기`;
+  const metaLine = formatDate(guide.updated, "ymd-dot");
+  // "앞부분, 뒷부분" 제목은 앞부분을 한 덩어리로 묶어, 넓은 화면에서 쉼표 앞 단어 하나만 다음 줄로 떨어지지 않게 한다.
+  const commaAt = guide.title.indexOf(", ");
 
   return (
     <GuideLayout surface="white">
@@ -66,7 +68,13 @@ export default function GuideArticle() {
 
           <header className="mt-9">
             <h1 className="text-[30px] font-extrabold leading-[1.25] tracking-[-0.035em] text-balance text-ink [word-break:keep-all] md:text-[40px]">
-              {guide.title}
+              {commaAt > 0 ? (
+                <>
+                  <span className="inline-block">{guide.title.slice(0, commaAt + 1)}</span> {guide.title.slice(commaAt + 2)}
+                </>
+              ) : (
+                guide.title
+              )}
             </h1>
             <p className="mt-3 text-[13px] text-ink-4">{metaLine}</p>
             <p className="mt-4 text-[16px] leading-[1.7] text-ink-3 md:text-[18px]">{guide.description}</p>

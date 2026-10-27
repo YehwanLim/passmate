@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, ChevronDown, User, FileText, CircleHelp } from "lucide-react";
 import { readStoredProfile, useAuth } from "@/contexts/AuthContext";
 import { useCreditSummary } from "@/hooks/useCreditSummary";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 /**
  * AuthButton

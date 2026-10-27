@@ -75,7 +75,7 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
 
   return (
     <div
-      className={`plan-card flex h-full flex-col rounded-[28px] border-2 bg-surface px-8 py-9 ${
+      className={`plan-card flex h-full flex-col rounded-[28px] border-2 bg-surface px-6 py-8 md:px-8 md:py-9 ${
         highlighted ? "border-brand" : "border-surface"
       }`}
     >
@@ -129,7 +129,7 @@ export default function PricingSection() {
   const [, navigate] = useLocation();
 
   return (
-    <section id="pricing" className="bg-fill py-24 md:py-[120px]">
+    <section id="pricing" className="bg-fill py-20 md:py-[120px]">
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
         {/* Heading */}
         <div
@@ -156,7 +156,7 @@ export default function PricingSection() {
 
         {/* 리포트 구성 — 자소서·기업 두 리포트를 흰 카드 두 장으로. 이용권 페이지와 같은 모양·문구 */}
         <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <div className="rounded-[28px] bg-surface px-7 py-8 md:px-10 md:py-10">
+          <div className="rounded-[28px] bg-surface px-6 py-8 md:px-10 md:py-10">
             <h3 className="text-[22px] font-extrabold tracking-[-0.02em] text-ink">자소서 진단 리포트</h3>
             <p className="mt-1 text-[15px] text-ink-4">어떤 이용권이든 내용은 같아요</p>
             <ul className="mt-5 divide-y divide-line-soft border-t border-line-soft">
@@ -167,7 +167,7 @@ export default function PricingSection() {
               ))}
             </ul>
           </div>
-          <div className="rounded-[28px] bg-surface px-7 py-8 md:px-10 md:py-10">
+          <div className="rounded-[28px] bg-surface px-6 py-8 md:px-10 md:py-10">
             <h3 className="text-[22px] font-extrabold tracking-[-0.02em] text-ink">기업 분석 리포트</h3>
             <p className="mt-1 text-[15px] text-ink-4">스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요</p>
             <ul className="mt-5 divide-y divide-line-soft border-t border-line-soft">
@@ -191,25 +191,26 @@ export default function PricingSection() {
 
         {/* 시세 비교 — 세로 막대로 가격 차이를 한눈에 보여준다 */}
         <div
-          className="mx-auto mt-16 max-w-3xl rounded-[28px] bg-surface px-6 py-12 md:mt-20 md:rounded-[32px] md:px-12 md:py-[52px]"
+          className="mx-auto mt-16 max-w-3xl rounded-[28px] bg-surface px-5 py-10 md:mt-20 md:rounded-[32px] md:px-12 md:py-[52px]"
         >
           <p className="text-center text-[20px] font-extrabold tracking-[-0.03em] text-ink md:text-[24px]">
             자소서 첨삭, 보통 얼마가 들까요?
           </p>
 
-          <div className="mt-10 flex items-start justify-center gap-4 sm:gap-12">
+          {/* 폰에선 세 칸이 카드 폭을 나눠 쓴다. 고정 폭(104px×3)이면 390px 화면에서 라벨이 옆 칸과 겹쳤다. */}
+          <div className="mt-10 flex items-start justify-center gap-2.5 sm:gap-12">
             {COMPARISON_COLUMNS.map((column, index) => (
               <div
                 key={column.label}
-                className="flex w-[104px] sm:w-36 flex-col items-center"
+                className="flex min-w-0 max-w-[104px] flex-1 flex-col items-center sm:w-36 sm:max-w-none sm:flex-none"
               >
                 {/* 막대 영역(고정 높이) — 값 라벨이 막대 바로 위에 붙는다 */}
                 <div className="flex h-56 w-full flex-col items-center justify-end">
                   <p
                     className={`mb-2.5 whitespace-nowrap font-bold tracking-tight ${
                       column.isPreview
-                        ? "text-[26px] font-extrabold text-brand-ink"
-                        : "text-[18px] font-extrabold text-ink-3"
+                        ? "text-[22px] font-extrabold text-brand-ink sm:text-[26px]"
+                        : "text-[17px] font-extrabold text-ink-3 sm:text-[18px]"
                     }`}
                   >
                     {column.value}
@@ -225,7 +226,7 @@ export default function PricingSection() {
                 </div>
                 <div className="w-full border-t border-line pt-3 text-center">
                   <p
-                    className={`whitespace-nowrap text-[12.5px] sm:text-[15px] leading-tight ${
+                    className={`text-balance text-[13px] leading-snug sm:whitespace-nowrap sm:text-[15px] sm:leading-tight ${
                       column.isPreview
                         ? "font-bold text-ink"
                         : "font-bold text-ink-2"
@@ -237,10 +238,21 @@ export default function PricingSection() {
                         {column.label}
                       </>
                     ) : (
-                      column.label
+                      // 폰에선 "사설 첨삭 / 문항당" 두 줄로 나눠, 칸마다 다른 자리에서 끊기지 않게 한다.
+                      column.label.split(" · ").map((part, partIndex) => (
+                        <span key={part}>
+                          {partIndex > 0 ? (
+                            <>
+                              <span className="hidden sm:inline"> · </span>
+                              <br className="sm:hidden" />
+                            </>
+                          ) : null}
+                          {part}
+                        </span>
+                      ))
                     )}
                   </p>
-                  <p className="mt-1 whitespace-nowrap text-[11px] sm:text-[13px] text-ink-4">
+                  <p className="mt-1 text-balance text-[11.5px] leading-snug text-ink-4 sm:whitespace-nowrap sm:text-[13px]">
                     {column.note}
                   </p>
                 </div>

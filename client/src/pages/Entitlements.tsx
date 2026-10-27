@@ -23,7 +23,7 @@ import {
   savingsFor,
 } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase";
-import { PAYMENT_INQUIRY_MAILTO, type BasicChoice } from "./entitlementsCopy";
+import { PAYMENT_INQUIRY_MAILTO, type BasicChoice } from "@/copy/entitlementsCopy";
 
 export default function Entitlements() {
   const [, navigate] = useLocation();

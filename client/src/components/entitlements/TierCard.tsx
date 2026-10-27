@@ -6,7 +6,7 @@ import {
   RECOMMENDED_TIER,
   TIER_COPY,
   type BasicChoice,
-} from "@/pages/entitlementsCopy";
+} from "@/copy/entitlementsCopy";
 
 type Tier = (typeof TIERS)[number];
 

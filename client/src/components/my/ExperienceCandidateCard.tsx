@@ -1,5 +1,5 @@
 import type { ExperienceCandidate } from "@/lib/experienceImport";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 const FIELDS = WORKSPACE_COPY.experiences.fields;
 const COPY = WORKSPACE_COPY.experiences.import;

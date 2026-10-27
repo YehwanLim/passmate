@@ -8,7 +8,7 @@ import {
   requestHash,
   resumeAnalysisInput,
   verifyResumeRequest,
-} from "../../lib/resume-analysis.js";
+} from "../../lib/analysis/resume-analysis.js";
 import { createResponse } from "../helpers/http.js";
 
 const POSTING_ID = "7b1f0c7e-9a2b-4c3d-8e4f-5a6b7c8d9e0f";
@@ -135,7 +135,7 @@ describe("GET /api/analysis/:id 의 job_posting", () => {
 
 describe("tidyPostingFit", () => {
   it("대조 항목과 빠진 키워드를 6개로 자르고 키워드 중복·빈 값을 없앤다", async () => {
-    const { tidyPostingFit } = await import("../../lib/resume-analysis.js");
+    const { tidyPostingFit } = await import("../../lib/analysis/resume-analysis.js");
     const report = {
       pmComment: "x",
       postingFit: {

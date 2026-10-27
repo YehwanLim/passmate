@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { COMPANY_REPORT_NAV_SECTIONS } from "@/pages/companyReportNavigation";
+import { COMPANY_REPORT_NAV_SECTIONS } from "@/lib/report/companyReportNavigation";
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn() }));
 vi.mock("wouter", () => ({ useLocation: () => ["/", mocks.navigate] }));

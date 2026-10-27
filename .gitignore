@@ -112,6 +112,7 @@ temp/
 .vercel
 .env*
 .worktrees/
+.claude/worktrees/
 
 # Agent skills — skills-lock.json으로 복원되는 서드파티 의존성
 # (.agents/product-marketing.md 같은 프로젝트 고유 자산은 커밋 대상이라 .agents/ 전체를 무시하지 않는다)
@@ -132,6 +133,9 @@ competitor-profiles/
 .agents/blog-job-posts/covers/
 .agents/blog-job-posts/backlog.md
 groble-cover-*.png
+
+# 성장 지표 기준선·실험 대장·주간 판독 — 가입자·결제 숫자가 들어가 공개 저장소에 올리지 않는다
+.agents/growth/
 
 # 일회성 점검·디버깅 스크립트
 tmp-*

@@ -23,7 +23,7 @@ vi.mock("../../../lib/rate-limit.js", () => ({
   consumeUserRateLimit: mocks.consumeUserRateLimit,
 }));
 
-vi.mock("../../../lib/ai-model-settings.js", () => ({
+vi.mock("../../../lib/analysis/ai-model-settings.js", () => ({
   readAiModelSettings: vi.fn(() => ({})),
   writeAiModelSettings: vi.fn(() => ({})),
 }));

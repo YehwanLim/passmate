@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
-import { GENERAL_INQUIRY_MAILTO, HELP_INQUIRY_EMAIL, HELP_SECTIONS } from "./helpCopy";
+import { GENERAL_INQUIRY_MAILTO, HELP_INQUIRY_EMAIL, HELP_SECTIONS } from "@/copy/helpCopy";
 
 /**
  * 고객센터: 자주 묻는 질문 + 문의 메일.

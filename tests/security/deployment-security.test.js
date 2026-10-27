@@ -37,6 +37,12 @@ describe("beta deployment security configuration", () => {
       source: "/api/webhooks/groble",
       destination: "/api/entitlements?grobleWebhook=1",
     });
+    // 인스타 자동 DM 웹훅도 같은 이유(12함수·원문 서명)로 entitlements 에 합류한다.
+    expect(existsSync(`${root}/api/webhooks/instagram.js`)).toBe(false);
+    expect(config.rewrites).toContainEqual({
+      source: "/api/webhooks/instagram",
+      destination: "/api/entitlements?instagramWebhook=1",
+    });
     expect(config.rewrites).toContainEqual({
       source: "/api/entitlements/purchase-intents",
       destination: "/api/entitlements?purchaseIntent=1",
@@ -92,6 +98,7 @@ describe("beta deployment security configuration", () => {
       // 공개 공지(팝업·배너). 같은 이유로 auth/me 함수에 얹는다.
       { source: "/api/notices", destination: "/api/auth/me?notices=1" },
       { source: "/api/webhooks/groble", destination: "/api/entitlements?grobleWebhook=1" },
+      { source: "/api/webhooks/instagram", destination: "/api/entitlements?instagramWebhook=1" },
       { source: "/api/entitlements/purchase-intents", destination: "/api/entitlements?purchaseIntent=1" },
       { source: "/api/analyze/split", destination: "/api/analyze?split=1" },
       { source: "/api/analyze/posting", destination: "/api/analyze?posting=1" },
@@ -120,6 +127,8 @@ describe("beta deployment security configuration", () => {
       { source: "/guide/:slug", destination: "/guide/:slug.html" },
       { source: "/jobs", destination: "/jobs.html" },
       { source: "/jobs/:slug", destination: "/jobs/:slug.html" },
+      // 인스타 자동 DM 링크 안내 페이지(client/public/dm/*.html): 우리 미리보기를 보여 주고 노션 자료로 넘긴다.
+      { source: "/dm/:slug", destination: "/dm/:slug.html" },
       { source: "/404", destination: "/404.html" },
       // 앱 화면만 SPA 셸(app.html)로 보낸다. 나열되지 않은 경로는 정적 파일이나 404 로 떨어져 /api/ 가 셸에 삼켜지지 않는다.
       {

@@ -187,8 +187,14 @@ export type ClientEventName =
   | "kakao_start_failed"
   | FunnelEventName;
 
-/** 랜딩 → 폼 → 가입 퍼널. 어디서 사람이 떨어지는지 DB 에서 기기별로 보려고 남긴다. */
-export type FunnelEventName = "landing_cta_click" | "analyze_form_start" | "analyze_submit_click" | "signup_complete";
+/** 랜딩 → 폼 → 가입 퍼널(+ 리포트 끝 경험 저장). 어디서 사람이 떨어지는지 DB 에서 기기별로 보려고 남긴다. */
+export type FunnelEventName =
+  | "landing_cta_click"
+  | "analyze_form_start"
+  | "analyze_submit_click"
+  | "signup_complete"
+  | "report_experience_save_click"
+  | "report_experience_saved";
 
 /** 폰(m)·PC(d) 구분. 손가락 입력이 주 포인터면 폰으로 친다. 판별이 안 되면 d. */
 export function deviceClass(): "m" | "d" {

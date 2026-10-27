@@ -1,7 +1,7 @@
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
 import { applicationStatus, daysUntil, monthDay, type ApplicationStatus } from "@/lib/workspace";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 type Deadline = { label: string; tone: "urgent" | "normal" | "muted" | "passed" };
 

@@ -4,6 +4,8 @@ import { purgeDueAccounts } from "../../lib/account-deletion.js";
 import { purgeExpiredAuditEvents } from "../../lib/audit-log.js";
 import { getSupabaseAdminClient } from "../../lib/auth.js";
 import { ApiError, sendJson, withApiHandler } from "../../lib/api-handler.js";
+import { runInstagramMaintenance } from "../../lib/instagram-dm/credential.js";
+import { createGraphClient } from "../../lib/instagram-dm/graph-client.js";
 import prisma from "../../lib/prisma.js";
 import { purgeExpiredRateLimitBuckets } from "../../lib/rate-limit.js";
 
@@ -32,6 +34,7 @@ export function createPurgeDeletedAccountsHandler({
   db = prisma,
   getAdminClient = getSupabaseAdminClient,
   purgeAccounts = purgeDueAccounts,
+  instagramMaintenance = () => runInstagramMaintenance({ db, graph: createGraphClient() }),
 } = {}) {
   return async function purgeDeletedAccountsHandler(req, res) {
     return withApiHandler(req, res, async (requestId) => {
@@ -55,6 +58,12 @@ export function createPurgeDeletedAccountsHandler({
       });
       await purgeExpiredAuditEvents({ db });
       await purgeExpiredRateLimitBuckets({ db });
+      // 인스타 자동 DM 토큰 갱신(30일마다)·발송 기록 1년 정리. 실패해도 계정 삭제 결과는 그대로 돌려준다.
+      try {
+        await instagramMaintenance();
+      } catch {
+        console.warn("[instagram-dm] maintenance failed");
+      }
       return sendJson(res, 200, { purged: result.purged }, requestId);
     });
   };

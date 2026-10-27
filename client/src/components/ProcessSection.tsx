@@ -27,7 +27,7 @@ const steps = [
 
 export default function ProcessSection() {
   return (
-    <section className="bg-fill-soft py-24 md:py-[120px]">
+    <section className="bg-fill-soft py-20 md:py-[120px]">
       <div className="max-w-5xl mx-auto px-6 lg:px-10">
         {/* Heading */}
         <div className="mb-14 text-center md:mb-[72px]">
@@ -63,7 +63,7 @@ export default function ProcessSection() {
                   )}
                 </div>
                 <div className={isLast ? "" : "pb-10 md:pb-14"}>
-                  <div className="flex flex-col gap-2.5 rounded-[24px] bg-surface p-7 shadow-[0_2px_12px_rgba(25,31,40,0.04)] md:rounded-[28px] md:px-10 md:py-9">
+                  <div className="flex flex-col gap-2.5 rounded-[24px] bg-surface p-6 shadow-[0_2px_12px_rgba(25,31,40,0.04)] md:rounded-[28px] md:px-10 md:py-9">
                     <span className="inline-flex h-[26px] w-fit items-center rounded-[8px] bg-fill px-2.5 text-[13px] font-bold text-ink-3">
                       Step {num}
                     </span>

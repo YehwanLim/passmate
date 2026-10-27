@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { ChevronRight } from "lucide-react";
 import { useCreditSummary } from "@/hooks/useCreditSummary";
-import { WORKSPACE_COPY } from "@/pages/workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 const COPY = WORKSPACE_COPY.credits;
 

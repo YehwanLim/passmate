@@ -6,7 +6,7 @@ import {
   knownKeywordsOf,
   normalizeKeywordOutput,
   normalizeKeywordRequest,
-} from "../../lib/experience-keywords.js";
+} from "../../lib/experience/experience-keywords.js";
 import { createResponse } from "../helpers/http.js";
 
 const USER = "11111111-1111-4111-8111-111111111111";

@@ -52,9 +52,6 @@ export type AdminPageMeta = {
 // Role-based Access Control
 // ============================================================
 
-/** users 테이블 role 컬럼 값 */
-export type UserRole = "user" | "admin";
-
 /**
  * AdminGuard 내부 상태 머신
  * - loading       : 인증 및 role 확인 중

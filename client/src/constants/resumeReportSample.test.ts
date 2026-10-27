@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { isRenderableReport } from "@/pages/ReportResult";
-import { tokenizeAnswerParagraph } from "@/pages/reportLineAnalysis";
-import { isPostingFitRenderable } from "@/pages/reportPostingFit";
+import { tokenizeAnswerParagraph } from "@/lib/report/reportLineAnalysis";
+import { isPostingFitRenderable } from "@/lib/report/reportPostingFit";
 import type { DiagnosisEntry } from "@/types/report";
 
 import { RESUME_REPORT_SAMPLE } from "./resumeReportSample";

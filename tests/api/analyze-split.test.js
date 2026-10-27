@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import analyzeHandler from "../../api/analyze.js";
-import { createResumeSplitHandler, normalizeSplitOutput } from "../../lib/resume-split.js";
+import { createResumeSplitHandler, normalizeSplitOutput } from "../../lib/analysis/resume-split.js";
 import { createResponse } from "../helpers/http.js";
 
 const VALID_TEXT = "가".repeat(300);

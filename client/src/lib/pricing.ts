@@ -2,7 +2,7 @@
 // 실제 결제 금액은 Groble 상품 설정이 진실이므로, 여기 값을 바꿀 땐 Groble 상품 가격도 함께 맞춘다.
 // 티어(스펙 §7-3): 베이직 3,900(자소서 1 또는 기업 1) → 스탠다드 9,900(자소서 2 + 기업 1) → 프리미엄 16,900(자소서 3 + 기업 3).
 
-/** 서버 쿼리 키(lib/entitlement-products.js PRODUCT_QUERY_KEYS)와 같다. checkoutUrls 의 키이기도 하다. */
+/** 서버 쿼리 키(lib/billing/entitlement-products.js PRODUCT_QUERY_KEYS)와 같다. checkoutUrls 의 키이기도 하다. */
 export const PURCHASE_PRODUCT_KEYS = ["single", "company", "standard", "premium", "triple"] as const;
 export type PurchaseProductKey = (typeof PURCHASE_PRODUCT_KEYS)[number];
 
@@ -99,7 +99,7 @@ export function savingsFor(plan: PricingPlan): number {
   return plan.listPrice - plan.salePrice;
 }
 
-/** 서버가 쓰는 상품 키(lib/entitlement-products.js). 상품을 알 수 없는 결제는 null. */
+/** 서버가 쓰는 상품 키(lib/billing/entitlement-products.js). 상품을 알 수 없는 결제는 null. */
 export type PurchaseProduct = "SINGLE" | "COMPANY_SINGLE" | "STANDARD" | "PREMIUM" | "TRIPLE";
 
 export const PRODUCT_KEY_BY_PRODUCT: Record<PurchaseProduct, PurchaseProductKey> = {

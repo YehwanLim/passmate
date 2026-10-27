@@ -12,7 +12,7 @@ import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAu
 import ExperienceVault from "@/components/my/ExperienceVault";
 import MyCreditsPanel from "@/components/my/MyCreditsPanel";
 import { applicationStatus, sortApplications } from "@/lib/workspace";
-import { WORKSPACE_COPY } from "./workspaceCopy";
+import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 type Tab = "applications" | "experiences" | "company";
 type Filter = "all" | "draft" | "done";
