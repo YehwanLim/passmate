@@ -88,3 +88,7 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
 | `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
+| `asiapaper.svg` | 아세아제지 | [아세아제지 홈페이지](https://www.asiapaper.co.kr/img/logo.png) | PNG를 SVG 래퍼에 |
+| `hyundai-welding.svg` | 현대종합금속 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hyundai_Welding.png) | PNG 여백을 잘라 SVG 래퍼에 |
+| `nongshim.svg` | 농심 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nongshim_Logo.svg) | 공식 SVG 그대로 |
+| `incheon-total-energy.svg` | 인천종합에너지 | [인천종합에너지 홈페이지](https://www.e-inteco.co.kr/pub/images/logo_g.svg) | 공식 SVG 그대로(title만 추가) |
