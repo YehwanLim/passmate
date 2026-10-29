@@ -58,7 +58,7 @@
 
 | # | slug | 목표 검색어 | 관점 | 상태 |
 | --- | --- | --- | --- | --- |
-| F1 | chatgpt-resume-prompt | ChatGPT 자소서 프롬프트 | 프롬프트보다 먼저 넣어야 하는 것(직무·공고·경험 원문) | 대기 |
+| F1 | chatgpt-resume-prompt | ChatGPT 자소서 프롬프트 | 프롬프트보다 먼저 넣어야 하는 것(직무·공고·경험 원문) | 발행 |
 | F2 | ai-feedback-blindly | AI 자소서 첨삭 그대로 쓰면 | AI가 바꾼 문장 중 되돌려야 하는 것 | 대기 |
 | F3 | ai-plagiarism-check | AI 자소서 표절 검사, 자소서 유사도 | 검사기가 보는 것과 읽는 사람이 보는 것은 다르다 | 대기 |
 | F4 | resume-based-interview-questions | 자소서 기반 면접 질문 | 질문이 만들어지는 자리: 부풀린 곳, 한 줄로 쓴 경험 | 대기 |
