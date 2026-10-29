@@ -88,3 +88,11 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
 | `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
+| `im-securities.svg` | iM증권 | [iM증권 홈페이지](https://www.imfnsec.com/images/main/2017/logo_2024CI_iMsec.png) | PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
+| `hanssem.svg` | 한샘 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hanssem_logo.svg) | Public domain |
+| `gabia.svg` | 가비아 | [가비아 홈페이지](https://static.gabia.com/www/common/img/logo.svg) | 공식 SVG, viewBox만 조정 |
+| `modetour.svg` | 모두투어네트워크 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:모두투어_로고.png) | PNG를 SVG 래퍼에 |
+| `cr-holdings.svg` | 조선내화 | [CR홀딩스 홈페이지](https://www.crholdings.co.kr/assets/images/common/logo-sprite.png) | 그룹 로고, 스프라이트 PNG를 잘라 SVG 래퍼에(작음) |
+| `jahwa.svg` | 자화전자 | [자화전자 홈페이지](https://www.jahwa.co.kr) | 헤더 인라인 SVG |
+| `kunwon.svg` | 건원엔지니어링 | [건원엔지니어링 홈페이지](https://www.kunwoneng.com/images/logo/kunwon_logo_black.svg) | 공식 SVG 그대로 |
+| `kooksoondang.svg` | 국순당 | [국순당 채용 사이트](https://recruit.ksdb.co.kr/images/sublogos.png) | PNG를 SVG 래퍼에(작음) |
