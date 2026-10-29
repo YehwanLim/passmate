@@ -64,7 +64,7 @@ function PostingTable({
                 {formatDeadline(posting.closesAt)}
               </span>
               {/* 계열사 한 줄(subtitle)은 목록에서 뺐다(10-11). 검색은 여전히 subtitle 도 본다 */}
-              <span className={`min-w-0 text-[17px] font-bold leading-snug text-ink [word-break:keep-all] ${RIGHT_OF_LOGO}`}>
+              <span className={`min-w-0 text-[16px] font-semibold leading-snug text-ink [word-break:keep-all] ${RIGHT_OF_LOGO}`}>
                 {posting.title}
               </span>
               <span className={`text-[14px] leading-relaxed text-ink-3 [word-break:keep-all] ${RIGHT_OF_LOGO}`}>{posting.roles}</span>
