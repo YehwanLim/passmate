@@ -904,6 +904,38 @@ describe("atomic analyze API", () => {
     }
   });
 
+  it("keeps the provider HTTP status on the failed analysis so the admin can see why after logs expire", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const db = createDatabase();
+    const queuedWork = [];
+    const handler = createAnalyzeHandler({
+      cancelReservation: vi.fn(async () => undefined),
+      db,
+      enqueueBackgroundWork: (work) => queuedWork.push(work),
+      finalizeReservation: vi.fn(async () => undefined),
+      model: async () => {
+        const error = new Error("Your prepayment credits are depleted.");
+        error.statusCode = 402;
+        throw error;
+      },
+      requireUser: activeUser,
+      reserveAnalysis: async () => ({ reservationId: "reservation-1" }),
+      consumeRateLimit: rateAllowed,
+    });
+
+    try {
+      await handler(request(), response());
+      await queuedWork[0]();
+
+      expect(db.analysis.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        data: { errorCode: "API_ERROR", errorMessage: "provider HTTP 402", status: "FAILED" },
+      }));
+      expect(JSON.stringify(db.analysis.updateMany.mock.calls)).not.toContain("prepayment");
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+
   it("does not refund a completed provider call when report persistence fails", async () => {
     const cancelReservation = vi.fn(async () => undefined);
     const db = createDatabase();
