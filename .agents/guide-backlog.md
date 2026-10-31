@@ -85,6 +85,6 @@
 | C3 | cj-cover-letter-questions | CJ그룹 | 21H2 서류 통과 → AI·인적성 탈락, 블로그 글에서 문항 확인 | 초안(10-13, #8) |
 | C4 | posco-international-cover-letter-questions | 포스코인터내셔널 | 21H2 2차(최종) 면접, 22H1 인턴 서류탈락 | 발행(10-27, #16) |
 | C5 | orion-cover-letter-questions | 오리온 | 21H2 지원·2차 면접 | 발행(10-27, 45c6dc5) |
-| C6 | sk-hynix-cover-letter-questions | SK하이닉스 | 없음(커피챗 관찰로만) | 대기 |
+| C6 | sk-hynix-cover-letter-questions | SK하이닉스 | 없음(커피챗 관찰로만) | 초안(10-31, #32) |
 | C7 | lg-electronics-cover-letter-questions | LG전자 | 없음(커피챗 관찰로만) | 대기 |
 | C8 | lg-display-cover-letter-questions | LG디스플레이 | 21H2 전형포기 → 22H1 AI·인적성 탈락 | 대기 |
