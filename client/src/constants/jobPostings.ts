@@ -850,6 +850,30 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     updated: "2026-10-13",
     logo: "/company-logos/i-sens.svg",
   },
+  {
+    slug: "yuanta-securities-2026-11",
+    company: "유안타증권",
+    shortName: "유안타증권",
+    title: "유안타증권 업무혁신팀 신입직원 채용",
+    subtitle: "업무혁신팀 신입(종합직) · 6개월 계약직 입사 후 정규직 전환 심사",
+    roles: "업무혁신팀 신입(종합직): 주식매매 결제·신용공여·신종증권 매매 업무 기획·프로세스 개발 지원",
+    opensAt: "2026-10-29",
+    closesAt: "2026-11-12T23:00:00+09:00",
+    updated: "2026-10-31",
+    logo: "/company-logos/yuanta-securities.svg",
+  },
+  {
+    slug: "biztechi-2026h2-intern",
+    company: "비즈테크아이",
+    shortName: "비즈테크아이",
+    title: "비즈테크아이 2026 하반기 신입 인턴 채용(전환형)",
+    subtitle: "LG CNS 자회사 · 채용연계형 인턴(3개월) 후 정규직 전환 심사 · 10개 직무",
+    roles: "SAP 모듈 · MES(구미·오창) · AI 에이전트 · 금융 애플리케이션 · AI 엔지니어 · 아키텍트 · AX 솔루션 · M365 · 클라우드 · IT인프라",
+    opensAt: "2026-10-29",
+    closesAt: "2026-11-15T23:00:00+09:00",
+    updated: "2026-10-31",
+    logo: "/company-logos/lg.svg",
+  },
 ];
 
 export function jobPostingPath(posting: Pick<JobPostingListing, "slug">): string {
