@@ -15,8 +15,8 @@
 | --- | --- | --- | --- | --- |
 | M1 | job-competency-question | 자소서 직무 역량, 직무 관련 경험 | 다섯 줄 순서·직무를 내 말로 다시 정의 | 초안(10-08, release-candidate) |
 | M2 | teamwork-experience-question | 자소서 협업 경험, 갈등 해결 경험 | 갈등의 크기보다 누구와 무엇을 맞췄는지 | 초안(10-08, release-candidate) |
-| M3 | cut-word-count | 자소서 글자 수 줄이기, 500자 자소서 | 지울 문장의 순서(교훈→수식어→배경) | 대기 |
-| M4 | first-sentence | 자소서 첫 문장, 두괄식 | 문항의 질문에 답하는 요약 문장 1개로 시작 | 대기 |
+| M3 | cut-word-count | 자소서 글자 수 줄이기, 500자 자소서 | 덜어 낼 순서(경험 개수→첫 문단 배경→수식어→세부 나열), 배운 점은 남김 | 초안(10-12, PR #6) |
+| M4 | first-sentence | 자소서 첫 문장, 두괄식 | 문항의 질문에 답하는 요약 문장 1개로 시작 | 초안(10-26, PR #26) |
 | M5 | subtitle-or-not | 자소서 소제목 | 소제목이 읽는 사람에게 하는 일과 안 다는 편이 나은 경우 | 대기 |
 | M6 | different-major | 전공 무관 직무 지원 자소서, 비전공 자소서 | 산업·전공 경험이 없어도 역량 구조로 엮기 | 대기 |
 | M7 | gap-period | 자소서 공백기 | 숨기지 않고 한 문장으로 끝내는 법 | 대기 |
@@ -38,7 +38,7 @@
 | # | slug | 목표 검색어 | 관점 | 상태 |
 | --- | --- | --- | --- | --- |
 | W1 | marketing-resume | 마케팅 직무 자소서 | 마케터에게서 읽는 사람이 찾는 것(숫자로 판단, 커뮤니케이션) | 초안(10-15, PR #14) |
-| W2 | service-planning-resume | 서비스 기획 자소서 | 기획자의 +α와 다직무 협업 경험 | 대기 |
+| W2 | service-planning-resume | 서비스 기획 자소서 | 기획자의 +α와 다직무 협업 경험 | 초안(10-29, PR #29) |
 | W3 | sales-resume | 영업 직무 자소서, 영업관리 자소서 | 상대가 원하는 것을 읽은 경험 | 대기 |
 | W4 | hr-resume | 인사 직무 자소서 | 사람을 좋아한다는 말 대신 제도와 운영 | 대기 |
 | W5 | finance-resume | 재무·회계 직무 자소서 | 꼼꼼함을 행동으로 증명하기 | 대기 |
@@ -59,7 +59,7 @@
 | F1 | chatgpt-resume-prompt | ChatGPT 자소서 프롬프트 | 프롬프트보다 먼저 넣어야 하는 것(직무·공고·경험 원문) | 대기 |
 | F2 | ai-feedback-blindly | AI 자소서 첨삭 그대로 쓰면 | AI가 바꾼 문장 중 되돌려야 하는 것 | 대기 |
 | F3 | ai-plagiarism-check | AI 자소서 표절 검사, 자소서 유사도 | 검사기가 보는 것과 읽는 사람이 보는 것은 다르다 | 대기 |
-| F4 | resume-based-interview-questions | 자소서 기반 면접 질문 | 질문이 만들어지는 자리: 부풀린 곳, 한 줄로 쓴 경험 | 대기 |
+| F4 | resume-based-interview-questions | 자소서 기반 면접 질문 | 질문이 만들어지는 자리: 부풀린 곳, 한 줄로 쓴 경험 | 초안(10-22, PR #20) |
 | F5 | one-minute-intro | 면접 1분 자기소개 | 자소서의 한 문장 포지셔닝을 말로 옮기기 | 대기 |
 | F6 | last-words-interview | 면접 마지막 할 말 | 다짐 대신 확인하고 싶은 것 하나 | 대기 |
 | F7 | job-vs-executive-interview | 직무면접 임원면접 차이 | 직무면접=전문성, 임원면접=인성·간결 | 대기 |
