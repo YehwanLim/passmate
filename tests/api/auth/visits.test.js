@@ -179,6 +179,7 @@ describe("POST /api/visits — 방문 핑", () => {
       "signup_complete",
       "report_experience_save_click",
       "report_experience_saved",
+      "content_cta_click",
     ]);
     expect(readClientEventBody({ visitorId: VISITOR_ID, event: "landing_cta_click", detail: "m:hero" })).toEqual({
       visitorId: VISITOR_ID, name: "landing_cta_click", detail: "m:hero", inAppBrowser: null,

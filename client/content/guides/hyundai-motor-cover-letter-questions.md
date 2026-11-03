@@ -2,6 +2,7 @@
 title: 현대자동차 자소서 문항, 문장은 바뀌어도 묻는 건 두 가지
 description: 최근 네 번의 현대차 신입 자소서 문항을 나란히 놓아 봤어요. 서류에서 한 번 떨어지고 한 번 붙어 면접까지 간 제 기록으로 두 문항을 풀었어요.
 category: 자소서
+company: 현대자동차
 coverStyle: chat
 coverLabel: 자소서 문항 · 현대자동차
 coverQuestion: 공고마다 바뀌는\n현대차 자소서 문항

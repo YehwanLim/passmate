@@ -2,6 +2,7 @@
 title: 삼성전자 자소서 문항, 네 문항이 각각 묻는 것
 description: 2022년에 제가 쓴 삼성전자 에세이와 최근 DX부문 공고 문항을 나란히 놓았어요. 네 문항을 어떤 순서로 썼고 면접에서 무엇이 돌아왔는지 적었어요.
 category: 자소서
+company: 삼성전자
 coverStyle: quote
 coverLabel: 자소서 문항 · 삼성전자
 coverQuestion: 몇 년째 그대로인\n삼성전자 에세이 네 문항

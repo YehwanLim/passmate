@@ -2,6 +2,7 @@
 title: 삼성전자 DX 마케팅 합격 후기 ③ 면접 준비 A to Z
 description: 자소서에서 예상 질문을 뽑는 법부터 기업·산업·직무·소비자 분석 정리 목록, 질문 카테고리별 리스트업과 모의면접까지. 삼성전자 DX 마케팅 면접을 준비한 과정 전체.
 category: 면접 후기
+company: 삼성전자
 coverTone: samsung
 coverLogo: /guide/logos/samsung-white.svg
 coverStyle: quote

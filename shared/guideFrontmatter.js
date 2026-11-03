@@ -80,6 +80,8 @@ export function parseGuideFile(filePath, raw) {
     title: data.title,
     description: data.description,
     category: data.category,
+    // 특정 회사를 다루는 글(면접 후기·기업 문항 해설): 폰 아래 띠가 분석 폼에 이 회사 이름을 채운다.
+    company: data.company || null,
     cover: data.cover || null,
     coverText,
     date: data.date,

@@ -2,6 +2,7 @@
 title: CJ 자소서 문항, 계열사는 달라도 반복되는 두 자리
 description: CJ제일제당·CJ올리브네트웍스의 최근 공고 네 개를 나란히 놓았어요. 다른 회사 글을 돌려써 CJ 서류를 낸 제 2021년 기록과 커피챗 기록으로 두 문항을 풀었어요.
 category: 자소서
+company: CJ
 coverStyle: mark
 coverLabel: 자소서 문항 · CJ
 coverQuestion: 계열사마다 다른\nCJ 자소서 문항

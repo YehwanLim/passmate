@@ -2,6 +2,7 @@
 title: 현대오토에버 1차 면접 후기 | 서비스 기획 기출 질문과 사전 과제
 description: 신입 공채 서비스 기획 직무의 사전 과제와 1차 면접(실무진 2:1 → 팀장 1:1)에서 실제로 받은 질문 22개. 모든 질문의 8할은 자소서에서 나왔다.
 category: 면접 후기
+company: 현대오토에버
 coverTone: hyundai
 coverLogo: /guide/logos/autoever-white.svg
 coverStyle: mark
