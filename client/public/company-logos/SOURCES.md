@@ -88,3 +88,10 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
 | `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
+| `toyota.svg` | 한국토요타자동차 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Toyota_logo_(Red).svg) | Public domain, `<title>`만 추가 |
+| `shinyoung-securities.svg` | 신영증권 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%EC%8B%A0%EC%98%81%EC%A6%9D%EA%B6%8C%EB%A1%9C%EA%B3%A01.png) | CC BY-SA 4.0, PNG 여백 자르고 SVG 래퍼에 |
+| `yuhan-kimberly.svg` | 유한킴벌리 | [유한킴벌리 홈페이지](https://www.yuhan-kimberly.co.kr/images/renewal2022/header/logo.png) | PNG를 SVG 래퍼에 |
+| `boryung.svg` | 보령 | [보령 홈페이지](https://www.boryung.co.kr/images/mo/logo.png) | PNG를 SVG 래퍼에(회색) |
+| `jeisys.svg` | 제이시스메디칼 | [제이시스메디칼 홈페이지](https://www.jeisys.co.kr/kor/pub/images/logo.svg) | 흰색 원본을 채용 사이트 색 #21358D 로 |
+| `apr.svg` | 에이피알 | [에이피알 공식 채용 페이지](https://img.inhr.co.kr/static/careerlink/DSGN/261027205832892Ylx.svg) | 공식 SVG, `<title>`만 추가 |
+| `shinwon.svg` | 신원 | [신원 공식 채용 사이트](https://opening-attachments.greetinghr.com/2024-12-23/9a90e554-a22f-40a1-b73a-018c6305e5a7/.png) | PNG를 SVG 래퍼에 |
