@@ -88,3 +88,9 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
 | `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
+| `wadiz.svg` | 와디즈 | [와디즈 채용 사이트](https://opening-attachments.greetinghr.com/2024-08-21/e5ff9679-5400-4191-9909-8d82b62ea034/wadizcareer.png) | "wadiz career" PNG를 줄여 SVG 래퍼에, viewBox로 "wadiz"만 |
+| `ibk.svg` | IBK투자증권 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Industrial_Bank_of_Korea_Logo.svg) | IBK 그룹 CI, 심볼만 남기고 viewBox 자름 |
+| `psk.svg` | 피에스케이 | [피에스케이 홈페이지](https://www.pskinc.com/img/psk_logo.svg) | 공식 SVG, class 스타일을 fill 속성으로 |
+| `hanmi-global.svg` | 한미글로벌 | [한미글로벌 홈페이지](https://www.hanmiglobal.com/en/images/logo.png) | PNG를 SVG 래퍼에(한미약품 hanmi.svg 와 다른 회사) |
+| `hana.svg` | 하나저축은행 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hana_Financial_Group_Logo_(kor).svg) | 하나금융그룹 로고에서 심볼만 |
+| `korea-alcohol.svg` | 한국알콜그룹 | [이엔에프테크놀로지 홈페이지](https://www.enftech.com/wp-content/themes/kai-child/images/layout/footer-kai-pic.svg) | KAI(한국알콜산업) 로고, 공식 SVG 정리 |
