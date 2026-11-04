@@ -106,6 +106,7 @@ describe("beta deployment security configuration", () => {
       { source: "/api/analyze/extract", destination: "/api/analyze?extract=1" },
       { source: "/api/analyze/keywords", destination: "/api/analyze?keywords=1" },
       { source: "/api/analyze/company", destination: "/api/analyze?kind=company" },
+      { source: "/api/analyze/interview-feedback", destination: "/api/analyze?interview_feedback=1" },
       // 공개 예시 리포트는 빌드 때 프리렌더한 정적 HTML 로 받는다(scripts/prerender-landing.mjs 참고).
       {
         source: "/report-new",

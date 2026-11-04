@@ -26,6 +26,7 @@ import { COMPANY_HANDLER_DEFAULTS } from "../lib/analysis/company-analysis.js";
 import { createExperienceDraftHandler } from "../lib/experience/experience-draft.js";
 import { createExperienceExtractHandler } from "../lib/experience/experience-extract.js";
 import { createExperienceKeywordsHandler } from "../lib/experience/experience-keywords.js";
+import { createInterviewFeedbackHandler } from "../lib/interview/interview-feedback.js";
 import { createJobPostingHandler } from "../lib/job-posting/job-posting.js";
 import { consumeUserRateLimit, getAnalysisThroughputPolicy } from "../lib/rate-limit.js";
 import {
@@ -227,26 +228,30 @@ const jobPostingHandler = createJobPostingHandler();
 const experienceDraftHandler = createExperienceDraftHandler();
 const experienceExtractHandler = createExperienceExtractHandler();
 const experienceKeywordsHandler = createExperienceKeywordsHandler();
+// AI 면접 연습 피드백은 사진을 받아 모델을 오래 부르므로 maxDuration 180s 인 이 함수에 얹는다.
+const interviewFeedbackHandler = createInterviewFeedbackHandler({ enqueueBackgroundWork: (work) => waitUntil(work()) });
 
-/** 쿼리로 일곱 핸들러 중 하나를 고른다. split → posting → draft → extract → keywords → kind 순으로 우선한다(기존 동작 유지). */
-export function selectAnalyzeHandler(query, { company, draft, extract, keywords, posting, resume, split }) {
+/** 쿼리로 여덟 핸들러 중 하나를 고른다. split → posting → draft → extract → keywords → interview_feedback → kind 순으로 우선한다(기존 동작 유지). */
+export function selectAnalyzeHandler(query, { company, draft, extract, interviewFeedback, keywords, posting, resume, split }) {
   if (query?.split === "1") return split;
   if (query?.posting === "1") return posting;
   if (query?.draft === "1") return draft;
   if (query?.extract === "1") return extract;
   if (query?.keywords === "1") return keywords;
+  if (query?.interview_feedback === "1") return interviewFeedback;
   if (query?.kind === "company") return company;
   return resume;
 }
 
 // /api/analyze/split → ?split=1, /api/analyze/posting → ?posting=1, /api/analyze/draft → ?draft=1,
-// /api/analyze/extract → ?extract=1, /api/analyze/keywords → ?keywords=1, /api/analyze/company → ?kind=company
-// 로 rewrite 되어 이 함수 하나로 들어온다 (Hobby 12함수 제한).
+// /api/analyze/extract → ?extract=1, /api/analyze/keywords → ?keywords=1, /api/analyze/company → ?kind=company,
+// /api/analyze/interview-feedback → ?interview_feedback=1 로 rewrite 되어 이 함수 하나로 들어온다 (Hobby 12함수 제한).
 export default function handler(req, res) {
   return selectAnalyzeHandler(req.query, {
     company: companyAnalyzeHandler,
     draft: experienceDraftHandler,
     extract: experienceExtractHandler,
+    interviewFeedback: interviewFeedbackHandler,
     keywords: experienceKeywordsHandler,
     posting: jobPostingHandler,
     resume: analyzeHandler,

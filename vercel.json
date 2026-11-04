@@ -92,6 +92,10 @@
       "destination": "/api/analyze?kind=company"
     },
     {
+      "source": "/api/analyze/interview-feedback",
+      "destination": "/api/analyze?interview_feedback=1"
+    },
+    {
       "source": "/report-new",
       "has": [{ "type": "query", "key": "sample", "value": "1" }],
       "destination": "/sample-report.html"

@@ -45,6 +45,7 @@ model User {
   receivedAdminCreditGrants AdminCreditGrant[] @relation("AdminCreditGrantRecipient")
   issuedAdminCreditGrants   AdminCreditGrant[] @relation("AdminCreditGrantAdministrator")
   experiences Experience[]
+  interviewSessions InterviewSession[]
 
   @@map("users")
 }
@@ -126,6 +127,8 @@ enum PurchaseProduct {
 enum AnalysisKind {
   RESUME
   COMPANY
+  /// AI 면접 연습 이용권 예약에만 쓴다. Analysis 행에는 쓰지 않는다.
+  INTERVIEW
 
   @@map("analysis_kind")
 }
@@ -151,6 +154,8 @@ model EntitlementSetting {
   grobleSinglePaymentUrl    String  @default("") @map("groble_single_payment_url") @db.Text
   /// 기업 분석 리포트 판매·생성 스위치. premiumEnabled 와 별개로 끄고 켠다.
   companyAnalysisEnabled    Boolean @default(false) @map("company_analysis_enabled")
+  /// AI 면접 연습 생성 스위치. 기본은 꺼짐이라 코드가 합쳐져도 화면에 나오지 않는다.
+  interviewEnabled          Boolean @default(false) @map("interview_enabled")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -179,6 +184,8 @@ model AnalysisEntitlement {
   premiumCreditsGranted   Int    @default(0) @map("premium_credits_granted")
   /// 기업 분석 리포트 크레딧 누적 지급치(결제·관리자). 잔여 = 이 값 - COMPANY 예약 수.
   companyCreditsGranted   Int    @default(0) @map("company_credits_granted")
+  /// AI 면접 연습 이용권 누적 지급치. 잔여 = 이 값 - INTERVIEW 예약 수.
+  interviewCreditsGranted Int    @default(0) @map("interview_credits_granted")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -202,6 +209,7 @@ model AnalysisReservation {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   analysisRequest AnalysisRequest?
+  interviewSession InterviewSession?
 
   @@index([userId])
   @@index([status])
@@ -493,6 +501,7 @@ model Analysis {
   tokenUsages    TokenUsage[]
   feedbacks      Feedback[]
   analysisRequest AnalysisRequest?
+  interviewSessions InterviewSession[]
 
   @@index([userId])
   @@index([userId, kind])
@@ -861,4 +870,102 @@ model InstagramCredential {
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("instagram_credentials")
+}
+
+enum InterviewSessionStatus {
+  CREATED
+  ACTIVE
+  ENDED
+  INTERRUPTED
+  CANCELLED
+
+  @@map("interview_session_status")
+}
+
+enum InterviewFeedbackStatus {
+  NONE
+  PENDING
+  CALLING
+  SUCCEEDED
+  FAILED
+
+  @@map("interview_feedback_status")
+}
+
+enum InterviewSpeaker {
+  CANDIDATE
+  INTERVIEWER
+
+  @@map("interview_speaker")
+}
+
+enum InterviewMode {
+  FULL
+  SHORT
+
+  @@map("interview_mode")
+}
+
+/// AI 면접 연습 한 번. 음성·영상·사진은 저장하지 않고 대화 글과 피드백만 남긴다.
+model InterviewSession {
+  id             String                 @id @default(uuid()) @db.Uuid
+  userId         String                 @map("user_id") @db.Uuid
+  analysisId     String                 @map("analysis_id") @db.Uuid
+  reservationId  String?                @unique @map("reservation_id") @db.Uuid
+  idempotencyKey String                 @map("idempotency_key") @db.VarChar(128)
+  mode           InterviewMode          @default(FULL)
+  status         InterviewSessionStatus @default(CREATED)
+  liveModel      String                 @map("live_model") @db.VarChar(100)
+  promptVersion  String                 @map("prompt_version") @db.VarChar(40)
+  consentVersion String                 @map("consent_version") @db.VarChar(40)
+  consentedAt    DateTime               @map("consented_at") @db.Timestamptz
+
+  /// 첫 입장권을 내준 시각. 이때부터 비용이 시작된다고 본다.
+  firstTokenAt    DateTime? @map("first_token_at") @db.Timestamptz
+  hardDeadlineAt  DateTime? @map("hard_deadline_at") @db.Timestamptz
+  tokenIssueCount Int       @default(0) @map("token_issue_count")
+  endedAt         DateTime? @map("ended_at") @db.Timestamptz
+  endReason       String?   @map("end_reason") @db.VarChar(40)
+  /// 빨리 끝나 돌려준 시각. 계정당 30일 횟수 제한에 쓴다.
+  earlyRefundAt   DateTime? @map("early_refund_at") @db.Timestamptz
+  /// 브라우저가 보고한 토큰 사용량. 참고용이고 과금 근거가 아니다.
+  clientReportedUsage Json? @map("client_reported_usage")
+
+  feedbackStatus   InterviewFeedbackStatus @default(NONE) @map("feedback_status")
+  feedbackJson     Json?                   @map("feedback_json")
+  feedbackAttempts Int                     @default(0) @map("feedback_attempts")
+  feedbackHadVideo Boolean                 @default(false) @map("feedback_had_video")
+  feedbackModel    String?                 @map("feedback_model") @db.VarChar(100)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis    Analysis             @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  reservation AnalysisReservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  turns       InterviewTurn[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, status])
+  @@index([analysisId])
+  @@index([hardDeadlineAt])
+  @@map("interview_sessions")
+}
+
+/// 자동 받아쓰기로 만든 발언 한 개. 받아쓰기라 실제 말과 다를 수 있다.
+model InterviewTurn {
+  id          String           @id @default(uuid()) @db.Uuid
+  sessionId   String           @map("session_id") @db.Uuid
+  seq         Int
+  speaker     InterviewSpeaker
+  text        String           @db.Text
+  interrupted Boolean          @default(false)
+  partial     Boolean          @default(false)
+  offsetMs    Int              @map("offset_ms")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, seq])
+  @@map("interview_turns")
 }
