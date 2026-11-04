@@ -21,6 +21,11 @@ const SAVE_INTERVAL_MS = 15_000;
 const MAX_RECONNECTS = 4;
 const SPEAKING_THRESHOLD = 0.012;
 const FRAME_WIDTH = 480;
+/**
+ * 사진 간격. 11-04 실측: AI 가 말할 차례마다 지금까지의 음성·사진 전체가 다시 청구돼, 보내는 양이 비용을 좌우한다.
+ * 1초 1장이면 15분 약 $2.8, 10초 1장 + AI 말할 때 전송 멈춤이면 약 $0.4 로 추정. 시선·자세 표본은 10초 간격으로 충분하다.
+ */
+const FRAME_INTERVAL_MS = 10_000;
 
 export type LivePhase = "connecting" | "live" | "reconnecting" | "ending" | "ended" | "failed";
 
@@ -43,7 +48,7 @@ export type LiveSessionOptions = {
   sessionId: string;
   mode: InterviewMode;
   micStream: MediaStream;
-  /** 카메라를 켰으면 이 비디오 요소에서 1초에 1장씩 사진을 찍어 AI 에 보내고 피드백용 표본을 모은다. */
+  /** 카메라를 켰으면 이 비디오 요소에서 10초에 1장씩(AI 가 말하는 동안은 빼고) 사진을 찍어 AI 에 보내고 피드백용 표본을 모은다. */
   videoElement: HTMLVideoElement | null;
   authHeader: { Authorization: string };
   onChange: (state: LiveState) => void;
@@ -162,6 +167,8 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
     const pcm = int16ToBase64(downsampleToInt16(concatFloat32(pendingBlocks, pendingSamples), inputRate, LIVE_INPUT_SAMPLE_RATE));
     pendingBlocks = [];
     pendingSamples = 0;
+    // 면접관이 말하는 동안은 내 소리를 보내지 않는다(비용 절반, 대신 말을 끊고 들어가지 못한다 — 면접엔 자연스럽다).
+    if (state.modelSpeaking) return;
     // 재연결 중인 목소리는 약 3초까지 담아 두었다가 다시 보낸다.
     if (reconnecting || !send(buildAudioMessage(pcm))) {
       ring.push(pcm);
@@ -180,7 +187,8 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
   if (videoElement) {
     const canvas = document.createElement("canvas");
     timers.push(setInterval(() => {
-      if (stopped || reconnecting || !videoElement.videoWidth) return;
+      // 면접관이 말하는 동안의 사진은 보내지도, 표본에 넣지도 않는다(지원자가 말하는 순간만 피드백에 쓴다).
+      if (stopped || reconnecting || state.modelSpeaking || !videoElement.videoWidth) return;
       canvas.width = FRAME_WIDTH;
       canvas.height = Math.round((FRAME_WIDTH * videoElement.videoHeight) / videoElement.videoWidth);
       canvas.getContext("2d")?.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
@@ -188,7 +196,7 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
       if (!data) return;
       send(buildVideoMessage(data));
       photos.offer(data, Math.round(performance.now() - startedAt), state.candidateSpeaking);
-    }, 1000));
+    }, FRAME_INTERVAL_MS));
   }
 
   // ── 대화 글 저장 ──

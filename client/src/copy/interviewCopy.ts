@@ -11,7 +11,7 @@ export const INTERVIEW_MODE_COPY: Record<InterviewMode, { label: string; minutes
 export const INTERVIEW_CONSENT_COPY = {
   heading: "시작하기 전에 확인해 주세요",
   items: [
-    "면접 중 마이크 소리와 카메라 사진(1초에 1장)이 Google의 AI(Gemini)로 전송되어 면접 진행과 피드백에 쓰여요.",
+    "면접 중 마이크 소리와 카메라 사진(약 10초에 1장)이 Google의 AI(Gemini)로 전송되어 면접 진행과 피드백에 쓰여요.",
     "음성·영상·사진 파일은 저장하지 않아요. 자동 받아쓰기로 만든 대화 글과 피드백만 남아요.",
     "자동 받아쓰기라 실제 말과 다를 수 있어요. 피드백은 참고로만 봐 주세요.",
     "시작하면 이용권 1회가 쓰여요. 2분 안에 그만두고 답변이 2번 미만이면 돌려드려요(한 달에 2번까지).",
