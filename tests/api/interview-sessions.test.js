@@ -99,7 +99,7 @@ describe("요청 정규화", () => {
 });
 
 describe("면접관 지시와 입장권 설정", () => {
-  it("자소서·질문·약한 곳을 담고 모범 답변은 넣지 않으며, 짧은 연습은 질문을 3개로 줄인다", () => {
+  it("자소서·질문·약한 곳을 담고 모범 답변은 넣지 않으며, 짧은 연습은 질문을 2개로 줄인다", () => {
     const material = interviewMaterialFromReport(SAMPLE_REPORT);
     const instruction = buildInterviewerInstruction({ company: "한빛모빌리티", jobRole: "서비스 기획", coverLetter: "자소서 본문", ...material, mode: "FULL" });
     expect(instruction).toContain("한빛모빌리티 서비스 기획의 면접관");
@@ -109,8 +109,8 @@ describe("면접관 지시와 입장권 설정", () => {
     expect(instruction).toContain("카메라 화면에 대해서는 말하지 않습니다");
     const many = { ...material, questions: Array.from({ length: 8 }, (_, index) => ({ question: `질문 ${index + 1}`, followUps: [] })) };
     const short = buildInterviewerInstruction({ coverLetter: "", ...many, mode: "SHORT" });
-    expect(short).toContain("3. 질문 3");
-    expect(short).not.toContain("4. 질문 4");
+    expect(short).toContain("2. 질문 2");
+    expect(short).not.toContain("3. 질문 3");
     expect(short).toContain("5분짜리");
   });
 
