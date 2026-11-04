@@ -25,7 +25,7 @@ describe("오디오 변환", () => {
 
 describe("Live 메시지", () => {
   it("보내는 메시지는 모델·이어받기·음성·사진·글 모양을 지킨다", () => {
-    expect(buildSetupMessage({ model: "gemini-3.8-live", resumeHandle: null })).toEqual({ setup: { model: "models/gemini-3.8-live" } });
+    expect(buildSetupMessage({ model: "gemini-3.8-live", resumeHandle: null })).toEqual({ setup: { model: "models/gemini-3.8-live", sessionResumption: {} } });
     expect(buildSetupMessage({ model: "m", resumeHandle: "h" }).setup).toMatchObject({ sessionResumption: { handle: "h" } });
     expect(buildAudioMessage("AA").realtimeInput.audio).toEqual({ data: "AA", mimeType: "audio/pcm;rate=16000" });
     expect(buildVideoMessage("BB").realtimeInput.video).toEqual({ data: "BB", mimeType: "image/jpeg" });

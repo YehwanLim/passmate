@@ -18,6 +18,7 @@ import {
   spentKrw,
   summarizeUsage,
   worstCaseKrw,
+  worstUsdPerMinute,
 } from "./probe-core.js";
 
 describe("오디오 변환", () => {
@@ -71,13 +72,18 @@ describe("연결 설정", () => {
     const body = buildTokenBody({ now, expireMinutes: 17, config });
     expect(body.uses).toBe(1);
     expect(body.expireTime).toBe(new Date(now + 17 * 60_000).toISOString());
-    expect(body.liveConnectConstraints.config).toBe(config);
+    expect(body.bidiGenerateContentSetup.model).toBe("models/gemini-3.8-live");
+    expect(body.bidiGenerateContentSetup.systemInstruction).toBe(config.systemInstruction);
+    expect(body.liveConnectConstraints).toBeUndefined();
   });
 
-  it("SDK 형태 토큰 본문은 잠글 필드 목록을 함께 보낸다", () => {
-    const body = buildTokenBody({ now: 0, expireMinutes: 1, config, variant: "sdk" });
-    expect(body.bidiGenerateContentSetup.setup.systemInstruction).toBeTruthy();
-    expect(body.fieldMask).toContain("systemInstruction");
+  it("지시·설정은 잠그고 이어받기는 브라우저 몫으로 남긴다", () => {
+    const body = buildTokenBody({ now: 0, expireMinutes: 1, config });
+    const locked = body.fieldMask.split(",");
+    expect(locked).toEqual(expect.arrayContaining(["model", "systemInstruction", "generationConfig", "contextWindowCompression", "realtimeInputConfig"]));
+    expect(locked).not.toContain("sessionResumption");
+    expect(body.bidiGenerateContentSetup.sessionResumption).toBeUndefined();
+    expect(buildSetupMessage({}).setup.sessionResumption).toEqual({});
   });
 });
 
@@ -182,5 +188,14 @@ describe("비용 차단", () => {
     const fullMinutes = Math.floor(BUDGET_KRW / worstCaseKrw(1));
     expect(canReserve([{ reservedMinutes: fullMinutes - 16 }], 16)).toBe(true);
     expect(canReserve([{ reservedMinutes: fullMinutes }], 16)).toBe(false);
+  });
+
+  it("사진 간격을 늘리거나 영상을 끄면 단가가 내려가고, 항목마다 적힌 단가로 합산한다", () => {
+    expect(worstUsdPerMinute()).toBeCloseTo(0.2);
+    expect(worstUsdPerMinute({ frameMs: 5000 })).toBeCloseTo(0.06 + 0.14 / 5);
+    expect(worstUsdPerMinute({ frameMs: 200 })).toBeCloseTo(0.2);
+    expect(worstUsdPerMinute({ video: false })).toBeCloseTo(0.06);
+    const spent = spentKrw([{ reservedMinutes: 10, usdPerMinute: 0.1 }, { reservedMinutes: 10 }]);
+    expect(spent).toBeCloseTo(worstCaseKrw(10, 0.1) + worstCaseKrw(10));
   });
 });

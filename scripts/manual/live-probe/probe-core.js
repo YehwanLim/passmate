@@ -74,27 +74,27 @@ export function buildSessionConfig({ systemInstruction, silenceMs, triggerTokens
   return config;
 }
 
+/** 브라우저가 보내는 setup. 이어받기(sessionResumption)는 토큰에 잠기지 않아 여기서 보내야 한다. */
 export function buildSetupMessage({ model = LIVE_MODEL, config = {}, resumeHandle = null }) {
-  const setup = { model: `models/${model}`, ...config };
-  if (resumeHandle) setup.sessionResumption = { handle: resumeHandle };
+  const setup = { model: `models/${model}`, ...config, sessionResumption: resumeHandle ? { handle: resumeHandle } : {} };
   return { setup };
 }
 
 /**
- * 임시 토큰 요청 본문. 문서의 REST 예시(liveConnectConstraints)와 SDK가 실제로 보내는 형태
- * (bidiGenerateContentSetup)가 달라 둘 다 만들어 두고, 어느 쪽이 통하는지 시험에서 기록한다.
+ * 임시 토큰 요청 본문. REST 는 문서 예시의 liveConnectConstraints 가 아니라
+ * bidiGenerateContentSetup(setup 내용을 바로 펼침) + fieldMask 를 받는다(2026-11-04 실측, v1beta discovery 문서와 일치).
+ * fieldMask 에 적은 필드는 토큰 값이 브라우저 setup 을 덮어쓴다. sessionResumption 은 빼서 브라우저가 이어받기 handle 을 보낼 수 있게 한다.
  */
-export function buildTokenBody({ now, expireMinutes, model = LIVE_MODEL, config, variant = "documented" }) {
+export function buildTokenBody({ now, expireMinutes, model = LIVE_MODEL, config }) {
   const expireTime = new Date(now + expireMinutes * 60_000).toISOString();
   const newSessionExpireTime = new Date(now + 2 * 60_000).toISOString();
-  const base = { uses: 1, expireTime, newSessionExpireTime };
-  if (variant === "documented") {
-    return { ...base, liveConnectConstraints: { model: `models/${model}`, config } };
-  }
+  const { sessionResumption: _unlocked, ...locked } = config;
   return {
-    ...base,
-    bidiGenerateContentSetup: { setup: { model: `models/${model}`, ...config } },
-    fieldMask: Object.keys(config).join(","),
+    uses: 1,
+    expireTime,
+    newSessionExpireTime,
+    bidiGenerateContentSetup: { model: `models/${model}`, ...locked },
+    fieldMask: ["model", ...Object.keys(locked)].join(","),
   };
 }
 
@@ -237,20 +237,27 @@ export function evaluateGate(result, { billedUsd = null, expectedUsd = 0.2 } = {
   return { checks, passed: values.every((value) => value === true), pendingBilling: billedUsd === null };
 }
 
-// 비용 차단: 가격표와 영상 초당 263토큰 보고 중 비싼 쪽(영상 분당 $0.016)에 AI가 내내 말한다고 보고 넉넉하게 잡는다.
-export const WORST_USD_PER_MINUTE = 0.005 + 0.016 + 0.018;
+// 비용 차단. 11-04 실측: 매 턴 대화 전체(사진 포함)가 다시 청구된다. 1초 1장이면 2분에 $0.094, 대화가 길어질수록
+// 턴당 금액이 커져 15분은 약 $2.8 로 추정된다. 그 값을 분당으로 올려 잡는다(사진 간격을 늘리면 실제는 훨씬 적다).
+export const WORST_USD_PER_MINUTE = 0.2;
 export const KRW_PER_USD = 1400;
 export const BUDGET_KRW = 10_000;
 
-export function worstCaseKrw(minutes) {
-  return minutes * WORST_USD_PER_MINUTE * KRW_PER_USD;
+/** 분당 최악 단가. 글·음성 몫 $0.06 + 사진 몫 $0.14(1초 1장 기준, 간격에 비례해 줄어든다). 영상을 끄면 글·음성 몫만. */
+export function worstUsdPerMinute({ video = true, frameMs = 1000 } = {}) {
+  if (!video) return 0.06;
+  return 0.06 + 0.14 * Math.min(1, 1000 / Math.max(1000, Number(frameMs) || 1000));
 }
 
-/** 원장 항목을 합산한다. 끝난 세션은 실제 분, 안 끝난 세션은 예약한 분으로 친다. */
+export function worstCaseKrw(minutes, usdPerMinute = WORST_USD_PER_MINUTE) {
+  return minutes * usdPerMinute * KRW_PER_USD;
+}
+
+/** 원장 항목을 합산한다. 끝난 세션은 실제 분, 안 끝난 세션은 예약한 분으로 친다. 단가를 안 적은 옛 항목은 최악 단가다. */
 export function spentKrw(entries) {
-  return entries.reduce((sum, entry) => sum + worstCaseKrw(entry.actualMinutes ?? entry.reservedMinutes), 0);
+  return entries.reduce((sum, entry) => sum + worstCaseKrw(entry.actualMinutes ?? entry.reservedMinutes, entry.usdPerMinute ?? WORST_USD_PER_MINUTE), 0);
 }
 
-export function canReserve(entries, minutes) {
-  return spentKrw(entries) + worstCaseKrw(minutes) <= BUDGET_KRW;
+export function canReserve(entries, minutes, usdPerMinute = WORST_USD_PER_MINUTE) {
+  return spentKrw(entries) + worstCaseKrw(minutes, usdPerMinute) <= BUDGET_KRW;
 }

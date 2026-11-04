@@ -70,6 +70,7 @@ function readSettings() {
     scenario: pick("scenario", $("scenario").value),
     minutes: Number(pick("minutes", $("minutes").value)),
     video: pick("video", $("video").checked ? "1" : "0") === "1",
+    frameMs: Number(pick("frameMs", $("frameMs").value)),
     silenceMs: Number(pick("silenceMs", $("silenceMs").value)),
     triggerTokens: Number(pick("triggerTokens", $("triggerTokens").value)),
     turnCoverage: pick("turnCoverage", $("turnCoverage").value) || null,
@@ -311,7 +312,7 @@ function startFrames(settings) {
     }
     const data = canvas.toDataURL("image/jpeg", 0.6).split(",")[1];
     if (send({ realtimeInput: { video: { data, mimeType: "image/jpeg" } } })) state.result.framesSent += 1;
-  }, 1000);
+  }, Math.max(1000, settings.frameMs || 1000)); // 사진 한 장 ≈ 258 토큰이 매 턴 다시 청구돼 간격이 비용을 좌우한다(1초가 상한).
 }
 
 /**
@@ -440,6 +441,8 @@ async function start() {
     const token = await postJson("/token", {
       scenario: settings.scenario,
       minutes: settings.minutes,
+      video: settings.video,
+      frameMs: settings.frameMs,
       silenceMs: settings.silenceMs,
       triggerTokens: settings.triggerTokens,
       turnCoverage: settings.turnCoverage,

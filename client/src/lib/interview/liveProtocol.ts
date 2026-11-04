@@ -13,10 +13,9 @@ export type LiveServerEvent =
   | { type: "resumption"; newHandle: string | null; resumable: boolean }
   | { type: "goAway"; timeLeft: string | null };
 
+/** 이어받기(sessionResumption)는 입장권에 잠기지 않아 브라우저가 항상 보낸다. 빈 값이면 새 세션, handle 이 있으면 이어받기. */
 export function buildSetupMessage({ model, resumeHandle }: { model: string; resumeHandle: string | null }) {
-  const setup: Record<string, unknown> = { model: `models/${model}` };
-  if (resumeHandle) setup.sessionResumption = { handle: resumeHandle };
-  return { setup };
+  return { setup: { model: `models/${model}`, sessionResumption: resumeHandle ? { handle: resumeHandle } : {} } };
 }
 
 export function buildAudioMessage(base64Pcm16k: string) {

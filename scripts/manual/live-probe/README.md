@@ -20,6 +20,8 @@ node scripts/manual/live-probe/run-auto.mjs --fake --minutes 2
 node scripts/manual/live-probe/run-auto.mjs --scenario lock --minutes 2
 node scripts/manual/live-probe/run-auto.mjs --scenario expire --minutes 4
 node scripts/manual/live-probe/run-auto.mjs --scenario full --minutes 15 --video 1
+# 사진 간격(ms, 1000 이상)과 침묵 판정(ms)을 바꿔 비용·끼어듦을 비교한다
+node scripts/manual/live-probe/run-auto.mjs --scenario full --minutes 15 --frame-ms 5000 --silence-ms 1200
 
 # 직접 말하는 시험(비용 발생): 서버를 켜고 크롬에서 http://127.0.0.1:5199/ 를 연다
 node scripts/manual/live-probe/server.mjs

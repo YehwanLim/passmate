@@ -123,7 +123,11 @@ describe("면접관 지시와 입장권 설정", () => {
     expect(config.sessionResumption).toEqual({});
     const body = buildLiveTokenBody({ config, expireAt: at(17), newSessionExpireAt: at(2) });
     expect(body.uses).toBe(1);
-    expect(body.liveConnectConstraints.model).toBe("models/gemini-3.8-live");
+    expect(body.bidiGenerateContentSetup.model).toBe("models/gemini-3.8-live");
+    expect(body.bidiGenerateContentSetup.systemInstruction.parts[0].text).toBe("면접관");
+    expect(body.bidiGenerateContentSetup.sessionResumption).toBeUndefined();
+    expect(body.fieldMask.split(",")).toEqual(expect.arrayContaining(["model", "systemInstruction", "generationConfig"]));
+    expect(body.fieldMask).not.toContain("sessionResumption");
     expect(body.expireTime).toBe(at(17).toISOString());
     expect(liveSocketUrl("a b")).toContain("BidiGenerateContentConstrained?access_token=a%20b");
   });

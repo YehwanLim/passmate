@@ -23,6 +23,8 @@ const fake = argv.includes("--fake");
 const scenario = option("scenario", "full");
 const minutes = Number(option("minutes", "15"));
 const video = option("video", "1");
+const frameMs = Number(option("frame-ms", "1000"));
+const silenceMs = Number(option("silence-ms", "800"));
 const voice = option("voice", "Yuna");
 
 function speak(text, tempDir, index) {
@@ -94,7 +96,7 @@ await wait(500);
 buildAnswerTrack();
 const profile = mkdtempSync(path.join(os.tmpdir(), "live-probe-chrome-"));
 const before = new Set(listResults());
-const url = `http://127.0.0.1:${PORT}/?auto=1&fake=${fake ? 1 : 0}&scenario=${scenario}&minutes=${minutes}&video=${video}`;
+const url = `http://127.0.0.1:${PORT}/?auto=1&fake=${fake ? 1 : 0}&scenario=${scenario}&minutes=${minutes}&video=${video}&frameMs=${frameMs}&silenceMs=${silenceMs}`;
 const chrome = spawn(
   CHROME,
   [

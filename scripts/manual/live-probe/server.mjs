@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 
 import { LOCK_TOKEN_INSTRUCTION, interviewerInstruction } from "./fixture.js";
 import { startFakeLiveServer } from "./fake-live-server.mjs";
-import { BUDGET_KRW, buildSessionConfig, buildTokenBody, canReserve, liveSocketUrls, spentKrw } from "./probe-core.js";
+import { BUDGET_KRW, buildSessionConfig, buildTokenBody, canReserve, liveSocketUrls, spentKrw, worstUsdPerMinute } from "./probe-core.js";
 
 const ROOT = import.meta.dirname;
 const RESULTS = path.join(ROOT, "results");
@@ -64,18 +64,15 @@ async function requestToken({ apiKey, scenario, minutes, silenceMs, triggerToken
   const expireMinutes = scenario === "expire" ? 2 : minutes + 1;
   const failures = [];
   for (const endpoint of TOKEN_ENDPOINTS) {
-    for (const variant of ["documented", "sdk"]) {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify(buildTokenBody({ now: Date.now(), expireMinutes, config, variant })),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (response.ok && payload.name) {
-        return { token: payload.name, variant: `${endpoint.includes("v1alpha") ? "v1alpha" : "v1beta"}/${variant}` };
-      }
-      failures.push(`${endpoint.includes("v1alpha") ? "v1alpha" : "v1beta"}/${variant}: ${response.status} ${String(payload.error?.message ?? "").slice(0, 200)}`);
-    }
+    const version = endpoint.includes("v1alpha") ? "v1alpha" : "v1beta";
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify(buildTokenBody({ now: Date.now(), expireMinutes, config })),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (response.ok && payload.name) return { token: payload.name, variant: version };
+    failures.push(`${version}: ${response.status} ${String(payload.error?.message ?? "").slice(0, 200)}`);
   }
   throw new Error(`TOKEN_FAILED ${failures.join(" | ")}`);
 }
@@ -95,13 +92,14 @@ async function handleToken(req, res, fakeUrl) {
   const minutes = Number(body.minutes);
   // 비용 차단: 최악 단가로 쳐서 상한을 넘기면 토큰을 내주지 않는다.
   const entries = readLedger();
-  if (!canReserve(entries, minutes + 1)) {
+  const usdPerMinute = worstUsdPerMinute({ video: body.video !== false, frameMs: body.frameMs });
+  if (!canReserve(entries, minutes + 1, usdPerMinute)) {
     sendJson(res, 402, { error: `BUDGET_EXCEEDED 누적 최악 추정 ${Math.round(spentKrw(entries))}원, 상한 ${BUDGET_KRW}원` });
     return;
   }
   try {
     const { token, variant } = await requestToken({ ...body, minutes, apiKey });
-    appendFileSync(LEDGER, `${JSON.stringify({ id: sessionId, at: new Date().toISOString(), scenario: body.scenario, reservedMinutes: minutes + 1 })}\n`);
+    appendFileSync(LEDGER, `${JSON.stringify({ id: sessionId, at: new Date().toISOString(), scenario: body.scenario, reservedMinutes: minutes + 1, usdPerMinute })}\n`);
     sendJson(res, 200, { urls: liveSocketUrls(token), variant, sessionId });
   } catch (error) {
     sendJson(res, 502, { error: error.message });
