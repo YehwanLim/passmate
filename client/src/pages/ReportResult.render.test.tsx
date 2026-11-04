@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -45,6 +45,62 @@ describe("ReportResult public sample", () => {
     }));
   });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+  // 면접 후기 글의 예시 리포트 링크·면접 입구에서 끝난 분석(?intent=interview)은 예상 질문 섹션부터 연다.
+  describe("intent=interview", () => {
+    // jsdom 에는 scrollIntoView 가 없다. 테스트마다 달았다가 뗀다.
+    let scrolled: string[];
+    beforeEach(() => {
+      scrolled = [];
+      Object.defineProperty(Element.prototype, "scrollIntoView", {
+        configurable: true,
+        writable: true,
+        value(this: Element) {
+          scrolled.push(this.id);
+        },
+      });
+    });
+    afterEach(() => {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    });
+
+    it("scrolls to the 예상 질문 section once when opened with intent=interview", async () => {
+      window.history.replaceState({}, "", "/report-new?sample=1&intent=interview");
+      render(<PassMateReport />);
+
+      await waitFor(() => expect(scrolled).toEqual(["section-interview-drill"]));
+      expect(document.getElementById("section-interview-drill")).toBeTruthy();
+    });
+
+    it("re-aligns while the sections above settle, and stops once the reader scrolls", async () => {
+      // 위 섹션이 마운트 직후 높이를 바꾸는 상황을 ResizeObserver 콜백으로 흉내 낸다.
+      let notifyResize = () => {};
+      vi.stubGlobal("ResizeObserver", class {
+        constructor(callback: () => void) { notifyResize = callback; }
+        observe() {}
+        disconnect() { notifyResize = () => {}; }
+      });
+      window.history.replaceState({}, "", "/report-new?sample=1&intent=interview");
+      render(<PassMateReport />);
+      await waitFor(() => expect(scrolled).toHaveLength(1));
+
+      notifyResize();
+      expect(scrolled).toHaveLength(2);
+
+      window.dispatchEvent(new Event("touchstart"));
+      notifyResize();
+      expect(scrolled).toEqual(["section-interview-drill", "section-interview-drill"]);
+    });
+
+    it("stays at the top without intent", async () => {
+      window.history.replaceState({}, "", "/report-new?sample=1");
+      render(<PassMateReport />);
+      await screen.findByText(/가상의 지원자 김민지님/);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      expect(scrolled).toEqual([]);
+    });
+  });
 
   it("renders the whole sample without login and without fetching", async () => {
     window.history.replaceState({}, "", "/report-new?sample=1");

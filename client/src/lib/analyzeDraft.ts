@@ -3,6 +3,7 @@
 // 떠나기 직전에 sessionStorage 에 넣고, /analyze 가 다시 마운트될 때 한 번 꺼내 쓰고 지운다.
 // sessionStorage 라 탭을 닫으면 사라지고, 다른 탭·기기와 공유되지 않는다.
 // 키는 passmate_ 접두사라 로그아웃 시 clearPassMateStorage 가 같이 지운다.
+import { type AnalyzeIntent, parseAnalyzeIntent } from "@/lib/analyze/analyzeIntent";
 import type { QuestionItem } from "@/lib/analyze/analyzeQuestions";
 import type { JobPostingRecord } from "@/types/jobPosting";
 
@@ -17,6 +18,8 @@ export interface AnalyzeDraft {
   jobPosting: JobPostingRecord | null;
   /** 떠나기 전에 이미 "분석 시작"을 눌렀는가. 돌아와서 로그인이 확인되면 제출을 대신 누른다(useSubmitAfterLogin). */
   submitOnReturn?: boolean;
+  /** 면접 후기 글에서 온 방문(?intent=interview). 돌아와서도 폼 안내와 리포트 첫 위치를 잇는다 */
+  intent?: AnalyzeIntent | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -54,6 +57,7 @@ function parseDraft(raw: string): AnalyzeDraft | null {
     return null;
   }
   if (!Array.isArray(parsed.questions)) return null;
+  const intent = parseAnalyzeIntent(parsed.intent);
 
   return {
     company: parsed.company,
@@ -61,6 +65,7 @@ function parseDraft(raw: string): AnalyzeDraft | null {
     questions: parsed.questions.filter(isQuestionItem),
     jobPosting: isJobPostingRecord(parsed.jobPosting) ? parsed.jobPosting : null,
     submitOnReturn: parsed.submitOnReturn === true,
+    ...(intent ? { intent } : {}),
   };
 }
 

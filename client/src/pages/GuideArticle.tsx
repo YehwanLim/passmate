@@ -5,6 +5,8 @@ import { ContentCtaBar } from "@/components/ContentCtaBar";
 import { GuideCover } from "@/components/guide/GuideCover";
 import { GuideCtaCard } from "@/components/guide/GuideCtaCard";
 import { GuideLayout } from "@/components/guide/GuideLayout";
+import { INTERVIEW_INTENT_COPY } from "@/copy/interviewIntentCopy";
+import { withAnalyzeIntent } from "@/lib/analyze/analyzeIntent";
 import { formatDate } from "@/lib/formatDate";
 import { hasGuideBody, readGuideHtml } from "@/lib/guideBodies";
 import { guideMeta } from "@/lib/guideMeta";
@@ -14,6 +16,8 @@ import NotFound from "./NotFound";
 
 const RELATED_COUNT = 3;
 const END_CTA_ID = "guide-end-cta";
+/** 이 분류의 글로 온 사람은 서류에 붙어 면접을 준비한다 — 입구를 예상 질문 쪽으로 돌린다. */
+const INTERVIEW_CATEGORY = "면접 후기";
 
 // 흰 바탕에서 길게 읽는 본문: 17px·줄 간격 1.8, 인용은 왼쪽 줄 대신 회색 판, 링크는 브랜드 글씨 + 밑줄.
 const PROSE_CLASS =
@@ -54,7 +58,12 @@ export default function GuideArticle() {
   // "앞부분, 뒷부분" 제목은 앞부분을 한 덩어리로 묶어, 넓은 화면에서 쉼표 앞 단어 하나만 다음 줄로 떨어지지 않게 한다.
   const commaAt = guide.title.indexOf(", ");
   // 회사를 다루는 글(frontmatter company)이면 분석 폼에 그 회사 이름을 채워 보낸다.
-  const analyzeHref = guide.company ? `/analyze?company=${encodeURIComponent(guide.company)}` : "/analyze";
+  // 면접 후기 글이면 intent=interview 를 붙여, 폼 안내 한 줄과 리포트 첫 위치(예상 질문)만 바꾼다.
+  const intent = guide.category === INTERVIEW_CATEGORY ? "interview" : null;
+  const analyzeHref = withAnalyzeIntent(
+    guide.company ? `/analyze?company=${encodeURIComponent(guide.company)}` : "/analyze",
+    intent
+  );
 
   return (
     <GuideLayout surface="white">
@@ -92,9 +101,14 @@ export default function GuideArticle() {
             id={END_CTA_ID}
             analyzeHref={analyzeHref}
             trackSlug={guide.slug}
+            intent={intent}
             className="mt-12 bg-fill"
-            title="다 쓴 자소서, 내기 전에 한 번 읽혀 보세요"
-            body="지원 회사와 문항을 넣으면 채용 담당자가 읽는 순서대로 첫인상과 고칠 곳을 짚어 드려요. 첫 분석은 무료예요."
+            title={intent ? INTERVIEW_INTENT_COPY.question(guide.company) : "다 쓴 자소서, 내기 전에 한 번 읽혀 보세요"}
+            body={
+              intent
+                ? INTERVIEW_INTENT_COPY.cardBody
+                : "지원 회사와 문항을 넣으면 채용 담당자가 읽는 순서대로 첫인상과 고칠 곳을 짚어 드려요. 첫 분석은 무료예요."
+            }
             withSample
           />
         </article>
@@ -119,7 +133,13 @@ export default function GuideArticle() {
         )}
       </div>
 
-      <ContentCtaBar company={guide.company} href={analyzeHref} where={`guide-bar:${guide.slug}`} endId={END_CTA_ID} />
+      <ContentCtaBar
+        company={guide.company}
+        href={analyzeHref}
+        where={`${intent ? "guide-bar-interview" : "guide-bar"}:${guide.slug}`}
+        endId={END_CTA_ID}
+        intent={intent}
+      />
     </GuideLayout>
   );
 }

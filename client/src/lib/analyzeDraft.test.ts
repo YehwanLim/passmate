@@ -50,6 +50,17 @@ describe("analyzeDraft", () => {
     expect(takeAnalyzeDraft()?.submitOnReturn).toBe(true);
   });
 
+  it("면접 후기 글에서 온 방문(intent)을 로그인 왕복 너머로 잇고, 모르는 값은 버린다", () => {
+    saveAnalyzeDraft({ ...DRAFT, intent: "interview" });
+    expect(takeAnalyzeDraft()?.intent).toBe("interview");
+
+    window.sessionStorage.setItem(
+      ANALYZE_DRAFT_KEY,
+      JSON.stringify({ ...DRAFT, savedAt: Date.now(), intent: "<script>" })
+    );
+    expect(takeAnalyzeDraft()).toEqual({ ...DRAFT, submitOnReturn: false });
+  });
+
   it("returns null when nothing was saved", () => {
     expect(takeAnalyzeDraft()).toBeNull();
   });
