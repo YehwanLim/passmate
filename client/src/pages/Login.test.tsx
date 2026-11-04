@@ -46,7 +46,7 @@ describe("getSafeRedirectPath", () => {
     return getSafeRedirectPath();
   }
 
-  it.each(["/analyze", "/my/new?x=1", "/account/deletion?pending=1"])("keeps the same-origin path %s", (path) => {
+  it.each(["/analyze", "/analyze?intent=interview", "/my/new?x=1", "/account/deletion?pending=1"])("keeps the same-origin path %s", (path) => {
     expect(withRedirect(path)).toBe(path);
   });
 

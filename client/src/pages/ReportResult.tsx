@@ -40,6 +40,7 @@ import {
   splitPersonaForHeroLines,
 } from "@/lib/report/reportFirstImpression";
 import { buildReportNavSections } from "@/lib/report/reportNavigation";
+import { ANALYZE_INTENT_SECTION_ID, readAnalyzeIntent } from "@/lib/analyze/analyzeIntent";
 import { isPostingFitRenderable } from "@/lib/report/reportPostingFit";
 
 function getFallbackDisplayName(user: { name?: string | null; email?: string | null } | null) {
@@ -82,6 +83,36 @@ interface LoadedReport {
   resumeText?: string;
   /** 로그인 없이 보는 공개 예시(/report-new?sample=1). 잠금·피드백·업셀 대신 분석 시작 CTA를 둔다. */
   sample?: boolean;
+}
+
+/** 열린 직후 섹션 위치를 다시 맞춰 주는 시간. 이 안에서도 사람이 스크롤·터치하면 바로 멈춘다. */
+const OPEN_AT_SECTION_SETTLE_MS = 2000;
+const USER_SCROLL_EVENTS = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
+
+/**
+ * 리포트를 열 때 sectionId 섹션으로 바로 옮긴다(한 번). 문장별 코멘트처럼 위 섹션이 마운트 직후 높이를 바꾸고,
+ * report.css 의 smooth 스크롤은 그 전 위치를 겨냥하므로, 즉시 이동한 뒤 잠깐 동안 페이지 높이가 바뀌면 다시 맞춘다.
+ */
+function useOpenAtSection(sectionId: string | null) {
+  useEffect(() => {
+    if (!sectionId) return;
+    const align = () => document.getElementById(sectionId)?.scrollIntoView({ block: "start", behavior: "instant" });
+    const raf = requestAnimationFrame(align);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => align());
+    observer?.observe(document.body);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const stop = () => {
+      observer?.disconnect();
+      clearTimeout(timer);
+      USER_SCROLL_EVENTS.forEach((name) => window.removeEventListener(name, stop));
+    };
+    timer = setTimeout(stop, OPEN_AT_SECTION_SETTLE_MS);
+    USER_SCROLL_EVENTS.forEach((name) => window.addEventListener(name, stop, { passive: true }));
+    return () => {
+      cancelAnimationFrame(raf);
+      stop();
+    };
+  }, [sectionId]);
 }
 
 const MISSING_MESSAGE = "분석 리포트를 찾을 수 없습니다.";
@@ -146,6 +177,9 @@ function ReportContent({
   const navSections = useMemo(() => buildReportNavSections({ hasPostingFit }), [hasPostingFit]);
   const activeSection = useScrollSpy(navSections);
   const [isPrinting, setIsPrinting] = useState(false);
+  // 면접 후기 글에서 온 분석·예시(?intent=interview)는 예상 질문 섹션부터 보여 준다.
+  const intent = readAnalyzeIntent(useSearch());
+  useOpenAtSection(intent ? ANALYZE_INTENT_SECTION_ID[intent] : null);
 
   // 접힌 항목을 모두 펼쳐 렌더한 다음 프레임에 브라우저 인쇄(→ PDF 저장)를 연다.
   useEffect(() => {

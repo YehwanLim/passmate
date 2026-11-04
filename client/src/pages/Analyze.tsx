@@ -49,6 +49,8 @@ import {
   type IdempotentRequest,
 } from "@/lib/analysisSubmit";
 import { readQueryParam } from "@/lib/readQueryParam";
+import { readAnalyzeIntent, withAnalyzeIntent } from "@/lib/analyze/analyzeIntent";
+import { INTERVIEW_INTENT_COPY } from "@/copy/interviewIntentCopy";
 import { saveAnalyzeDraft, takeAnalyzeDraft } from "@/lib/analyzeDraft";
 import { useSubmitAfterLogin } from "@/hooks/useSubmitAfterLogin";
 import {
@@ -93,6 +95,9 @@ export default function Analyze() {
   const [draft] = useState(() => takeAnalyzeDraft());
   // 채용 공고 한 장(/jobs/:slug)의 "다 쓴 자소서 분석하기"가 ?job= 으로 공고를 넘긴다. 초안이 있으면 초안이 우선이다.
   const [jobListing] = useState(() => (draft ? undefined : findJobPosting(readQueryParam("job", 80))));
+  // 면접 후기 글에서 온 방문(?intent=interview). 로그인 왕복 뒤에는 초안이, 초안이 없으면 돌아온 주소가 들고 온다.
+  // 서버로 보내지 않는다 — 안내 한 줄을 띄우고, 대기 화면을 거쳐 리포트를 예상 질문부터 열 때만 쓴다.
+  const [intent] = useState(() => draft?.intent ?? readAnalyzeIntent());
   // /company-report 의 CTA 가 회사·직무를 쿼리로 넘긴다. 없으면 빈 값.
   const [company, setCompany] = useState(
     () => draft?.company ?? (readQueryParam("company") || jobListing?.company || "")
@@ -455,7 +460,7 @@ export default function Analyze() {
       }
 
       analysisRequestRef.current = null;
-      navigate(analysisPendingPath(result.receipt.analysisRequestId));
+      navigate(withAnalyzeIntent(analysisPendingPath(result.receipt.analysisRequestId), intent));
     } finally {
       setIsLoading(false);
     }
@@ -540,6 +545,9 @@ export default function Analyze() {
       />
 
       <div className="container max-w-6xl pt-6">
+        {intent === "interview" && (
+          <p className="mb-4 text-[14px] leading-6 text-ink-3">{INTERVIEW_INTENT_COPY.formNotice}</p>
+        )}
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* 왼쪽: 번호 탭 + 원고지 */}
           <div className="min-w-0">
@@ -787,12 +795,13 @@ export default function Analyze() {
 
       <AnalyzeLoginModal
         open={loginPromptOpen && !isAuthenticated}
+        redirectPath={withAnalyzeIntent("/analyze", intent)}
         onClose={() => {
           submitAfterLogin.disarm();
           setLoginPromptOpen(false);
         }}
         onBeforeRedirect={() =>
-          saveAnalyzeDraft({ company, jobRole, questions, jobPosting, submitOnReturn: true })
+          saveAnalyzeDraft({ company, jobRole, questions, jobPosting, submitOnReturn: true, intent })
         }
       />
 

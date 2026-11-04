@@ -8,7 +8,7 @@ vi.mock("@/lib/siteVisits", async (importOriginal) => ({
   sendFunnelEvent: mocks.sendFunnelEvent,
 }));
 
-import { CONTENT_CTA_BAR_SHOW_AFTER_PX, ContentCtaBar, contentCtaBarText } from "./ContentCtaBar";
+import { CONTENT_CTA_BAR_SHOW_AFTER_PX, ContentCtaBar, contentCtaBarButton, contentCtaBarText } from "./ContentCtaBar";
 
 function scrollTo(y: number) {
   act(() => {
@@ -37,6 +37,17 @@ describe("contentCtaBarText", () => {
   it("회사가 있으면 회사 이름, 없으면 '내'로 묻는다", () => {
     expect(contentCtaBarText("삼립")).toBe("삼립 자소서, 이대로 내도 될까요?");
     expect(contentCtaBarText(null)).toBe("내 자소서, 이대로 내도 될까요?");
+  });
+});
+
+describe("contentCtaBarText — 면접 후기 글", () => {
+  it("이미 낸 자소서로 예상 질문을 묻고, 버튼도 예상 질문으로 바뀐다", () => {
+    expect(contentCtaBarText("삼성전자", "interview")).toBe("삼성전자 면접, 내 자소서로는 뭘 물어볼까요?");
+    expect(contentCtaBarText(null, "interview")).toBe("내 자소서로는 뭘 물어볼까요?");
+    expect(contentCtaBarButton("interview")).toBe("예상 질문 보기");
+    // intent 가 없으면(공고·일반 가이드) 원래 문구 그대로다.
+    expect(contentCtaBarButton()).toBe("무료 분석");
+    expect(contentCtaBarText("삼립", null)).toBe("삼립 자소서, 이대로 내도 될까요?");
   });
 });
 
