@@ -76,3 +76,13 @@
 .site-card__name { display: block; font-size: 16px; font-weight: 700; line-height: 1.4; color: var(--color-ink); }
 .site-card__domain { margin-left: 6px; font-size: 13px; font-weight: 500; color: var(--color-ink-5); }
 .site-card__desc { display: block; margin-top: 4px; font-size: 14.5px; line-height: 1.65; color: var(--color-ink-3); word-break: keep-all; }
+
+/* AI 면접 연습: 면접관이 말할 때 움직이는 파형(components/interview/InterviewerPresence). 오디오 분석 없이 CSS 로만 움직인다. */
+@keyframes interview-wave {
+  0%, 100% { height: 10px; }
+  50% { height: 40px; }
+}
+.interview-wave { height: 10px; animation: interview-wave 0.9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .interview-wave { animation: none; height: 24px; }
+}

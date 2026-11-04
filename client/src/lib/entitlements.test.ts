@@ -44,6 +44,9 @@ describe("entitlements client", () => {
       // 구버전 서버 응답에 없으면 기업 분석은 "꺼짐·0"으로 읽는다
       companyAnalysisEnabled: false,
       companyRemaining: 0,
+      // 구버전 서버 응답에 없으면 AI 면접 연습도 "꺼짐·0"으로 읽는다
+      interviewEnabled: false,
+      interviewRemaining: 0,
       // 구버전 서버 응답에 없으면 무료 AI 도구 칸은 숨긴다
       freeTools: null,
     });
