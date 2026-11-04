@@ -88,12 +88,12 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
 | `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
+| `yuanta-securities.svg` | 유안타증권 | [유안타증권 홈페이지 CI](https://www.yuantakorea.com/images/sub/1/1/5/cont2.jpg) | 국문 로고타입 한 줄을 잘라 PNG를 SVG 래퍼에 |
 | `kumho-express.svg` | 금호익스프레스 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%EA%B8%88%ED%98%B8%EA%B3%A0%EC%86%8DCI.png) | 금호고속 CI, 퍼블릭 도메인, PNG를 잘라 SVG 래퍼에 |
 | `suhyup.svg` | 수협중앙회 | [수협중앙회 채용 사이트](https://raspfiles2.incruit.com/suhyup/data/101/SuccessData/addFile/수협중앙회_0000000_135x90.png) | PNG를 잘라 SVG 래퍼에 |
 | `hyundai-lnc.svg` | 현대엘앤씨 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/Special:FilePath/Hyundai_L%26C_Logo.svg) | 라이선스 문구 미확인 |
 | `fanuc.svg` | 한국화낙 | [Wikimedia Commons](https://upload.wikimedia.org/wikipedia/commons/b/bb/Fanuc_logo.svg) | 영문 FANUC 워드마크, viewBox만 추가 |
 | `hyundai-steel.svg` | 현대제철 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hyundai_Steel_logo.svg) | Public domain(상표 제한) |
-| `pkc.svg` | PKC | [PKC 홈페이지](https://www.pkc.kr/theme/pkc2426/extend/sections/header/pkc_header/img/logo_hv.png) | PNG(여백 없음)를 SVG 래퍼에 |
 | `ecount.svg` | 이카운트 | [이카운트 홈페이지](https://www.ecount.com/kr/common/images/common/logo.svg) | 공식 SVG 그대로 |
 | `cr-holdings.svg` | 조선내화 | [CR홀딩스 홈페이지](https://www.crholdings.co.kr/assets/images/common/logo-sprite.png) | 그룹 로고, 스프라이트 PNG를 잘라 SVG 래퍼에(작음) |
 | `im-securities.svg` | iM증권 | [iM증권 홈페이지](https://www.imfnsec.com/images/main/2017/logo_2024CI_iMsec.png) | PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
@@ -111,7 +111,6 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `nongshim.svg` | 농심 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nongshim_Logo.svg) | 공식 SVG 그대로 |
 | `hyundai-bngsteel.svg` | 현대비앤지스틸 | [현대비앤지스틸 홈페이지](https://www.bngsteel.com/kr/images/gnb/logo.png) | PNG를 SVG 래퍼에 |
 | `foosung.svg` | 후성그룹 | [후성그룹 채용 홈페이지](https://img.inhr.co.kr/static/careerlink/LOGO/251028181710522fZa.png) | 채용 사이트 등록 로고 PNG를 SVG 래퍼에 |
-| `yuanta-securities.svg` | 유안타증권 | [유안타증권 홈페이지 CI](https://www.yuantakorea.com/images/sub/1/1/5/cont2.jpg) | 국문 로고타입 한 줄을 잘라 PNG를 SVG 래퍼에 |
 | `yuhan-kimberly.svg` | 유한킴벌리 | [유한킴벌리 홈페이지](https://www.yuhan-kimberly.co.kr/images/renewal2022/header/logo.png) | PNG를 SVG 래퍼에 |
 | `toyota.svg` | 한국토요타자동차 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Toyota_logo_(Red).svg) | Public domain, `<title>`만 추가 |
 | `shinyoung-securities.svg` | 신영증권 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%EC%8B%A0%EC%98%81%EC%A6%9D%EA%B6%8C%EB%A1%9C%EA%B3%A01.png) | CC BY-SA 4.0, PNG 여백 자르고 SVG 래퍼에 |
