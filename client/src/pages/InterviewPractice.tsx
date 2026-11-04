@@ -3,7 +3,7 @@ import { useLocation, useParams, useSearch } from "wouter";
 import { ArrowLeft, Camera, CameraOff, Loader2, Mic } from "lucide-react";
 
 import FeedbackView, { TranscriptList } from "@/components/interview/FeedbackView";
-import InterviewerPresence from "@/components/interview/InterviewerPresence";
+import InterviewerPresence, { type InterviewerActivity } from "@/components/interview/InterviewerPresence";
 import SiteHeader from "@/components/SiteHeader";
 import {
   INTERVIEW_CONSENT_COPY,
@@ -12,6 +12,7 @@ import {
   INTERVIEW_LIVE_COPY,
   INTERVIEW_MODE_COPY,
   INTERVIEW_TITLE,
+  INTERVIEWER_STATUS_COPY,
 } from "@/copy/interviewCopy";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getAuthorizationHeader } from "@/lib/apiAuth";
@@ -26,6 +27,7 @@ import {
   type InterviewSession,
 } from "@/lib/interview/interviewApi";
 import { startLiveSession, type LiveSessionHandle, type LiveState } from "@/lib/interview/liveSession";
+import { pickInterviewerPhoto } from "@/lib/interview/interviewerPhoto";
 import { rootMeanSquare } from "@/lib/interview/pcm";
 
 type Phase = "loading" | "setup" | "live" | "after" | "error";
@@ -257,6 +259,11 @@ export default function InterviewPractice() {
     await handleRef.current?.stop("user-stop");
   };
 
+  const interviewerActivity: InterviewerActivity =
+    live?.phase === "connecting" ? "connecting"
+      : live?.phase === "reconnecting" ? "reconnecting"
+        : live?.modelSpeaking ? "speaking"
+          : live?.candidateSpeaking ? "listening" : "thinking";
   const effectiveMode = session?.mode ?? mode;
   const modeCopy = INTERVIEW_MODE_COPY[effectiveMode];
   const backPath = session?.analysisId || analysisId ? `/report-new?analysisId=${encodeURIComponent(session?.analysisId ?? analysisId ?? "")}` : "/my";
@@ -353,19 +360,22 @@ export default function InterviewPractice() {
         {phase === "live" && (
           <div className="mt-6 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <InterviewerPresence
-                speaking={live?.modelSpeaking ?? false}
-                status={
-                  live?.phase === "connecting" ? INTERVIEW_LIVE_COPY.connecting
-                    : live?.phase === "reconnecting" ? INTERVIEW_LIVE_COPY.reconnecting
-                      : live?.modelSpeaking ? INTERVIEW_LIVE_COPY.speaking
-                        : live?.candidateSpeaking ? INTERVIEW_LIVE_COPY.listening : INTERVIEW_LIVE_COPY.thinking
-                }
-              />
+              <InterviewerPresence activity={interviewerActivity} status={INTERVIEWER_STATUS_COPY[interviewerActivity]} photoSrc={pickInterviewerPhoto(session?.id)} />
               <div className="relative aspect-video overflow-hidden rounded-3xl bg-ink md:aspect-auto md:min-h-[220px]">
                 <video ref={liveVideoRef} autoPlay muted playsInline className={`h-full w-full object-cover ${cameraOn ? "" : "hidden"}`} />
                 {!cameraOn && <div className="flex h-full items-center justify-center text-white/60"><CameraOff className="h-7 w-7" aria-hidden="true" /></div>}
                 <span className="absolute bottom-3 left-3 rounded-full bg-black/50 px-2.5 py-1 text-[12px] font-semibold text-white">{INTERVIEW_LIVE_COPY.you}</span>
+                {/* 내 목소리 크기. 말하는 동안 막대가 움직여 "들어가고 있다"가 보인다. */}
+                <span
+                  className="absolute bottom-3 right-3 flex h-7 w-28 items-center rounded-full bg-black/50 px-2.5"
+                  role="meter"
+                  aria-label="내 목소리 크기"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(Math.min(1, (live?.micLevel ?? 0) * 6) * 100)}
+                >
+                  <span className={`h-1.5 rounded-full transition-[width] duration-100 ${live?.candidateSpeaking ? "bg-white" : "bg-white/50"}`} style={{ width: `${Math.max(4, Math.min(100, (live?.micLevel ?? 0) * 600))}%` }} />
+                </span>
               </div>
             </div>
             <div className="flex items-center justify-between rounded-2xl bg-surface px-5 py-3.5">

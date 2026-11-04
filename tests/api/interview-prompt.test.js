@@ -19,6 +19,13 @@ describe("면접관 지시문", () => {
     expect(INTERVIEW_KICKOFF_TEXT).toMatch(/인사부터/);
   });
 
+  it("말투는 차분하고 사무적이며 칭찬·격려를 쓰지 않는다", () => {
+    const text = buildInterviewerInstruction({ coverLetter: "본문", questions, gaps: [], mode: "FULL" });
+    expect(text).toMatch(/\[말투\] 차분하고 사무적인/);
+    expect(text).toMatch(/칭찬·공감·격려의 말, 감탄사, 느낌표는 쓰지 않습니다/);
+    expect(text).toMatch(/과장된 환영이나 격려는 하지 않습니다/);
+  });
+
   it("자기소개에 시간을 쓰므로 질문은 실전 7개, 짧은 연습 2개까지만 싣는다", () => {
     const full = buildInterviewerInstruction({ coverLetter: "본문", questions, gaps: [], mode: "FULL" });
     const short = buildInterviewerInstruction({ coverLetter: "본문", questions, gaps: [], mode: "SHORT" });

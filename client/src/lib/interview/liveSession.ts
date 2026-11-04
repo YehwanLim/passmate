@@ -154,6 +154,7 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
   const inputRate = micContext.sampleRate;
   let pendingBlocks: Float32Array[] = [];
   let pendingSamples = 0;
+  let lastLevelEmitAt = 0;
   capture.port.onmessage = (event: MessageEvent<Float32Array>) => {
     const block = event.data;
     const level = rootMeanSquare(block);
@@ -161,6 +162,11 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
     const now = performance.now();
     if (level >= SPEAKING_THRESHOLD) lastSpeechAt = now;
     state.candidateSpeaking = now - lastSpeechAt < 600;
+    // 화면의 내 목소리 막대와 "듣고 있어요" 표시가 따라오도록 0.1초마다 알린다(블록마다 알리면 너무 잦다).
+    if (now - lastLevelEmitAt >= 100) {
+      lastLevelEmitAt = now;
+      emit();
+    }
     pendingBlocks.push(block);
     pendingSamples += block.length;
     if (pendingSamples < (inputRate * CHUNK_MS) / 1000) return;

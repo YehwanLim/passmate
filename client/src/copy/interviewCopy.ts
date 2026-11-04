@@ -44,6 +44,15 @@ export const INTERVIEW_LIVE_COPY = {
   thinking: "생각 중",
 };
 
+/** 면접관 자리 상태 글. 키는 components/interview/InterviewerPresence 의 InterviewerActivity 와 같다. */
+export const INTERVIEWER_STATUS_COPY = {
+  connecting: INTERVIEW_LIVE_COPY.connecting,
+  reconnecting: INTERVIEW_LIVE_COPY.reconnecting,
+  speaking: INTERVIEW_LIVE_COPY.speaking,
+  listening: INTERVIEW_LIVE_COPY.listening,
+  thinking: INTERVIEW_LIVE_COPY.thinking,
+} as const;
+
 export const INTERVIEW_FEEDBACK_COPY = {
   pending: "면접을 되돌아보고 있어요",
   pendingHint: "1~3분 걸려요. 이 화면을 닫아도 계속 만들어져요.",
