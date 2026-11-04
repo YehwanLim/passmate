@@ -83,6 +83,7 @@ export default function InterviewPractice() {
   const handleRef = useRef<LiveSessionHandle | null>(null);
   const photosRef = useRef<string[]>([]);
   const idempotencyKeyRef = useRef(newIdempotencyKey());
+  const startedSessionIdRef = useRef<string | null>(null);
   const inApp = detectInAppBrowser();
   const mediaSupported = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
 
@@ -143,6 +144,9 @@ export default function InterviewPractice() {
       if (mediaSupported && !inApp) void requestDevices(true);
       return;
     }
+    // 시작 때 주소를 /start → /:id 로 바꾸면 wouter 가 이 효과를 다시 돌린다. 이미 들고 있는 세션이면 다시 불러오지 않는다
+    // (불러오면 장비 점검 화면으로 되돌아가 마이크를 끊고, 다시 시작하면 면접관이 둘이 된다).
+    if (startedSessionIdRef.current === params.sessionId) return;
     let alive = true;
     (async () => {
       try {
@@ -203,6 +207,7 @@ export default function InterviewPractice() {
         if (!analysisId) throw new InterviewApiError("NOT_FOUND", 404);
         current = await createInterviewSession({ analysisId, mode, idempotencyKey: idempotencyKeyRef.current });
         setSession(current);
+        startedSessionIdRef.current = current.id;
         window.history.replaceState(null, "", `/my/interview-practice/${current.id}`);
       }
       const authHeader = await getAuthorizationHeader();
