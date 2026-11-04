@@ -60,6 +60,8 @@ describe("ReportResult public sample", () => {
     expect(screen.getByText("현대자동차의 커넥티드 서비스를 개선한다면 어떤 데이터를 가장 먼저 보겠습니까?")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /내 자소서 분석하기/ }).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "자기소개서" })).toBeNull();
+    // 수요 시험은 내 리포트를 본 회원만 잰다. 공개 예시에는 띄우지 않는다.
+    expect(screen.queryByText("이 질문들, 직접 답해 보고 싶나요?")).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -118,6 +120,7 @@ describe("ReportResult public sample", () => {
     expect(await screen.findByText("지원자님은 채용 담당자에게 이렇게 읽혀요")).toBeTruthy();
     expect(screen.getByText("지원자님 · 문항 2개")).toBeTruthy();
     expect(screen.getByRole("button", { name: "자기소개서" })).toBeTruthy();
+    expect(screen.getByText("이 질문들, 직접 답해 보고 싶나요?")).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "공고가 원하는 것을 자소서가 얼마나 채웠는지 봤어요" })).toBeNull();
     expect(navTexts()).toEqual([
       "01.첫인상",

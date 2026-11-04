@@ -180,9 +180,14 @@ describe("POST /api/visits — 방문 핑", () => {
       "report_experience_save_click",
       "report_experience_saved",
       "content_cta_click",
+      "report_mock_interview_click",
+      "report_mock_interview_apply",
     ]);
     expect(readClientEventBody({ visitorId: VISITOR_ID, event: "landing_cta_click", detail: "m:hero" })).toEqual({
       visitorId: VISITOR_ID, name: "landing_cta_click", detail: "m:hero", inAppBrowser: null,
+    });
+    expect(readClientEventBody({ visitorId: VISITOR_ID, event: "report_mock_interview_apply", detail: "d:report" })).toEqual({
+      visitorId: VISITOR_ID, name: "report_mock_interview_apply", detail: "d:report", inAppBrowser: null,
     });
   });
 

@@ -48,6 +48,7 @@ const privacySections = [
       "부정 이용 방지",
       "법령상 의무 이행",
       "인스타그램 댓글로 자료를 신청한 분께 자료 DM 발송과 팔로우 여부 확인(팔로우 여부는 저장하지 않습니다)",
+      "모의면접 출시 알림을 신청한 분께 가입한 이메일로 출시 안내 1회 발송(광고성 정보, 신청한 분에 한합니다)",
     ],
     footer:
       "회사는 이용자의 동의 없이 위 목적 외의 용도로 개인정보를 이용하지 않습니다.",
@@ -167,6 +168,7 @@ const privacySections = [
       "본 개인정보처리방침은 2026년 7월 13일부터 시행됩니다.",
       "2026년 8월 29일 개정: 회원 탈퇴 시 30일 유예 기간 후 파기되는 절차를 명시했습니다.",
       "2026년 10월 23일 개정: 인스타그램 자동 DM 신청 시 처리하는 항목, 이용 목적, 보관 기간을 추가했습니다.",
+      "2026년 11월 4일 개정: 모의면접 출시 알림을 신청한 분께 안내 메일을 보내는 이용 목적을 추가했습니다.",
     ],
   },
 ];
@@ -179,7 +181,7 @@ export default function Privacy() {
       <main className="relative z-10 mx-auto w-full max-w-4xl px-5 py-12 sm:py-16">
         <div className="mb-10">
           <p className="mb-3 text-[13px] font-semibold text-brand-ink">
-            최종 업데이트: 2026년 10월 23일
+            최종 업데이트: 2026년 11월 4일
           </p>
           <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink sm:text-4xl">
             개인정보처리방침

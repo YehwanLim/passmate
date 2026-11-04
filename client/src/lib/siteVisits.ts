@@ -195,7 +195,9 @@ export type FunnelEventName =
   | "signup_complete"
   | "report_experience_save_click"
   | "report_experience_saved"
-  | "content_cta_click";
+  | "content_cta_click"
+  | "report_mock_interview_click"
+  | "report_mock_interview_apply";
 
 /** 폰(m)·PC(d) 구분. 손가락 입력이 주 포인터면 폰으로 친다. 판별이 안 되면 d. */
 export function deviceClass(): "m" | "d" {
