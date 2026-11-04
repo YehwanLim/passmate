@@ -18,7 +18,6 @@ import { MentorCommentSection } from "@/components/report/sections/MentorComment
 import { PostingFitSection } from "@/components/report/sections/PostingFitSection";
 import { ReportClosing } from "@/components/report/sections/ReportClosing";
 import { ReportBlock } from "@/components/report/sections/ReportBlock";
-import MockInterviewInterestCard from "@/components/report/MockInterviewInterestCard";
 import SaveExperiencesCard, { resumeTextForExtract } from "@/components/report/SaveExperiencesCard";
 import { UI_LABELS } from "@/constants/labels";
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
@@ -335,8 +334,6 @@ function ReportContent({
           >
             <InterviewDrillSection items={reportData.interviewQA} isPrinting={isPrinting} />
           </ReportBlock>
-
-          {sample ? null : <MockInterviewInterestCard />}
 
           <ReportBlock
             id="section-action-plan"
