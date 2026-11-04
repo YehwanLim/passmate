@@ -83,10 +83,21 @@
   50% { height: 40px; }
 }
 .interview-wave { height: 10px; animation: interview-wave 0.9s ease-in-out infinite; }
-/* 면접관 사진: 말할 때 둘레로 테가 번지고, 듣거나 생각할 때는 상태 글 뒤 점 세 개가 차례로 깜빡인다. */
+/* 면접관 사진(components/interview/InterviewCall): 숨 쉬듯 천천히 움직이고, 말할 때는 조금 당겨지며 둘레로 테가 번진다.
+   듣거나 생각할 때는 상태 글 뒤 점 세 개가 차례로 깜빡인다. */
+@keyframes interview-breathe {
+  0%, 100% { transform: scale(1.02) translate3d(0, 0, 0); }
+  50% { transform: scale(1.05) translate3d(0, -1.5%, 0); }
+}
+@keyframes interview-nod {
+  0%, 100% { transform: scale(1.08) translate3d(0, -2%, 0); }
+  50% { transform: scale(1.09) translate3d(0, -0.5%, 0); }
+}
+.interview-portrait { transform-origin: 50% 35%; animation: interview-breathe 7s ease-in-out infinite; }
+.interview-portrait--speaking { animation: interview-nod 1.6s ease-in-out infinite; }
 @keyframes interview-ring {
   0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.3); opacity: 0; }
+  100% { transform: scale(1.08); opacity: 0; }
 }
 .interview-ring { animation: interview-ring 1.4s ease-out infinite; }
 @keyframes interview-dot {
@@ -98,4 +109,5 @@
   .interview-wave { animation: none; height: 24px; }
   .interview-ring { animation: none; opacity: 0.35; }
   .interview-dot { animation: none; opacity: 0.7; }
+  .interview-portrait, .interview-portrait--speaking { animation: none; transform: scale(1.02); }
 }
