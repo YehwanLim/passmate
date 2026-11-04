@@ -76,6 +76,8 @@ export default function InterviewPractice() {
   const [live, setLive] = useState<LiveState | null>(null);
   const [feedbackRequesting, setFeedbackRequesting] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
+  // ref 만 바꾸면 다시 그려지지 않아 마이크 막대·시작 버튼이 스트림 도착을 모른다. 그리기용으로 state 를 같이 둔다.
+  const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement | null>(null);
   const liveVideoRef = useRef<HTMLVideoElement | null>(null);
   const handleRef = useRef<LiveSessionHandle | null>(null);
@@ -88,6 +90,7 @@ export default function InterviewPractice() {
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    setPreviewStream(null);
   }, []);
 
   const requestDevices = useCallback(async (withCamera: boolean) => {
@@ -99,6 +102,7 @@ export default function InterviewPractice() {
         video: withCamera ? { width: 640, height: 360, facingMode: "user" } : false,
       });
       streamRef.current = stream;
+      setPreviewStream(stream);
       if (previewVideoRef.current) previewVideoRef.current.srcObject = withCamera ? stream : null;
     } catch (cause) {
       const name = cause instanceof Error ? cause.name : "";
@@ -108,9 +112,11 @@ export default function InterviewPractice() {
 
   // 마이크 레벨 표시(미리보기용). 면접 중에는 liveSession 이 따로 잰다.
   useEffect(() => {
-    if (phase !== "setup" || !streamRef.current) return;
+    if (phase !== "setup" || !previewStream) return;
     const context = new AudioContext();
-    const source = context.createMediaStreamSource(streamRef.current);
+    // 사용자 동작 없이 만든 AudioContext 는 멈춘 채 시작할 수 있어 깨운다.
+    void context.resume();
+    const source = context.createMediaStreamSource(previewStream);
     const analyser = context.createAnalyser();
     analyser.fftSize = 1024;
     source.connect(analyser);
@@ -123,7 +129,7 @@ export default function InterviewPractice() {
       clearInterval(timer);
       void context.close();
     };
-  }, [phase, deviceError, cameraOn]);
+  }, [phase, previewStream]);
 
   // ── 세션 불러오기 ──
   useEffect(() => {
@@ -329,7 +335,7 @@ export default function InterviewPractice() {
             {error && <p role="alert" className="text-[14px] text-danger">{error}</p>}
             <button
               type="button"
-              disabled={!consented || starting || !streamRef.current || Boolean(inApp) || !mediaSupported}
+              disabled={!consented || starting || !previewStream || Boolean(inApp) || !mediaSupported}
               onClick={() => void start()}
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-brand px-6 text-[15px] font-bold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             >
