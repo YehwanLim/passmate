@@ -97,7 +97,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
         ) : loadError ? (
           <AdminErrorAlert message={loadError} />
         ) : summary ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
             <div className="rounded-md border p-2">
               <p className="text-lg font-semibold">{summary.freeRemaining}</p>
               <p className="text-xs text-muted-foreground">무료 잔여</p>
@@ -115,6 +115,10 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
             <div className="rounded-md border p-2">
               <p className="text-lg font-semibold">{summary.companyRemaining}</p>
               <p className="text-xs text-muted-foreground">기업 분석</p>
+            </div>
+            <div className="rounded-md border p-2">
+              <p className="text-lg font-semibold">{summary.interviewRemaining}</p>
+              <p className="text-xs text-muted-foreground">면접 연습</p>
             </div>
           </div>
         ) : null}
@@ -143,6 +147,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
             >
               <option value="RESUME">자소서 분석</option>
               <option value="COMPANY">기업 분석</option>
+              <option value="INTERVIEW">AI 면접 연습</option>
             </select>
           </div>
           <div className="min-w-40 flex-1">
@@ -180,10 +185,12 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
                       className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-bold border ${
                         grant.kind === "COMPANY"
                           ? "bg-sky-500/15 text-sky-300 border-sky-400/25"
-                          : "bg-zinc-500/15 text-zinc-300 border-zinc-400/25"
+                          : grant.kind === "INTERVIEW"
+                            ? "bg-violet-500/15 text-violet-300 border-violet-400/25"
+                            : "bg-zinc-500/15 text-zinc-300 border-zinc-400/25"
                       }`}
                     >
-                      {grant.kind === "COMPANY" ? "기업" : "자소서"}
+                      {grant.kind === "COMPANY" ? "기업" : grant.kind === "INTERVIEW" ? "면접" : "자소서"}
                     </span>
                     {grant.note ? ` · ${grant.note}` : ""}
                   </span>

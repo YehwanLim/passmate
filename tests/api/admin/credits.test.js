@@ -153,6 +153,15 @@ describe("admin credit grants", () => {
     }));
   });
 
+  it("forwards INTERVIEW grants so admins can hand out AI interview practice credits", async () => {
+    mocks.grantAdminCredits.mockResolvedValue({ ...SUMMARY, interviewRemaining: 2 });
+
+    const res = await invoke({ method: "POST", body: { userId: USER_ID, credits: 2, kind: "INTERVIEW" } });
+
+    expect(res.statusCode).toBe(200);
+    expect(mocks.grantAdminCredits).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ kind: "INTERVIEW", credits: 2 }));
+  });
+
   it("defaults the grant kind to RESUME and rejects unknown kinds", async () => {
     mocks.grantAdminCredits.mockResolvedValue(SUMMARY);
 

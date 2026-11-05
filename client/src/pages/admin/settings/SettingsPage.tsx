@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import {
   fetchPremiumSalesSettings,
   updateCompanyAnalysisEnabled,
+  updateInterviewEnabled,
   updatePremiumSalesEnabled,
 } from "@/lib/admin-entitlements";
 import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
@@ -10,7 +11,7 @@ import { ServerToggleCard } from "@/components/admin/settings/ServerToggleCard";
 import { useServerToggle } from "@/hooks/admin/useServerToggle";
 
 export default function SettingsPage() {
-  // 프리미엄 판매·기업 분석 스위치 — 이 화면에서 서버에 실제 반영되는 설정
+  // 프리미엄 판매·기업 분석·AI 면접 연습 스위치 — 이 화면에서 서버에 실제 반영되는 설정
   const premium = useServerToggle({
     update: async (checked) => (await updatePremiumSalesEnabled(checked)).premiumEnabled,
     failMessage: "결제 판매 상태를 변경하지 못했습니다.",
@@ -19,19 +20,25 @@ export default function SettingsPage() {
     update: async (checked) => (await updateCompanyAnalysisEnabled(checked)).companyAnalysisEnabled,
     failMessage: "기업 분석 스위치를 변경하지 못했습니다.",
   });
+  const interview = useServerToggle({
+    update: async (checked) => (await updateInterviewEnabled(checked)).interviewEnabled,
+    failMessage: "AI 면접 연습 스위치를 변경하지 못했습니다.",
+  });
   const { setEnabled: setPremiumEnabled, setError: setPremiumError } = premium;
   const { setEnabled: setCompanyEnabled } = company;
+  const { setEnabled: setInterviewEnabled } = interview;
 
   useEffect(() => {
     fetchPremiumSalesSettings()
       .then((result) => {
         setPremiumEnabled(result.premiumEnabled);
         setCompanyEnabled(result.companyAnalysisEnabled);
+        setInterviewEnabled(result.interviewEnabled);
       })
       .catch((error: unknown) =>
         setPremiumError(error instanceof Error ? error.message : "결제 판매 상태를 불러오지 못했습니다."),
       );
-  }, [setCompanyEnabled, setPremiumEnabled, setPremiumError]);
+  }, [setCompanyEnabled, setInterviewEnabled, setPremiumEnabled, setPremiumError]);
 
   return (
     <div className="space-y-6">
@@ -64,6 +71,16 @@ export default function SettingsPage() {
         busy={company.busy}
         error={company.error}
         onToggle={(checked) => void company.toggle(checked)}
+      />
+
+      <ServerToggleCard
+        title="AI 면접 연습"
+        description="켜면 자소서 리포트 끝의 면접 카드가 열리고, 면접 이용권이 있는 사용자가 카메라·마이크로 AI 면접관과 연습할 수 있습니다. 꺼져 있으면 카드가 '준비 중'으로 보이고 새 면접을 만들 수 없습니다. 면접 1회는 Google Gemini 비용이 들므로(5분 약 200~500원) 이용권 지급과 함께 켜세요. 토글 즉시 서버에 반영됩니다."
+        statusLabel={interview.enabled === null ? "상태 불러오는 중..." : interview.enabled ? "열림" : "닫힘"}
+        enabled={interview.enabled}
+        busy={interview.busy}
+        error={interview.error}
+        onToggle={(checked) => void interview.toggle(checked)}
       />
 
       <ProductSettingsCard />

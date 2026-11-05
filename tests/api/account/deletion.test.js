@@ -141,19 +141,45 @@ describe("deleted account purge cron", () => {
       await deleteAuthUser(USER_ID);
       return { purged: 1 };
     });
+    const expireInterviewSessions = vi.fn(async () => 2);
     const handler = createPurgeDeletedAccountsHandler({
       cronSecret: "cron-secret",
       getAdminClient: () => ({ auth: { admin: { deleteUser } } }),
       purgeAccounts,
       instagramMaintenance: vi.fn(async () => ({})),
+      expireInterviewSessions,
     });
     const res = response();
 
     await handler(request({ headers: { authorization: "Bearer cron-secret" }, method: "GET" }), res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ purged: 1 });
+    expect(res.body).toEqual({ purged: 1, expiredInterviewSessions: 2 });
     expect(deleteUser).toHaveBeenCalledWith(USER_ID);
+    // 면접 세션 정리는 계정 삭제 뒤에 돈다.
+    expect(expireInterviewSessions).toHaveBeenCalledTimes(1);
+  });
+
+  it("still answers 200 when interview session cleanup throws", async () => {
+    const handler = createPurgeDeletedAccountsHandler({
+      cronSecret: "cron-secret",
+      getAdminClient: () => ({ auth: { admin: { deleteUser: vi.fn() } } }),
+      purgeAccounts: vi.fn(async () => ({ purged: 0 })),
+      instagramMaintenance: vi.fn(async () => ({})),
+      expireInterviewSessions: vi.fn(async () => {
+        throw new Error("db down");
+      }),
+    });
+    const res = response();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      await handler(request({ headers: { authorization: "Bearer cron-secret" }, method: "GET" }), res);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ purged: 0, expiredInterviewSessions: 0 });
+      expect(warn).toHaveBeenCalledWith("[interview] stale session cleanup failed");
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("runs instagram maintenance after the purge without changing the response", async () => {
@@ -162,13 +188,14 @@ describe("deleted account purge cron", () => {
       cronSecret: "cron-secret",
       purgeAccounts: vi.fn(async () => ({ purged: 1 })),
       instagramMaintenance,
+      expireInterviewSessions: vi.fn(async () => 0),
     });
     const res = response();
 
     await handler(request({ headers: { authorization: "Bearer cron-secret" }, method: "GET" }), res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ purged: 1 });
+    expect(res.body).toEqual({ purged: 1, expiredInterviewSessions: 0 });
     expect(instagramMaintenance).toHaveBeenCalledTimes(1);
   });
 
@@ -180,6 +207,7 @@ describe("deleted account purge cron", () => {
       instagramMaintenance: vi.fn(async () => {
         throw new Error("secret-token leaked");
       }),
+      expireInterviewSessions: vi.fn(async () => 0),
     });
     const res = response();
 
@@ -187,7 +215,7 @@ describe("deleted account purge cron", () => {
       await handler(request({ headers: { authorization: "Bearer cron-secret" }, method: "GET" }), res);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body).toEqual({ purged: 1 });
+      expect(res.body).toEqual({ purged: 1, expiredInterviewSessions: 0 });
       expect(warn).toHaveBeenCalledWith("[instagram-dm] maintenance failed");
       expect(JSON.stringify(warn.mock.calls)).not.toContain("secret-token");
     } finally {
