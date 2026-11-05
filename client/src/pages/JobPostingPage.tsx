@@ -4,11 +4,12 @@ import { Link, useParams } from "wouter";
 import { ContentCtaBar } from "@/components/ContentCtaBar";
 import { GuideLayout } from "@/components/guide/GuideLayout";
 import { ProcessSteps } from "@/components/jobs/ProcessSteps";
-import { findJobPosting, type JobPostingListing } from "@/constants/jobPostings";
+import { findJobPosting, jobPostingPath, JOB_POSTINGS, type JobPostingListing } from "@/constants/jobPostings";
 import { JOB_POSTING_DETAILS, type JobPostingDetail } from "@/constants/jobPostingDetails";
 import { useNow } from "@/hooks/useNow";
 import { dDayLabel, formatDeadline, isOpen } from "@/lib/jobPostingDates";
 import { jobPostingMeta } from "@/lib/jobPostingMeta";
+import { similarOpenPostings } from "@/lib/similarJobPostings";
 import { applyDocumentMeta, JOBS_INDEX_PATH, SEO_ROUTES } from "@/lib/seo";
 import { sendFunnelEvent } from "@/lib/siteVisits";
 import NotFound from "./NotFound";
@@ -103,6 +104,49 @@ function StartCard({ listing }: { listing: JobPostingListing }) {
   );
 }
 
+/**
+ * 마감된 공고에 도착한 사람에게 지금 지원할 수 있는 공고를 최대 3개 잇는다(고르는 기준은 lib/similarJobPostings).
+ * 접수 중 여부가 시각에 달려 있어 now 가 있을 때만(하이드레이션 뒤) 부른다. 접수 중 공고가 없으면 칸째 숨긴다.
+ */
+function NextOpenPostings({ listing, now }: { listing: JobPostingListing; now: Date }) {
+  const picks = similarOpenPostings(listing, JOB_POSTINGS, now);
+  if (picks.length === 0) return null;
+  const track = (where: string) => () => void sendFunnelEvent("content_cta_click", `${where}:${listing.slug}`);
+  return (
+    <section className="mt-6" aria-labelledby="closed-job-next">
+      <h2 id="closed-job-next" className="mb-3 text-[17px] font-bold tracking-[-0.02em] text-ink">
+        지금 지원할 수 있는 비슷한 공고
+      </h2>
+      <ul className="divide-y divide-line-soft overflow-hidden rounded-[24px] bg-surface">
+        {picks.map(posting => (
+          <li key={posting.slug}>
+            <Link
+              href={jobPostingPath(posting)}
+              onClick={track("closed-job-next")}
+              className="grid grid-cols-1 gap-y-1 px-5 py-4 transition-colors hover:bg-fill-soft md:grid-cols-[76px_minmax(0,1.3fr)_minmax(0,1fr)] md:items-center md:gap-6 md:px-7"
+            >
+              <b className="text-[15px] font-bold tabular-nums text-danger">{dDayLabel(posting.closesAt, now)}</b>
+              <span className="min-w-0 text-[16px] font-semibold leading-snug text-ink [overflow-wrap:anywhere] [word-break:keep-all]">
+                {posting.title}
+              </span>
+              <span className="min-w-0 text-[14px] leading-relaxed text-ink-3 [overflow-wrap:anywhere] [word-break:keep-all]">
+                {posting.roles}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Link
+        href={JOBS_INDEX_PATH}
+        onClick={track("closed-job-next-all")}
+        className="mt-3 inline-flex text-[14px] font-semibold text-brand-ink hover:text-brand"
+      >
+        접수 중인 공고 전체 보기 →
+      </Link>
+    </section>
+  );
+}
+
 function PostingBody({ detail }: { detail: JobPostingDetail }) {
   return (
     <div className="grid gap-5">
@@ -176,6 +220,7 @@ export default function JobPostingPage() {
           마감된 공고예요. 다음 시즌 공고가 열리면 새로 올려요.
         </p>
       )}
+      {closed && now && <NextOpenPostings listing={listing} now={now} />}
 
       <header className="mt-6 max-w-3xl">
         <h1 className="text-[30px] font-extrabold leading-[1.25] tracking-[-0.035em] text-balance text-ink [word-break:keep-all] md:text-[40px]">

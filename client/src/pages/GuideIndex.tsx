@@ -109,7 +109,7 @@ export default function GuideIndex() {
 
       <GuideCtaCard
         className="mt-20 md:mt-24"
-        title="다 쓴 자소서, 내기 전에 한 번 읽혀 보세요"
+        title="다 쓴 자소서, 제출 전에 마지막으로 점검해 보세요"
         body="지원 회사와 문항을 넣으면 채용 담당자가 읽는 순서대로 첫인상과 고칠 곳을 짚어 드려요. 첫 분석은 무료예요."
       />
     </GuideLayout>
