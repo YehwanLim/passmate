@@ -3,7 +3,7 @@
 // 티어(스펙 §7-3): 베이직 3,900(자소서 1 또는 기업 1) → 스탠다드 9,900(자소서 2 + 기업 1) → 프리미엄 16,900(자소서 3 + 기업 3).
 
 /** 서버 쿼리 키(lib/billing/entitlement-products.js PRODUCT_QUERY_KEYS)와 같다. checkoutUrls 의 키이기도 하다. */
-export const PURCHASE_PRODUCT_KEYS = ["single", "company", "standard", "premium", "triple"] as const;
+export const PURCHASE_PRODUCT_KEYS = ["single", "company", "standard", "premium", "triple", "interview"] as const;
 export type PurchaseProductKey = (typeof PURCHASE_PRODUCT_KEYS)[number];
 
 export type PricingPlan = {
@@ -17,6 +17,8 @@ export type PricingPlan = {
   uses: number;
   /** 기업 분석 횟수 */
   companyUses: number;
+  /** AI 면접 연습 횟수(면접 이용권 상품만) */
+  interviewUses?: number;
 };
 
 export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
@@ -55,6 +57,15 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     salePrice: 14_900,
     uses: 3,
     companyUses: 0,
+  },
+  // AI 면접 연습 1회권. 가격은 아직 미정(2026-11-05, 4,900 은 자리 표시) — Groble 상품 가격과 함께 정한다. 티어 카드에는 싣지 않는다.
+  interview: {
+    label: "AI 면접 연습 1회",
+    listPrice: 4_900,
+    salePrice: 4_900,
+    uses: 0,
+    companyUses: 0,
+    interviewUses: 1,
   },
 };
 
@@ -100,7 +111,7 @@ export function savingsFor(plan: PricingPlan): number {
 }
 
 /** 서버가 쓰는 상품 키(lib/billing/entitlement-products.js). 상품을 알 수 없는 결제는 null. */
-export type PurchaseProduct = "SINGLE" | "COMPANY_SINGLE" | "STANDARD" | "PREMIUM" | "TRIPLE";
+export type PurchaseProduct = "SINGLE" | "COMPANY_SINGLE" | "STANDARD" | "PREMIUM" | "TRIPLE" | "INTERVIEW_SINGLE";
 
 export const PRODUCT_KEY_BY_PRODUCT: Record<PurchaseProduct, PurchaseProductKey> = {
   SINGLE: "single",
@@ -108,6 +119,7 @@ export const PRODUCT_KEY_BY_PRODUCT: Record<PurchaseProduct, PurchaseProductKey>
   STANDARD: "standard",
   PREMIUM: "premium",
   TRIPLE: "triple",
+  INTERVIEW_SINGLE: "interview",
 };
 
 export function productLabel(product: PurchaseProduct | null): string {

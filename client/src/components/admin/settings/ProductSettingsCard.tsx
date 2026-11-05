@@ -91,7 +91,7 @@ export function ProductSettingsCard() {
               <div key={row.product} className="grid gap-2 rounded-lg border p-3.5 md:grid-cols-[160px_1fr_1fr_auto_auto] md:items-center">
                 <div>
                   <p className="text-sm font-semibold">{productLabel(row.product)}</p>
-                  <p className="text-[11px] text-muted-foreground">자소서 {row.resumeCredits} · 기업 {row.companyCredits} · {row.product}</p>
+                  <p className="text-[11px] text-muted-foreground">자소서 {row.resumeCredits} · 기업 {row.companyCredits} · 면접 {row.interviewCredits} · {row.product}</p>
                 </div>
                 <Input
                   aria-label={`${productLabel(row.product)} Groble contentId`}

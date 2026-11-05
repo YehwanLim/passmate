@@ -74,6 +74,7 @@ export const INTERVIEW_CARD_COPY = {
   description: "카메라와 마이크를 켜면 내 자소서를 읽은 AI 면접관이 실시간으로 물어요. 말로 답하면 꼬리 질문이 이어지고, 끝나면 답변·시선·자세 피드백을 받아요.",
   remaining: (count: number) => `이용권 ${count}회 남음`,
   none: "지금은 쓸 수 있는 면접 이용권이 없어요.",
+  buy: "면접 이용권 구매",
   disabled: "준비 중인 기능이에요.",
   history: "지난 면접 보기",
 };

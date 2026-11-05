@@ -37,7 +37,19 @@ export default function InterviewPracticeCard({ analysisId, enabled = true }: { 
           <span className="text-[13px] text-ink-4">{INTERVIEW_CARD_COPY.remaining(remaining)}</span>
         </div>
       ) : (
-        <p className="mt-6 text-[14px] text-ink-4">{INTERVIEW_CARD_COPY.none}</p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <p className="text-[14px] text-ink-4">{INTERVIEW_CARD_COPY.none}</p>
+          {/* 결제 URL 은 서버가 스위치·상품 설정으로 판단한다. 없으면 구매 버튼도 없다. */}
+          {summary.checkoutUrls?.interview && (
+            <Link
+              href="/checkout?product=interview"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-soft px-6 py-3 font-bold text-brand-ink transition-colors hover:bg-[#dbe9ff] sm:w-auto"
+            >
+              <span>{INTERVIEW_CARD_COPY.buy}</span>
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          )}
+        </div>
       )}
       <Link href={`/my/interview-practice?analysisId=${encodeURIComponent(analysisId)}`} className="mt-4 inline-block text-[14px] font-semibold text-ink-4 underline-offset-4 hover:underline">
         {INTERVIEW_CARD_COPY.history}

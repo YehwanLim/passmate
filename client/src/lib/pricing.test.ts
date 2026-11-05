@@ -95,7 +95,7 @@ describe("tier pricing", () => {
   });
 
   it("maps server product keys to pricing keys and labels", () => {
-    expect(PRODUCT_KEY_BY_PRODUCT).toEqual({ SINGLE: "single", COMPANY_SINGLE: "company", STANDARD: "standard", PREMIUM: "premium", TRIPLE: "triple" });
+    expect(PRODUCT_KEY_BY_PRODUCT).toEqual({ SINGLE: "single", COMPANY_SINGLE: "company", STANDARD: "standard", PREMIUM: "premium", TRIPLE: "triple", INTERVIEW_SINGLE: "interview" });
     expect(productLabel("STANDARD")).toBe("스탠다드");
     expect(productLabel("PREMIUM")).toBe("프리미엄");
     expect(productLabel("COMPANY_SINGLE")).toBe("기업 분석 1회");
@@ -105,6 +105,9 @@ describe("tier pricing", () => {
   it("lists the tiers in ascending order with the basic tier offering a choice", () => {
     expect(TIERS.map((tier) => tier.key)).toEqual(["basic", "standard", "premium"]);
     expect(TIERS[0].products).toEqual(["single", "company"]);
-    expect(PURCHASE_PRODUCT_KEYS).toEqual(["single", "company", "standard", "premium", "triple"]);
+    expect(PURCHASE_PRODUCT_KEYS).toEqual(["single", "company", "standard", "premium", "triple", "interview"]);
+    // 면접 1회권은 티어 카드 밖(리포트 카드와 /checkout?product=interview 로만)이다.
+    expect(TIERS.flatMap((tier) => tier.products)).not.toContain("interview");
+    expect(productLabel("INTERVIEW_SINGLE")).toBe("AI 면접 연습 1회");
   });
 });

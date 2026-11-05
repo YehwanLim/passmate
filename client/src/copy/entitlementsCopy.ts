@@ -47,6 +47,7 @@ export const PLAN_BUTTON_CLASS: Record<PurchaseProductKey, string> = {
   standard: "bg-brand text-white hover:bg-brand-hover",
   premium: PLAN_BUTTON_BASIC,
   triple: PLAN_BUTTON_BASIC,
+  interview: PLAN_BUTTON_BASIC,
 };
 
 /** 추천 카드 — 랜딩의 "커피 한 잔" 기준과 같은 스탠다드. */

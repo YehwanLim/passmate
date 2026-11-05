@@ -118,6 +118,8 @@ enum PurchaseProduct {
   COMPANY_SINGLE
   STANDARD
   PREMIUM
+  /// AI 면접 연습 1회권(2026-11-05). 가격은 Groble 상품이 진실이다.
+  INTERVIEW_SINGLE
 
   @@map("purchase_product")
 }
@@ -281,6 +283,8 @@ model PaymentEntitlement {
   creditsGranted    Int    @map("credits_granted")
   /// 번들 결제에서 함께 지급된 기업 분석 크레딧. credits_granted 는 자소서 크레딧 의미를 유지한다.
   companyCreditsGranted Int @default(0) @map("company_credits_granted")
+  /// AI 면접 연습 이용권 결제에서 지급된 수.
+  interviewCreditsGranted Int @default(0) @map("interview_credits_granted")
   rawEvent          Json   @map("raw_event")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz

@@ -9,6 +9,8 @@ export interface AdminProductSetting {
   active: boolean;
   resumeCredits: number;
   companyCredits: number;
+  /** AI 면접 연습 이용권 수. 구버전 서버 응답에 없으면 0. */
+  interviewCredits: number;
 }
 
 export interface ProductSettingPatch {
@@ -53,7 +55,8 @@ async function requestProductSettings(init: RequestInit, fallback: string): Prom
   if (!payload || !Array.isArray(payload.products) || !payload.products.every(isProductSetting)) {
     throw new Error(fallback);
   }
-  return payload.products;
+  // 면접 이용권 수는 2026-11-05 에 생겼다. 없는 응답은 0 으로 읽는다.
+  return payload.products.map((row) => ({ ...row, interviewCredits: typeof row.interviewCredits === "number" ? row.interviewCredits : 0 }));
 }
 
 export function fetchProductSettings(): Promise<AdminProductSetting[]> {

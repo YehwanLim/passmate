@@ -126,7 +126,7 @@ describe("Groble webhook", () => {
     const response = await invokeGrobleWebhook();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ grantedCredits: 2, grantedCompanyCredits: 1, ok: true });
+    expect(response.body).toEqual({ grantedCredits: 2, grantedCompanyCredits: 1, grantedInterviewCredits: 0, ok: true });
     expect(mocks.prisma.purchaseIntent.updateMany).toHaveBeenCalledWith({
       data: { status: "PAID" },
       where: { id: INTENT_ID, status: "PENDING" },
@@ -138,6 +138,7 @@ describe("Groble webhook", () => {
     expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(mocks.prisma, {
       resumeCredits: 2,
       companyCredits: 1,
+      interviewCredits: 0,
       providerPaymentId: "groble-100",
       rawEvent: {
         contentId: CONTENT_ID,
@@ -168,7 +169,7 @@ describe("Groble webhook", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ grantedCredits: 1, grantedCompanyCredits: 0, ok: true });
+    expect(response.body).toEqual({ grantedCredits: 1, grantedCompanyCredits: 0, grantedInterviewCredits: 0, ok: true });
     expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
       mocks.prisma,
       expect.objectContaining({
@@ -229,7 +230,7 @@ describe("Groble webhook", () => {
     const response = await invokeGrobleWebhook();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ grantedCredits: 2, grantedCompanyCredits: 1, ok: true });
+    expect(response.body).toEqual({ grantedCredits: 2, grantedCompanyCredits: 1, grantedInterviewCredits: 0, ok: true });
     expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
       mocks.prisma,
       expect.objectContaining({ resumeCredits: 2, companyCredits: 1 }),
@@ -349,7 +350,7 @@ describe("Groble webhook", () => {
     const response = await invokeGrobleWebhook();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ grantedCredits: 0, grantedCompanyCredits: 0, ok: true });
+    expect(response.body).toEqual({ grantedCredits: 0, grantedCompanyCredits: 0, grantedInterviewCredits: 0, ok: true });
     expect(mocks.grantGroblePurchase).not.toHaveBeenCalled();
   });
 
@@ -387,7 +388,7 @@ describe("Groble webhook", () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ ok: true, grantedCredits: 3, grantedCompanyCredits: 3 });
+    expect(res.body).toEqual({ ok: true, grantedCredits: 3, grantedCompanyCredits: 3, grantedInterviewCredits: 0 });
     expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
       mocks.prisma,
       expect.objectContaining({ resumeCredits: 3, companyCredits: 3, userId: USER_ID }),
@@ -405,7 +406,7 @@ describe("Groble webhook", () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ ok: true, grantedCredits: 0, grantedCompanyCredits: 1 });
+    expect(res.body).toEqual({ ok: true, grantedCredits: 0, grantedCompanyCredits: 1, grantedInterviewCredits: 0 });
     expect(mocks.grantGroblePurchase).toHaveBeenCalledWith(
       mocks.prisma,
       expect.objectContaining({ resumeCredits: 0, companyCredits: 1 }),

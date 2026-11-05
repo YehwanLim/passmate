@@ -48,6 +48,7 @@ const SUMMARY = {
     standard: "https://www.groble.im/payment/4SGBV5",
     premium: "https://www.groble.im/payment/PRM",
     triple: null,
+    interview: null,
   },
   companyAnalysisEnabled: true,
   companyRemaining: 0,
@@ -115,7 +116,7 @@ describe("Entitlements purchase button", () => {
       premiumEnabled: false,
       groblePaymentUrl: null,
       grobleSinglePaymentUrl: null,
-      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null },
+      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null, interview: null },
     });
 
     render(<Entitlements />);

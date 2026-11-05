@@ -36,6 +36,16 @@ describe("리포트 안 AI 면접 연습 입구", () => {
     render(<InterviewPracticeCard analysisId="a1" />);
     expect(screen.queryByRole("link", { name: /실전 15분/ })).toBeNull();
     expect(screen.getByText("지금은 쓸 수 있는 면접 이용권이 없어요.")).toBeTruthy();
+    // 결제 URL 이 없으면 구매 버튼도 없다.
+    expect(screen.queryByRole("link", { name: /면접 이용권 구매/ })).toBeNull();
+
+    cleanup();
+    mocks.useCreditSummary.mockReturnValue({
+      summary: summary({ interviewRemaining: 0, checkoutUrls: { interview: "https://www.groble.im/payment/ITV" } }),
+      failed: false,
+    });
+    render(<InterviewPracticeCard analysisId="a1" />);
+    expect(screen.getByRole("link", { name: /면접 이용권 구매/ }).getAttribute("href")).toBe("/checkout?product=interview");
     // 점수·퍼센트는 어디에도 없다.
     expect(document.body.textContent).not.toMatch(/\d+점|%/);
   });
