@@ -12,7 +12,7 @@ import {
   normalizeTurns,
 } from "../../lib/interview/interview-sessions.js";
 import { INTERVIEW_RULES } from "../../lib/interview/interview-lifecycle.js";
-import { buildLiveSessionConfig, buildLiveTokenBody, issueLiveToken, liveSocketUrl } from "../../lib/interview/live-token.js";
+import { buildLiveSessionConfig, buildLiveTokenBody, issueLiveToken, liveSocketUrl, readLiveApiKey } from "../../lib/interview/live-token.js";
 import { INTERVIEW_PROMPT_VERSION, buildInterviewerInstruction } from "../../shared/prompts/interviewPrompt.js";
 import { createResponse } from "../helpers/http.js";
 import { INTERVIEW_TEST_ANALYSIS, INTERVIEW_TEST_USER, SAMPLE_REPORT, createInterviewMemoryDb } from "../helpers/interview-db.js";
@@ -39,10 +39,12 @@ function makeHandlers(db, { clock = DEFAULT_CLOCK, issueToken } = {}) {
     now,
   };
   const token = issueToken ?? vi.fn(async () => ({ token: "secret-token-name" }));
+  const consumeRateLimit = vi.fn(async () => ({ allowed: true, remaining: 2 }));
   return {
     issueToken: token,
-    sessions: createInterviewSessionsHandler({ ...deps, consumeRateLimit: vi.fn(async () => ({ allowed: true, remaining: 2 })) }),
-    detail: createInterviewSessionDetailHandler({ ...deps, issueToken: token, apiKey: () => "server-key" }),
+    consumeRateLimit,
+    sessions: createInterviewSessionsHandler({ ...deps, consumeRateLimit }),
+    detail: createInterviewSessionDetailHandler({ ...deps, issueToken: token, apiKey: () => "server-key", consumeRateLimit }),
   };
 }
 
@@ -121,15 +123,26 @@ describe("면접관 지시와 입장권 설정", () => {
     expect(config.outputAudioTranscription).toEqual({});
     expect(config.contextWindowCompression).toEqual({ slidingWindow: { targetTokens: "20000" }, triggerTokens: "40000" });
     expect(config.sessionResumption).toEqual({});
+    // 도구는 비워서 잠근다 — 입장권을 꺼낸 쪽이 검색 같은 도구를 setup 에 끼워 넣지 못한다.
+    expect(config.tools).toEqual([]);
     const body = buildLiveTokenBody({ config, expireAt: at(17), newSessionExpireAt: at(2) });
     expect(body.uses).toBe(1);
     expect(body.bidiGenerateContentSetup.model).toBe("models/gemini-3.8-live");
     expect(body.bidiGenerateContentSetup.systemInstruction.parts[0].text).toBe("면접관");
     expect(body.bidiGenerateContentSetup.sessionResumption).toBeUndefined();
-    expect(body.fieldMask.split(",")).toEqual(expect.arrayContaining(["model", "systemInstruction", "generationConfig"]));
+    expect(body.bidiGenerateContentSetup.tools).toEqual([]);
+    expect(body.fieldMask.split(",")).toEqual(expect.arrayContaining(["model", "systemInstruction", "generationConfig", "tools"]));
     expect(body.fieldMask).not.toContain("sessionResumption");
     expect(body.expireTime).toBe(at(17).toISOString());
     expect(liveSocketUrl("a b")).toContain("BidiGenerateContentConstrained?access_token=a%20b");
+  });
+
+  it("운영에서는 면접 전용 키만 쓰고 분석용 키로 대신하지 않는다", () => {
+    expect(readLiveApiKey({ INTERVIEW_GEMINI_API_KEY: "i", GEMINI_API_KEY: "g", VERCEL_ENV: "production" })).toBe("i");
+    expect(readLiveApiKey({ GEMINI_API_KEY: "g", VERCEL_ENV: "production" })).toBeNull();
+    expect(readLiveApiKey({ GEMINI_API_KEY: "g", VERCEL_ENV: "preview" })).toBe("g");
+    expect(readLiveApiKey({ GEMINI_API_KEY: "g" })).toBe("g");
+    expect(readLiveApiKey({})).toBeNull();
   });
 
   it("토큰 발급은 키를 헤더로 보내고, 거절되면 본문 없이 상태 코드만 남긴다", async () => {
@@ -246,6 +259,54 @@ describe("입장권·대화 글·종료", () => {
     expect(issued.apiKey).toBe("server-key");
     expect(JSON.stringify(res.body)).not.toContain("로그 3,000건");
     expect(db.state.audits.map((audit) => audit.outcome)).toEqual(["CREATED", "STARTED"]);
+    // 입장권은 사용자별 호출 제한도 거친다.
+    expect(handlers.consumeRateLimit).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ policy: expect.objectContaining({ route: "interview-token" }) }));
+  });
+
+  it("스위치를 끄면 이미 만든 세션에도 입장권을 더 내주지 않는다(503)", async () => {
+    const db = newDb();
+    const handlers = makeHandlers(db);
+    const { body: { session } } = await createSession(handlers);
+    db.state.settings.interviewEnabled = false;
+    const res = await act(handlers, session.id, "token", {});
+    expect(res.statusCode).toBe(503);
+    expect(res.body.error).toBe("INTERVIEW_DISABLED");
+    expect(db.state.sessions[0]).toMatchObject({ status: "CREATED", tokenIssueCount: 0 });
+  });
+
+  it("서비스 전체의 하루 첫 입장권 상한을 넘기면 503 이고 세션은 CREATED 로 남는다", async () => {
+    const db = newDb();
+    const handlers = makeHandlers(db);
+    for (let index = 0; index < INTERVIEW_RULES.dailyStartCap; index += 1) {
+      db.state.sessions.push({ id: `other-${index}`, userId: "someone-else", status: "ENDED", firstTokenAt: at(-30), createdAt: at(-40) });
+    }
+    const { body: { session } } = await createSession(handlers);
+    const res = await act(handlers, session.id, "token", {});
+    expect(res.statusCode).toBe(503);
+    expect(res.body.error).toBe("INTERVIEW_CAPACITY");
+    expect(db.state.sessions.find((row) => row.id === session.id)).toMatchObject({ status: "CREATED", tokenIssueCount: 0 });
+  });
+
+  it("첫 입장권 발급이 실패하면 CREATED 로 되돌려 이용권을 잃지 않고, 재시도는 같은 세션으로 한다", async () => {
+    const clock = { now: T0 };
+    const db = newDb({}, clock);
+    const failing = vi.fn()
+      .mockRejectedValueOnce(Object.assign(new Error("x"), { code: "LIVE_TOKEN_REJECTED" }))
+      .mockResolvedValue({ token: "t" });
+    const handlers = makeHandlers(db, { clock, issueToken: failing });
+    const { body: { session } } = await createSession(handlers);
+
+    const failed = await act(handlers, session.id, "token", {});
+    expect(failed.statusCode).toBe(502);
+    expect(db.state.sessions[0]).toMatchObject({ status: "CREATED", tokenIssueCount: 0, firstTokenAt: null, hardDeadlineAt: null });
+    expect(db.state.audits.map((audit) => audit.outcome)).toEqual(["CREATED"]);
+
+    clock.now = at(3);
+    const retried = await act(handlers, session.id, "token", {});
+    expect(retried.statusCode).toBe(200);
+    // 마감은 실제로 연결된 시각부터 센다.
+    expect(retried.body.hard_deadline_at).toBe(at(19).toISOString());
+    expect(db.state.audits.map((audit) => audit.outcome)).toEqual(["CREATED", "STARTED"]);
   });
 
   it("재발급은 마감 전 5회까지이고, 토큰 호출이 실패하면 횟수를 되돌린다", async () => {
@@ -262,7 +323,7 @@ describe("입장권·대화 글·종료", () => {
     const failed = await act(handlers, session.id, "token", {});
     expect(failed.statusCode).toBe(502);
     expect(failed.body.error).toBe("INTERVIEW_TOKEN_FAILED");
-    expect(db.state.sessions[0].tokenIssueCount).toBe(1);
+    expect(db.state.sessions[0]).toMatchObject({ status: "ACTIVE", tokenIssueCount: 1 });
 
     for (let count = 2; count <= INTERVIEW_RULES.maxTokenIssues; count += 1) {
       expect((await act(handlers, session.id, "token", {})).statusCode).toBe(200);
@@ -281,12 +342,25 @@ describe("입장권·대화 글·종료", () => {
     const handlers = makeHandlers(db, { clock });
     const { body: { session } } = await createSession(handlers);
     await act(handlers, session.id, "token", {});
+    await act(handlers, session.id, "turns", { turns: [0, 1].map((seq) => ({ seq, speaker: "CANDIDATE", text: "답변", offsetMs: seq })) });
     clock.now = at(16);
     const res = await act(handlers, session.id, "token", {});
     expect(res.statusCode).toBe(409);
     expect(db.state.sessions[0]).toMatchObject({ status: "INTERRUPTED", endReason: "deadline" });
     // 이용권은 그대로 사용한 것으로 남는다(예약 PENDING).
     expect(db.state.reservations[0].status).toBe("PENDING");
+  });
+
+  it("마감이 지났는데 답변이 하나도 없으면(연결 직후 탭이 죽음) 정리가 이용권을 돌려준다", async () => {
+    const clock = { now: T0 };
+    const db = newDb({}, clock);
+    const handlers = makeHandlers(db, { clock });
+    const { body: { session } } = await createSession(handlers);
+    await act(handlers, session.id, "token", {});
+    clock.now = at(16);
+    await act(handlers, session.id, "token", {});
+    expect(db.state.sessions[0]).toMatchObject({ status: "CANCELLED", endReason: "deadline", earlyRefundAt: at(16) });
+    expect(db.state.reservations[0].status).toBe("CANCELLED");
   });
 
   it("입장권을 받지 않은 채 10분이 지나면 취소되고 이용권이 돌아온다", async () => {
@@ -323,6 +397,7 @@ describe("입장권·대화 글·종료", () => {
     expect(detail.headers["Cache-Control"]).toBe("no-store");
     expect(detail.body.session.turns.map((turn) => turn.seq)).toEqual([0, 1]);
     expect(detail.body.session.feedback).toBeNull();
+    expect(detail.body.session.feedback_attempts).toBe(0);
   });
 
   it("세션당 글자 수를 넘기면 413", async () => {
@@ -362,6 +437,27 @@ describe("입장권·대화 글·종료", () => {
     expect(db.state.sessions[1].clientReportedUsage).toEqual({ total: 12 });
     // 끝난 뒤 종료를 다시 보내도 상태가 바뀌지 않는다.
     expect((await act(handlers, second, "end", { reason: "closed" })).body.session.status).toBe("ENDED");
+  });
+
+  it("환불 횟수를 다 쓰면 답변 없이 끝내도 사용한 것으로 남고, 취소된 세션에는 입장권을 내주지 않는다", async () => {
+    const clock = { now: T0 };
+    const db = newDb({ interviewCredits: 3 }, clock);
+    const handlers = makeHandlers(db, { clock });
+    const ids = [];
+    for (const key of ["key-a-0000000000001", "key-b-0000000000002", "key-c-0000000000003"]) {
+      const res = createResponse();
+      await handlers.sessions(post({ analysisId: INTERVIEW_TEST_ANALYSIS, consentVersion: INTERVIEW_CONSENT_VERSION }, { key }), res);
+      ids.push(res.body.session.id);
+      await act(handlers, res.body.session.id, "token", {});
+      clock.now = new Date(clock.now.getTime() + 30_000);
+      await act(handlers, res.body.session.id, "end", { reason: "user-stop" });
+    }
+    expect(db.state.reservations.map((row) => row.status)).toEqual(["CANCELLED", "CANCELLED", "PENDING"]);
+    expect(db.state.sessions[2].status).toBe("ENDED");
+    // CANCELLED 로 끝난 세션은 다시 열리지 않는다(동시 /token·/end 가 와도 상태 조건부 갱신이라 되돌아가지 않는다).
+    const reopened = await act(handlers, ids[0], "token", {});
+    expect(reopened.body.error).toBe("INTERVIEW_NOT_OPEN");
+    expect(db.state.sessions[0].status).toBe("CANCELLED");
   });
 
   it("남의 세션은 404, 모르는 동작은 404, GET 외 상세는 405", async () => {

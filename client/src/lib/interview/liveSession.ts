@@ -2,7 +2,11 @@
 // 서버 입장권(토큰)으로만 붙고, 약 10분마다 오는 끊김 신호(goAway)에 재발급·이어받기로 다시 붙는다.
 // 화면은 이 모듈이 내보내는 상태만 그린다. 오디오 본문은 어디에도 저장하지 않는다.
 
+import type { RefObject } from "react";
+
 import { INTERVIEW_KICKOFF_TEXT, INTERVIEW_WRAP_UP_TEXT } from "@shared/prompts/interviewPrompt.js";
+
+import { getAuthorizationHeader } from "@/lib/apiAuth";
 
 import { endInterviewSession, issueInterviewToken, saveInterviewTurns, type InterviewEndReason, type InterviewMode } from "./interviewApi";
 import { buildAudioMessage, buildSetupMessage, buildTextMessage, buildVideoMessage, readServerMessage } from "./liveProtocol";
@@ -19,6 +23,8 @@ const CHUNK_MS = 100;
 const RING_MS = 3000;
 const SAVE_INTERVAL_MS = 15_000;
 const MAX_RECONNECTS = 4;
+/** 소켓은 열렸는데 setup 응답이 이만큼 안 오면 거절된 것으로 보고 끊는다(안 그러면 "다시 잇는 중"에 영원히 멈춘다). */
+const SETUP_TIMEOUT_MS = 10_000;
 const SPEAKING_THRESHOLD = 0.012;
 const FRAME_WIDTH = 480;
 /**
@@ -48,9 +54,15 @@ export type LiveSessionOptions = {
   sessionId: string;
   mode: InterviewMode;
   micStream: MediaStream;
-  /** 카메라를 켰으면 이 비디오 요소에서 10초에 1장씩(AI 가 말하는 동안은 빼고) 사진을 찍어 AI 에 보내고 피드백용 표본을 모은다. */
-  videoElement: HTMLVideoElement | null;
+  /**
+   * 카메라를 켰으면 이 ref 의 비디오 요소에서 10초에 1장씩(AI 가 말하는 동안은 빼고) 사진을 찍어 AI 에 보내고 피드백용 표본을 모은다.
+   * 요소가 아니라 ref 를 받는다 — 통화 화면은 시작 직후에야 그려지므로 시작 시점에는 요소가 아직 없다(11-05 점검 B6).
+   */
+  videoRef: RefObject<HTMLVideoElement | null> | null;
+  /** 탭이 닫히는 순간처럼 토큰을 새로 받을 수 없을 때 쓰는 마지막 인증 헤더. 평소 요청은 매번 새로 받는다. */
   authHeader: { Authorization: string };
+  /** 테스트용. 기본은 Supabase 세션에서 새 헤더를 받는다. */
+  readAuthHeader?: () => Promise<{ Authorization: string }>;
   onChange: (state: LiveState) => void;
 };
 
@@ -60,7 +72,7 @@ export type LiveSessionHandle = {
 };
 
 export async function startLiveSession(options: LiveSessionOptions): Promise<LiveSessionHandle> {
-  const { sessionId, mode, micStream, videoElement, onChange } = options;
+  const { sessionId, mode, micStream, videoRef, onChange, readAuthHeader = getAuthorizationHeader } = options;
   const timing = INTERVIEW_TIMING[mode];
   const transcript = createTranscriptAssembler();
   const photos = createPhotoSampler();
@@ -78,7 +90,16 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
     endReason: null,
     refunded: null,
   };
+  // 로그인 토큰은 면접 도중 만료될 수 있다(기본 1시간). 요청마다 새로 받고, 못 받을 때만 마지막 값을 쓴다.
   let authHeader = options.authHeader;
+  const freshAuth = async () => {
+    try {
+      authHeader = await readAuthHeader();
+    } catch {
+      // 세션을 못 읽으면 마지막 헤더로 보낸다.
+    }
+    return authHeader;
+  };
   let ws: WebSocket | null = null;
   let resumeHandle: string | null = null;
   let kickedOff = false;
@@ -190,11 +211,13 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
   await micContext.resume();
 
   // ── 카메라 사진 ──
-  if (videoElement) {
+  if (videoRef) {
     const canvas = document.createElement("canvas");
     timers.push(setInterval(() => {
+      // 요소는 찍을 때마다 ref 에서 읽는다. 통화 화면이 그려진 뒤에야 들어온다.
+      const videoElement = videoRef.current;
       // 면접관이 말하는 동안의 사진은 보내지도, 표본에 넣지도 않는다(지원자가 말하는 순간만 피드백에 쓴다).
-      if (stopped || reconnecting || state.modelSpeaking || !videoElement.videoWidth) return;
+      if (!videoElement || stopped || reconnecting || state.modelSpeaking || !videoElement.videoWidth) return;
       canvas.width = FRAME_WIDTH;
       canvas.height = Math.round((FRAME_WIDTH * videoElement.videoHeight) / videoElement.videoWidth);
       canvas.getContext("2d")?.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
@@ -215,7 +238,9 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
     }
     saving = true;
     try {
-      await saveInterviewTurns(sessionId, batch, { authHeader, keepalive });
+      // 탭이 닫히는 순간에는 세션 읽기를 기다릴 수 없어 마지막 헤더를 그대로 쓴다.
+      const auth = keepalive ? authHeader : await freshAuth();
+      await saveInterviewTurns(sessionId, batch, { authHeader: auth, keepalive });
     } catch {
       transcript.requeue(batch);
     } finally {
@@ -273,32 +298,53 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
   };
 
   // ── 연결 ──
+  // 소켓이 열리고 setup 응답(setupComplete)까지 받아야 연결된 것이다. 열렸지만 setup 이 거절돼 닫히면 reject 한다.
   const openSocket = async () => {
     const token = await issueInterviewToken(sessionId);
     model = token.model;
     await new Promise<void>((resolve, reject) => {
       const socket = new WebSocket(token.socketUrl);
       let opened = false;
+      let settled = false;
+      const settle = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(setupTimer);
+        if (error) reject(error);
+        else resolve();
+      };
+      const setupTimer = setTimeout(() => {
+        if (settled) return;
+        try {
+          socket.close();
+        } catch {
+          // 이미 닫혔으면 무시한다.
+        }
+        settle(new Error("SETUP_TIMEOUT"));
+      }, SETUP_TIMEOUT_MS);
       socket.onopen = () => {
         opened = true;
         ws = socket;
         socket.send(JSON.stringify(buildSetupMessage({ model, resumeHandle })));
-        resolve();
+      };
+      const receive = (payload: unknown) => {
+        if (!settled && readServerMessage(payload).some((event) => event.type === "setupComplete")) settle();
+        handleEvents(payload);
       };
       socket.onmessage = (message) => {
         const text = typeof message.data === "string" ? message.data : null;
         if (text === null) {
-          void (message.data as Blob).text().then((decoded) => handleEvents(JSON.parse(decoded)));
+          void (message.data as Blob).text().then((decoded) => receive(JSON.parse(decoded)));
           return;
         }
-        handleEvents(JSON.parse(text));
+        receive(JSON.parse(text));
       };
       socket.onerror = () => {
-        if (!opened) reject(new Error("SOCKET_OPEN_FAILED"));
+        if (!opened) settle(new Error("SOCKET_OPEN_FAILED"));
       };
       socket.onclose = () => {
-        if (!opened) {
-          reject(new Error("SOCKET_CLOSED"));
+        if (!settled) {
+          settle(new Error(opened ? "SETUP_REJECTED" : "SOCKET_CLOSED"));
           return;
         }
         if (ws === socket && !stopped && !reconnecting) void reconnect("closed");
@@ -347,15 +393,19 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
     capture.disconnect();
     void micContext.close();
     void playContext.close();
-    await flushTurns(keepalive);
+    // 탭이 닫히는 순간에는 저장 응답을 기다릴 수 없다. 저장과 종료를 동시에 보내 종료가 빠지지 않게 한다.
+    const flushing = flushTurns(keepalive);
+    if (!keepalive) await flushing;
     try {
-      const result = await endInterviewSession(sessionId, reason, usage, { authHeader, keepalive });
+      const auth = keepalive ? authHeader : await freshAuth();
+      const result = await endInterviewSession(sessionId, reason, usage, { authHeader: auth, keepalive });
       state.refunded = result.refunded;
       state.phase = "ended";
     } catch (error) {
       state.phase = "failed";
       state.error = error instanceof Error ? error.message : "END_FAILED";
     }
+    await flushing;
     emit();
   };
 

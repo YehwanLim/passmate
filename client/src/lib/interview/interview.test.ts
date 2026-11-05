@@ -110,9 +110,11 @@ describe("세션 응답 읽기", () => {
       created_at: "2026-11-04T09:59:00.000Z",
       feedback_status: "SUCCEEDED",
       feedback: { summary: "좋아요" },
+      feedback_attempts: 2,
       turns: [{ seq: 0, speaker: "INTERVIEWER", text: "안녕", offset_ms: 5 }],
     });
-    expect(session).toMatchObject({ id: "s1", mode: "SHORT", status: "ENDED", company: "한빛", jobRole: null, tokenIssueCount: 2, feedbackStatus: "SUCCEEDED" });
+    expect(session).toMatchObject({ id: "s1", mode: "SHORT", status: "ENDED", company: "한빛", jobRole: null, tokenIssueCount: 2, feedbackStatus: "SUCCEEDED", feedbackAttempts: 2 });
+    expect(parseSession({ id: "s2" }).feedbackAttempts).toBe(0);
     expect(session.feedback).toEqual({ summary: "좋아요" });
     expect(session.turns).toEqual([{ seq: 0, speaker: "INTERVIEWER", text: "안녕", interrupted: false, partial: false, offsetMs: 5 }]);
     expect(() => parseSession(null)).toThrow();

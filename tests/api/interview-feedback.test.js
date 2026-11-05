@@ -14,7 +14,9 @@ import { createResponse } from "../helpers/http.js";
 import { INTERVIEW_TEST_ANALYSIS, INTERVIEW_TEST_USER, createInterviewMemoryDb } from "../helpers/interview-db.js";
 
 const SESSION_ID = "55555555-5555-4555-8555-555555555555";
-const PHOTO = Buffer.from("fake-jpeg-bytes").toString("base64");
+// JPEG 는 FF D8 FF 로 시작한다(base64 "/9j/"). 서버는 그 앞머리를 검사한다.
+const PHOTO = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from("fake-jpeg-bytes")]).toString("base64");
+const NOT_JPEG = Buffer.from("fake-png-bytes").toString("base64");
 
 const GOOD_OUTPUT = {
   summary: "경험을 순서대로 말한 점이 좋았어요. 숫자의 근거를 먼저 말하면 훨씬 좋아질 것 같아요.",
@@ -70,6 +72,7 @@ function makeHandler(db, overrides = {}) {
     db,
     requireUser: async () => ({ applicationUser: { id: INTERVIEW_TEST_USER } }),
     callModel: vi.fn(async () => GOOD_OUTPUT),
+    consumeRateLimit: vi.fn(async () => ({ allowed: true, remaining: 5 })),
     ...overrides,
   };
   return { deps, handler: createInterviewFeedbackHandler(deps) };
@@ -78,13 +81,13 @@ function makeHandler(db, overrides = {}) {
 const post = (body) => ({ method: "POST", headers: {}, query: { interview_feedback: "1" }, body });
 
 describe("normalizeFeedbackRequest", () => {
-  it("세션 id 와 base64 사진 12장까지, 크기 상한을 넘기면 413", () => {
+  it("세션 id 와 JPEG base64 사진 12장까지, JPEG 가 아니면 400, 크기 상한을 넘기면 413", () => {
     expect(normalizeFeedbackRequest({ sessionId: SESSION_ID, photos: [PHOTO] })).toEqual({ sessionId: SESSION_ID, photos: [PHOTO] });
     expect(normalizeFeedbackRequest({ sessionId: SESSION_ID }).photos).toEqual([]);
-    for (const bad of [null, { sessionId: "x" }, { sessionId: SESSION_ID, photos: "a" }, { sessionId: SESSION_ID, photos: ["not base64!"] }, { sessionId: SESSION_ID, photos: Array.from({ length: PHOTO_LIMITS.count + 1 }, () => PHOTO) }]) {
-      expect(() => normalizeFeedbackRequest(bad)).toThrow();
+    for (const bad of [null, { sessionId: "x" }, { sessionId: SESSION_ID, photos: "a" }, { sessionId: SESSION_ID, photos: ["not base64!"] }, { sessionId: SESSION_ID, photos: [NOT_JPEG] }, { sessionId: SESSION_ID, photos: ["AAAA"] }, { sessionId: SESSION_ID, photos: Array.from({ length: PHOTO_LIMITS.count + 1 }, () => PHOTO) }]) {
+      expect(() => normalizeFeedbackRequest(bad)).toThrow(expect.objectContaining({ statusCode: 400 }));
     }
-    const huge = "A".repeat(Math.ceil((PHOTO_LIMITS.eachBytes + 1000) / 3) * 4);
+    const huge = `/9j/${"A".repeat(Math.ceil((PHOTO_LIMITS.eachBytes + 1000) / 3) * 4)}`;
     expect(() => normalizeFeedbackRequest({ sessionId: SESSION_ID, photos: [huge] })).toThrow(expect.objectContaining({ statusCode: 413 }));
   });
 });
@@ -106,8 +109,21 @@ describe("sanitizeFeedback", () => {
   it("사진이 없으면 전달 항목을 비우고, 쓸 내용이 없으면 null", () => {
     const noPhoto = sanitizeFeedback(GOOD_OUTPUT, { photoCount: 0 });
     expect(noPhoto.delivery).toEqual({ available: false, photoCount: 0, items: [] });
-    expect(sanitizeFeedback({ summary: "85점이에요", answers: [] }, { photoCount: 0 })).toBeNull();
+    expect(sanitizeFeedback({ summary: "점수는 85점이에요", answers: [] }, { photoCount: 0 })).toBeNull();
     expect(sanitizeFeedback("nope", { photoCount: 0 })).toBeNull();
+  });
+
+  it("지원자 말을 인용한 숫자·퍼센트·'성격' 같은 일상어는 버리지 않는다", () => {
+    const quoted = sanitizeFeedback({
+      summary: "전환율 15% 개선이라는 수치를 먼저 말한 점이 좋았어요.",
+      answers: [
+        { question: "성격의 장단점은?", whatWorked: "'제 성격은 꼼꼼합니다'라고 바로 답했어요.", whatToImprove: "평점 4.0점이었다는 근거를 이어서 말하면 어떨까요.", evidenceTurnSeqs: [1], nextAttempt: "" },
+        { question: "지원 동기", whatWorked: "", whatToImprove: "불합격할 것 같아요.", evidenceTurnSeqs: [], nextAttempt: "" },
+      ],
+    }, { photoCount: 0 });
+    expect(quoted.summary).toContain("15%");
+    expect(quoted.answers).toHaveLength(1);
+    expect(quoted.answers[0].whatToImprove).toContain("4.0점");
   });
 
   it("피드백 프롬프트는 대화·발언 번호·사진 수를 담고 점수를 쓰지 말라고 한다", () => {
@@ -199,11 +215,58 @@ describe("POST /api/analyze?interview_feedback=1", () => {
     expect(exhausted.body.error).toBe("INTERVIEW_FEEDBACK_EXHAUSTED");
   });
 
-  it("모델이 금지 표현만 돌려주면 실패로 친다", async () => {
+  it("모델이 금지 표현만 돌려주면 실패로 세지만, 상한까지 그래도 이용권은 돌려주지 않는다(대화 글로 환불을 유도하는 길을 막는다)", async () => {
+    const db = createInterviewMemoryDb();
+    seedEndedSession(db);
+    const unusable = async () => ({ summary: "점수는 80점. 자신감이 없어 보였어요.", answers: [] });
+    for (let attempt = 1; attempt <= INTERVIEW_RULES.feedbackMaxAttempts; attempt += 1) {
+      await db.interviewSession.update({ where: { id: SESSION_ID }, data: { feedbackStatus: "PENDING" } });
+      await runInterviewFeedback({ db, sessionId: SESSION_ID, userId: INTERVIEW_TEST_USER, photos: [], callModel: unusable, requestId: "r" });
+      expect(db.state.sessions[0]).toMatchObject({ feedbackStatus: "FAILED", feedbackJson: null, feedbackAttempts: attempt });
+    }
+    expect(db.state.reservations[0].status).toBe("CONSUMED");
+    expect(db.state.audits.map((audit) => audit.outcome)).toContain("FEEDBACK_UNUSABLE");
+  });
+
+  it("제공자가 사진이 든 요청을 거절하면(4xx) 같은 시도 안에서 사진 없이 다시 부르고, 사진 피드백만 뺀다", async () => {
     const db = createInterviewMemoryDb();
     seedEndedSession(db, { feedbackStatus: "PENDING" });
-    await runInterviewFeedback({ db, sessionId: SESSION_ID, userId: INTERVIEW_TEST_USER, photos: [], callModel: async () => ({ summary: "80점. 자신감이 없어 보였어요.", answers: [] }), requestId: "r" });
-    expect(db.state.sessions[0].feedbackStatus).toBe("FAILED");
-    expect(db.state.sessions[0].feedbackJson).toBeNull();
+    const callModel = vi.fn()
+      .mockRejectedValueOnce(Object.assign(new Error("bad image"), { statusCode: 400 }))
+      .mockResolvedValueOnce(GOOD_OUTPUT);
+    await runInterviewFeedback({ db, sessionId: SESSION_ID, userId: INTERVIEW_TEST_USER, photos: [PHOTO, PHOTO, PHOTO], callModel, requestId: "r" });
+    expect(callModel).toHaveBeenCalledTimes(2);
+    expect(callModel.mock.calls[1][0].photos).toEqual([]);
+    expect(db.state.sessions[0]).toMatchObject({ feedbackStatus: "SUCCEEDED", feedbackHadVideo: false, feedbackAttempts: 1 });
+    expect(db.state.reservations[0].status).toBe("CONSUMED");
+  });
+
+  it("같은 세션에 요청이 동시에 와도 모델은 한 번만 부른다", async () => {
+    const db = createInterviewMemoryDb();
+    seedEndedSession(db);
+    const work = [];
+    const { deps, handler } = makeHandler(db, { enqueueBackgroundWork: (run) => work.push(run()) });
+    const [first, second] = [createResponse(), createResponse()];
+    await Promise.all([handler(post({ sessionId: SESSION_ID }), first), handler(post({ sessionId: SESSION_ID }), second)]);
+    await Promise.all(work);
+    expect([first.statusCode, second.statusCode]).toEqual([202, 202]);
+    expect(deps.callModel).toHaveBeenCalledTimes(1);
+    expect(db.state.sessions[0].feedbackAttempts).toBe(1);
+  });
+
+  it("스위치를 끄면 피드백 요청도 503 이고, 호출 제한에 걸리면 429 다", async () => {
+    const db = createInterviewMemoryDb({ interviewEnabled: false });
+    seedEndedSession(db);
+    const off = createResponse();
+    await makeHandler(db).handler(post({ sessionId: SESSION_ID }), off);
+    expect(off.statusCode).toBe(503);
+    expect(off.body.error).toBe("INTERVIEW_DISABLED");
+
+    const limited = createInterviewMemoryDb();
+    seedEndedSession(limited);
+    const res = createResponse();
+    await makeHandler(limited, { consumeRateLimit: async () => ({ allowed: false, remaining: 0, resetAt: new Date() }) }).handler(post({ sessionId: SESSION_ID }), res);
+    expect(res.statusCode).toBe(429);
+    expect(limited.state.sessions[0].feedbackStatus).toBe("NONE");
   });
 });

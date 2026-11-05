@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   params: { sessionId: "start" },
   search: "analysisId=22222222-2222-4222-8222-222222222222&mode=SHORT",
   getInterviewSession: vi.fn(),
+  endInterviewSession: vi.fn(),
+  requestInterviewFeedback: vi.fn(),
 }));
 vi.mock("wouter", () => ({
   useLocation: () => ["/my/interview-practice/start", mocks.navigate],
@@ -19,9 +21,33 @@ vi.mock("@/components/SiteHeader", () => ({ default: () => null }));
 vi.mock("@/lib/interview/interviewApi", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/interview/interviewApi")>()),
   getInterviewSession: mocks.getInterviewSession,
+  endInterviewSession: mocks.endInterviewSession,
+  requestInterviewFeedback: mocks.requestInterviewFeedback,
 }));
 
 import InterviewPractice from "./InterviewPractice";
+import type { InterviewSession } from "@/lib/interview/interviewApi";
+
+const SESSION_ID = "77777777-7777-4777-8777-777777777777";
+const baseSession: InterviewSession = {
+  id: SESSION_ID,
+  analysisId: "a",
+  mode: "FULL",
+  status: "ENDED",
+  company: "한빛모빌리티",
+  jobRole: "서비스 기획",
+  firstTokenAt: null,
+  hardDeadlineAt: null,
+  tokenIssueCount: 1,
+  endedAt: null,
+  endReason: "user-stop",
+  createdAt: "2026-11-04T10:00:00.000Z",
+  feedbackStatus: "NONE",
+  feedback: null,
+  feedbackAttempts: 0,
+  feedbackHadVideo: false,
+  turns: [{ seq: 1, speaker: "CANDIDATE", text: "제가 직접 모았습니다.", interrupted: false, partial: false, offsetMs: 4000 }],
+};
 
 describe("AI 면접 연습 화면", () => {
   beforeEach(() => {
@@ -84,6 +110,43 @@ describe("AI 면접 연습 화면", () => {
     expect(screen.getByText(/12장 중 7장/)).toBeTruthy();
     expect(screen.getByText("제가 직접 모았습니다.")).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/\d+점/);
+    mocks.params = { sessionId: "start" };
+  });
+
+  it("진행 중(ACTIVE)으로 남은 세션에 다시 들어오면 끝내기 버튼을 주고, 끝내면 사진 없이 피드백을 요청한다", async () => {
+    mocks.params = { sessionId: SESSION_ID };
+    mocks.search = "";
+    const active = { ...baseSession, status: "ACTIVE" as const, endReason: null };
+    const ended = { ...baseSession, status: "INTERRUPTED" as const, endReason: "closed" };
+    mocks.getInterviewSession.mockResolvedValueOnce(active).mockResolvedValue({ ...ended, feedbackStatus: "PENDING" as const });
+    mocks.endInterviewSession.mockResolvedValue({ session: ended, refunded: false });
+    mocks.requestInterviewFeedback.mockResolvedValue("PENDING");
+    render(<InterviewPractice />);
+
+    const endButton = await screen.findByRole("button", { name: "면접 끝내기" });
+    expect(screen.getByText("진행 중이던 면접이 있어요")).toBeTruthy();
+    fireEvent.click(endButton);
+
+    await waitFor(() => expect(mocks.endInterviewSession).toHaveBeenCalledWith(SESSION_ID, "closed", null));
+    await waitFor(() => expect(mocks.requestInterviewFeedback).toHaveBeenCalledWith(SESSION_ID, []));
+    await waitFor(() => expect(screen.getByText("면접을 되돌아보고 있어요")).toBeTruthy());
+    mocks.params = { sessionId: "start" };
+  });
+
+  it("끝났지만 피드백을 안 만든 세션에는 만들기 버튼을 주고, 세 번 실패한 세션에는 더 묻지 않는다", async () => {
+    mocks.params = { sessionId: SESSION_ID };
+    mocks.search = "";
+    mocks.getInterviewSession.mockResolvedValue(baseSession);
+    const { unmount } = render(<InterviewPractice />);
+    expect(await screen.findByRole("button", { name: "피드백 만들기" })).toBeTruthy();
+    expect(screen.getByText("제가 직접 모았습니다.")).toBeTruthy();
+    unmount();
+
+    mocks.getInterviewSession.mockResolvedValue({ ...baseSession, feedbackStatus: "FAILED", feedbackAttempts: 3 });
+    render(<InterviewPractice />);
+    await waitFor(() => expect(screen.getByText(/세 번 시도했지만/)).toBeTruthy());
+    expect(screen.queryByRole("button", { name: "피드백 다시 만들기" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "피드백 만들기" })).toBeNull();
     mocks.params = { sessionId: "start" };
   });
 });

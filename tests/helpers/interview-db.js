@@ -142,6 +142,11 @@ export function createInterviewMemoryDb({
         if (!row) throw Object.assign(new Error("not found"), { code: "P2025" });
         return { ...applyUpdate(row, data) };
       },
+      updateMany: async ({ where, data }) => {
+        const rows = state.sessions.map(withRelations).filter((session) => matches(session, where));
+        rows.forEach((row) => applyUpdate(state.sessions.find((session) => session.id === row.id), data));
+        return { count: rows.length };
+      },
     },
     interviewTurn: {
       count: async ({ where }) => state.turns.filter((turn) => matches(turn, where)).length,

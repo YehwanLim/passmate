@@ -5,18 +5,19 @@ export const INTERVIEW_TITLE = "AI 면접 연습";
 
 export const INTERVIEW_MODE_COPY: Record<InterviewMode, { label: string; minutes: number; description: string }> = {
   FULL: { label: "실전 15분", minutes: 15, description: "리포트의 예상 질문으로 면접관이 묻고, 답에 따라 꼬리 질문이 이어져요." },
-  SHORT: { label: "짧은 연습 5분", minutes: 5, description: "질문 세 개로 가볍게 몸을 풀어요. 피드백은 같은 구성으로 받아요." },
+  SHORT: { label: "짧은 연습 5분", minutes: 5, description: "질문 두 개로 가볍게 몸을 풀어요. 피드백은 같은 구성으로 받아요." },
 };
 
+// 문구를 바꾸면 lib/interview/interview-sessions.js 와 interviewApi.ts 의 INTERVIEW_CONSENT_VERSION 을 함께 올린다.
 export const INTERVIEW_CONSENT_COPY = {
   heading: "시작하기 전에 확인해 주세요",
   items: [
-    "면접 중 마이크 소리와 카메라 사진(약 10초에 1장)이 Google의 AI(Gemini)로 전송되어 면접 진행과 피드백에 쓰여요.",
-    "음성·영상·사진 파일은 저장하지 않아요. 자동 받아쓰기로 만든 대화 글과 피드백만 남아요.",
+    "면접 중 마이크 소리와 카메라 사진(약 10초에 1장)이 내 브라우저에서 Google의 AI(Gemini, 미국)로 바로 전송돼요. 내 자소서와 리포트의 예상 질문·보완점, 회사·직무, 채용공고 내용도 면접관 지시로 함께 전달돼요.",
+    "끝나면 사진 최대 12장이 회사 서버를 거쳐 Google에 전달되어 피드백을 만들어요. 회사는 음성·영상·사진을 저장하지 않아요. 자동 받아쓰기로 만든 대화 글과 피드백은 내가 이 지원서를 지우거나 탈퇴할 때까지 남아요.",
     "자동 받아쓰기라 실제 말과 다를 수 있어요. 피드백은 참고로만 봐 주세요.",
-    "시작하면 이용권 1회가 쓰여요. 2분 안에 그만두고 답변이 2번 미만이면 돌려드려요(한 달에 2번까지).",
+    "시작하면 이용권 1회가 쓰여요. 2분 안에 그만두고 답변이 2번 미만이면 돌려드려요(한 달에 2번까지). 끝난 뒤 24시간 안에 피드백을 받지 않으면 사용한 것으로 확정돼요.",
   ],
-  checkbox: "위 내용을 확인했고 전송에 동의해요",
+  checkbox: "위 내용을 확인했고 전송과 국외 이전에 동의해요",
 };
 
 export const INTERVIEW_DEVICE_COPY = {
@@ -58,8 +59,14 @@ export const INTERVIEW_FEEDBACK_COPY = {
   pendingHint: "1~3분 걸려요. 이 화면을 닫아도 계속 만들어져요.",
   failed: "피드백을 만들지 못했어요",
   failedHint: "대화 글은 남아 있어요. 다시 시도해 주세요.",
-  exhausted: "피드백 생성에 세 번 실패해 이용권을 돌려드렸어요. 대화 글은 아래에서 볼 수 있어요.",
-  refunded: "2분 안에 끝나 이용권을 돌려드렸어요.",
+  exhausted: "피드백 생성을 세 번 시도했지만 만들지 못했어요. 서버 문제였다면 이용권은 돌려드려요. 대화 글은 아래에서 볼 수 있어요.",
+  notRequested: "아직 피드백을 만들지 않았어요",
+  notRequestedHint: "끝난 뒤 24시간 안에 만들 수 있어요. 이 화면에서 다시 들어온 경우라 시선·자세 피드백은 빠져요.",
+  request: "피드백 만들기",
+  active: "진행 중이던 면접이 있어요",
+  activeHint: "연결이 끊긴 채 남아 있어요. 끝내면 지금까지의 대화 글로 피드백을 만들어요.",
+  endActive: "면접 끝내기",
+  refunded: "답변 전에 끝나 이용권을 돌려드렸어요.",
   transcriptHeading: "대화 글",
   transcriptHint: "자동 받아쓰기라 실제 말과 다를 수 있어요.",
   deliveryHeading: "카메라에 보인 것",

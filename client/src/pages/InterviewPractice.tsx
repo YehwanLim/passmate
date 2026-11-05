@@ -19,6 +19,7 @@ import { detectInAppBrowser } from "@/lib/inAppBrowser";
 import {
   InterviewApiError,
   createInterviewSession,
+  endInterviewSession,
   getInterviewSession,
   newIdempotencyKey,
   requestInterviewFeedback,
@@ -37,9 +38,12 @@ const API_ERROR_COPY: Record<string, string> = {
   INTERVIEW_DISABLED: "지금은 면접 연습을 열 수 없어요.",
   INTERVIEW_SOURCE_UNAVAILABLE: "이 리포트에는 예상 질문이 없어 면접을 만들 수 없어요.",
   INTERVIEW_TOKEN_FAILED: "면접관을 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+  INTERVIEW_CAPACITY: "오늘은 면접 연습이 꽉 찼어요. 내일 다시 시도해 주세요. 이용권은 쓰이지 않았어요.",
+  INTERVIEW_FEEDBACK_EXHAUSTED: "피드백 생성을 세 번 시도해 더는 만들 수 없어요.",
   RATE_LIMITED: "잠시 뒤 다시 시도해 주세요.",
   NOT_FOUND: "리포트를 찾을 수 없어요.",
 };
+const FEEDBACK_MAX_ATTEMPTS = 3;
 
 function errorCopy(error: unknown) {
   if (error instanceof InterviewApiError) return API_ERROR_COPY[error.code] ?? "문제가 생겼어요. 잠시 뒤 다시 시도해 주세요.";
@@ -187,6 +191,7 @@ export default function InterviewPractice() {
 
   const requestFeedback = useCallback(async (target: InterviewSession, photos: string[]) => {
     setFeedbackRequesting(true);
+    setError(null);
     try {
       await requestInterviewFeedback(target.id, photos);
       setSession(await getInterviewSession(target.id));
@@ -196,6 +201,21 @@ export default function InterviewPractice() {
       setFeedbackRequesting(false);
     }
   }, []);
+
+  // 다시 들어왔더니 ACTIVE 로 남아 있는 세션(탭이 죽음 등). 서버에 끝을 알리고 피드백을 만든다. 사진 표본은 없으므로 사진 없이.
+  const endStrandedSession = useCallback(async (target: InterviewSession) => {
+    setStarting(true);
+    setError(null);
+    try {
+      const { session: ended } = await endInterviewSession(target.id, "closed", null);
+      setSession(ended);
+      if (["ENDED", "INTERRUPTED"].includes(ended.status) && ended.feedbackStatus === "NONE") await requestFeedback(ended, []);
+    } catch (cause) {
+      setError(errorCopy(cause));
+    } finally {
+      setStarting(false);
+    }
+  }, [requestFeedback]);
 
   // ── 시작 ──
   const start = async () => {
@@ -222,7 +242,8 @@ export default function InterviewPractice() {
         sessionId: current.id,
         mode: current.mode,
         micStream: stream,
-        videoElement: cameraOn ? liveVideoRef.current : null,
+        // 요소가 아니라 ref 를 넘긴다. 통화 화면은 이 줄이 돌 때 아직 그려지지 않았다.
+        videoRef: cameraOn ? liveVideoRef : null,
         authHeader,
         onChange: (state) => {
           setLive(state);
@@ -383,7 +404,22 @@ export default function InterviewPractice() {
             {session.status === "CANCELLED" && (
               <p className="rounded-2xl bg-surface px-6 py-5 text-[15px] text-ink-3">{INTERVIEW_FEEDBACK_COPY.refunded}</p>
             )}
-            {["PENDING", "CALLING"].includes(session.feedbackStatus) || feedbackRequesting ? (
+            {session.status === "ACTIVE" ? (
+              <div className="rounded-3xl bg-surface px-6 py-7">
+                <p className="text-[17px] font-bold">{INTERVIEW_FEEDBACK_COPY.active}</p>
+                <p className="mt-1.5 text-[14px] text-ink-4">{INTERVIEW_FEEDBACK_COPY.activeHint}</p>
+                {error && <p role="alert" className="mt-3 text-[14px] text-danger">{error}</p>}
+                <button
+                  type="button"
+                  disabled={starting}
+                  onClick={() => void endStrandedSession(session)}
+                  className="mt-4 inline-flex h-11 items-center gap-2 rounded-[10px] bg-brand px-5 text-[14px] font-bold text-white hover:bg-brand-hover disabled:opacity-40"
+                >
+                  {starting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                  {INTERVIEW_FEEDBACK_COPY.endActive}
+                </button>
+              </div>
+            ) : ["PENDING", "CALLING"].includes(session.feedbackStatus) || feedbackRequesting ? (
               <div className="rounded-3xl bg-surface px-6 py-10 text-center">
                 <Loader2 className="mx-auto h-6 w-6 animate-spin text-ink-4" aria-hidden="true" />
                 <p className="mt-4 text-[17px] font-bold">{INTERVIEW_FEEDBACK_COPY.pending}</p>
@@ -393,7 +429,10 @@ export default function InterviewPractice() {
               <FeedbackView feedback={session.feedback} turns={session.turns ?? []} hadVideo={session.feedbackHadVideo} />
             ) : (
               <>
-                {session.feedbackStatus === "FAILED" && (
+                {session.feedbackStatus === "FAILED" && session.feedbackAttempts >= FEEDBACK_MAX_ATTEMPTS && (
+                  <p className="rounded-2xl bg-surface px-6 py-5 text-[15px] text-ink-3">{INTERVIEW_FEEDBACK_COPY.exhausted}</p>
+                )}
+                {session.feedbackStatus === "FAILED" && session.feedbackAttempts < FEEDBACK_MAX_ATTEMPTS && (
                   <div className="rounded-3xl bg-surface px-6 py-7">
                     <p className="text-[17px] font-bold">{INTERVIEW_FEEDBACK_COPY.failed}</p>
                     <p className="mt-1.5 text-[14px] text-ink-4">{INTERVIEW_FEEDBACK_COPY.failedHint}</p>
@@ -407,7 +446,20 @@ export default function InterviewPractice() {
                     </button>
                   </div>
                 )}
-                {session.status !== "CANCELLED" && session.feedbackStatus === "NONE" && error && <p role="alert" className="text-[14px] text-danger">{error}</p>}
+                {session.status !== "CANCELLED" && session.feedbackStatus === "NONE" && (
+                  <div className="rounded-3xl bg-surface px-6 py-7">
+                    <p className="text-[17px] font-bold">{INTERVIEW_FEEDBACK_COPY.notRequested}</p>
+                    <p className="mt-1.5 text-[14px] text-ink-4">{INTERVIEW_FEEDBACK_COPY.notRequestedHint}</p>
+                    {error && <p role="alert" className="mt-3 text-[14px] text-danger">{error}</p>}
+                    <button
+                      type="button"
+                      onClick={() => void requestFeedback(session, photosRef.current)}
+                      className="mt-4 inline-flex h-11 items-center rounded-[10px] bg-brand-soft px-5 text-[14px] font-bold text-brand-ink hover:bg-[#dbe9ff]"
+                    >
+                      {INTERVIEW_FEEDBACK_COPY.request}
+                    </button>
+                  </div>
+                )}
                 <TranscriptList turns={session.turns ?? []} />
               </>
             )}

@@ -1,7 +1,7 @@
 // AI 면접 연습 서버 API. 응답 필드명은 서버(lib/interview/interview-sessions.js)와 맞춘다.
 import { getAuthorizationHeader } from "@/lib/apiAuth";
 
-export const INTERVIEW_CONSENT_VERSION = "interview-consent-2026-11-04";
+export const INTERVIEW_CONSENT_VERSION = "interview-consent-2026-11-06";
 export type InterviewMode = "FULL" | "SHORT";
 export type InterviewSessionStatus = "CREATED" | "ACTIVE" | "ENDED" | "INTERRUPTED" | "CANCELLED";
 export type InterviewFeedbackStatus = "NONE" | "PENDING" | "CALLING" | "SUCCEEDED" | "FAILED";
@@ -37,6 +37,8 @@ export type InterviewSession = {
   createdAt: string;
   feedbackStatus: InterviewFeedbackStatus;
   feedback: InterviewFeedback | null;
+  /** 피드백 생성을 시도한 횟수. 상한(3)에 닿으면 다시 요청할 수 없다. */
+  feedbackAttempts: number;
   feedbackHadVideo: boolean;
   turns?: InterviewTurnPayload[];
 };
@@ -87,6 +89,7 @@ export function parseSession(raw: unknown): InterviewSession {
     createdAt: String(raw.created_at ?? ""),
     feedbackStatus: String(raw.feedback_status ?? "NONE") as InterviewFeedbackStatus,
     feedback: isRecord(raw.feedback) ? (raw.feedback as unknown as InterviewFeedback) : null,
+    feedbackAttempts: Number(raw.feedback_attempts ?? 0),
     feedbackHadVideo: raw.feedback_had_video === true,
     ...(turns ? { turns } : {}),
   };
