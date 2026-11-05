@@ -49,6 +49,7 @@ const SUMMARY = {
     premium: "https://www.groble.im/payment/PRM",
     triple: null,
     interview: null,
+    interview3: null,
   },
   companyAnalysisEnabled: true,
   companyRemaining: 0,
@@ -87,6 +88,10 @@ describe("Entitlements purchase button", () => {
 
     expect(screen.queryAllByText(/판매를 준비하고 있어요/)).toHaveLength(0);
     expect(screen.getAllByRole("button", { name: /스탠다드 구매하기/ }).length).toBeGreaterThan(0);
+    // AI 면접 연습 이용권 칸(#interview): 1회·3회 두 상품이 티어 카드와 별개로 선다.
+    expect(document.getElementById("interview")).not.toBeNull();
+    expect(screen.getAllByRole("button", { name: /AI 면접 연습 1회 구매하기/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /AI 면접 연습 3회 구매하기/ }).length).toBeGreaterThan(0);
   });
 
   it("keeps the purchase button disabled until the checkout URL is known", async () => {
@@ -116,7 +121,7 @@ describe("Entitlements purchase button", () => {
       premiumEnabled: false,
       groblePaymentUrl: null,
       grobleSinglePaymentUrl: null,
-      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null, interview: null },
+      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null, interview: null, interview3: null },
     });
 
     render(<Entitlements />);
@@ -213,7 +218,8 @@ describe("Entitlements purchase button", () => {
     signedIn();
     mocks.fetchEntitlementSummary.mockResolvedValue({
       ...SUMMARY,
-      checkoutUrls: { ...SUMMARY.checkoutUrls, premium: null },
+      // 면접 이용권 둘은 열려 있고 프리미엄만 닫힌 상태 — 안내 문구는 닫힌 상품에만 붙는다.
+      checkoutUrls: { ...SUMMARY.checkoutUrls, premium: null, interview: "https://www.groble.im/payment/ITV1", interview3: "https://www.groble.im/payment/ITV3" },
     });
 
     render(<Entitlements />);

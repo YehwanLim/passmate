@@ -118,8 +118,9 @@ enum PurchaseProduct {
   COMPANY_SINGLE
   STANDARD
   PREMIUM
-  /// AI 면접 연습 1회권(2026-11-05). 가격은 Groble 상품이 진실이다.
+  /// AI 면접 연습 1회권·3회권(2026-11-05). 가격은 Groble 상품이 진실이다.
   INTERVIEW_SINGLE
+  INTERVIEW_TRIPLE
 
   @@map("purchase_product")
 }

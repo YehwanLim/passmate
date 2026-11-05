@@ -30,6 +30,8 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
     children: [
       { label: "자소서 분석", target: "/analyze", description: "채용 담당자의 눈으로 보는 자소서 분석" },
       { label: "기업 분석", target: "/company-analysis", description: "지원할 회사의 사업·이슈·직무 정리" },
+      // AI 면접 연습은 리포트에서 시작하므로 메뉴는 이용권 안내(#interview)로 보낸다(11-05).
+      { label: "AI 면접 연습", target: "/entitlements#interview", description: "리포트를 읽은 AI 면접관과 실시간 면접" },
     ],
   },
   { label: "취업 가이드", type: "route", target: "/guide" },

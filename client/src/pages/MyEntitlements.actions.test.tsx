@@ -54,6 +54,7 @@ const BASE_SUMMARY = {
     premium: null,
     triple: null,
     interview: null,
+    interview3: null,
   },
   companyAnalysisEnabled: true,
   companyRemaining: 0,

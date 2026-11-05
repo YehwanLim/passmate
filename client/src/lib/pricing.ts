@@ -3,8 +3,10 @@
 // 티어(스펙 §7-3): 베이직 3,900(자소서 1 또는 기업 1) → 스탠다드 9,900(자소서 2 + 기업 1) → 프리미엄 16,900(자소서 3 + 기업 3).
 
 /** 서버 쿼리 키(lib/billing/entitlement-products.js PRODUCT_QUERY_KEYS)와 같다. checkoutUrls 의 키이기도 하다. */
-export const PURCHASE_PRODUCT_KEYS = ["single", "company", "standard", "premium", "triple", "interview"] as const;
+export const PURCHASE_PRODUCT_KEYS = ["single", "company", "standard", "premium", "triple", "interview", "interview3"] as const;
 export type PurchaseProductKey = (typeof PURCHASE_PRODUCT_KEYS)[number];
+/** AI 면접 연습 이용권(분석 티어와 별개). 이용권 페이지의 면접 칸과 랜딩 가격 안내가 쓴다. */
+export const INTERVIEW_PRODUCT_KEYS = ["interview", "interview3"] as const;
 
 export type PricingPlan = {
   /** 카드·버튼 라벨 */
@@ -58,7 +60,7 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     uses: 3,
     companyUses: 0,
   },
-  // AI 면접 연습 1회권. 가격은 아직 미정(2026-11-05, 4,900 은 자리 표시) — Groble 상품 가격과 함께 정한다. 티어 카드에는 싣지 않는다.
+  // AI 면접 연습 이용권(2026-11-05 확정): 1회 4,900 · 3회 9,900(회당 3,300). 분석 티어 카드와 별개 칸에 보여 준다.
   interview: {
     label: "AI 면접 연습 1회",
     listPrice: 4_900,
@@ -66,6 +68,14 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     uses: 0,
     companyUses: 0,
     interviewUses: 1,
+  },
+  interview3: {
+    label: "AI 면접 연습 3회",
+    listPrice: 14_700,
+    salePrice: 9_900,
+    uses: 0,
+    companyUses: 0,
+    interviewUses: 3,
   },
 };
 
@@ -111,7 +121,7 @@ export function savingsFor(plan: PricingPlan): number {
 }
 
 /** 서버가 쓰는 상품 키(lib/billing/entitlement-products.js). 상품을 알 수 없는 결제는 null. */
-export type PurchaseProduct = "SINGLE" | "COMPANY_SINGLE" | "STANDARD" | "PREMIUM" | "TRIPLE" | "INTERVIEW_SINGLE";
+export type PurchaseProduct = "SINGLE" | "COMPANY_SINGLE" | "STANDARD" | "PREMIUM" | "TRIPLE" | "INTERVIEW_SINGLE" | "INTERVIEW_TRIPLE";
 
 export const PRODUCT_KEY_BY_PRODUCT: Record<PurchaseProduct, PurchaseProductKey> = {
   SINGLE: "single",
@@ -120,6 +130,7 @@ export const PRODUCT_KEY_BY_PRODUCT: Record<PurchaseProduct, PurchaseProductKey>
   PREMIUM: "premium",
   TRIPLE: "triple",
   INTERVIEW_SINGLE: "interview",
+  INTERVIEW_TRIPLE: "interview3",
 };
 
 export function productLabel(product: PurchaseProduct | null): string {
