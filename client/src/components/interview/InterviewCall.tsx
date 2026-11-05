@@ -42,7 +42,7 @@ export default function InterviewCall({ activity, photoSrc, videoRef, cameraOn, 
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" aria-hidden="true" />
 
       {/* 면접관 */}
-      <div className="absolute inset-x-0 top-0 bottom-28 flex flex-col items-center justify-center gap-5 px-6">
+      <div className="absolute inset-x-0 top-20 bottom-32 flex flex-col items-center justify-center gap-5 px-6 md:top-0 md:bottom-28">
         <div className="relative w-[min(68vw,320px)] md:w-[min(40vh,380px)]">
           {speaking && <span className="interview-ring absolute -inset-2 rounded-[32px] border-2 border-white/60" aria-hidden="true" />}
           <div className="relative aspect-square overflow-hidden rounded-[28px] shadow-2xl ring-1 ring-white/15">
@@ -75,13 +75,14 @@ export default function InterviewCall({ activity, photoSrc, videoRef, cameraOn, 
       </p>
 
       {/* 내 카메라 */}
-      <div className="absolute bottom-6 right-5 aspect-video w-36 overflow-hidden rounded-2xl bg-black/70 ring-1 ring-white/20 md:bottom-7 md:right-7 md:w-60">
+      {/* 폰에서는 오른쪽 위(시간 옆), 넓은 화면에서는 오른쪽 아래 */}
+      <div className="absolute right-4 top-4 aspect-video w-32 overflow-hidden rounded-2xl bg-black/70 ring-1 ring-white/20 md:bottom-7 md:right-7 md:top-auto md:w-60">
         <video ref={videoRef} autoPlay muted playsInline className={`h-full w-full object-cover ${cameraOn ? "" : "hidden"}`} />
         {!cameraOn && <div className="flex h-full items-center justify-center text-white/60"><CameraOff className="h-6 w-6" aria-hidden="true" /></div>}
         <span className="absolute bottom-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold">{INTERVIEW_LIVE_COPY.you}</span>
         {/* 내 목소리 크기. 말하는 동안 막대가 움직여 "들어가고 있다"가 보인다. */}
         <span
-          className="absolute bottom-2 right-2 flex h-5 w-16 items-center rounded-full bg-black/55 px-2 md:w-24"
+          className="absolute bottom-2 right-2 flex h-5 w-12 items-center rounded-full bg-black/55 px-2 md:w-24"
           role="meter"
           aria-label="내 목소리 크기"
           aria-valuemin={0}
@@ -93,11 +94,14 @@ export default function InterviewCall({ activity, photoSrc, videoRef, cameraOn, 
       </div>
 
       {/* 자막과 끝내기 */}
-      <div className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-3 px-5 pr-44 md:bottom-7 md:pr-72">
+      <div className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-3 px-5 md:bottom-7 md:pr-72">
         {subtitle && subtitle.text && (
-          <p className={`line-clamp-2 max-w-xl rounded-2xl bg-black/50 px-4 py-2 text-center text-[14px] leading-relaxed ${subtitle.draft ? "text-white/70" : "text-white/90"}`} aria-live="polite">
-            <span className="mr-1.5 font-semibold">{subtitle.speaker === "CANDIDATE" ? INTERVIEW_LIVE_COPY.you : INTERVIEW_LIVE_COPY.interviewer}</span>
-            {subtitle.text}
+          <p className={`max-w-xl rounded-2xl bg-black/50 px-4 py-2 text-center text-[14px] leading-relaxed ${subtitle.draft ? "text-white/70" : "text-white/90"}`} aria-live="polite">
+            {/* 줄 제한은 안쪽 span 에: p 에 걸면 padding 자리에 세 번째 줄이 비친다 */}
+            <span className="line-clamp-2">
+              <span className="mr-1.5 font-semibold">{subtitle.speaker === "CANDIDATE" ? INTERVIEW_LIVE_COPY.you : INTERVIEW_LIVE_COPY.interviewer}</span>
+              {subtitle.text}
+            </span>
           </p>
         )}
         <button
