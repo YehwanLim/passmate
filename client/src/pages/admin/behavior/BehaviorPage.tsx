@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EngagedTimeCard } from "@/components/admin/behavior/EngagedTimeCard";
 import { FeatureUsageTable } from "@/components/admin/behavior/FeatureUsageTable";
 import { FunnelTable } from "@/components/admin/behavior/FunnelTable";
 import { RetentionLoginCards } from "@/components/admin/behavior/RetentionLoginCards";
@@ -35,6 +36,7 @@ export default function BehaviorPage() {
       <AdminErrorAlert message={error} />
 
       <FunnelTable steps={data?.funnel ?? []} periodLabel={periodLabel} isLoading={isLoading} />
+      <EngagedTimeCard data={data?.engagedTime ?? null} periodLabel={periodLabel} />
       <SourcesTable rows={data?.sources ?? []} periodLabel={periodLabel} isLoading={isLoading} />
       <RetentionLoginCards
         retention={data?.retention ?? null}

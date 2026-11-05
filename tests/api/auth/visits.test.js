@@ -182,6 +182,7 @@ describe("POST /api/visits — 방문 핑", () => {
       "content_cta_click",
       "report_mock_interview_click",
       "report_mock_interview_apply",
+      "engaged_time",
     ]);
     expect(readClientEventBody({ visitorId: VISITOR_ID, event: "landing_cta_click", detail: "m:hero" })).toEqual({
       visitorId: VISITOR_ID, name: "landing_cta_click", detail: "m:hero", inAppBrowser: null,
@@ -245,6 +246,19 @@ describe("POST /api/visits — IP 상한", () => {
     expect(visitCall.subjectKey).toBe(eventCall.subjectKey);
     expect(visitCall.subjectKey).toMatch(/^ip:[0-9a-f]{32}$/);
     expect(visitCall.subjectKey).not.toContain("198.51.100.7");
+  });
+
+  it("체류 시간은 퍼널 이벤트와 다른 버킷을 써서 제출·가입 기록을 밀어내지 않는다", async () => {
+    const db = createDb();
+    const consumeRateLimit = vi.fn(async () => ({ allowed: true }));
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null, consumeRateLimit });
+
+    await handler({ method: "POST", headers: {}, body: { visitorId: VISITOR_ID, event: "engaged_time", detail: "m:42" } }, response());
+
+    expect(consumeRateLimit.mock.calls[0][1].policy.route).toBe("engaged-time");
+    expect(db.clientEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ name: "engaged_time", detail: "m:42", userId: null }),
+    }));
   });
 
   it("잘못된 본문은 상한을 쓰기 전에 400 으로 거절한다", async () => {
