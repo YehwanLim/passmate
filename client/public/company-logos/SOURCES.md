@@ -89,3 +89,10 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
 | `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
 | `yuanta-securities.svg` | 유안타증권 | [유안타증권 홈페이지 CI](https://www.yuantakorea.com/images/sub/1/1/5/cont2.jpg) | 국문 로고타입 한 줄을 잘라 PNG를 SVG 래퍼에 |
+| `shinyoung-group.svg` | 신영그룹 | [신영그룹 홈페이지](https://www.shinyounggroup.com/resources/images/shinyoungGroup/common/group_logo.svg) | 공식 SVG 그대로 |
+| `hyundai-department.svg` | 현대백화점그룹 | [현대백화점그룹 채용 홈페이지](https://recruit.ehyundai.com/common/images/logo-bk.svg) | 공식 SVG 그대로 |
+| `logisall.svg` | 한국컨테이너풀 | [로지스올 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2024/11/27/655ffdb9-9048-4b86-9556-5bc216fe96d7.png) | 그룹(로지스올) 로고, 여백을 잘라 PNG를 SVG 래퍼에 |
+| `kctech.svg` | 케이씨텍 | [케이씨텍 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/05/28/41d72399-a205-4d48-b866-c87a5e3e1e66.png) | PNG를 줄여 SVG 래퍼에 |
+| `loreal.svg` | 로레알코리아 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:L%27Or%C3%A9al_logo.svg) | PD-textlogo, 상표 고지 있음 |
+| `whanin.svg` | 환인제약 | [환인제약 홈페이지](https://whanin.com/_theme/basic/img/ci.png) | 여백을 잘라 PNG를 SVG 래퍼에(작음) |
+| `ktnet.svg` | 한국무역정보통신 | [KTNET 홈페이지](https://www.ktnet.com/html/aw_img/renew/images/common/logo.svg) | 공식 SVG 그대로 |
