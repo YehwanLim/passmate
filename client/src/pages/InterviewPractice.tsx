@@ -40,9 +40,21 @@ const API_ERROR_COPY: Record<string, string> = {
   INTERVIEW_TOKEN_FAILED: "면접관을 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
   INTERVIEW_CAPACITY: "오늘은 면접 연습이 꽉 찼어요. 내일 다시 시도해 주세요. 이용권은 쓰이지 않았어요.",
   INTERVIEW_FEEDBACK_EXHAUSTED: "피드백 생성을 세 번 시도해 더는 만들 수 없어요.",
+  INTERVIEW_TRANSCRIPT_EMPTY: "기록된 답변이 없어 피드백을 만들 수 없어요.",
+  INTERVIEW_CONSENT_REQUIRED: "안내 문구가 바뀌었어요. 새로고침한 뒤 다시 동의해 주세요.",
+  INTERVIEW_NOT_OPEN: "이미 끝난 면접이에요.",
+  INTERVIEW_EXPIRED: "면접 시간이 지났어요.",
+  INTERVIEW_TOKEN_LIMIT: "연결을 너무 여러 번 다시 시도했어요. 이 면접은 여기서 끝나요.",
+  PAYLOAD_TOO_LARGE: "보내려는 사진이 너무 커요.",
+  SETUP_TIMEOUT: "면접관이 응답하지 않아 연결을 끊었어요. 잠시 뒤 다시 시도해 주세요.",
+  SETUP_REJECTED: "면접관 연결이 거절됐어요. 잠시 뒤 다시 시도해 주세요.",
+  SOCKET_OPEN_FAILED: "면접관에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.",
   RATE_LIMITED: "잠시 뒤 다시 시도해 주세요.",
   NOT_FOUND: "리포트를 찾을 수 없어요.",
 };
+function liveErrorCopy(code: string) {
+  return API_ERROR_COPY[code] ?? "면접관 연결에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요.";
+}
 const FEEDBACK_MAX_ATTEMPTS = 3;
 
 function errorCopy(error: unknown) {
@@ -64,7 +76,7 @@ export default function InterviewPractice() {
   const params = useParams<{ sessionId: string }>();
   const search = useSearch();
   const [, navigate] = useLocation();
-  const { isLoading: authLoading } = useRequireAuth({ redirectPath: `${window.location.pathname}${window.location.search}` });
+  const { isLoading: authLoading, isAuthenticated } = useRequireAuth({ redirectPath: `${window.location.pathname}${window.location.search}` });
   const query = new URLSearchParams(search);
   const isStart = params.sessionId === "start";
   const analysisId = query.get("analysisId");
@@ -139,7 +151,8 @@ export default function InterviewPractice() {
 
   // ── 세션 불러오기 ──
   useEffect(() => {
-    if (authLoading) return;
+    // 로그인 전에는 아무것도 하지 않는다(useRequireAuth 가 로그인으로 보낸다). 안 그러면 로그인 화면으로 가기 전에 카메라 권한 창이 뜬다.
+    if (authLoading || !isAuthenticated) return;
     if (isStart) {
       if (!analysisId) {
         navigate("/my");
@@ -169,7 +182,7 @@ export default function InterviewPractice() {
     return () => {
       alive = false;
     };
-  }, [authLoading, isStart, analysisId, params.sessionId, navigate, requestDevices, mediaSupported, inApp]);
+  }, [authLoading, isAuthenticated, isStart, analysisId, params.sessionId, navigate, requestDevices, mediaSupported, inApp]);
 
   useEffect(() => () => {
     stopStream();
@@ -250,6 +263,8 @@ export default function InterviewPractice() {
           if (state.phase === "ended" || state.phase === "failed") {
             photosRef.current = handleRef.current?.photos() ?? [];
             stopStream();
+            // 시작조차 못 한 이유(하루 상한·연결 거절 등)는 끝난 화면에서 알려 준다.
+            if (state.error) setError(liveErrorCopy(state.error));
             void (async () => {
               try {
                 const ended = await getInterviewSession(current!.id);
@@ -402,7 +417,10 @@ export default function InterviewPractice() {
         {phase === "after" && session && (
           <div className="mt-8 space-y-6">
             {session.status === "CANCELLED" && (
-              <p className="rounded-2xl bg-surface px-6 py-5 text-[15px] text-ink-3">{INTERVIEW_FEEDBACK_COPY.refunded}</p>
+              <div className="rounded-2xl bg-surface px-6 py-5 text-[15px] text-ink-3">
+                {error && <p role="alert" className="mb-2 text-danger">{error}</p>}
+                <p>{INTERVIEW_FEEDBACK_COPY.refunded}</p>
+              </div>
             )}
             {session.status === "ACTIVE" ? (
               <div className="rounded-3xl bg-surface px-6 py-7">

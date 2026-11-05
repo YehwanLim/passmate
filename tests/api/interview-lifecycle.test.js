@@ -97,15 +97,31 @@ describe("묵은 면접 세션 정리", () => {
     expect(reservationUpdates).toEqual([expect.objectContaining({ id: "r4", status: "CANCELLED" })]);
   });
 
-  it("끝난 뒤 24시간: 피드백을 안 받았으면 확정하고, 실패한 채였으면 돌려준다", async () => {
+  it("끝난 뒤 24시간: 피드백을 안 받았으면 확정하고, 장애로 실패한 채였으면 돌려주며, 내용 없음(금지어) 실패는 확정한다", async () => {
     const unclaimed = { id: "s-none", userId: "u5", status: "ENDED", reservationId: "r5", feedbackStatus: "NONE", endedAt: hoursAgo(25) };
-    const failed = { id: "s-failed", userId: "u6", status: "INTERRUPTED", reservationId: "r6", feedbackStatus: "FAILED", feedbackAttempts: 1, endedAt: hoursAgo(25) };
-    const { db, reservationUpdates } = fakeDb([unclaimed, failed]);
+    const failed = { id: "s-failed", userId: "u6", status: "INTERRUPTED", reservationId: "r6", feedbackStatus: "FAILED", feedbackAttempts: 1, feedbackJson: { failure: "error" }, endedAt: hoursAgo(25) };
+    const unusable = { id: "s-unusable", userId: "u7", status: "ENDED", reservationId: "r7", feedbackStatus: "FAILED", feedbackAttempts: 1, feedbackJson: { failure: "unusable" }, endedAt: hoursAgo(25) };
+    const { db, reservationUpdates } = fakeDb([unclaimed, failed, unusable]);
     await expireStaleInterviewSessions({ db, now: NOW });
     expect(reservationUpdates).toEqual([
       expect.objectContaining({ id: "r5", status: "CONSUMED" }),
       expect.objectContaining({ id: "r6", status: "CANCELLED" }),
+      expect.objectContaining({ id: "r7", status: "CONSUMED" }),
     ]);
+  });
+
+  it("후보로 읽은 뒤 잠그고 다시 읽어, 그 사이 바뀐 세션(입장권을 받음·피드백 요청함)은 건드리지 않는다", async () => {
+    const rows = [created(), { id: "s-none", userId: "u5", status: "ENDED", reservationId: "r5", feedbackStatus: "NONE", endedAt: hoursAgo(25) }];
+    const { db, reservationUpdates } = fakeDb(rows);
+    // 잠금 직후 다시 읽을 때는 이미 바뀐 상태를 돌려준다.
+    db.interviewSession.findUnique.mockImplementation(async ({ where }) => {
+      if (where.id === "s-created") return { ...rows[0], status: "ACTIVE", firstTokenAt: NOW, hardDeadlineAt: new Date(NOW.getTime() + 60_000) };
+      if (where.id === "s-none") return { ...rows[1], feedbackStatus: "PENDING" };
+      return null;
+    });
+    await expireStaleInterviewSessions({ db, now: NOW });
+    expect(rows[0].status).toBe("CREATED");
+    expect(reservationUpdates).toEqual([]);
   });
 
   it("userId 를 주면(사용자 요청) 그 사용자의 세션만 최대 20건 훑는다", async () => {

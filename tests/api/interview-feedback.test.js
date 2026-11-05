@@ -204,8 +204,7 @@ describe("POST /api/analyze?interview_feedback=1", () => {
     for (let attempt = 1; attempt <= INTERVIEW_RULES.feedbackMaxAttempts; attempt += 1) {
       await db.interviewSession.update({ where: { id: SESSION_ID }, data: { feedbackStatus: "PENDING" } });
       await runInterviewFeedback({ db, sessionId: SESSION_ID, userId: INTERVIEW_TEST_USER, photos: [], callModel, requestId: "r" });
-      expect(db.state.sessions[0].feedbackStatus).toBe("FAILED");
-      expect(db.state.sessions[0].feedbackAttempts).toBe(attempt);
+      expect(db.state.sessions[0]).toMatchObject({ feedbackStatus: "FAILED", feedbackAttempts: attempt, feedbackJson: { failure: "error" } });
     }
     expect(db.state.reservations[0].status).toBe("CANCELLED");
     expect(db.state.turns).toHaveLength(2);
@@ -222,7 +221,7 @@ describe("POST /api/analyze?interview_feedback=1", () => {
     for (let attempt = 1; attempt <= INTERVIEW_RULES.feedbackMaxAttempts; attempt += 1) {
       await db.interviewSession.update({ where: { id: SESSION_ID }, data: { feedbackStatus: "PENDING" } });
       await runInterviewFeedback({ db, sessionId: SESSION_ID, userId: INTERVIEW_TEST_USER, photos: [], callModel: unusable, requestId: "r" });
-      expect(db.state.sessions[0]).toMatchObject({ feedbackStatus: "FAILED", feedbackJson: null, feedbackAttempts: attempt });
+      expect(db.state.sessions[0]).toMatchObject({ feedbackStatus: "FAILED", feedbackJson: { failure: "unusable" }, feedbackAttempts: attempt });
     }
     expect(db.state.reservations[0].status).toBe("CONSUMED");
     expect(db.state.audits.map((audit) => audit.outcome)).toContain("FEEDBACK_UNUSABLE");

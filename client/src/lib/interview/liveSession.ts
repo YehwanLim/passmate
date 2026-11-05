@@ -216,8 +216,11 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
     timers.push(setInterval(() => {
       // 요소는 찍을 때마다 ref 에서 읽는다. 통화 화면이 그려진 뒤에야 들어온다.
       const videoElement = videoRef.current;
+      if (!videoElement || stopped) return;
+      // 화면이 스트림을 아직 못 꽂았으면(그려지기 전에 시도했을 때) 여기서 꽂는다. 마이크 스트림에 카메라 트랙이 같이 들어 있다.
+      if (!videoElement.srcObject) videoElement.srcObject = micStream;
       // 면접관이 말하는 동안의 사진은 보내지도, 표본에 넣지도 않는다(지원자가 말하는 순간만 피드백에 쓴다).
-      if (!videoElement || stopped || reconnecting || state.modelSpeaking || !videoElement.videoWidth) return;
+      if (reconnecting || state.modelSpeaking || !videoElement.videoWidth) return;
       canvas.width = FRAME_WIDTH;
       canvas.height = Math.round((FRAME_WIDTH * videoElement.videoHeight) / videoElement.videoWidth);
       canvas.getContext("2d")?.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
@@ -423,8 +426,11 @@ export async function startLiveSession(options: LiveSessionOptions): Promise<Liv
 
   try {
     await openSocket();
-  } catch {
+  } catch (error) {
+    // 왜 못 열었는지(하루 상한·발급 실패 등)를 화면이 보여 줄 수 있게 코드를 남긴다. 종료 요청은 그대로 보낸다.
+    const code = error instanceof Error ? error.message : "SOCKET_OPEN_FAILED";
     await stop("error");
+    if (!state.error) state.error = code;
   }
   emit();
 
