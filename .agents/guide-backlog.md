@@ -68,4 +68,4 @@
 | F10 | blog-import-samsung-1-2 | (이관) 삼성전자 DX 합격 후기 ①② | 네이버 블로그 원문 그대로 | 대기 |
 | F11 | ai-vs-human-review | 자소서 첨삭 AI vs 사람 | 각각이 잘 보는 것과 못 보는 것 | 대기 |
 | F12 | ai-resume-workflow | AI로 자소서 쓰는 순서 | 초안은 내가, 점검은 AI가 | 대기 |
-| F13 | interview-where-to-start | 면접 준비 방법, 면접 준비 순서 | 면접이 잡히면 뭐부터 하나 | 초안(11-05, PR) |
+| F13 | interview-where-to-start | 면접 준비 방법, 면접 준비 순서 | 면접이 잡히면 뭐부터 하나 | 초안(11-05, PR #41) |
