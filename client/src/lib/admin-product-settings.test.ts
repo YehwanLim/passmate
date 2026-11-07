@@ -42,7 +42,8 @@ describe("admin product settings API client", () => {
     ];
     mockedFetch().mockResolvedValue(jsonResponse({ products }));
 
-    await expect(fetchProductSettings()).resolves.toEqual(products);
+    // 면접 이용권 수가 없는 구버전 응답은 0 으로 채워 읽는다.
+    await expect(fetchProductSettings()).resolves.toEqual(products.map((row) => ({ ...row, interviewCredits: 0 })));
     expect(mockedFetch()).toHaveBeenCalledWith("/api/admin/product-settings", {
       headers: {
         Authorization: "Bearer session-token",

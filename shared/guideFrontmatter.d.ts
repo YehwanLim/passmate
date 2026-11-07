@@ -4,6 +4,8 @@ export type GuideSummary = {
   description: string;
   /** 목록 탭에 쓰는 분류: "자소서" | "면접 후기". 화면 카드에는 보이지 않는다. */
   category: string;
+  /** 특정 회사를 다루는 글의 회사 이름. 폰 아래 띠가 분석 폼에 채운다. 일반 글은 null */
+  company: string | null;
   /** 커버 이미지 경로(/guide/<slug>/cover.png). 면접 후기처럼 만든 커버가 있을 때. */
   cover: string | null;
   /** 이미지가 없을 때 그리는 질문형 커버. frontmatter coverStyle·coverLabel·coverQuestion·coverAnswer·coverTone·coverLogo */

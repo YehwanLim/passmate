@@ -229,6 +229,56 @@ describe("admin behavior — 사용 행동", () => {
     expect(res.body.period).toBe("7d");
   });
 
+  it("체류 시간은 방문자별 최댓값으로 중앙값·평균·구간을 내고, 시간을 못 잰 방문은 전체 수에만 남는다", async () => {
+    mocks.prisma.siteVisit.findMany.mockResolvedValue(
+      ["a", "b", "c", "d", "bot"].map((visitorId) => ({ visitorId, createdAt: NOW })),
+    );
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([
+      // a 는 누적값이 두 번 왔다 — 더하지 않고 큰 값만 쓴다
+      { visitorId: "a", name: "engaged_time", detail: "m:5" },
+      { visitorId: "a", name: "engaged_time", detail: "m:20" },
+      { visitorId: "b", name: "engaged_time", detail: "d:40" },
+      { visitorId: "c", name: "engaged_time", detail: "m:100" },
+      // 자리를 비운 탭은 1시간에서 자른다
+      { visitorId: "d", name: "engaged_time", detail: "d:90000" },
+      // 다른 이벤트의 detail 이나 꼴이 틀린 값은 시간으로 읽지 않는다
+      { visitorId: "bot", name: "analyze_form_start", detail: "m:999" },
+      { visitorId: "bot", name: "engaged_time", detail: "m:abc" },
+    ]);
+
+    const res = await run();
+
+    expect(res.body.engagedTime).toEqual({
+      visitors: 5,
+      measured: 4,
+      medianSeconds: 70,
+      averageSeconds: 940,
+      buckets: [
+        { label: "10초 미만", count: 0 },
+        { label: "10~30초", count: 1 },
+        { label: "30초~1분", count: 1 },
+        { label: "1~3분", count: 1 },
+        { label: "3~10분", count: 0 },
+        { label: "10분 이상", count: 1 },
+      ],
+    });
+  });
+
+  it("체류 시간을 잰 방문이 없으면 초 값은 null 이고, 운영자 탭의 시간은 뺀다", async () => {
+    admins = [{ id: "admin-1" }];
+    mocks.prisma.siteVisit.findMany.mockResolvedValue([
+      { visitorId: "me", createdAt: NOW, userId: "admin-1" },
+      { visitorId: "guest", createdAt: NOW },
+    ]);
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([{ visitorId: "me", name: "engaged_time", detail: "d:500" }]);
+
+    const res = await run();
+
+    expect(res.body.engagedTime).toEqual(
+      expect.objectContaining({ visitors: 1, measured: 0, medianSeconds: null, averageSeconds: null }),
+    );
+  });
+
   it("응답에 이메일이 실리지 않는다", async () => {
     mocks.prisma.siteVisit.findMany.mockResolvedValue([{ visitorId: "a", createdAt: NOW, utmSource: "threads" }]);
     const res = await run();

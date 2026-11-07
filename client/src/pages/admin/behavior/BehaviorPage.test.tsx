@@ -31,6 +31,13 @@ describe("BehaviorPage", () => {
       ],
       sources: [{ source: "threads", visitors: 20, formStarts: 2, signups: 1 }],
       retention: { visitors: 72, returningVisitors: 4, signups: 4, returningSignups: 1 },
+      engagedTime: {
+        visitors: 72,
+        measured: 40,
+        medianSeconds: 84,
+        averageSeconds: 130,
+        buckets: [{ label: "10초 미만", count: 10 }, { label: "1~3분", count: 30 }],
+      },
       login: { visitors: 72, inAppVisitors: 16, inAppKinds: [{ kind: "kakaotalk", visitors: 10 }], events: { google_signin_failed: 2 } },
       features: [{ key: "resume", label: "자소서 분석", uses: 3, users: 3 }],
     });
@@ -44,5 +51,8 @@ describe("BehaviorPage", () => {
     expect(screen.getByText("5.6%")).toBeTruthy(); // 다시 온 방문자 4/72
     expect(screen.getByText("자소서 분석")).toBeTruthy();
     expect(screen.getByText("Google 로그인 실패")).toBeTruthy();
+    expect(screen.getByText("1분 24초")).toBeTruthy(); // 체류 시간 중앙값
+    expect(screen.getByText("시간을 잰 방문 40 / 전체 72")).toBeTruthy();
+    expect(screen.getByText("75%")).toBeTruthy(); // 1~3분 30/40
   });
 });

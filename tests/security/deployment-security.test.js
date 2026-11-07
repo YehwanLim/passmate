@@ -17,7 +17,12 @@ describe("beta deployment security configuration", () => {
     expect(headers["Strict-Transport-Security"]).toContain("max-age=");
     expect(headers["X-Content-Type-Options"]).toBe("nosniff");
     expect(headers["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");
-    expect(headers["Permissions-Policy"]).toContain("camera=()");
+    // AI 면접 연습이 카메라·마이크를 쓴다. 리포트에서 클라이언트 라우팅으로 넘어오면 문서는 리포트 경로의 헤더를 갖고 있으므로
+    // 경로별이 아니라 전체에서 self 만 허용한다(다른 출처의 프레임은 여전히 못 쓴다). 그 외 권한은 계속 막는다.
+    expect(headers["Permissions-Policy"]).toContain("camera=(self)");
+    expect(headers["Permissions-Policy"]).toContain("microphone=(self)");
+    expect(headers["Permissions-Policy"]).toContain("geolocation=()");
+    expect(headers["Content-Security-Policy"]).toContain("wss://generativelanguage.googleapis.com");
     expect(headers["X-Frame-Options"]).toBe("DENY");
   });
 
@@ -106,6 +111,7 @@ describe("beta deployment security configuration", () => {
       { source: "/api/analyze/extract", destination: "/api/analyze?extract=1" },
       { source: "/api/analyze/keywords", destination: "/api/analyze?keywords=1" },
       { source: "/api/analyze/company", destination: "/api/analyze?kind=company" },
+      { source: "/api/analyze/interview-feedback", destination: "/api/analyze?interview_feedback=1" },
       // 공개 예시 리포트는 빌드 때 프리렌더한 정적 HTML 로 받는다(scripts/prerender-landing.mjs 참고).
       {
         source: "/report-new",

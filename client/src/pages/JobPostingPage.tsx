@@ -1,6 +1,7 @@
 import { useLayoutEffect, type ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Link, useParams } from "wouter";
+import { ContentCtaBar } from "@/components/ContentCtaBar";
 import { GuideLayout } from "@/components/guide/GuideLayout";
 import { ProcessSteps } from "@/components/jobs/ProcessSteps";
 import { findJobPosting, type JobPostingListing } from "@/constants/jobPostings";
@@ -9,7 +10,10 @@ import { useNow } from "@/hooks/useNow";
 import { dDayLabel, formatDeadline, isOpen } from "@/lib/jobPostingDates";
 import { jobPostingMeta } from "@/lib/jobPostingMeta";
 import { applyDocumentMeta, JOBS_INDEX_PATH, SEO_ROUTES } from "@/lib/seo";
+import { sendFunnelEvent } from "@/lib/siteVisits";
 import NotFound from "./NotFound";
+
+const START_CARD_ID = "job-start-card";
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -68,25 +72,28 @@ function FactValue({ value, href }: { value: string | readonly string[]; href?: 
 /** 이 공고로 바로 시작하기. 회사와 공고(slug)를 쿼리로 넘겨 받는 화면이 회사·마감·공고 내용을 채운다. */
 function StartCard({ listing }: { listing: JobPostingListing }) {
   const company = encodeURIComponent(listing.company);
+  const track = (which: string) => () => void sendFunnelEvent("content_cta_click", `job-card-${which}:${listing.slug}`);
   const button = "flex h-12 w-full items-center justify-center rounded-[12px] text-[15px] font-bold transition-colors";
   return (
-    <aside className="rounded-[24px] bg-surface p-6 lg:sticky lg:top-24">
+    <aside id={START_CARD_ID} className="rounded-[24px] bg-surface p-6 lg:sticky lg:top-24">
       <h2 className="text-[17px] font-bold text-ink">이 공고로 자소서 준비하기</h2>
       <p className="mt-1.5 text-[14px] leading-relaxed text-ink-4 [word-break:keep-all]">
         회사 이름과 공고 내용이 채워진 채로 시작해요.
       </p>
       <div className="mt-5 grid gap-2.5">
-        <Link href={`/my/new?job=${listing.slug}`} className={`${button} bg-brand text-white hover:bg-brand-hover`}>
+        <Link href={`/my/new?job=${listing.slug}`} onClick={track("draft")} className={`${button} bg-brand text-white hover:bg-brand-hover`}>
           내 경험으로 초안 쓰기
         </Link>
         <Link
           href={`/analyze?company=${company}&job=${listing.slug}`}
+          onClick={track("analyze")}
           className={`${button} bg-brand-soft text-brand-ink hover:bg-[#dde9ff]`}
         >
           자소서 분석하기
         </Link>
         <Link
           href={`/company-analysis?company=${company}&job=${listing.slug}`}
+          onClick={track("company")}
           className={`${button} border border-line bg-surface text-ink-2 hover:bg-fill-soft`}
         >
           기업 분석하기
@@ -195,6 +202,14 @@ export default function JobPostingPage() {
         <PostingBody detail={detail} />
         <StartCard listing={listing} />
       </div>
+
+      {/* 마감된 공고도 검색으로 계속 들어온다. 다음 시즌을 준비하는 사람이라 회사 이름은 그대로 채운다. */}
+      <ContentCtaBar
+        company={listing.company}
+        href={`/analyze?company=${encodeURIComponent(listing.company)}&job=${listing.slug}`}
+        where={`job-bar${closed ? "-closed" : ""}:${listing.slug}`}
+        endId={START_CARD_ID}
+      />
     </GuideLayout>
   );
 }

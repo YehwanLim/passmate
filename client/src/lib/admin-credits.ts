@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-export type AdminCreditKind = "RESUME" | "COMPANY";
+export type AdminCreditKind = "RESUME" | "COMPANY" | "INTERVIEW";
 
 export interface UserCreditSummary {
   premiumEnabled: boolean;
@@ -10,6 +10,8 @@ export interface UserCreditSummary {
   remaining: number;
   /** 기업 분석 크레딧 잔여. 구버전 응답에 없으면 0. */
   companyRemaining: number;
+  /** AI 면접 연습 이용권 잔여. 구버전 응답에 없으면 0. */
+  interviewRemaining: number;
 }
 
 export interface AdminCreditGrantRecord {
@@ -51,6 +53,10 @@ function parseSummary(payload: unknown): UserCreditSummary | null {
       typeof summary.companyRemaining === "number" && Number.isInteger(summary.companyRemaining) && summary.companyRemaining >= 0
         ? summary.companyRemaining
         : 0,
+    interviewRemaining:
+      typeof summary.interviewRemaining === "number" && Number.isInteger(summary.interviewRemaining) && summary.interviewRemaining >= 0
+        ? summary.interviewRemaining
+        : 0,
   };
 }
 
@@ -62,7 +68,7 @@ function parseGrant(value: JsonRecord): AdminCreditGrantRecord {
     source: value.source as string,
     note: (value.note as string | null) ?? null,
     created_at: value.created_at as string,
-    kind: value.kind === "COMPANY" ? "COMPANY" : "RESUME",
+    kind: value.kind === "COMPANY" || value.kind === "INTERVIEW" ? value.kind : "RESUME",
   };
 }
 

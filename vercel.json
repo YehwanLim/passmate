@@ -13,7 +13,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://accounts.google.com/gsi/client; frame-src 'self' https://accounts.google.com/gsi/; connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://accounts.google.com/gsi/; img-src 'self' data: https://*.supabase.co https://lh3.googleusercontent.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://accounts.google.com/gsi/style; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://accounts.google.com/gsi/client; frame-src 'self' https://accounts.google.com/gsi/; connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://accounts.google.com/gsi/ wss://generativelanguage.googleapis.com; img-src 'self' data: https://*.supabase.co https://lh3.googleusercontent.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://accounts.google.com/gsi/style; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; upgrade-insecure-requests"
         },
         {
           "key": "Strict-Transport-Security",
@@ -29,7 +29,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+          "value": "camera=(self), microphone=(self), geolocation=(), payment=(), usb=()"
         },
         {
           "key": "X-Frame-Options",
@@ -90,6 +90,10 @@
     {
       "source": "/api/analyze/company",
       "destination": "/api/analyze?kind=company"
+    },
+    {
+      "source": "/api/analyze/interview-feedback",
+      "destination": "/api/analyze?interview_feedback=1"
     },
     {
       "source": "/report-new",

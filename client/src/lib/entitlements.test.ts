@@ -38,12 +38,15 @@ describe("entitlements client", () => {
       groblePaymentUrl: null,
       // 구버전 서버 응답에 없으면 "미설정"으로 읽는다
       grobleSinglePaymentUrl: null,
-      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null },
+      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null, interview: null, interview3: null },
       // 응답에 없으면 "아직 안 받음"으로 읽는다
       feedbackRewardClaimed: false,
       // 구버전 서버 응답에 없으면 기업 분석은 "꺼짐·0"으로 읽는다
       companyAnalysisEnabled: false,
       companyRemaining: 0,
+      // 구버전 서버 응답에 없으면 AI 면접 연습도 "꺼짐·0"으로 읽는다
+      interviewEnabled: false,
+      interviewRemaining: 0,
       // 구버전 서버 응답에 없으면 무료 AI 도구 칸은 숨긴다
       freeTools: null,
     });
@@ -142,7 +145,7 @@ describe("entitlements client", () => {
 
     const summary = await fetchEntitlementSummary("access-token", fetcher);
     expect(summary.checkoutUrls).toEqual({
-      single: null, company: null, standard: "https://www.groble.im/payment/4SGBV5", premium: "https://www.groble.im/payment/PRM", triple: null,
+      single: null, company: null, standard: "https://www.groble.im/payment/4SGBV5", premium: "https://www.groble.im/payment/PRM", triple: null, interview: null, interview3: null,
     });
   });
 
@@ -270,7 +273,7 @@ describe("fetchSalesAvailability", () => {
     expect(fetch).toHaveBeenCalledWith("/api/entitlements?availability=1");
     expect(availability).toEqual({
       companyAnalysisEnabled: true,
-      purchasable: { single: true, company: false, standard: false, premium: false, triple: false },
+      purchasable: { single: true, company: false, standard: false, premium: false, triple: false, interview: false, interview3: false },
     });
   });
 

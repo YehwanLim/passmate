@@ -55,7 +55,7 @@ describe("admin dashboard — 결제 요약", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.paymentSummary.total).toBe(3);
     expect(res.body.paymentSummary.byProduct).toEqual({
-      SINGLE: 1, COMPANY_SINGLE: 0, STANDARD: 0, PREMIUM: 0, TRIPLE: 2, UNKNOWN: 0,
+      SINGLE: 1, COMPANY_SINGLE: 0, STANDARD: 0, PREMIUM: 0, TRIPLE: 2, INTERVIEW_SINGLE: 0, INTERVIEW_TRIPLE: 0, UNKNOWN: 0,
     });
   });
 
@@ -90,7 +90,7 @@ describe("admin dashboard — 결제 요약", () => {
     expect(res.body.paymentSummary).toEqual({
       total: 0,
       today: 0,
-      byProduct: { SINGLE: 0, COMPANY_SINGLE: 0, STANDARD: 0, PREMIUM: 0, TRIPLE: 0, UNKNOWN: 0 },
+      byProduct: { SINGLE: 0, COMPANY_SINGLE: 0, STANDARD: 0, PREMIUM: 0, TRIPLE: 0, INTERVIEW_SINGLE: 0, INTERVIEW_TRIPLE: 0, UNKNOWN: 0 },
     });
   });
 
@@ -107,7 +107,7 @@ describe("admin dashboard — 결제 요약", () => {
     await dashboardHandler({ method: "GET", query: {} }, res);
 
     expect(res.body.paymentSummary.byProduct).toEqual({
-      SINGLE: 0, COMPANY_SINGLE: 0, STANDARD: 2, PREMIUM: 0, TRIPLE: 0, UNKNOWN: 0,
+      SINGLE: 0, COMPANY_SINGLE: 0, STANDARD: 2, PREMIUM: 0, TRIPLE: 0, INTERVIEW_SINGLE: 0, INTERVIEW_TRIPLE: 0, UNKNOWN: 0,
     });
   });
 
@@ -128,7 +128,7 @@ describe("admin dashboard — 결제 요약", () => {
     expect(res.body.paymentChart.at(-1)).toEqual({
       date: "09/10",
       count: 2,
-      byProduct: { SINGLE: 1, COMPANY_SINGLE: 0, STANDARD: 0, PREMIUM: 0, TRIPLE: 1, UNKNOWN: 0 },
+      byProduct: { SINGLE: 1, COMPANY_SINGLE: 0, STANDARD: 0, PREMIUM: 0, TRIPLE: 1, INTERVIEW_SINGLE: 0, INTERVIEW_TRIPLE: 0, UNKNOWN: 0 },
     });
     expect(res.body.paymentChart.reduce((sum, point) => sum + point.count, 0)).toBe(2);
   });

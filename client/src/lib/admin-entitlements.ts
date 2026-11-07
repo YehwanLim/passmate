@@ -4,6 +4,8 @@ export interface PremiumSalesSettings {
   premiumEnabled: boolean;
   /** 기업 분석 리포트 생성·판매 스위치. 구버전 서버 응답에 없으면 false. */
   companyAnalysisEnabled: boolean;
+  /** AI 면접 연습 스위치. 꺼져 있으면 리포트 카드가 "준비 중"으로 보이고 세션을 만들 수 없다. */
+  interviewEnabled: boolean;
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -43,6 +45,7 @@ async function requestPremiumSalesSettings(
   return {
     premiumEnabled: payload.premiumEnabled,
     companyAnalysisEnabled: payload.companyAnalysisEnabled === true,
+    interviewEnabled: payload.interviewEnabled === true,
   };
 }
 
@@ -68,5 +71,14 @@ export function updateCompanyAnalysisEnabled(
   return requestPremiumSalesSettings(
     { method: "PATCH", body: JSON.stringify({ companyAnalysisEnabled }) },
     "기업 분석 스위치를 변경하지 못했습니다.",
+  );
+}
+
+export function updateInterviewEnabled(
+  interviewEnabled: boolean,
+): Promise<PremiumSalesSettings> {
+  return requestPremiumSalesSettings(
+    { method: "PATCH", body: JSON.stringify({ interviewEnabled }) },
+    "AI 면접 연습 스위치를 변경하지 못했습니다.",
   );
 }

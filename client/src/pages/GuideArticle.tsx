@@ -1,6 +1,7 @@
 import { Suspense, useLayoutEffect } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Link, useParams } from "wouter";
+import { ContentCtaBar } from "@/components/ContentCtaBar";
 import { GuideCover } from "@/components/guide/GuideCover";
 import { GuideCtaCard } from "@/components/guide/GuideCtaCard";
 import { GuideLayout } from "@/components/guide/GuideLayout";
@@ -12,6 +13,7 @@ import { applyDocumentMeta, GUIDE_INDEX_PATH, SEO_ROUTES } from "@/lib/seo";
 import NotFound from "./NotFound";
 
 const RELATED_COUNT = 3;
+const END_CTA_ID = "guide-end-cta";
 
 // 흰 바탕에서 길게 읽는 본문: 17px·줄 간격 1.8, 인용은 왼쪽 줄 대신 회색 판, 링크는 브랜드 글씨 + 밑줄.
 const PROSE_CLASS =
@@ -51,6 +53,8 @@ export default function GuideArticle() {
   const metaLine = formatDate(guide.updated, "ymd-dot");
   // "앞부분, 뒷부분" 제목은 앞부분을 한 덩어리로 묶어, 넓은 화면에서 쉼표 앞 단어 하나만 다음 줄로 떨어지지 않게 한다.
   const commaAt = guide.title.indexOf(", ");
+  // 회사를 다루는 글(frontmatter company)이면 분석 폼에 그 회사 이름을 채워 보낸다.
+  const analyzeHref = guide.company ? `/analyze?company=${encodeURIComponent(guide.company)}` : "/analyze";
 
   return (
     <GuideLayout surface="white">
@@ -85,6 +89,9 @@ export default function GuideArticle() {
           </Suspense>
 
           <GuideCtaCard
+            id={END_CTA_ID}
+            analyzeHref={analyzeHref}
+            trackSlug={guide.slug}
             className="mt-12 bg-fill"
             title="다 쓴 자소서, 내기 전에 한 번 읽혀 보세요"
             body="지원 회사와 문항을 넣으면 채용 담당자가 읽는 순서대로 첫인상과 고칠 곳을 짚어 드려요. 첫 분석은 무료예요."
@@ -111,6 +118,8 @@ export default function GuideArticle() {
           </aside>
         )}
       </div>
+
+      <ContentCtaBar company={guide.company} href={analyzeHref} where={`guide-bar:${guide.slug}`} endId={END_CTA_ID} />
     </GuideLayout>
   );
 }

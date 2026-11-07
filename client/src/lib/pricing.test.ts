@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  INTERVIEW_PRODUCT_KEYS,
   PRICING,
   PRODUCT_KEY_BY_PRODUCT,
   PURCHASE_PRODUCT_KEYS,
@@ -95,7 +96,7 @@ describe("tier pricing", () => {
   });
 
   it("maps server product keys to pricing keys and labels", () => {
-    expect(PRODUCT_KEY_BY_PRODUCT).toEqual({ SINGLE: "single", COMPANY_SINGLE: "company", STANDARD: "standard", PREMIUM: "premium", TRIPLE: "triple" });
+    expect(PRODUCT_KEY_BY_PRODUCT).toEqual({ SINGLE: "single", COMPANY_SINGLE: "company", STANDARD: "standard", PREMIUM: "premium", TRIPLE: "triple", INTERVIEW_SINGLE: "interview", INTERVIEW_TRIPLE: "interview3" });
     expect(productLabel("STANDARD")).toBe("스탠다드");
     expect(productLabel("PREMIUM")).toBe("프리미엄");
     expect(productLabel("COMPANY_SINGLE")).toBe("기업 분석 1회");
@@ -105,6 +106,14 @@ describe("tier pricing", () => {
   it("lists the tiers in ascending order with the basic tier offering a choice", () => {
     expect(TIERS.map((tier) => tier.key)).toEqual(["basic", "standard", "premium"]);
     expect(TIERS[0].products).toEqual(["single", "company"]);
-    expect(PURCHASE_PRODUCT_KEYS).toEqual(["single", "company", "standard", "premium", "triple"]);
+    expect(PURCHASE_PRODUCT_KEYS).toEqual(["single", "company", "standard", "premium", "triple", "interview", "interview3"]);
+    // 면접 이용권은 티어 카드 밖(이용권 페이지 #interview 칸)이다. 1회 4,900 · 3회 9,900(회당 3,300).
+    expect(TIERS.flatMap((tier) => tier.products)).not.toContain("interview");
+    expect(INTERVIEW_PRODUCT_KEYS).toEqual(["interview", "interview3"]);
+    expect(productLabel("INTERVIEW_SINGLE")).toBe("AI 면접 연습 1회");
+    expect(productLabel("INTERVIEW_TRIPLE")).toBe("AI 면접 연습 3회");
+    expect(PRICING.interview.salePrice).toBe(4_900);
+    expect(PRICING.interview3.salePrice).toBe(9_900);
+    expect(Math.round(PRICING.interview3.salePrice / (PRICING.interview3.interviewUses ?? 1))).toBe(3_300);
   });
 });

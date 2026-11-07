@@ -2,6 +2,7 @@
 title: 포스코인터내셔널 자소서 문항, 꿈과 직무 역량은 매번 나와요
 description: 2024년부터 네 번의 포스코인터내셔널 신입 자소서 문항을 모아 봤어요. 식량 영업에 지원해 면접에서 받은 질문으로 두 문항을 풀었어요.
 category: 자소서
+company: 포스코인터내셔널
 coverStyle: quote
 coverLabel: 자소서 문항 · 포스코인터내셔널
 coverQuestion: 포스코인터내셔널에서\n이루고 싶은 꿈

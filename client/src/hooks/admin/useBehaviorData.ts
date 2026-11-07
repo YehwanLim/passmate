@@ -5,6 +5,14 @@ import { useAdminResource } from "./useAdminResource";
 export interface FunnelStep { key: string; label: string; count: number; mobile: number | null; desktop: number | null; }
 export interface BehaviorSourceRow { source: string; visitors: number; formStarts: number; signups: number; }
 export interface BehaviorRetention { visitors: number; returningVisitors: number; signups: number; returningSignups: number; }
+/** 방문(탭 세션) 한 번의 체류 시간. 측정된 방문이 없으면 초 값은 null. */
+export interface BehaviorEngagedTime {
+  visitors: number;
+  measured: number;
+  medianSeconds: number | null;
+  averageSeconds: number | null;
+  buckets: { label: string; count: number }[];
+}
 export interface BehaviorLogin {
   visitors: number;
   inAppVisitors: number;
@@ -18,6 +26,7 @@ export interface BehaviorData {
   funnel: FunnelStep[];
   sources: BehaviorSourceRow[];
   retention: BehaviorRetention;
+  engagedTime: BehaviorEngagedTime;
   login: BehaviorLogin;
   features: FeatureUsageRow[];
 }

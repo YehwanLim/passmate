@@ -56,7 +56,7 @@ describe("SiteHeader", () => {
     expect(SITE_NAV_ITEMS.map(item => item.label)).toEqual(["채용 공고", "분석하기", "취업 가이드", "이용권", "마이페이지"]);
     render(<SiteHeader />);
     const hrefs = screen.getAllByRole("link").map(link => link.getAttribute("href"));
-    for (const href of ["/jobs", "/analyze", "/company-analysis", "/my", "/my#experiences", "/my#company", "/my/entitlements"]) {
+    for (const href of ["/jobs", "/analyze", "/company-analysis", "/entitlements#interview", "/my", "/my#experiences", "/my#company", "/my/entitlements"]) {
       expect(hrefs, href).toContain(href);
     }
   });

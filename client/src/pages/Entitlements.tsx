@@ -16,6 +16,7 @@ import {
 } from "@/lib/entitlements";
 import {
   COMPANY_REPORT_INCLUDED_FEATURES,
+  INTERVIEW_PRODUCT_KEYS,
   PRICING,
   REPORT_INCLUDED_FEATURES,
   TIERS,
@@ -23,7 +24,7 @@ import {
   savingsFor,
 } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase";
-import { PAYMENT_INQUIRY_MAILTO, type BasicChoice } from "@/copy/entitlementsCopy";
+import { INTERVIEW_PLAN_COPY, PAYMENT_INQUIRY_MAILTO, type BasicChoice } from "@/copy/entitlementsCopy";
 
 export default function Entitlements() {
   const [, navigate] = useLocation();
@@ -97,8 +98,9 @@ export default function Entitlements() {
       document.getElementById("basic")?.scrollIntoView({ block: "start" });
       return;
     }
+    // /entitlements#interview — 리포트의 면접 카드·상단 메뉴에서 면접 이용권 칸으로 바로 온다.
     const targetId = window.location.hash.slice(1);
-    if (TIERS.some((tier) => tier.key === targetId)) {
+    if (TIERS.some((tier) => tier.key === targetId) || targetId === "interview") {
       document.getElementById(targetId)?.scrollIntoView({ block: "start" });
     }
   }, []);
@@ -246,6 +248,42 @@ export default function Entitlements() {
                   세 곳을 준비하면 프리미엄이 따로 살 때보다 {formatKrw(savingsFor(PRICING.premium))} 저렴합니다.
                 </p>
               </div>
+            </div>
+
+            {/* AI 면접 연습 이용권 — 분석 티어와 별개 상품(11-05). 리포트를 받은 뒤 시작하므로 티어 카드 아래 한 칸. */}
+            <div id="interview" className="rounded-[20px] bg-surface px-6 py-7 md:px-8">
+              <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">{INTERVIEW_PLAN_COPY.heading}</h2>
+              <p className="mt-1 text-[14px] text-ink-4">{INTERVIEW_PLAN_COPY.lead}</p>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {INTERVIEW_PRODUCT_KEYS.map((product) => {
+                  const plan = PRICING[product];
+                  const uses = plan.interviewUses ?? 1;
+                  return (
+                    <div key={product} className="flex flex-col rounded-[16px] border border-line-soft px-5 py-5">
+                      <p className="text-[15px] font-bold text-ink">{plan.label}</p>
+                      <p className="mt-2 text-[28px] font-extrabold leading-none tracking-[-0.03em] text-ink">
+                        {formatKrw(plan.salePrice)}
+                        <span className="ml-1.5 text-sm font-medium tracking-normal text-ink-4">/ {uses}회</span>
+                      </p>
+                      {uses > 1 ? (
+                        <p className="mt-2 text-[13px] font-extrabold text-brand-ink">1회당 {formatKrw(Math.round(plan.salePrice / uses))}</p>
+                      ) : null}
+                      <p className="mb-4 mt-3 flex-1 text-[14px] leading-relaxed text-ink-3">{INTERVIEW_PLAN_COPY.what[product]}</p>
+                      <PlanPurchaseButton
+                        product={product}
+                        authLoading={authLoading}
+                        isAuthenticated={isAuthenticated}
+                        isLoading={isLoading}
+                        availability={availability}
+                        canPurchase={canPurchase(product)}
+                        onBuy={startCheckout}
+                        onLogin={() => navigate(getLoginRedirectPath("/entitlements#interview"))}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-4 text-[13px] text-ink-4">{INTERVIEW_PLAN_COPY.note}</p>
             </div>
 
             {purchaseStarted && (
