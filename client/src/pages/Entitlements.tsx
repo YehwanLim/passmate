@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useLocationProperty } from "wouter/use-browser-location";
 import { motion } from "framer-motion";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
@@ -21,7 +22,6 @@ import {
   REPORT_INCLUDED_FEATURES,
   TIERS,
   formatKrw,
-  savingsFor,
 } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase";
 import { INTERVIEW_PLAN_COPY, PAYMENT_INQUIRY_MAILTO, type BasicChoice } from "@/copy/entitlementsCopy";
@@ -35,6 +35,7 @@ export default function Entitlements() {
   const [isLoading, setIsLoading] = useState(true);
   const [purchaseStarted, setPurchaseStarted] = useState(false);
   const [basicChoice, setBasicChoice] = useState<BasicChoice>("single");
+  const hash = useLocationProperty(() => window.location.hash, () => "");
   const [availability, setAvailability] = useState<SalesAvailability | null>(null);
 
   const getAccessToken = useCallback(async () => {
@@ -93,17 +94,18 @@ export default function Entitlements() {
   // /entitlements#company — 기업 분석 이용권이 없어서 온 사용자는 베이직 카드의 기업 분석을 바로 고른 상태로 만난다.
   // /entitlements#standard·#premium — 소진 모달 등에서 추천 티어로 바로 스크롤한다.
   useEffect(() => {
-    if (window.location.hash === "#company") {
+    if (hash === "#company") {
       setBasicChoice("company");
       document.getElementById("basic")?.scrollIntoView({ block: "start" });
       return;
     }
     // /entitlements#interview — 리포트의 면접 카드·상단 메뉴에서 면접 이용권 칸으로 바로 온다.
-    const targetId = window.location.hash.slice(1);
+    const targetId = hash.slice(1);
     if (TIERS.some((tier) => tier.key === targetId) || targetId === "interview") {
       document.getElementById(targetId)?.scrollIntoView({ block: "start" });
     }
-  }, []);
+    // 이미 이 화면에서 상단 '이용권' 펼침 메뉴를 눌러 해시만 바뀌어도 그 칸으로 간다(11-08).
+  }, [hash]);
 
   const startCheckout = useCallback(
     (product: PurchaseProductKey) => {
@@ -140,11 +142,20 @@ export default function Entitlements() {
           <h1 className="text-[28px] font-bold tracking-[-0.03em] text-ink">
             이용권
           </h1>
+          {/* 무료 체험은 파는 물건이 아니라 입구다 — 따로 상자를 두지 않고 제목 아래 한 줄로(11-08). */}
           <p className="mt-1.5 text-[15px] text-ink-4">
-            필요한 만큼만 사세요. 어떤 이용권이든 자소서 리포트는 같습니다.
+            첫 분석은 무료예요.{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/analyze")}
+              className="inline-flex items-center gap-1 font-semibold text-brand-ink underline-offset-4 transition-colors hover:underline"
+            >
+              무료로 분석하기
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
             {isAuthenticated && (
               <>
-                {" "}
+                <span className="mx-2 text-line" aria-hidden="true">|</span>
                 <button
                   type="button"
                   onClick={() => navigate("/my/entitlements")}
@@ -157,7 +168,7 @@ export default function Entitlements() {
           </p>
         </motion.div>
 
-        <section className="mt-8 space-y-10" aria-live="polite">
+        <section className="mt-12 space-y-14" aria-live="polite">
           {/* 보유 현황은 /my/entitlements로 분리 — 여기서는 구매 게이트 복구용 에러만 보여준다. */}
           {isAuthenticated && !isLoading && error && (
             <div className="flex items-center justify-between gap-4 rounded-[16px] bg-danger-soft px-4 py-3">
@@ -173,31 +184,60 @@ export default function Entitlements() {
             </div>
           )}
 
-          {/* 가격 카드 — 로그인 여부와 상관없이 항상 보여준다. */}
-          <div className="space-y-6">
-            {/* 무료 체험은 파는 물건이 아니라 입구다 — 카드 열에서 빼서 한 줄로. */}
-            <div className="flex flex-col gap-3 rounded-[20px] bg-surface px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[15px] font-semibold text-ink">첫 분석은 무료예요</p>
-              <button
-                type="button"
-                onClick={() => navigate("/analyze")}
-                className="inline-flex h-10 shrink-0 items-center gap-1.5 self-start rounded-[10px] bg-brand-soft px-4 text-[14px] font-semibold text-brand-ink transition-colors hover:bg-[#dceaff] sm:self-auto"
-              >
-                무료로 분석하기
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </div>
+          {/* 가격 카드 — 로그인 여부와 상관없이 항상 보여준다. 사는 물건(분석 → 면접)을 먼저, 구성 설명은 맨 아래로. */}
+          <div>
+            <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">자소서·기업 분석</h2>
+            <p className="mt-1 text-[14px] text-ink-4">필요한 만큼만 사세요. 어떤 이용권이든 리포트 내용은 같아요.</p>
+            <div className="mt-5 grid gap-5 md:grid-cols-3">
+            {TIERS.map((tier) => {
+              const product: PurchaseProductKey = tier.key === "basic" ? basicChoice : tier.products[0];
+              return (
+                <TierCard
+                  key={tier.key}
+                  tier={tier}
+                  basicChoice={basicChoice}
+                  onBasicChoice={setBasicChoice}
+                >
+                  <PlanPurchaseButton
+                    product={product}
+                    authLoading={authLoading}
+                    isAuthenticated={isAuthenticated}
+                    isLoading={isLoading}
+                    availability={availability}
+                    canPurchase={canPurchase(product)}
+                    onBuy={startCheckout}
+                    onLogin={() => navigate(getLoginRedirectPath("/entitlements"))}
+                  />
+                </TierCard>
+              );
+            })}
+          </div>
+        </div>
 
-            <div className="grid gap-5 pt-1 md:grid-cols-3">
-              {TIERS.map((tier) => {
-                const product: PurchaseProductKey = tier.key === "basic" ? basicChoice : tier.products[0];
+        {/* AI 모의 면접 이용권 — 분석 티어와 별개 상품(11-05). 카드 폭을 위 분석 카드(3칸)와 맞추려고 3칸 격자에 2장만 둔다 — 마지막 칸은 비워 둔다(11-09 사용자 결정). */}
+        <div id="interview" className="scroll-mt-24">
+          <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">{INTERVIEW_PLAN_COPY.heading}</h2>
+          <p className="mt-1 text-[14px] text-ink-4">{INTERVIEW_PLAN_COPY.lead}</p>
+          <div className="mt-5 grid gap-5 md:grid-cols-3">
+              {INTERVIEW_PRODUCT_KEYS.map((product) => {
+                const plan = PRICING[product];
+                const uses = plan.interviewUses ?? 1;
                 return (
-                  <TierCard
-                    key={tier.key}
-                    tier={tier}
-                    basicChoice={basicChoice}
-                    onBasicChoice={setBasicChoice}
-                  >
+                  <div key={product} className="flex flex-col rounded-[28px] bg-surface p-7 md:p-8">
+                    <p className="text-[17px] font-bold tracking-[-0.02em] text-ink">{plan.label}</p>
+                    <p className="mt-4 text-[36px] font-extrabold leading-none tracking-[-0.03em] text-ink">
+                      {formatKrw(plan.salePrice)}
+                      <span className="ml-1.5 text-[14px] font-medium tracking-normal text-ink-4">/ {uses}회</span>
+                    </p>
+                    <p className="mt-2 text-[13px] text-ink-4 empty:hidden md:min-h-[20px] md:empty:block">
+                      {uses > 1 && (
+                        <>
+                          1회당{" "}
+                          <span className="font-semibold text-ink-2">{formatKrw(Math.round(plan.salePrice / uses))}</span>
+                        </>
+                      )}
+                    </p>
+                    <p className="mb-6 mt-4 flex-1 text-[14px] leading-[1.7] text-ink-3">{INTERVIEW_PLAN_COPY.what[product]}</p>
                     <PlanPurchaseButton
                       product={product}
                       authLoading={authLoading}
@@ -206,86 +246,39 @@ export default function Entitlements() {
                       availability={availability}
                       canPurchase={canPurchase(product)}
                       onBuy={startCheckout}
-                      onLogin={() => navigate(getLoginRedirectPath("/entitlements"))}
+                      onLogin={() => navigate(getLoginRedirectPath("/entitlements#interview"))}
                     />
-                  </TierCard>
+                  </div>
                 );
               })}
             </div>
+            <p className="mt-4 text-[13px] text-ink-4">{INTERVIEW_PLAN_COPY.note}</p>
+          </div>
 
-            {/* 리포트 구성 — 체크 목록은 배경에 묻혀서, 가격 카드와 같은 흰 카드에 제목을 크게 두고 항목은 줄로 나눈다. */}
-            <div className="grid gap-5 pt-5 md:grid-cols-2">
-              <div className="rounded-[20px] bg-surface px-6 py-7 md:px-8">
-                <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">
-                  자소서 진단 리포트
-                </h2>
-                <p className="mt-1 text-[14px] text-ink-4">
-                  어떤 이용권이든 내용은 같아요
-                </p>
-                <ul className="mt-5 divide-y divide-line-soft border-t border-line-soft">
-                  {REPORT_INCLUDED_FEATURES.map((feature) => (
-                    <li key={feature} className="py-3 text-[15px] text-ink-2">
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="rounded-[20px] bg-surface px-6 py-7 md:px-8">
-                <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">
-                  기업 분석 리포트
-                </h2>
-                <p className="mt-1 text-[14px] text-ink-4">
-                  스탠다드·프리미엄에 포함, 베이직에서 따로 고를 수 있어요
-                </p>
-                <ul className="mt-5 divide-y divide-line-soft border-t border-line-soft">
-                  {COMPANY_REPORT_INCLUDED_FEATURES.map((feature) => (
-                    <li key={feature} className="py-3 text-[15px] text-ink-2">
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-[13px] text-ink-4">
-                  세 곳을 준비하면 프리미엄이 따로 살 때보다 {formatKrw(savingsFor(PRICING.premium))} 저렴합니다.
-                </p>
-              </div>
+          {/* 리포트 구성 — 고를 때 참고만 하는 정보라 맨 아래. 사는 카드와 구분되게 상자·구분선 없이 배경 위 두 열 목록으로(11-08). */}
+          <div className="border-t border-line-soft pt-10">
+            <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">리포트에 들어 있는 것</h2>
+            <div className="mt-5 grid gap-x-12 gap-y-8 md:grid-cols-2">
+              {[
+                { title: "자소서 진단 리포트", items: REPORT_INCLUDED_FEATURES },
+                { title: "기업 분석 리포트", items: COMPANY_REPORT_INCLUDED_FEATURES },
+              ].map((report) => (
+                <div key={report.title}>
+                  <h3 className="text-[15px] font-bold text-ink">{report.title}</h3>
+                  <ul className="mt-3 space-y-2">
+                    {report.items.map((feature) => (
+                      <li key={feature} className="flex gap-2.5 text-[14px] leading-[1.6] text-ink-3">
+                        <span className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-ink-4" aria-hidden="true" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* AI 면접 연습 이용권 — 분석 티어와 별개 상품(11-05). 리포트를 받은 뒤 시작하므로 티어 카드 아래 한 칸. */}
-            <div id="interview" className="rounded-[20px] bg-surface px-6 py-7 md:px-8">
-              <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">{INTERVIEW_PLAN_COPY.heading}</h2>
-              <p className="mt-1 text-[14px] text-ink-4">{INTERVIEW_PLAN_COPY.lead}</p>
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                {INTERVIEW_PRODUCT_KEYS.map((product) => {
-                  const plan = PRICING[product];
-                  const uses = plan.interviewUses ?? 1;
-                  return (
-                    <div key={product} className="flex flex-col rounded-[16px] border border-line-soft px-5 py-5">
-                      <p className="text-[15px] font-bold text-ink">{plan.label}</p>
-                      <p className="mt-2 text-[28px] font-extrabold leading-none tracking-[-0.03em] text-ink">
-                        {formatKrw(plan.salePrice)}
-                        <span className="ml-1.5 text-sm font-medium tracking-normal text-ink-4">/ {uses}회</span>
-                      </p>
-                      {uses > 1 ? (
-                        <p className="mt-2 text-[13px] font-extrabold text-brand-ink">1회당 {formatKrw(Math.round(plan.salePrice / uses))}</p>
-                      ) : null}
-                      <p className="mb-4 mt-3 flex-1 text-[14px] leading-relaxed text-ink-3">{INTERVIEW_PLAN_COPY.what[product]}</p>
-                      <PlanPurchaseButton
-                        product={product}
-                        authLoading={authLoading}
-                        isAuthenticated={isAuthenticated}
-                        isLoading={isLoading}
-                        availability={availability}
-                        canPurchase={canPurchase(product)}
-                        onBuy={startCheckout}
-                        onLogin={() => navigate(getLoginRedirectPath("/entitlements#interview"))}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="mt-4 text-[13px] text-ink-4">{INTERVIEW_PLAN_COPY.note}</p>
-            </div>
-
+          <div className="space-y-4">
             {purchaseStarted && (
               <div className="flex items-center justify-between gap-4 rounded-[16px] bg-surface px-5 py-4">
                 <p className="text-[13px] text-ink-3">

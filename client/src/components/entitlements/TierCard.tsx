@@ -53,7 +53,7 @@ export function TierCard({
       </div>
 
       {/* 베이직만 토글이 들어가 아래 가격 줄이 밀리므로 구성 안내 영역 높이를 카드마다 맞춘다. */}
-      <div className="mt-2.5 min-h-[62px]">
+      <div className="mt-2.5 md:min-h-[62px]">
         {tier.key === "basic" ? (
           <div>
           <p className="text-[12px] font-medium text-ink-4">
@@ -94,16 +94,15 @@ export function TierCard({
         </span>
       </p>
 
-      {hasStrike ? (
-        <p className="mt-2 whitespace-nowrap text-[13px] text-ink-4 line-through">
-          {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
-        </p>
-      ) : (
-        <p className="mt-2 text-[13px] text-ink-4">정가 판매</p>
-      )}
-
-      <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap text-[13px] text-ink-4">
-        {totalUses > 0 && (
+      {/* 할인 전 가격과 1회당 가격을 한 줄로 — 1회짜리는 1회당이 곧 가격이라 줄을 비워 높이만 맞춘다. */}
+      <p className="mt-2 whitespace-nowrap empty:hidden md:min-h-[20px] md:empty:block text-[13px] text-ink-4">
+        {hasStrike && (
+          <span className="line-through">
+            {tier.key === "basic" ? "정가" : "따로 사면"} {formatKrw(plan.listPrice)}
+          </span>
+        )}
+        {hasStrike && totalUses > 1 && <span aria-hidden="true"> · </span>}
+        {totalUses > 1 && (
           <span>
             1회당{" "}
             <span className="font-semibold text-ink-2">

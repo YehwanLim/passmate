@@ -90,8 +90,8 @@ describe("Entitlements purchase button", () => {
     expect(screen.getAllByRole("button", { name: /스탠다드 구매하기/ }).length).toBeGreaterThan(0);
     // AI 모의 면접 이용권 칸(#interview): 1회·3회 두 상품이 티어 카드와 별개로 선다.
     expect(document.getElementById("interview")).not.toBeNull();
-    expect(screen.getAllByRole("button", { name: /AI 모의 면접 1회 구매하기/ }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /AI 모의 면접 3회 구매하기/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /^모의 면접 1회 구매하기$/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /^모의 면접 3회 구매하기$/ }).length).toBeGreaterThan(0);
   });
 
   it("keeps the purchase button disabled until the checkout URL is known", async () => {
