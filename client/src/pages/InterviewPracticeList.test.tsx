@@ -9,8 +9,13 @@ const mocks = vi.hoisted(() => ({
   listInterviewSessions: vi.fn(async () => []),
   listApplications: vi.fn(async () => [] as unknown[]),
   fetchApplication: vi.fn(),
+  fetchAnalysisSourceText: vi.fn(),
 }));
-vi.mock("@/lib/workspace", () => ({ listApplications: mocks.listApplications, fetchApplication: mocks.fetchApplication }));
+vi.mock("@/lib/workspace", () => ({
+  listApplications: mocks.listApplications,
+  fetchApplication: mocks.fetchApplication,
+  fetchAnalysisSourceText: mocks.fetchAnalysisSourceText,
+}));
 vi.mock("wouter", () => ({
   useLocation: () => ["/my/interview-practice", mocks.navigate],
   useSearch: () => "",
@@ -69,7 +74,7 @@ describe("AI 모의 면접 소개 화면", () => {
     mocks.auth = { isLoading: false, isAuthenticated: true };
     mocks.listApplications.mockResolvedValue([
       { id: "p1", title: "t1", company_name: "새벽물산", job_role: "영업 관리", kind: "RESUME", answered_count: 2 },
-      { id: "p2", title: "t2", company_name: "빈칸상사", job_role: "기획", kind: "RESUME", answered_count: 0 },
+      { id: "p2", title: "t2", company_name: "빈칸상사", job_role: "기획", kind: "RESUME", answered_count: 0, latest_analysis_id: null },
       { id: "p3", title: "t3", company_name: "기업리포트", job_role: "마케팅", kind: "COMPANY", answered_count: 1 },
     ]);
     mocks.fetchApplication.mockResolvedValue({
@@ -88,6 +93,27 @@ describe("AI 모의 면접 소개 화면", () => {
     expect((screen.getByLabelText("회사") as HTMLInputElement).value).toBe("새벽물산");
     expect((screen.getByLabelText("직무") as HTMLInputElement).value).toBe("영업 관리");
     expect(mocks.fetchApplication).toHaveBeenCalledWith("p1");
+  });
+
+  it("분석 화면에서 바로 분석한 지원서(작업실 문항 없음)는 분석 기록의 글을 불러온다", async () => {
+    mocks.auth = { isLoading: false, isAuthenticated: true };
+    mocks.listApplications.mockResolvedValue([
+      { id: "p9", title: "t9", company_name: "한빛모빌리티", job_role: "서비스 기획", kind: "RESUME", answered_count: 0, latest_analysis_id: "a9" },
+    ]);
+    mocks.fetchAnalysisSourceText.mockResolvedValue({
+      company_name: "한빛모빌리티",
+      job_role: "서비스 기획",
+      question_text: "[문항 1] 지원 동기\n\n[문항 2] 협업 경험",
+      input_text: "[문항 1]\n이동이 편해지는 서비스를 만들고 싶습니다.\n\n[문항 2]\n일정을 맞췄습니다.",
+    });
+    render(<InterviewPracticeList />);
+    const select = (await screen.findByLabelText("저장한 지원서 불러오기")) as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: "p9" } });
+    await waitFor(() => expect((screen.getByLabelText("자기소개서") as HTMLTextAreaElement).value).toBe(
+      "[문항 1] 지원 동기\n이동이 편해지는 서비스를 만들고 싶습니다.\n\n[문항 2] 협업 경험\n일정을 맞췄습니다.",
+    ));
+    expect(mocks.fetchAnalysisSourceText).toHaveBeenCalledWith("a9");
+    expect(mocks.fetchApplication).not.toHaveBeenCalled();
   });
 
   it("지원서를 면접 입력으로 바꿀 때 빈 답은 빼고 순서대로 문항 번호를 붙이며, 쓴 답이 없으면 null", () => {

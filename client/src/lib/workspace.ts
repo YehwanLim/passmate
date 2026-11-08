@@ -153,6 +153,13 @@ export function listApplications(): Promise<ProjectSummary[]> {
   return request("/api/projects");
 }
 
+/** 분석 기록 원문(GET /api/analysis/:id) 중 글을 다시 쓰는 데 필요한 칸만. 소유권은 서버가 본다. */
+export type AnalysisSourceText = { company_name: string | null; job_role: string | null; question_text: string | null; input_text: string | null };
+
+export function fetchAnalysisSourceText(analysisId: string): Promise<AnalysisSourceText> {
+  return request(`/api/analysis/${encodeURIComponent(analysisId)}`);
+}
+
 export function fetchApplication(id: string): Promise<ApplicationDetail> {
   return request(`/api/projects/${encodeURIComponent(id)}`);
 }

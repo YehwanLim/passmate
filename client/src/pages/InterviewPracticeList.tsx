@@ -9,9 +9,9 @@ import SiteHeader from "@/components/SiteHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { INTERVIEW_CARD_COPY, INTERVIEW_MODE_COPY, INTERVIEW_START_COPY } from "@/copy/interviewCopy";
 import { useCreditSummary } from "@/hooks/useCreditSummary";
-import { directSourceFromApplication, loadInterviewDirectDraft, saveInterviewDirectDraft } from "@/lib/interview/directDraft";
+import { directSourceFromAnalysis, directSourceFromApplication, loadInterviewDirectDraft, saveInterviewDirectDraft } from "@/lib/interview/directDraft";
 import { INTERVIEW_DIRECT_LIMITS, listInterviewSessions, type InterviewMode, type InterviewSession } from "@/lib/interview/interviewApi";
-import { fetchApplication, listApplications } from "@/lib/workspace";
+import { fetchAnalysisSourceText, fetchApplication, listApplications } from "@/lib/workspace";
 import type { ProjectSummary } from "@/types/my";
 
 const STATUS_LABEL: Record<InterviewSession["status"], string> = {
@@ -60,7 +60,8 @@ export default function InterviewPracticeList() {
     let alive = true;
     listApplications()
       .then((rows) => {
-        if (alive) setApplications(rows.filter((row) => row.kind !== "COMPANY" && (row.answered_count ?? 0) > 0));
+        // 작업실에서 답을 쓴 지원서 + 분석 화면에서 바로 분석해 글이 분석 기록에만 있는 지원서.
+        if (alive) setApplications(rows.filter((row) => row.kind !== "COMPANY" && ((row.answered_count ?? 0) > 0 || Boolean(row.latest_analysis_id))));
       })
       .catch(() => {});
     return () => { alive = false; };
@@ -72,7 +73,9 @@ export default function InterviewPracticeList() {
     setImporting(true);
     setFormError(null);
     try {
-      const source = directSourceFromApplication(await fetchApplication(id));
+      const picked = applications.find((application) => application.id === id);
+      let source = (picked?.answered_count ?? 0) > 0 ? directSourceFromApplication(await fetchApplication(id)) : null;
+      if (!source && picked?.latest_analysis_id) source = directSourceFromAnalysis(await fetchAnalysisSourceText(picked.latest_analysis_id));
       if (!source) {
         setFormError(INTERVIEW_START_COPY.importEmpty);
         return;
