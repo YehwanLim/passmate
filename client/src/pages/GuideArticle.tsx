@@ -93,8 +93,8 @@ export default function GuideArticle() {
             analyzeHref={analyzeHref}
             trackSlug={guide.slug}
             className="mt-12 bg-fill"
-            title="다 쓴 자소서, 내기 전에 한 번 읽혀 보세요"
-            body="지원 회사와 문항을 넣으면 채용 담당자가 읽는 순서대로 첫인상과 고칠 곳을 짚어 드려요. 첫 분석은 무료예요."
+            title="내 자소서, 인사담당자 눈에는 어떻게 읽힐까요?"
+            body="여러분의 자소서를 분석하고 채용 담당자의 시선으로 고칠 곳과 예상 질문을 알려 드려요. 첫 분석은 무료예요."
             withSample
           />
         </article>
