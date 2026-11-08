@@ -26,6 +26,14 @@ describe("면접관 지시문", () => {
     expect(text).toMatch(/과장된 환영이나 격려는 하지 않습니다/);
   });
 
+  it("조금 차갑게 캐묻되 깎아내리거나 반말·언성은 쓰지 않는다(11-08 사용자: 적당히 무섭지만 겁주지 않게)", () => {
+    const text = buildInterviewerInstruction({ coverLetter: "본문", questions, gaps: [], mode: "FULL" });
+    expect(text).toMatch(/조금 차갑게 느껴지지만, 무례하지는 않습니다/);
+    expect(text).toMatch(/깎아내리거나 비꼬지 않고, 반말이나 언성을 높이는 말은 하지 않습니다/);
+    expect(text).toMatch(/핵심만 짧게 다시 말해 달라고 요청합니다/);
+    expect(text).toMatch(/근거를 한 번 확인합니다/);
+  });
+
   it("자기소개에 시간을 쓰므로 질문은 실전 7개, 짧은 연습 2개까지만 싣는다", () => {
     const full = buildInterviewerInstruction({ coverLetter: "본문", questions, gaps: [], mode: "FULL" });
     const short = buildInterviewerInstruction({ coverLetter: "본문", questions, gaps: [], mode: "SHORT" });
