@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { RouteMeta } from "./components/RouteMeta";
 import { SiteNotices } from "./components/SiteNotices";
+import { InterviewLaunchPopup } from "./components/InterviewLaunchPopup";
 import { VisitTracker } from "./components/VisitTracker";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -67,7 +68,7 @@ function Router() {
         {/* /my/:projectId 보다 먼저 선언해야 "entitlements"·"new"가 projectId로 잡히지 않는다 */}
         <Route path={"/my/entitlements"} component={MyEntitlements} />
         <Route path={"/my/new"} component={NewApplication} />
-        {/* AI 면접 연습(실시간 음성·영상). /my 아래라 noindex·robots 가 함께 적용된다. "start" 는 새 면접 설정 화면이다 */}
+        {/* AI 모의 면접(실시간 음성·영상). /my 아래라 noindex·robots 가 함께 적용된다. "start" 는 새 면접 설정 화면이다 */}
         <Route path={"/my/interview-practice"} component={InterviewPracticeList} />
         <Route path={"/my/interview-practice/:sessionId"} component={InterviewPractice} />
         <Route path={"/my/:projectId"} component={MyAnalyses} />
@@ -106,6 +107,8 @@ function App() {
             <VisitTracker />
             {/* 관리자가 켠 팝업·상단 배너(관리자 화면에서는 안 뜸) */}
             <SiteNotices />
+            {/* AI 모의 면접 출시 안내(랜딩·마이페이지, 기념가 기간에만) */}
+            <InterviewLaunchPopup />
             <Router />
           </TooltipProvider>
         </AuthProvider>

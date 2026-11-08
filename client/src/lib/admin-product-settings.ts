@@ -9,7 +9,7 @@ export interface AdminProductSetting {
   active: boolean;
   resumeCredits: number;
   companyCredits: number;
-  /** AI 면접 연습 이용권 수. 구버전 서버 응답에 없으면 0. */
+  /** AI 모의 면접 이용권 수. 구버전 서버 응답에 없으면 0. */
   interviewCredits: number;
 }
 

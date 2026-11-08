@@ -18,7 +18,7 @@ export type EntitlementSummary = {
   companyAnalysisEnabled: boolean;
   /** 기업 분석 리포트 잔여 크레딧(자소서 remaining 과 별도 풀). 구버전 응답에 없으면 0. */
   companyRemaining: number;
-  /** AI 면접 연습 스위치와 잔여 이용권(별도 풀). 구버전 응답에 없으면 꺼짐·0. */
+  /** AI 모의 면접 스위치와 잔여 이용권(별도 풀). 구버전 응답에 없으면 꺼짐·0. */
   interviewEnabled: boolean;
   interviewRemaining: number;
   /** 크레딧 없이 하루 몇 번 쓰는 AI 도구의 오늘 남은 횟수. 구버전 응답·서버 읽기 실패면 null — 화면은 칸을 숨긴다. */

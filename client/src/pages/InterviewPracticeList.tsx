@@ -20,7 +20,7 @@ function formatDate(iso: string) {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-/** 지난 AI 면접 연습 목록. 리포트별(analysisId)로 좁힐 수 있다. */
+/** 지난 AI 모의 면접 목록. 리포트별(analysisId)로 좁힐 수 있다. */
 export default function InterviewPracticeList() {
   const search = useSearch();
   const analysisId = new URLSearchParams(search).get("analysisId") ?? undefined;
@@ -43,13 +43,20 @@ export default function InterviewPracticeList() {
       <main className="container max-w-2xl pt-10">
         <h1 className="text-[28px] font-bold tracking-[-0.03em]">{INTERVIEW_TITLE}</h1>
         <p className="mt-1.5 text-[15px] text-ink-4">지난 면접의 피드백과 대화 글을 다시 볼 수 있어요.</p>
+        {/* 상단 '마이페이지 > AI 모의 면접 기록'·내 이용권에서 들어온 사람에게 새 면접을 어디서 시작하는지 알려 준다(11-08) */}
+        <p className="mt-1 text-[14px] text-ink-4">
+          새 면접은 자기소개서 리포트의 예상 질문 아래에서 시작해요.{" "}
+          <Link href="/my" className="font-semibold text-brand-ink underline-offset-4 hover:underline">
+            내 자기소개서 보기
+          </Link>
+        </p>
         <section className="mt-8" aria-live="polite">
           {error ? (
             <p className="rounded-2xl bg-surface px-6 py-5 text-[15px] text-danger">{error}</p>
           ) : sessions === null ? (
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-ink-4" aria-hidden="true" /></div>
           ) : sessions.length === 0 ? (
-            <p className="rounded-2xl bg-surface px-6 py-5 text-[15px] text-ink-4">아직 한 면접이 없어요. 리포트의 예상 질문 아래에서 시작할 수 있어요.</p>
+            <p className="rounded-2xl bg-surface px-6 py-5 text-[15px] text-ink-4">아직 본 면접이 없어요.</p>
           ) : (
             <ul className="space-y-3">
               {sessions.map((session) => (

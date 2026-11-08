@@ -18,6 +18,7 @@ describe("HOME_NAV_ITEMS", () => {
     expect(HOME_NAV_ITEMS.map(item => item.label)).toEqual([
       "채용 공고",
       "분석하기",
+      "AI 모의 면접",
       "취업 가이드",
       "이용권",
       "마이페이지",
@@ -31,11 +32,11 @@ describe("HOME_NAV_ITEMS", () => {
   });
 
   it("routes the purchase nav item to the standalone entitlements page", () => {
-    expect(HOME_NAV_ITEMS).toContainEqual({
+    expect(HOME_NAV_ITEMS).toContainEqual(expect.objectContaining({
       label: "이용권",
       type: "route",
       target: "/entitlements",
-    });
+    }));
   });
 
   it("does not expose coming soon navigation states", () => {

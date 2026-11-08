@@ -35,10 +35,10 @@ type Phase = "loading" | "setup" | "live" | "after" | "error";
 const API_ERROR_COPY: Record<string, string> = {
   INTERVIEW_CREDITS_EXHAUSTED: "쓸 수 있는 면접 이용권이 없어요.",
   INTERVIEW_IN_PROGRESS: "진행 중인 면접이 있어요. 끝낸 뒤 다시 시작해 주세요.",
-  INTERVIEW_DISABLED: "지금은 면접 연습을 열 수 없어요.",
+  INTERVIEW_DISABLED: "지금은 모의 면접을 열 수 없어요.",
   INTERVIEW_SOURCE_UNAVAILABLE: "이 리포트에는 예상 질문이 없어 면접을 만들 수 없어요.",
   INTERVIEW_TOKEN_FAILED: "면접관을 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
-  INTERVIEW_CAPACITY: "오늘은 면접 연습이 꽉 찼어요. 내일 다시 시도해 주세요. 이용권은 쓰이지 않았어요.",
+  INTERVIEW_CAPACITY: "오늘은 모의 면접이 꽉 찼어요. 내일 다시 시도해 주세요. 이용권은 쓰이지 않았어요.",
   INTERVIEW_FEEDBACK_EXHAUSTED: "피드백 생성을 세 번 시도해 더는 만들 수 없어요.",
   INTERVIEW_TRANSCRIPT_EMPTY: "기록된 답변이 없어 피드백을 만들 수 없어요.",
   INTERVIEW_CONSENT_REQUIRED: "안내 문구가 바뀌었어요. 새로고침한 뒤 다시 동의해 주세요.",
@@ -68,7 +68,7 @@ function formatClock(ms: number) {
 }
 
 /**
- * AI 면접 연습 한 화면: 장비 점검·동의(setup) → 실시간 면접(live) → 피드백(after).
+ * AI 모의 면접 한 화면: 장비 점검·동의(setup) → 실시간 면접(live) → 피드백(after).
  * /my/interview-practice/start?analysisId=&mode= 로 들어와 세션을 만들면 주소만 /my/interview-practice/:id 로 바꾸고 같은 컴포넌트가 이어 간다.
  * 끝난 세션 주소로 다시 들어오면 피드백·대화 글을 보여 준다.
  */

@@ -5,7 +5,7 @@ import { INTERVIEW_CARD_COPY, INTERVIEW_MODE_COPY } from "@/copy/interviewCopy";
 import { useCreditSummary } from "@/hooks/useCreditSummary";
 
 /**
- * 리포트 예상 질문 아래: 이 리포트로 AI 면접 연습을 시작하는 입구.
+ * 리포트 예상 질문 아래: 이 리포트로 AI 모의 면접을 시작하는 입구.
  * 스위치가 꺼져 있거나(요약에 interviewEnabled 없음) 요약을 못 읽으면 아무것도 그리지 않는다 — 배포돼도 기본은 보이지 않는다.
  */
 export default function InterviewPracticeCard({ analysisId, enabled = true }: { analysisId: string; enabled?: boolean }) {

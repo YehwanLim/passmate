@@ -49,7 +49,7 @@ const baseSession: InterviewSession = {
   turns: [{ seq: 1, speaker: "CANDIDATE", text: "제가 직접 모았습니다.", interrupted: false, partial: false, offsetMs: 4000 }],
 };
 
-describe("AI 면접 연습 화면", () => {
+describe("AI 모의 면접 화면", () => {
   beforeEach(() => {
     window.history.replaceState({}, "", "/my/interview-practice/start?analysisId=22222222-2222-4222-8222-222222222222&mode=SHORT");
   });

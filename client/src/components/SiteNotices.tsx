@@ -52,7 +52,15 @@ function NoticeBanner({ notice, onClose }: { notice: SiteNotice; onClose: () => 
 function NoticePopup({ notice, onClose, onHideToday }: { notice: SiteNotice; onClose: () => void; onHideToday: () => void }) {
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[min(92vw,420px)] gap-0 overflow-hidden p-0" showCloseButton={false}>
+      <DialogContent
+        className="max-w-[min(92vw,420px)] gap-0 overflow-hidden p-0 outline-none"
+        showCloseButton={false}
+        // 뜨자마자 "오늘 하루 보지 않기"에 포커스 테가 그려지지 않게, 포커스는 창 자체에 둔다.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          (event.currentTarget as HTMLElement | null)?.focus();
+        }}
+      >
         {notice.imageUrl && <img src={notice.imageUrl} alt="" className="block max-h-[50vh] w-full object-cover" />}
         <div className="space-y-2 px-6 pb-5 pt-6">
           <DialogTitle className="text-lg font-semibold leading-snug">{notice.title}</DialogTitle>

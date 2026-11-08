@@ -6,13 +6,14 @@ import GuideTeaserSection from "@/components/GuideTeaserSection";
 import PricingSection from "@/components/PricingSection";
 import ChatGptComparisonSection from "@/components/ChatGptComparisonSection";
 import CompanyReportIntroSection from "@/components/CompanyReportIntroSection";
+import InterviewPracticeIntroSection, { INTERVIEW_PRACTICE_INTRO_ID } from "@/components/InterviewPracticeIntroSection";
 import CompanyMarqueeSection from "@/components/CompanyMarqueeSection";
 import FounderSection, {
   FounderNoteSection,
 } from "@/components/FounderSection";
 import HeroWorkflowDemo from "@/components/HeroWorkflowDemo";
 import SiteHeader from "@/components/SiteHeader";
-import { Check, X } from "lucide-react";
+import { ArrowRight, Check, X } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 import { Link } from "wouter";
@@ -104,6 +105,20 @@ export default function Home() {
     document.documentElement.classList.add("landing-canvas");
     return () => {
       document.documentElement.classList.remove("landing-canvas");
+    };
+  }, []);
+
+  // 다른 화면의 상단 'AI 면접' 메뉴(/#interview-practice)로 들어오면 소개 칸에서 시작한다.
+  // 브라우저 기본 해시 이동은 화면이 그려지기 전에 끝나 맨 위에 머물 수 있어, 그린 뒤 한 번 더 맞춘다(11-08).
+  useEffect(() => {
+    if (window.location.hash !== `#${INTERVIEW_PRACTICE_INTRO_ID}`) return;
+    const scrollToIntro = () => document.getElementById(INTERVIEW_PRACTICE_INTRO_ID)?.scrollIntoView({ block: "start" });
+    const frame = window.requestAnimationFrame(scrollToIntro);
+    // 위쪽 그림이 늦게 불러와져 칸이 밀리면 다 불러온 뒤 다시 맞춘다
+    if (document.readyState !== "complete") window.addEventListener("load", scrollToIntro, { once: true });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("load", scrollToIntro);
     };
   }, []);
 
@@ -206,6 +221,15 @@ export default function Home() {
               <Link href={RESUME_REPORT_SAMPLE_PATH} className="landing-secondary-cta w-full sm:w-auto" data-funnel-cta="sample">
                 예시 리포트 보기
               </Link>
+              {/* 새 기능 안내. 칸을 차지하는 배지 대신 글자 링크 한 줄. */}
+              <a
+                href={`#${INTERVIEW_PRACTICE_INTRO_ID}`}
+                className="mt-1 inline-flex w-full items-center justify-center gap-1 text-[14px] font-semibold text-ink-3 underline-offset-4 hover:underline md:justify-start"
+                data-funnel-cta="hero-interview"
+              >
+                AI 모의 면접이 새로 나왔어요
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </a>
             </div>
           </div>
 
@@ -294,6 +318,9 @@ export default function Home() {
           (구 "이렇게 읽습니다" 방법론은 장면별 lens 문구로 병합)
           ══════════════════════════════════════════════════ */}
       <ReportShowcase />
+
+      {/* ── AI 모의 면접 소개 — 리포트의 예상 질문을 본 바로 다음 ── */}
+      <InterviewPracticeIntroSection />
 
       {/* ── 기업 분석 리포트 소개 — 자소서 쇼케이스 다음. 두 상품을 다 본 뒤 신뢰 → 가격 순으로 내려간다 ── */}
       <CompanyReportIntroSection />

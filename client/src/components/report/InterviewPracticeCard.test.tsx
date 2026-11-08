@@ -12,7 +12,7 @@ const summary = (overrides: Record<string, unknown>) => ({ interviewEnabled: tru
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
-describe("리포트 안 AI 면접 연습 입구", () => {
+describe("리포트 안 AI 모의 면접 입구", () => {
   it("스위치가 꺼졌거나 요약을 못 읽으면 아무것도 그리지 않는다", () => {
     mocks.useCreditSummary.mockReturnValue({ summary: null, failed: false });
     const { container, rerender } = render(<InterviewPracticeCard analysisId="a1" />);

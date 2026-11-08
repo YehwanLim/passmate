@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  * - light: 10월 새 디자인으로 바꾼 밝은 화면(마이페이지·작업실). 흰 헤더 + 검은 워드마크. 글자색은 landing.css 의 .site-header-light.
  * - floating: 랜딩 전용. light 와 같은 글자색에, 회색 무대 위에 떠 있는 둥근 흰 바(스픽식) + "무료로 시작하기" 버튼.
  * 항목은 실제 <a> 라 지연 하이드레이션 전에도 동작하고 크롤러가 따라간다. 현재 페이지는 aria-current 로 표시한다.
- * 768px 미만에서는 햄버거 메뉴로 바꾼다(landing.css 의 미디어쿼리도 같은 기준). 메뉴가 다섯 개라 640px 에선 넘친다.
+ * 768px 미만에서는 햄버거 메뉴로 바꾼다(landing.css 의 미디어쿼리도 같은 기준). 메뉴가 여섯 개라 640px 에선 넘친다.
  * 하위 항목(siteNav children)이 있는 칸은 데스크톱에선 마우스를 올리면 펼치고, 폰 메뉴에선 들여 쓴 채 늘 보인다.
  * 밝은 헤더의 데스크톱 메뉴는 회색 칸 하나가 마우스를 따라 미끄러지고, 마우스가 떠나면 현재 페이지로 돌아간다(없으면 사라진다).
  * 칸을 처음 재기 전(프리렌더·하이드레이션 전)에는 링크마다 회색 바탕을 까는 기존 CSS 가 그대로 동작한다.
@@ -52,6 +52,21 @@ export default function SiteHeader({ variant = "solid" }: SiteHeaderProps) {
 
   const renderItem = (item: SiteNavItem, className: string, navSlot = false) => {
     const current = isCurrentNavItem(item, location);
+    // 랜딩 안의 칸(/#interview-practice)은 일반 <a> 로 둔다. wouter Link 는 해시만 바꿔 스크롤하지 않고,
+    // 일반 링크는 랜딩에선 그 칸으로 스크롤하고 다른 화면에선 프리렌더된 랜딩을 열어 그 칸에서 시작한다.
+    if (item.target.startsWith("/#")) {
+      return (
+        <a
+          key={item.label}
+          href={item.target}
+          className={className}
+          data-nav-slot={navSlot || undefined}
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          {navSlot ? <NavLabel label={item.label} /> : item.label}
+        </a>
+      );
+    }
     return (
       <Link
         key={item.label}

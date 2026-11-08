@@ -54,9 +54,9 @@ export const PLAN_BUTTON_CLASS: Record<PurchaseProductKey, string> = {
 /** 추천 카드 — 랜딩의 "커피 한 잔" 기준과 같은 스탠다드. */
 export const RECOMMENDED_TIER: TierKey = "standard";
 
-/** AI 면접 연습 이용권 칸(이용권 페이지 #interview). 분석 티어와 별개 상품이라 따로 설명한다. */
+/** AI 모의 면접 이용권 칸(이용권 페이지 #interview). 분석 티어와 별개 상품이라 따로 설명한다. */
 export const INTERVIEW_PLAN_COPY = {
-  heading: "AI 면접 연습",
+  heading: "AI 모의 면접",
   lead: "자소서 리포트를 읽은 AI 면접관과 카메라·마이크로 실시간 면접을 보고, 답변·시선·자세 피드백을 받아요.",
   what: {
     interview: "실전 15분 또는 짧은 연습 5분, 한 번.",

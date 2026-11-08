@@ -1,4 +1,4 @@
-// AI 면접 연습 서버 API. 응답 필드명은 서버(lib/interview/interview-sessions.js)와 맞춘다.
+// AI 모의 면접 서버 API. 응답 필드명은 서버(lib/interview/interview-sessions.js)와 맞춘다.
 import { getAuthorizationHeader } from "@/lib/apiAuth";
 
 export const INTERVIEW_CONSENT_VERSION = "interview-consent-2026-11-06";

@@ -38,7 +38,8 @@ describe("entry-server render", () => {
     const ctas = (html.match(/<a [^>]*>/g) ?? []).filter(
       tag => tag.includes('href="/analyze"') && tag.includes("landing-primary-cta")
     );
-    expect(ctas).toHaveLength(2);
+    // 첫 화면 두 곳 + AI 모의 면접 소개 칸("무료 리포트부터 받기")
+    expect(ctas).toHaveLength(3);
   });
 
   it("renders the landing, not the 404 fallback, for the root path", () => {

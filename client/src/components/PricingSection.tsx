@@ -154,10 +154,10 @@ export default function PricingSection() {
           ))}
         </div>
 
-        {/* AI 면접 연습 — 분석 티어와 별개 상품(11-05). 가격 둘을 한 줄로 보여 주고 구매·설명은 이용권 페이지 #interview 가 맡는다 */}
+        {/* AI 모의 면접 — 분석 티어와 별개 상품(11-05). 가격 둘을 한 줄로 보여 주고 구매·설명은 이용권 페이지 #interview 가 맡는다 */}
         <div className="mt-5 rounded-[28px] bg-surface px-6 py-8 md:flex md:items-center md:justify-between md:gap-8 md:px-10 md:py-9">
           <div>
-            <h3 className="text-[22px] font-extrabold tracking-[-0.02em] text-ink">AI 면접 연습</h3>
+            <h3 className="text-[22px] font-extrabold tracking-[-0.02em] text-ink">AI 모의 면접</h3>
             <p className="mt-1 text-[15px] text-ink-3">리포트를 읽은 AI 면접관과 카메라·마이크로 실시간 면접 · 답변·시선·자세 피드백</p>
             <p className="mt-3 text-[17px] font-bold text-ink">
               {formatKrw(PRICING.interview.salePrice)} / 1회

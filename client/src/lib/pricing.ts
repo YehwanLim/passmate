@@ -5,7 +5,7 @@
 /** 서버 쿼리 키(lib/billing/entitlement-products.js PRODUCT_QUERY_KEYS)와 같다. checkoutUrls 의 키이기도 하다. */
 export const PURCHASE_PRODUCT_KEYS = ["single", "company", "standard", "premium", "triple", "interview", "interview3"] as const;
 export type PurchaseProductKey = (typeof PURCHASE_PRODUCT_KEYS)[number];
-/** AI 면접 연습 이용권(분석 티어와 별개). 이용권 페이지의 면접 칸과 랜딩 가격 안내가 쓴다. */
+/** AI 모의 면접 이용권(분석 티어와 별개). 이용권 페이지의 면접 칸과 랜딩 가격 안내가 쓴다. */
 export const INTERVIEW_PRODUCT_KEYS = ["interview", "interview3"] as const;
 
 export type PricingPlan = {
@@ -19,7 +19,7 @@ export type PricingPlan = {
   uses: number;
   /** 기업 분석 횟수 */
   companyUses: number;
-  /** AI 면접 연습 횟수(면접 이용권 상품만) */
+  /** AI 모의 면접 횟수(면접 이용권 상품만) */
   interviewUses?: number;
 };
 
@@ -60,19 +60,21 @@ export const PRICING: Record<PurchaseProductKey, PricingPlan> = {
     uses: 3,
     companyUses: 0,
   },
-  // AI 면접 연습 이용권(2026-11-05 확정): 1회 4,900 · 3회 9,900(회당 3,300). 분석 티어 카드와 별개 칸에 보여 준다.
+  // AI 모의 면접 이용권. 정가 1회 4,900 · 3회 9,900(2026-11-05 확정).
+  // 출시 기념가 1회 1,990 · 3회 4,900 은 12월 8일까지(11-08 결정) — 끝나면 salePrice 를 정가로 되돌리고 그로블 가격도 함께 바꾼다.
+  // 분석 티어 카드와 별개 칸에 보여 준다.
   interview: {
-    label: "AI 면접 연습 1회",
+    label: "AI 모의 면접 1회",
     listPrice: 4_900,
-    salePrice: 4_900,
+    salePrice: 1_990,
     uses: 0,
     companyUses: 0,
     interviewUses: 1,
   },
   interview3: {
-    label: "AI 면접 연습 3회",
-    listPrice: 14_700,
-    salePrice: 9_900,
+    label: "AI 모의 면접 3회",
+    listPrice: 9_900,
+    salePrice: 4_900,
     uses: 0,
     companyUses: 0,
     interviewUses: 3,

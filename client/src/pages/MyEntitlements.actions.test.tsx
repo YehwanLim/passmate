@@ -58,6 +58,8 @@ const BASE_SUMMARY = {
   },
   companyAnalysisEnabled: true,
   companyRemaining: 0,
+  interviewEnabled: false,
+  interviewRemaining: 0,
   feedbackRewardClaimed: false,
 };
 
@@ -100,6 +102,24 @@ describe("MyEntitlements action buttons", () => {
 
     screen.getByRole("button", { name: "자소서 분석하기" }).click();
     expect(mocks.navigate).toHaveBeenCalledWith("/analyze");
+  });
+
+  it("AI 모의 면접 칸은 판매 중이거나 남은 횟수가 있을 때만 보이고, 남았으면 면접 기록으로 가는 버튼을 둔다(11-08)", async () => {
+    await renderWith({ remaining: 1, freeRemaining: 1 });
+    expect(screen.queryByText("AI 모의 면접", { selector: ":not(.nav-label)" })).toBeNull();
+    cleanup();
+
+    await renderWith({ remaining: 1, freeRemaining: 1, interviewEnabled: true, interviewRemaining: 0 });
+    expect(screen.getByText("AI 모의 면접", { selector: ":not(.nav-label)" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "AI 모의 면접 보기" })).toBeNull();
+    cleanup();
+
+    await renderWith({ remaining: 0, interviewEnabled: false, interviewRemaining: 2 });
+    expect(screen.getByText("AI 모의 면접", { selector: ":not(.nav-label)" })).toBeTruthy();
+    screen.getByRole("button", { name: "AI 모의 면접 보기" }).click();
+    expect(mocks.navigate).toHaveBeenCalledWith("/my/interview-practice");
+    // 면접 이용권이 남아 있으면 구매 버튼을 파랑으로 재촉하지 않는다
+    expect(isPrimary(screen.getByRole("button", { name: "이용권 구매하기" }))).toBe(false);
   });
 
   it("hides the bonus credit row unless the account actually has bonus credits", async () => {

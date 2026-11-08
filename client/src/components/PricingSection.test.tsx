@@ -31,7 +31,7 @@ describe("PricingSection", () => {
 
   it("shows the AI interview practice prices from pricing.ts and sends to the entitlements interview section", () => {
     render(<PricingSection />);
-    expect(screen.getByRole("heading", { name: "AI 면접 연습" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "AI 모의 면접" })).toBeTruthy();
     expect(screen.getByText(new RegExp(`${formatKrw(PRICING.interview.salePrice)} / 1회`))).toBeTruthy();
     expect(screen.getByText(new RegExp(`${formatKrw(PRICING.interview3.salePrice)} / 3회`))).toBeTruthy();
     screen.getByRole("button", { name: "면접 이용권 보기" }).click();

@@ -30,13 +30,23 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
     children: [
       { label: "자소서 분석", target: "/analyze", description: "채용 담당자의 눈으로 보는 자소서 분석" },
       { label: "기업 분석", target: "/company-analysis", description: "지원할 회사의 사업·이슈·직무 정리" },
-      // AI 면접 연습은 리포트에서 시작하므로 메뉴는 이용권 안내(#interview)로 보낸다(11-05).
-      { label: "AI 면접 연습", target: "/entitlements#interview", description: "리포트를 읽은 AI 면접관과 실시간 면접" },
     ],
   },
+  // AI 면접은 출시하며 분석하기 펼침 안에서 꺼내 한 칸을 줬다(11-08). 처음 보는 사람이 많아 랜딩 소개 칸으로 보낸다.
+  // 해시 주소라 SiteHeader 가 wouter Link 대신 일반 <a> 로 그린다(같은 화면이면 그 자리로 스크롤, 다른 화면이면 랜딩을 열고 스크롤).
+  { label: "AI 모의 면접", type: "route", target: "/#interview-practice" },
   { label: "취업 가이드", type: "route", target: "/guide" },
   // 멘토링(/mentoring)은 페이지·파운더 섹션 링크·sitemap 은 그대로 두고, 손볼 것이 남아 상단 메뉴에서만 잠시 뺐다(09-27).
-  { label: "이용권", type: "route", target: "/entitlements" },
+  // 펼치면 분석 이용권과 AI 모의 면접 이용권(#interview)으로 바로 간다(11-08).
+  {
+    label: "이용권",
+    type: "route",
+    target: "/entitlements",
+    children: [
+      { label: "분석 이용권", target: "/entitlements", description: "자소서·기업 분석 횟수권" },
+      { label: "AI 모의 면접 이용권", target: "/entitlements#interview", description: "실시간 화상 면접 1회권·3회권" },
+    ],
+  },
   // 마이페이지는 맨 오른쪽 — 내 것(지원서·경험·기업)을 모아 보는 곳이라 "할 수 있는 일" 다음에 둔다(10-08).
   // 펼치면 마이페이지 탭(해시)과 내 이용권으로 바로 간다(10-09).
   {
@@ -47,7 +57,8 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
       { label: "자기소개서", target: "/my", description: "채용 공고별로 쓴 자소서와 분석 리포트" },
       { label: "경험 카드", target: "/my#experiences", description: "경험 관리하고 자소서 초안 쓰기" },
       { label: "기업 리포트", target: "/my#company", description: "분석한 회사 리포트 모아 보기" },
-      { label: "내 이용권", target: "/my/entitlements", description: "남은 분석 이용권 확인 및 구매" },
+      { label: "AI 모의 면접 기록", target: "/my/interview-practice", description: "지난 면접의 피드백과 대화 다시 보기" },
+      { label: "내 이용권", target: "/my/entitlements", description: "이용권 남은 횟수 확인 및 구매" },
     ],
   },
 ];

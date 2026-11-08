@@ -118,7 +118,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
             </div>
             <div className="rounded-md border p-2">
               <p className="text-lg font-semibold">{summary.interviewRemaining}</p>
-              <p className="text-xs text-muted-foreground">면접 연습</p>
+              <p className="text-xs text-muted-foreground">모의 면접</p>
             </div>
           </div>
         ) : null}
@@ -147,7 +147,7 @@ export function UserCreditManagementCard({ userId }: { userId: string }) {
             >
               <option value="RESUME">자소서 분석</option>
               <option value="COMPANY">기업 분석</option>
-              <option value="INTERVIEW">AI 면접 연습</option>
+              <option value="INTERVIEW">AI 모의 면접</option>
             </select>
           </div>
           <div className="min-w-40 flex-1">

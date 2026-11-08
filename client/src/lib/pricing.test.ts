@@ -107,13 +107,13 @@ describe("tier pricing", () => {
     expect(TIERS.map((tier) => tier.key)).toEqual(["basic", "standard", "premium"]);
     expect(TIERS[0].products).toEqual(["single", "company"]);
     expect(PURCHASE_PRODUCT_KEYS).toEqual(["single", "company", "standard", "premium", "triple", "interview", "interview3"]);
-    // 면접 이용권은 티어 카드 밖(이용권 페이지 #interview 칸)이다. 1회 4,900 · 3회 9,900(회당 3,300).
+    // 면접 이용권은 티어 카드 밖(이용권 페이지 #interview 칸)이다. 출시 기념가 1회 1,990 · 3회 4,900(회당 1,633), 12월 8일까지.
     expect(TIERS.flatMap((tier) => tier.products)).not.toContain("interview");
     expect(INTERVIEW_PRODUCT_KEYS).toEqual(["interview", "interview3"]);
-    expect(productLabel("INTERVIEW_SINGLE")).toBe("AI 면접 연습 1회");
-    expect(productLabel("INTERVIEW_TRIPLE")).toBe("AI 면접 연습 3회");
-    expect(PRICING.interview.salePrice).toBe(4_900);
-    expect(PRICING.interview3.salePrice).toBe(9_900);
-    expect(Math.round(PRICING.interview3.salePrice / (PRICING.interview3.interviewUses ?? 1))).toBe(3_300);
+    expect(productLabel("INTERVIEW_SINGLE")).toBe("AI 모의 면접 1회");
+    expect(productLabel("INTERVIEW_TRIPLE")).toBe("AI 모의 면접 3회");
+    expect(PRICING.interview.salePrice).toBe(1_990);
+    expect(PRICING.interview3.salePrice).toBe(4_900);
+    expect(Math.round(PRICING.interview3.salePrice / (PRICING.interview3.interviewUses ?? 1))).toBe(1_633);
   });
 });

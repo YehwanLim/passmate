@@ -1,7 +1,7 @@
-// AI 면접 연습 화면 문구. 사람과 하는 멘토링 모의면접(/mentoring)과 다른 기능이라 "모의면접"이라는 말은 쓰지 않는다.
+// AI 모의 면접 화면 문구. 11-08 이름을 "AI 면접 연습"에서 "AI 모의 면접"으로 바꿨다(사용자 결정). 사람과 하는 멘토링 모의 면접(/mentoring)과 헷갈리지 않게 앞에 늘 "AI"를 붙인다.
 import type { InterviewMode } from "@/lib/interview/interviewApi";
 
-export const INTERVIEW_TITLE = "AI 면접 연습";
+export const INTERVIEW_TITLE = "AI 모의 면접";
 
 export const INTERVIEW_MODE_COPY: Record<InterviewMode, { label: string; minutes: number; description: string }> = {
   FULL: { label: "실전 15분", minutes: 15, description: "리포트의 예상 질문으로 면접관이 묻고, 답에 따라 꼬리 질문이 이어져요." },

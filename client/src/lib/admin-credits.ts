@@ -10,7 +10,7 @@ export interface UserCreditSummary {
   remaining: number;
   /** 기업 분석 크레딧 잔여. 구버전 응답에 없으면 0. */
   companyRemaining: number;
-  /** AI 면접 연습 이용권 잔여. 구버전 응답에 없으면 0. */
+  /** AI 모의 면접 이용권 잔여. 구버전 응답에 없으면 0. */
   interviewRemaining: number;
 }
 
