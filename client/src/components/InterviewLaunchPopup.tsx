@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { INTERVIEW_PRACTICE_INTRO_ID } from "@/components/InterviewPracticeIntroSection";
 import { fetchSalesAvailability } from "@/lib/entitlements";
 import { PRICING, formatKrw } from "@/lib/pricing";
 import { sendFunnelEvent } from "@/lib/siteVisits";
@@ -104,13 +103,13 @@ export function InterviewLaunchPopupCard({ onClose, onNeverShow, onGo }: { onClo
             </span>
           </div>
           <div className="mt-4 flex justify-center">
-            <a
-              href={`/#${INTERVIEW_PRACTICE_INTRO_ID}`}
+            <Link
+              href="/my/interview-practice"
               onClick={onGo}
               className="inline-flex h-11 items-center rounded-[12px] bg-brand px-10 text-[15px] font-bold text-white"
             >
               면접 보러 가기
-            </a>
+            </Link>
           </div>
           <button type="button" onClick={onNeverShow} className="mt-3 text-[11px] text-white/40 hover:text-white/70">
             다시 보지 않기

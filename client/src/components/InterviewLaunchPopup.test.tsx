@@ -127,9 +127,9 @@ describe("InterviewLaunchPopup", () => {
     expect(isInterviewLaunchPopupDue(INTERVIEW_LAUNCH_ENDS_AT - 1)).toBe(false);
   });
 
-  it("면접 보러 가기는 랜딩 소개 칸으로 간다", async () => {
+  it("면접 보러 가기는 AI 모의 면접 화면으로 간다", async () => {
     await renderAt("/my");
     const link = screen.getByRole("link", { name: "면접 보러 가기" });
-    expect(link.getAttribute("href")).toBe("/#interview-practice");
+    expect(link.getAttribute("href")).toBe("/my/interview-practice");
   });
 });
