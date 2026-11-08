@@ -1,7 +1,7 @@
 // AI 모의 면접 서버 API. 응답 필드명은 서버(lib/interview/interview-sessions.js)와 맞춘다.
 import { getAuthorizationHeader } from "@/lib/apiAuth";
 
-export const INTERVIEW_CONSENT_VERSION = "interview-consent-2026-11-06";
+export const INTERVIEW_CONSENT_VERSION = "interview-consent-2026-11-09";
 export type InterviewMode = "FULL" | "SHORT";
 export type InterviewSessionStatus = "CREATED" | "ACTIVE" | "ENDED" | "INTERRUPTED" | "CANCELLED";
 export type InterviewFeedbackStatus = "NONE" | "PENDING" | "CALLING" | "SUCCEEDED" | "FAILED";
@@ -113,11 +113,21 @@ export function newIdempotencyKey(): string {
   return `interview-${crypto.randomUUID()}`;
 }
 
-export async function createInterviewSession({ analysisId, mode, idempotencyKey }: { analysisId: string; mode: InterviewMode; idempotencyKey: string }) {
+/** 리포트 없이 시작할 때 보내는 재료. 길이 범위는 서버(INTERVIEW_DIRECT_LIMITS)와 같다. */
+export type InterviewDirectSource = { company: string; jobRole: string; coverLetter: string };
+export const INTERVIEW_DIRECT_LIMITS = { companyMax: 100, jobRoleMax: 100, coverLetterMin: 200, coverLetterMax: 6000 } as const;
+
+export async function createInterviewSession({
+  analysisId,
+  direct,
+  mode,
+  idempotencyKey,
+}: { analysisId?: string; direct?: InterviewDirectSource; mode: InterviewMode; idempotencyKey: string }) {
+  const source = analysisId ? { analysisId } : direct ? { company: direct.company, jobRole: direct.jobRole, coverLetter: direct.coverLetter } : {};
   const payload = await call(BASE, {
     method: "POST",
     headers: { "Idempotency-Key": idempotencyKey },
-    body: JSON.stringify({ analysisId, mode, consentVersion: INTERVIEW_CONSENT_VERSION }),
+    body: JSON.stringify({ ...source, mode, consentVersion: INTERVIEW_CONSENT_VERSION }),
   });
   return parseSession(isRecord(payload) ? payload.session : null);
 }

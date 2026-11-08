@@ -240,6 +240,16 @@ describe("POST /api/analyze?interview_feedback=1", () => {
     expect(db.state.reservations[0].status).toBe("CONSUMED");
   });
 
+  it("리포트 없이 시작한 세션도 세션에 저장한 회사·직무로 피드백을 만든다", async () => {
+    const db = createInterviewMemoryDb();
+    seedEndedSession(db, { analysisId: null, company: "새벽물산", jobRole: "영업 관리", feedbackStatus: "PENDING" });
+    const callModel = vi.fn(async () => GOOD_OUTPUT);
+    await runInterviewFeedback({ db, sessionId: SESSION_ID, userId: INTERVIEW_TEST_USER, photos: [], callModel, requestId: "r" });
+    expect(JSON.stringify(callModel.mock.calls[0][0])).toContain("새벽물산 영업 관리 면접관");
+    expect(JSON.stringify(callModel.mock.calls[0][0])).not.toContain("면접관이 준비했던 질문");
+    expect(db.state.sessions[0]).toMatchObject({ feedbackStatus: "SUCCEEDED" });
+  });
+
   it("같은 세션에 요청이 동시에 와도 모델은 한 번만 부른다", async () => {
     const db = createInterviewMemoryDb();
     seedEndedSession(db);

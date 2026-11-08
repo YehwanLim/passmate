@@ -18,6 +18,7 @@ import { createResponse } from "../helpers/http.js";
 import { INTERVIEW_TEST_ANALYSIS, INTERVIEW_TEST_USER, SAMPLE_REPORT, createInterviewMemoryDb } from "../helpers/interview-db.js";
 
 const KEY = "interview-key-0000001";
+const DIRECT_COVER_LETTER = "저는 동아리에서 로그 3,000건을 모아 이탈 구간을 찾았습니다. ".repeat(8).trim();
 const T0 = new Date("2026-11-04T10:00:00Z");
 const at = (minutes) => new Date(T0.getTime() + minutes * 60_000);
 
@@ -64,12 +65,32 @@ describe("요청 정규화", () => {
   it("리포트 id·모드·동의 버전만 받고, 동의 버전이 다르면 거부한다", () => {
     expect(normalizeCreateRequest({ analysisId: INTERVIEW_TEST_ANALYSIS, consentVersion: INTERVIEW_CONSENT_VERSION })).toEqual({
       analysisId: INTERVIEW_TEST_ANALYSIS,
+      direct: null,
       mode: "FULL",
       consentVersion: INTERVIEW_CONSENT_VERSION,
     });
     expect(normalizeCreateRequest({ analysisId: INTERVIEW_TEST_ANALYSIS, mode: "SHORT", consentVersion: INTERVIEW_CONSENT_VERSION }).mode).toBe("SHORT");
     expect(() => normalizeCreateRequest({ analysisId: INTERVIEW_TEST_ANALYSIS, consentVersion: "old" })).toThrow(expect.objectContaining({ code: "INTERVIEW_CONSENT_REQUIRED" }));
     for (const bad of [null, {}, { analysisId: "nope", consentVersion: INTERVIEW_CONSENT_VERSION }, { analysisId: INTERVIEW_TEST_ANALYSIS, consentVersion: INTERVIEW_CONSENT_VERSION, extra: 1 }, { analysisId: INTERVIEW_TEST_ANALYSIS, mode: "LONG", consentVersion: INTERVIEW_CONSENT_VERSION }]) {
+      expect(() => normalizeCreateRequest(bad)).toThrow();
+    }
+  });
+
+  it("리포트 없이 회사·직무·자소서를 직접 받고, 짧은 자소서·빈 칸·리포트와 섞인 요청은 거부한다", () => {
+    const body = { company: " 한빛모빌리티 ", jobRole: "서비스 기획", coverLetter: DIRECT_COVER_LETTER, consentVersion: INTERVIEW_CONSENT_VERSION };
+    expect(normalizeCreateRequest(body)).toEqual({
+      analysisId: null,
+      direct: { company: "한빛모빌리티", jobRole: "서비스 기획", coverLetter: DIRECT_COVER_LETTER },
+      mode: "FULL",
+      consentVersion: INTERVIEW_CONSENT_VERSION,
+    });
+    expect(() => normalizeCreateRequest({ ...body, coverLetter: "짧아요" })).toThrow(expect.objectContaining({ code: "INTERVIEW_COVER_LETTER_TOO_SHORT" }));
+    for (const bad of [
+      { ...body, company: "  " },
+      { ...body, jobRole: undefined },
+      { ...body, coverLetter: "가".repeat(6001) },
+      { ...body, analysisId: INTERVIEW_TEST_ANALYSIS },
+    ]) {
       expect(() => normalizeCreateRequest(bad)).toThrow();
     }
   });
@@ -101,6 +122,13 @@ describe("요청 정규화", () => {
 });
 
 describe("면접관 지시와 입장권 설정", () => {
+  it("리포트 없이 시작하면 질문 목록 대신 자소서를 읽고 질문을 직접 정하라고 지시한다", () => {
+    const instruction = buildInterviewerInstruction({ company: "한빛모빌리티", jobRole: "서비스 기획", coverLetter: "자소서 본문", questions: [], gaps: [], mode: "SHORT" });
+    expect(instruction).toContain("질문 2개를 직접 정해");
+    expect(instruction).toContain("자소서 본문");
+    expect(instruction).not.toContain("진단에서 약하게 나온 곳");
+  });
+
   it("자소서·질문·약한 곳을 담고 모범 답변은 넣지 않으며, 짧은 연습은 질문을 2개로 줄인다", () => {
     const material = interviewMaterialFromReport(SAMPLE_REPORT);
     const instruction = buildInterviewerInstruction({ company: "한빛모빌리티", jobRole: "서비스 기획", coverLetter: "자소서 본문", ...material, mode: "FULL" });
@@ -190,6 +218,24 @@ describe("POST /api/account/interview-sessions", () => {
     await handlers.sessions(post({ analysisId: INTERVIEW_TEST_ANALYSIS, mode: "SHORT", consentVersion: INTERVIEW_CONSENT_VERSION }), reused);
     expect(reused.statusCode).toBe(409);
     expect(reused.body.error).toBe("IDEMPOTENCY_KEY_REUSED");
+  });
+
+  it("리포트 없이 직접 입력으로 세션을 만들고, 입장권 때 붙여 넣은 자소서로 면접관 지시를 만든다", async () => {
+    const db = newDb();
+    const handlers = makeHandlers(db);
+    const created = await createSession(handlers, { company: "새벽물산", jobRole: "영업 관리", coverLetter: DIRECT_COVER_LETTER, mode: "SHORT", consentVersion: INTERVIEW_CONSENT_VERSION });
+    expect(created.statusCode).toBe(201);
+    expect(created.body.session).toMatchObject({ analysis_id: null, company: "새벽물산", job_role: "영업 관리", mode: "SHORT" });
+    // 자소서 본문은 세션 응답에 싣지 않는다.
+    expect(JSON.stringify(created.body)).not.toContain("이탈 구간");
+    expect(db.state.reservations).toHaveLength(1);
+
+    const token = await act(handlers, created.body.session.id, "token", {});
+    expect(token.statusCode).toBe(200);
+    const config = JSON.stringify(handlers.issueToken.mock.calls[0][0].config);
+    expect(config).toContain("새벽물산 영업 관리의 면접관");
+    expect(config).toContain("이탈 구간");
+    expect(config).toContain("질문 2개를 직접 정해");
   });
 
   it("스위치가 꺼졌으면 503, 이용권이 없으면 409 이고 예약은 생기지 않는다", async () => {

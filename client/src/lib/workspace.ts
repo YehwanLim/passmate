@@ -148,6 +148,11 @@ export function createApplication(input: {
   return request("/api/projects", { method: "POST", body: JSON.stringify(input) });
 }
 
+/** 내 지원서·기업 리포트 목록(/api/projects). 쓰는 쪽에서 kind 로 거른다. */
+export function listApplications(): Promise<ProjectSummary[]> {
+  return request("/api/projects");
+}
+
 export function fetchApplication(id: string): Promise<ApplicationDetail> {
   return request(`/api/projects/${encodeURIComponent(id)}`);
 }

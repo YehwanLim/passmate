@@ -60,23 +60,22 @@ describe("SiteHeader", () => {
       "/jobs",
       "/analyze",
       "/company-analysis",
-      "/#interview-practice",
+      "/my/interview-practice",
       "/entitlements",
       "/entitlements#interview",
       "/my",
       "/my#experiences",
       "/my#company",
-      "/my/interview-practice",
       "/my/entitlements",
     ]) {
       expect(hrefs, href).toContain(href);
     }
   });
 
-  it("AI 면접 칸은 랜딩 소개 칸으로 가는 일반 링크이고, 랜딩에서 현재 페이지로 표시하지 않는다(11-08)", () => {
+  it("AI 면접 칸은 소개 화면(/my/interview-practice)으로 가고, 랜딩에서 현재 페이지로 표시하지 않는다(11-09)", () => {
     mocks.location = "/";
     render(<SiteHeader />);
-    const link = screen.getAllByRole("link").find(candidate => candidate.getAttribute("href") === "/#interview-practice");
+    const link = screen.getAllByRole("link").find(candidate => candidate.getAttribute("href") === "/my/interview-practice");
     expect(link?.textContent).toBe("AI 모의 면접");
     expect(link?.getAttribute("aria-current")).toBeNull();
     expect(screen.getAllByRole("link").filter(candidate => candidate.getAttribute("aria-current") === "page")).toHaveLength(0);
@@ -85,7 +84,8 @@ describe("SiteHeader", () => {
   it.each([
     ["/company-analysis", "/analyze"],
     ["/my/entitlements", "/my"],
-    ["/my/interview-practice", "/my"],
+    ["/my/interview-practice", "/my/interview-practice"],
+    ["/my/interview-practice/start", "/my/interview-practice"],
     ["/entitlements", "/entitlements"],
     ["/jobs/shinsegae-2027", "/jobs"],
   ])("marks the parent current on %s", (location, parentHref) => {

@@ -915,7 +915,11 @@ enum InterviewMode {
 model InterviewSession {
   id             String                 @id @default(uuid()) @db.Uuid
   userId         String                 @map("user_id") @db.Uuid
-  analysisId     String                 @map("analysis_id") @db.Uuid
+  /// 리포트로 시작한 면접만 채운다. 리포트 없이 시작하면 비우고 아래 company·jobRole·coverLetter 를 쓴다(11-09).
+  analysisId     String?                @map("analysis_id") @db.Uuid
+  company        String?                @db.VarChar(100)
+  jobRole        String?                @map("job_role") @db.VarChar(100)
+  coverLetter    String?                @map("cover_letter")
   reservationId  String?                @unique @map("reservation_id") @db.Uuid
   idempotencyKey String                 @map("idempotency_key") @db.VarChar(128)
   mode           InterviewMode          @default(FULL)
@@ -946,7 +950,7 @@ model InterviewSession {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  analysis    Analysis             @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  analysis    Analysis?            @relation(fields: [analysisId], references: [id], onDelete: Cascade)
   reservation AnalysisReservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
   turns       InterviewTurn[]
 

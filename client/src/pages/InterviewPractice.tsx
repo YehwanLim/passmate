@@ -26,6 +26,7 @@ import {
   type InterviewMode,
   type InterviewSession,
 } from "@/lib/interview/interviewApi";
+import { loadInterviewDirectDraft } from "@/lib/interview/directDraft";
 import { startLiveSession, type LiveSessionHandle, type LiveState } from "@/lib/interview/liveSession";
 import { rootMeanSquare } from "@/lib/interview/pcm";
 import { pickInterviewer } from "@shared/interviewPersona.js";
@@ -36,7 +37,8 @@ const API_ERROR_COPY: Record<string, string> = {
   INTERVIEW_CREDITS_EXHAUSTED: "쓸 수 있는 면접 이용권이 없어요.",
   INTERVIEW_IN_PROGRESS: "진행 중인 면접이 있어요. 끝낸 뒤 다시 시작해 주세요.",
   INTERVIEW_DISABLED: "지금은 모의 면접을 열 수 없어요.",
-  INTERVIEW_SOURCE_UNAVAILABLE: "이 리포트에는 예상 질문이 없어 면접을 만들 수 없어요.",
+  INTERVIEW_SOURCE_UNAVAILABLE: "면접에 쓸 자소서나 예상 질문을 찾지 못했어요.",
+  INTERVIEW_COVER_LETTER_TOO_SHORT: "자소서를 200자 이상 붙여 넣어 주세요.",
   INTERVIEW_TOKEN_FAILED: "면접관을 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
   INTERVIEW_CAPACITY: "오늘은 모의 면접이 꽉 찼어요. 내일 다시 시도해 주세요. 이용권은 쓰이지 않았어요.",
   INTERVIEW_FEEDBACK_EXHAUSTED: "피드백 생성을 세 번 시도해 더는 만들 수 없어요.",
@@ -69,7 +71,7 @@ function formatClock(ms: number) {
 
 /**
  * AI 모의 면접 한 화면: 장비 점검·동의(setup) → 실시간 면접(live) → 피드백(after).
- * /my/interview-practice/start?analysisId=&mode= 로 들어와 세션을 만들면 주소만 /my/interview-practice/:id 로 바꾸고 같은 컴포넌트가 이어 간다.
+ * /my/interview-practice/start?analysisId=&mode= (리포트로 시작) 또는 ?source=direct&mode= (소개 화면에서 회사·직무·자소서를 넣고 시작)로 들어와 세션을 만들면 주소만 /my/interview-practice/:id 로 바꾸고 같은 컴포넌트가 이어 간다.
  * 끝난 세션 주소로 다시 들어오면 피드백·대화 글을 보여 준다.
  */
 export default function InterviewPractice() {
@@ -80,6 +82,9 @@ export default function InterviewPractice() {
   const query = new URLSearchParams(search);
   const isStart = params.sessionId === "start";
   const analysisId = query.get("analysisId");
+  // 리포트 없이 시작: 소개 화면이 sessionStorage 에 넣어 둔 입력을 읽는다. 처음 그릴 때 한 번만 읽는다.
+  const isDirect = isStart && !analysisId && query.get("source") === "direct";
+  const [directDraft] = useState(() => (isDirect ? loadInterviewDirectDraft() : null));
   const mode: InterviewMode = query.get("mode") === "SHORT" ? "SHORT" : "FULL";
 
   const [phase, setPhase] = useState<Phase>("loading");
@@ -154,8 +159,8 @@ export default function InterviewPractice() {
     // 로그인 전에는 아무것도 하지 않는다(useRequireAuth 가 로그인으로 보낸다). 안 그러면 로그인 화면으로 가기 전에 카메라 권한 창이 뜬다.
     if (authLoading || !isAuthenticated) return;
     if (isStart) {
-      if (!analysisId) {
-        navigate("/my");
+      if (!analysisId && !directDraft) {
+        navigate("/my/interview-practice");
         return;
       }
       setPhase("setup");
@@ -182,7 +187,7 @@ export default function InterviewPractice() {
     return () => {
       alive = false;
     };
-  }, [authLoading, isAuthenticated, isStart, analysisId, params.sessionId, navigate, requestDevices, mediaSupported, inApp]);
+  }, [authLoading, isAuthenticated, isStart, analysisId, directDraft, params.sessionId, navigate, requestDevices, mediaSupported, inApp]);
 
   useEffect(() => () => {
     stopStream();
@@ -238,8 +243,13 @@ export default function InterviewPractice() {
     try {
       let current = session;
       if (!current) {
-        if (!analysisId) throw new InterviewApiError("NOT_FOUND", 404);
-        current = await createInterviewSession({ analysisId, mode, idempotencyKey: idempotencyKeyRef.current });
+        if (analysisId) {
+          current = await createInterviewSession({ analysisId, mode, idempotencyKey: idempotencyKeyRef.current });
+        } else if (directDraft) {
+          current = await createInterviewSession({ direct: directDraft, mode, idempotencyKey: idempotencyKeyRef.current });
+        } else {
+          throw new InterviewApiError("NOT_FOUND", 404);
+        }
         setSession(current);
         startedSessionIdRef.current = current.id;
         window.history.replaceState(null, "", `/my/interview-practice/${current.id}`);
@@ -306,7 +316,11 @@ export default function InterviewPractice() {
     : lastTurn ? { speaker: lastTurn.speaker, text: lastTurn.text, draft: false } : null;
   const effectiveMode = session?.mode ?? mode;
   const modeCopy = INTERVIEW_MODE_COPY[effectiveMode];
-  const backPath = session?.analysisId || analysisId ? `/report-new?analysisId=${encodeURIComponent(session?.analysisId ?? analysisId ?? "")}` : "/my";
+  const reportId = session ? session.analysisId : analysisId;
+  // 리포트 없이 시작한 면접은 소개 화면(새 면접 입력·지난 면접)으로 돌아간다.
+  const backPath = reportId ? `/report-new?analysisId=${encodeURIComponent(reportId)}` : "/my/interview-practice";
+  const headerCompany = session?.company ?? directDraft?.company ?? null;
+  const headerJobRole = session?.jobRole ?? directDraft?.jobRole ?? null;
 
   return (
     <div className="min-h-screen bg-stage pb-24 text-ink">
@@ -315,12 +329,12 @@ export default function InterviewPractice() {
         {phase !== "live" && (
           <button type="button" onClick={() => navigate(backPath)} className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-ink-4 transition-colors hover:text-ink-2">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            리포트로
+            {reportId ? "리포트로" : INTERVIEW_TITLE}
           </button>
         )}
         <h1 className="text-[28px] font-bold tracking-[-0.03em]">{INTERVIEW_TITLE}</h1>
         <p className="mt-1.5 text-[15px] text-ink-4">
-          {session?.company || session?.jobRole ? `${session.company ?? ""} ${session.jobRole ?? ""}`.trim() : modeCopy.label} · {modeCopy.minutes}분
+          {headerCompany || headerJobRole ? `${headerCompany ?? ""} ${headerJobRole ?? ""}`.trim() : modeCopy.label} · {modeCopy.minutes}분
         </p>
 
         {phase === "loading" && (

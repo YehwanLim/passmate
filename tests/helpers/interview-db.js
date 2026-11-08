@@ -69,7 +69,8 @@ export function createInterviewMemoryDb({
 
   const withRelations = (session) => ({
     ...session,
-    analysis: { project: state.analysis.project },
+    // 리포트 없이 시작한 세션(analysisId 없음)은 리포트 관계가 비어 있다.
+    analysis: session.analysisId ? { project: state.analysis.project } : null,
     __reservation: state.reservations.find((reservation) => reservation.id === session.reservationId) ?? null,
   });
 
@@ -107,7 +108,7 @@ export function createInterviewMemoryDb({
       findFirst: async ({ where, include }) => {
         const row = state.sessions.map(withRelations).find((session) => matches(session, where));
         if (!row) return null;
-        return include ? { ...row, analysis: { aiResponseJson: state.analysis.aiResponseJson, project: state.analysis.project }, turns: state.turns.filter((turn) => turn.sessionId === row.id).sort((a, b) => a.seq - b.seq) } : row;
+        return include ? { ...row, analysis: row.analysisId ? { aiResponseJson: state.analysis.aiResponseJson, project: state.analysis.project } : null, turns: state.turns.filter((turn) => turn.sessionId === row.id).sort((a, b) => a.seq - b.seq) } : row;
       },
       findMany: async ({ where, take, orderBy }) => {
         let rows = state.sessions.map(withRelations).filter((session) => matches(session, where));

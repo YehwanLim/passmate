@@ -1,7 +1,7 @@
 // AI 면접 연습 프롬프트 단일 정의처. 면접관 지시(실시간)와 피드백 지시(면접 뒤)를 여기서만 만든다.
 // 금지 예시 단어를 적으면 모델이 베끼므로, 하지 말 것은 짧게 쓰고 할 것은 필드 설명에 긍정문으로 쓴다.
 
-export const INTERVIEW_PROMPT_VERSION = "interview-2026-11-08";
+export const INTERVIEW_PROMPT_VERSION = "interview-2026-11-09";
 
 const COVER_LETTER_MAX_CHARS = 6000;
 /** 자기소개에 1분을 쓰므로 11-05 에 하나씩 줄였다(실전 8→7, 짧은 연습 3→2). */
@@ -13,8 +13,19 @@ function clip(text, max) {
   return text.length > max ? `${text.slice(0, max)} (이하 생략)` : text;
 }
 
+/** 리포트 없이 시작한 면접(질문 목록이 비어 있음)에서 면접관이 직접 질문을 짜게 하는 문단. */
+function selfPlannedQuestions(limit, where) {
+  return [
+    `[질문 계획] 아래 자기소개서를 읽고 ${where ? `${where} 면접관으로서 ` : ""}질문 ${limit}개를 직접 정해 순서대로 묻습니다. 답변에 따라 꼬리 질문을 먼저 해도 됩니다.`,
+    "- 자기소개서에 적힌 경험마다, 지원자가 실제로 한 일·판단의 이유·결과의 근거를 확인하는 질문으로 만듭니다.",
+    "- 지원 동기와 직무 이해를 확인하는 질문을 하나 넣습니다.",
+    "- 자기소개서 문장을 그대로 읽어 주지 말고, 면접에서 말로 묻는 짧은 질문으로 바꿉니다.",
+  ];
+}
+
 /**
  * 실시간 면접관 지시. 리포트의 예상 질문·약한 곳에서 시작하고 모범 답변은 넘기지 않는다.
+ * 리포트 없이 시작하면 questions 가 비어 있고, 면접관이 자기소개서를 읽고 질문을 직접 정한다.
  * @param {{ company?: string|null, jobRole?: string|null, coverLetter: string, questions: Array<{question: string, followUps: string[]}>, gaps: string[], postingBlock?: string, mode: "FULL"|"SHORT" }} input
  */
 export function buildInterviewerInstruction({ company, jobRole, coverLetter, questions, gaps, postingBlock = "", mode }) {
@@ -46,8 +57,7 @@ export function buildInterviewerInstruction({ company, jobRole, coverLetter, que
     "2) 1분 정도 자기소개를 부탁합니다.",
     "3) 자기소개에서 나온 이야기 중 자기소개서와 이어지는 것을 짧게 받아 1번 질문으로 자연스럽게 넘어갑니다. 자기소개에 대한 평가는 말하지 않습니다.",
     "",
-    "[질문 계획] 순서대로 쓰되, 답변에 따라 꼬리 질문을 먼저 해도 됩니다.",
-    ...plan,
+    ...(plan.length ? ["[질문 계획] 순서대로 쓰되, 답변에 따라 꼬리 질문을 먼저 해도 됩니다.", ...plan] : selfPlannedQuestions(limit, where)),
     "",
     gaps.length ? `[진단에서 약하게 나온 곳] 이 부분은 꼭 확인합니다.\n${gaps.slice(0, GAP_MAX).map((gap) => `- ${gap}`).join("\n")}\n` : "",
     postingBlock ? `${postingBlock}` : "",
@@ -98,9 +108,7 @@ export function buildFeedbackPrompt({ company, jobRole, transcript, photoCount, 
     "    suggestion: 다음 면접에서 해 볼 한 가지를 한 문장으로.",
     "    supportingPhotoCount: 그 행동이 보인 사진 수(정수).",
     "",
-    "[면접관이 준비했던 질문]",
-    plannedQuestions,
-    "",
+    ...(plannedQuestions ? ["[면접관이 준비했던 질문]", plannedQuestions, ""] : []),
     "[대화]",
     ...lines,
   ].join("\n");

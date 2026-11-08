@@ -4,7 +4,7 @@ import type { InterviewMode } from "@/lib/interview/interviewApi";
 export const INTERVIEW_TITLE = "AI 모의 면접";
 
 export const INTERVIEW_MODE_COPY: Record<InterviewMode, { label: string; minutes: number; description: string }> = {
-  FULL: { label: "실전 15분", minutes: 15, description: "리포트의 예상 질문으로 면접관이 묻고, 답에 따라 꼬리 질문이 이어져요." },
+  FULL: { label: "실전 15분", minutes: 15, description: "내 자소서를 읽은 면접관이 묻고, 답에 따라 꼬리 질문이 이어져요." },
   SHORT: { label: "짧은 연습 5분", minutes: 5, description: "질문 두 개로 가볍게 몸을 풀어요. 피드백은 같은 구성으로 받아요." },
 };
 
@@ -12,8 +12,8 @@ export const INTERVIEW_MODE_COPY: Record<InterviewMode, { label: string; minutes
 export const INTERVIEW_CONSENT_COPY = {
   heading: "시작하기 전에 확인해 주세요",
   items: [
-    "면접 중 마이크 소리와 카메라 사진(약 10초에 1장)이 내 브라우저에서 Google의 AI(Gemini, 미국)로 바로 전송돼요. 내 자소서와 리포트의 예상 질문·보완점, 회사·직무, 채용공고 내용도 면접관 지시로 함께 전달돼요.",
-    "끝나면 사진 최대 12장이 회사 서버를 거쳐 Google에 전달되어 피드백을 만들어요. 회사는 음성·영상·사진을 저장하지 않아요. 자동 받아쓰기로 만든 대화 글과 피드백은 내가 이 지원서를 지우거나 탈퇴할 때까지 남아요.",
+    "면접 중 마이크 소리와 카메라 사진(약 10초에 1장)이 내 브라우저에서 Google의 AI(Gemini, 미국)로 바로 전송돼요. 내 자소서와 회사·직무(리포트로 시작하면 리포트의 예상 질문·보완점과 채용공고 내용까지)도 면접관 지시로 함께 전달돼요.",
+    "끝나면 사진 최대 12장이 회사 서버를 거쳐 Google에 전달되어 피드백을 만들어요. 회사는 음성·영상·사진을 저장하지 않아요. 자동 받아쓰기로 만든 대화 글과 피드백(리포트 없이 시작하면 붙여 넣은 자소서도)은 리포트로 시작한 면접은 그 지원서를 지우거나 탈퇴할 때까지, 리포트 없이 시작한 면접은 탈퇴할 때까지 남아요.",
     "자동 받아쓰기라 실제 말과 다를 수 있어요. 피드백은 참고로만 봐 주세요.",
     "시작하면 이용권 1회가 쓰여요. 2분 안에 그만두고 답변이 2번 미만이면 돌려드려요(한 달에 2번까지). 끝난 뒤 24시간 안에 피드백을 받지 않으면 사용한 것으로 확정돼요.",
   ],
@@ -84,6 +84,32 @@ export const INTERVIEW_CARD_COPY = {
   buy: "면접 이용권 구매",
   disabled: "준비 중인 기능이에요.",
   history: "지난 면접 보기",
+};
+
+/** /my/interview-practice 소개 화면의 진행 순서·입력 칸(11-09, 리포트 없이 시작). */
+export const INTERVIEW_START_COPY = {
+  stepsHeading: "이렇게 진행돼요",
+  steps: [
+    { title: "자소서 붙여 넣기", body: "지원할 회사·직무와 자기소개서를 넣어요. 면접관이 이걸 읽고 질문을 준비해요." },
+    { title: "화상 면접 보기", body: "카메라와 마이크를 켜고 말로 답해요. 답을 듣고 꼬리 질문이 이어져요." },
+    { title: "피드백 받기", body: "끝나면 질문마다 괜찮았던 점과 고칠 점, 시선·자세까지 정리해 줘요." },
+  ],
+  formHeading: "면접 시작하기",
+  formHint: "리포트가 없어도 괜찮아요. 회사·직무와 자소서만 있으면 바로 시작해요.",
+  letterPlaceholder: "제출할(또는 제출한) 자기소개서를 붙여 넣어 주세요. 문항이 여러 개면 모두 넣어도 돼요.",
+  modeHint: {
+    FULL: "실제 면접처럼 질문 여러 개와 꼬리 질문이 이어져요.",
+    SHORT: "질문 두 개로 가볍게 몸을 풀어요.",
+  } satisfies Record<InterviewMode, string>,
+  needCompany: "회사와 직무를 적어 주세요.",
+  needLetter: "자소서를 200자 이상 붙여 넣어 주세요.",
+  loginHint: "시작하면 로그인 화면으로 이동해요.",
+  importLabel: "저장한 지원서 불러오기",
+  importPlaceholder: "지원서를 고르면 회사·직무·자소서가 채워져요",
+  importHint: "답을 쓴 문항만 불러와요. 불러온 뒤에 고쳐도 지원서에는 반영되지 않아요.",
+  importEmpty: "이 지원서에는 불러올 답변이 없어요.",
+  importFailed: "지원서를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+  reportHint: "자소서 리포트를 받았다면, 리포트의 예상 질문으로 시작하면 진단에서 약했던 곳까지 짚어 줘요.",
 };
 
 export const DELIVERY_CATEGORY_LABEL: Record<"GAZE" | "POSTURE" | "FRAMING", string> = {
