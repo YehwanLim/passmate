@@ -29,6 +29,16 @@ export interface BehaviorInterviews {
   shortMode: number;
   medianSeconds: number | null;
 }
+/** 팝업별 고유 방문자 수. 클릭률은 clicked / shown. */
+export interface PopupClickRow {
+  key: string;
+  label: string;
+  kind: "interview" | "notice";
+  shown: number;
+  clicked: number;
+  closed: number;
+  hidden: number;
+}
 /** GET /api/admin/behavior (lib/admin-handlers/behavior.js) */
 export interface BehaviorData {
   period: AdminPeriod | "custom";
@@ -40,6 +50,7 @@ export interface BehaviorData {
   login: BehaviorLogin;
   features: FeatureUsageRow[];
   interviews: BehaviorInterviews;
+  popups: PopupClickRow[];
 }
 
 const POLL_MS = 5 * 60 * 1000;

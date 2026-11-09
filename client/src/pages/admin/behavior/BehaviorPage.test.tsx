@@ -50,6 +50,7 @@ describe("BehaviorPage", () => {
         shortMode: 1,
         medianSeconds: 540,
       },
+      popups: [{ key: "interview", label: "AI 모의 면접 출시 팝업", kind: "interview", shown: 40, clicked: 6, closed: 30, hidden: 4 }],
     });
 
     render(createElement(BehaviorPage));
@@ -67,6 +68,8 @@ describe("BehaviorPage", () => {
     expect(screen.getByText("한 번 이상 답함")).toBeTruthy();
     expect(screen.getByText("38%")).toBeTruthy(); // 면접 답함 3/8
     expect(screen.getByText(/진행 시간 중앙값 9분/)).toBeTruthy();
+    expect(screen.getByText("AI 모의 면접 출시 팝업")).toBeTruthy();
+    expect(screen.getByText("15%")).toBeTruthy(); // 팝업 클릭률 6/40
   });
 
   it("날짜 지정을 누르면 오늘 하루를 custom 으로 요청하고, 기간 버튼을 누르면 돌아간다", async () => {

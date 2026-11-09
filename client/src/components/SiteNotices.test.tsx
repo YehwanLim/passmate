@@ -6,6 +6,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
+const sendFunnelEvent = vi.hoisted(() => vi.fn(async () => true));
+vi.mock("@/lib/siteVisits", () => ({ sendFunnelEvent }));
+
 import { SiteNotices } from "./SiteNotices";
 
 const banner = { id: "b1", kind: "BANNER", title: "10월 점검 안내", body: "새벽 2시~3시", linkUrl: "/guide", linkLabel: "자세히", imageUrl: null };
@@ -51,6 +54,16 @@ describe("SiteNotices", () => {
     fireEvent.click(screen.getByLabelText("공지 닫기"));
     expect(screen.queryByText("10월 점검 안내")).toBeNull();
     expect(window.sessionStorage.getItem("preview.notice.closed.b1")).toBe("1");
+  });
+
+  it("팝업이 뜨고 닫힐 때 공지 id 로 기록을 남긴다", async () => {
+    sendFunnelEvent.mockClear();
+    renderAt("/");
+    await waitFor(() => expect(screen.getByText("이벤트")).toBeTruthy());
+    expect(sendFunnelEvent).toHaveBeenCalledWith("content_cta_click", "notice-popup:p1:open");
+
+    fireEvent.click(screen.getByText("닫기"));
+    expect(sendFunnelEvent).toHaveBeenCalledWith("content_cta_click", "notice-popup:p1:close");
   });
 
   it("관리자 화면에서는 공지를 받아 오지도 않는다", () => {

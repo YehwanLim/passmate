@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     apiRateLimitBucket: { findMany: vi.fn() },
     interviewSession: { findMany: vi.fn() },
     interviewTurn: { groupBy: vi.fn() },
+    siteNotice: { findMany: vi.fn() },
   },
   requireAdministrator: vi.fn(),
 }));
@@ -49,6 +50,7 @@ describe("admin behavior — 사용 행동", () => {
     mocks.prisma.apiRateLimitBucket.findMany.mockResolvedValue([]);
     mocks.prisma.interviewSession.findMany.mockResolvedValue([]);
     mocks.prisma.interviewTurn.groupBy.mockResolvedValue([]);
+    mocks.prisma.siteNotice.findMany.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -338,5 +340,40 @@ describe("admin behavior — 사용 행동", () => {
     expect(mocks.prisma.interviewTurn.groupBy).not.toHaveBeenCalled();
     expect(res.body.interviews.steps[0]).toEqual({ key: "created", label: "시작 누름", sessions: 0, users: 0 });
     expect(res.body.interviews.medianSeconds).toBeNull();
+  });
+
+  it("팝업마다 뜬 사람·누른 사람·닫은 사람을 세고 공지 제목을 붙인다", async () => {
+    const noticeId = "11111111-2222-3333-4444-555555555555";
+    const goneId = "99999999-2222-3333-4444-555555555555";
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([
+      { visitorId: "v1", name: "content_cta_click", detail: "m:interview-popup:open" },
+      { visitorId: "v1", name: "content_cta_click", detail: "m:interview-popup:go" },
+      { visitorId: "v2", name: "content_cta_click", detail: "d:interview-popup:open" },
+      { visitorId: "v2", name: "content_cta_click", detail: "d:interview-popup:never" },
+      { visitorId: "v3", name: "content_cta_click", detail: "d:interview-popup:open" },
+      { visitorId: "v3", name: "content_cta_click", detail: "d:interview-popup:open" },
+      { visitorId: "v3", name: "content_cta_click", detail: "d:interview-popup:close" },
+      { visitorId: "v1", name: "content_cta_click", detail: `m:notice-popup:${noticeId}:open` },
+      { visitorId: "v1", name: "content_cta_click", detail: `m:notice-popup:${noticeId}:today` },
+      { visitorId: "v4", name: "content_cta_click", detail: `d:notice-popup:${goneId}:open` },
+      // 팝업이 아닌 것·꼴이 다른 것은 버린다
+      { visitorId: "v5", name: "content_cta_click", detail: "m:guide-end:slug" },
+      { visitorId: "v5", name: "content_cta_click", detail: "m:notice-popup:------------------------------------:open" },
+    ]);
+    mocks.prisma.siteNotice.findMany.mockResolvedValue([{ id: noticeId, title: "11월 이벤트" }]);
+
+    const res = await run();
+    expect(mocks.prisma.siteNotice.findMany.mock.calls[0][0].where.id.in.sort()).toEqual([noticeId, goneId].sort());
+    expect(res.body.popups).toEqual([
+      { key: "interview", label: "AI 모의 면접 출시 팝업", kind: "interview", shown: 3, clicked: 1, closed: 1, hidden: 1 },
+      { key: `notice:${noticeId}`, label: "11월 이벤트", kind: "notice", shown: 1, clicked: 0, closed: 0, hidden: 1 },
+      { key: `notice:${goneId}`, label: "지운 공지 팝업", kind: "notice", shown: 1, clicked: 0, closed: 0, hidden: 0 },
+    ]);
+  });
+
+  it("팝업 기록이 없으면 공지를 조회하지 않고 빈 목록을 준다", async () => {
+    const res = await run();
+    expect(mocks.prisma.siteNotice.findMany).not.toHaveBeenCalled();
+    expect(res.body.popups).toEqual([]);
   });
 });

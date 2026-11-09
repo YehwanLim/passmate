@@ -12,6 +12,12 @@ import {
   isNoticeHidden,
   type SiteNotice,
 } from "@/lib/siteNotices";
+import { sendFunnelEvent } from "@/lib/siteVisits";
+
+/** 공지 팝업 노출·버튼·닫기 기록. 관리자 사용 행동의 '팝업 클릭률'이 공지 id 로 묶어 센다. */
+function trackPopup(id: string, action: "open" | "go" | "close" | "today") {
+  void sendFunnelEvent("content_cta_click", `notice-popup:${id}:${action}`);
+}
 
 function NoticeLink({ notice, className, onNavigate }: { notice: SiteNotice; className?: string; onNavigate?: () => void }) {
   if (!notice.linkUrl) return null;
@@ -49,7 +55,17 @@ function NoticeBanner({ notice, onClose }: { notice: SiteNotice; onClose: () => 
   );
 }
 
-function NoticePopup({ notice, onClose, onHideToday }: { notice: SiteNotice; onClose: () => void; onHideToday: () => void }) {
+function NoticePopup({
+  notice,
+  onClose,
+  onGo,
+  onHideToday,
+}: {
+  notice: SiteNotice;
+  onClose: () => void;
+  onGo: () => void;
+  onHideToday: () => void;
+}) {
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
@@ -69,7 +85,7 @@ function NoticePopup({ notice, onClose, onHideToday }: { notice: SiteNotice; onC
           </DialogDescription>
           {notice.linkUrl && (
             <Button asChild className="mt-3 w-full">
-              <NoticeLink notice={notice} onNavigate={onClose} />
+              <NoticeLink notice={notice} onNavigate={onGo} />
             </Button>
           )}
         </div>
@@ -103,7 +119,9 @@ export function SiteNotices() {
       .then((notices) => {
         if (cancelled) return;
         setBanner(notices.banner && !isNoticeHidden(notices.banner.id) ? notices.banner : null);
-        setPopup(notices.popup && !isNoticeHidden(notices.popup.id) ? notices.popup : null);
+        const visiblePopup = notices.popup && !isNoticeHidden(notices.popup.id) ? notices.popup : null;
+        setPopup(visiblePopup);
+        if (visiblePopup) trackPopup(visiblePopup.id, "open");
       })
       .catch(() => {
         // 공지는 부가 기능이다. 실패하면 조용히 넘어간다.
@@ -129,10 +147,17 @@ export function SiteNotices() {
         <NoticePopup
           notice={popup}
           onClose={() => {
+            trackPopup(popup.id, "close");
+            closeNoticeForSession(popup.id);
+            setPopup(null);
+          }}
+          onGo={() => {
+            trackPopup(popup.id, "go");
             closeNoticeForSession(popup.id);
             setPopup(null);
           }}
           onHideToday={() => {
+            trackPopup(popup.id, "today");
             hideNoticeForToday(popup.id);
             setPopup(null);
           }}

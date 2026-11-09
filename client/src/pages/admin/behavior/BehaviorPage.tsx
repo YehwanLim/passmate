@@ -3,6 +3,7 @@ import { EngagedTimeCard } from "@/components/admin/behavior/EngagedTimeCard";
 import { FeatureUsageTable } from "@/components/admin/behavior/FeatureUsageTable";
 import { FunnelTable } from "@/components/admin/behavior/FunnelTable";
 import { InterviewStatsCard } from "@/components/admin/behavior/InterviewStatsCard";
+import { PopupClicksTable } from "@/components/admin/behavior/PopupClicksTable";
 import { RetentionLoginCards } from "@/components/admin/behavior/RetentionLoginCards";
 import { SourcesTable } from "@/components/admin/behavior/SourcesTable";
 import { AdminErrorAlert } from "@/components/admin/shared/AdminErrorAlert";
@@ -49,6 +50,7 @@ export default function BehaviorPage() {
 
       <FunnelTable steps={data?.funnel ?? []} periodLabel={periodLabel} isLoading={isLoading} />
       <InterviewStatsCard data={data?.interviews ?? null} periodLabel={periodLabel} />
+      <PopupClicksTable rows={data?.popups ?? null} periodLabel={periodLabel} />
       <EngagedTimeCard data={data?.engagedTime ?? null} periodLabel={periodLabel} />
       <SourcesTable rows={data?.sources ?? []} periodLabel={periodLabel} isLoading={isLoading} />
       <RetentionLoginCards
