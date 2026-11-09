@@ -61,7 +61,29 @@ export function shiftDateRange(range: AdminDateRange, direction: -1 | 1, today =
   return next.to > today ? range : next;
 }
 
-export function adminDateRangeLabel({ from, to }: AdminDateRange): string {
-  const short = (value: string) => `${value.slice(5, 7)}/${value.slice(8, 10)}`;
-  return from === to ? `${short(from)} 하루` : `${short(from)} ~ ${short(to)} (${spanDays({ from, to })}일)`;
+/** 사용 행동 화면 위쪽 빠른 버튼. 모두 오늘에서 끝난다. */
+export const BEHAVIOR_RANGE_PRESETS = [
+  { key: "today", label: "오늘", days: 1 },
+  { key: "7d", label: "최근 7일", days: 7 },
+  { key: "30d", label: "최근 30일", days: 30 },
+] as const;
+
+export function presetRange(days: number, today = kstDateString()): AdminDateRange {
+  return { from: shiftDate(today, -(days - 1)), to: today };
+}
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const shortDate = (value: string) => `${value.slice(5, 7)}/${value.slice(8, 10)}`;
+
+/** 화살표 사이에 크게 보이는 제목: 하루면 "11월 10일 (화)", 여러 날이면 "11/04 ~ 11/10". */
+export function adminDateRangeTitle({ from, to }: AdminDateRange): string {
+  if (from !== to) return `${shortDate(from)} ~ ${shortDate(to)}`;
+  const weekday = WEEKDAYS[new Date(`${from}T00:00:00Z`).getUTCDay()];
+  return `${Number(from.slice(5, 7))}월 ${Number(from.slice(8, 10))}일 (${weekday})`;
+}
+
+/** 카드 설명에 붙는 짧은 기간 이름. */
+export function adminDateRangeLabel({ from, to }: AdminDateRange, today = kstDateString()): string {
+  if (from === to) return from === today ? "오늘" : shortDate(from);
+  return `${shortDate(from)} ~ ${shortDate(to)} (${spanDays({ from, to })}일)`;
 }

@@ -55,14 +55,13 @@ export interface BehaviorData {
 
 const POLL_MS = 5 * 60 * 1000;
 
-/** range 가 있으면 직접 지정 기간(period=custom&from&to), 없으면 기간 버튼 값. */
-export function behaviorUrl(period: AdminPeriod, range: AdminDateRange | null = null): string {
-  if (!range) return `/api/admin/behavior?period=${period}`;
+/** 화면은 늘 날짜 범위(KST, 양 끝 포함)로 묻는다 — 서버 period=custom&from&to. */
+export function behaviorUrl(range: AdminDateRange): string {
   return `/api/admin/behavior?${new URLSearchParams({ period: "custom", from: range.from, to: range.to })}`;
 }
 
-export function useBehaviorData(period: AdminPeriod, range: AdminDateRange | null = null) {
-  return useAdminResource<BehaviorData>(behaviorUrl(period, range), {
+export function useBehaviorData(range: AdminDateRange) {
+  return useAdminResource<BehaviorData>(behaviorUrl(range), {
     pollMs: POLL_MS,
     errorMessage: "사용 행동 데이터를 불러오지 못했습니다.",
   });

@@ -56,7 +56,7 @@ describe("BehaviorPage", () => {
     render(createElement(BehaviorPage));
 
     await waitFor(() => expect(screen.getByText("threads")).toBeTruthy());
-    expect(adminApiFetch).toHaveBeenCalledWith("/api/admin/behavior?period=7d");
+    expect(adminApiFetch.mock.calls[0][0]).toMatch(/^\/api\/admin\/behavior\?period=custom&from=\d{4}-\d{2}-\d{2}&to=/);
     expect(screen.getByText("분석 폼 열람 → 작성 시작")).toBeTruthy();
     expect(screen.getByText("늘어남")).toBeTruthy(); // 제출 1 → 가입 4
     expect(screen.getByText("5.6%")).toBeTruthy(); // 다시 온 방문자 4/72
@@ -72,29 +72,33 @@ describe("BehaviorPage", () => {
     expect(screen.getByText("15%")).toBeTruthy(); // 팝업 클릭률 6/40
   });
 
-  it("날짜 지정을 누르면 오늘 하루를 custom 으로 요청하고, 기간 버튼을 누르면 돌아간다", async () => {
+  it("처음엔 오늘 하루, 화살표로 하루씩, 빠른 버튼·기간 지정으로 범위를 바꾼다", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-11-09T14:00:00.000Z")); // 11-09 23시 KST
+    vi.setSystemTime(new Date("2026-11-10T05:00:00.000Z")); // 11-10(화) 14시 KST
     adminApiFetch.mockResolvedValue({});
+    const url = (from: string, to: string) => `/api/admin/behavior?period=custom&from=${from}&to=${to}`;
     render(createElement(BehaviorPage));
 
-    fireEvent.click(screen.getByText("날짜 지정"));
-    await waitFor(() =>
-      expect(adminApiFetch).toHaveBeenLastCalledWith("/api/admin/behavior?period=custom&from=2026-11-09&to=2026-11-09"),
-    );
+    await waitFor(() => expect(adminApiFetch).toHaveBeenLastCalledWith(url("2026-11-10", "2026-11-10")));
+    expect(screen.getByText("11월 10일 (화)")).toBeTruthy();
+    expect((screen.getByLabelText("다음 날짜") as HTMLButtonElement).disabled).toBe(true);
 
-    fireEvent.click(screen.getByLabelText("이전 기간"));
-    await waitFor(() =>
-      expect(adminApiFetch).toHaveBeenLastCalledWith("/api/admin/behavior?period=custom&from=2026-11-08&to=2026-11-08"),
-    );
+    fireEvent.click(screen.getByLabelText("이전 날짜"));
+    await waitFor(() => expect(adminApiFetch).toHaveBeenLastCalledWith(url("2026-11-09", "2026-11-09")));
+    expect(screen.getByText("11월 9일 (월)")).toBeTruthy();
 
+    fireEvent.click(screen.getByText("최근 7일"));
+    await waitFor(() => expect(adminApiFetch).toHaveBeenLastCalledWith(url("2026-11-04", "2026-11-10")));
+    expect(screen.getByText("최근 7일").getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByLabelText("이전 날짜"));
+    await waitFor(() => expect(adminApiFetch).toHaveBeenLastCalledWith(url("2026-10-28", "2026-11-03")));
+
+    fireEvent.click(screen.getByText("기간 지정"));
     fireEvent.change(screen.getByLabelText("시작 날짜"), { target: { value: "2026-11-01" } });
-    await waitFor(() =>
-      expect(adminApiFetch).toHaveBeenLastCalledWith("/api/admin/behavior?period=custom&from=2026-11-01&to=2026-11-08"),
-    );
+    await waitFor(() => expect(adminApiFetch).toHaveBeenLastCalledWith(url("2026-11-01", "2026-11-03")));
 
-    fireEvent.click(screen.getByText("최근 30일"));
-    await waitFor(() => expect(adminApiFetch).toHaveBeenLastCalledWith("/api/admin/behavior?period=30d"));
+    fireEvent.click(screen.getByText("오늘"));
+    await waitFor(() => expect(adminApiFetch).toHaveBeenLastCalledWith(url("2026-11-10", "2026-11-10")));
     vi.useRealTimers();
   });
 });
