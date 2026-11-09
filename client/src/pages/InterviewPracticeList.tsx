@@ -142,7 +142,6 @@ export default function InterviewPracticeList() {
 
         <section id={INTERVIEW_START_FORM_ID} className="scroll-mt-24 pt-14" aria-labelledby="interview-start-heading">
           <h2 id="interview-start-heading" className="text-[22px] font-bold tracking-[-0.03em]">{INTERVIEW_START_COPY.formHeading}</h2>
-          <p className="mt-1.5 text-[15px] text-ink-4 text-pretty">{INTERVIEW_START_COPY.formHint}</p>
 
           <form onSubmit={submit} className="mt-5 space-y-5 rounded-3xl bg-surface px-5 py-6 md:px-8 md:py-8">
             {applications.length > 0 && (

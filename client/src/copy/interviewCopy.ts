@@ -95,7 +95,6 @@ export const INTERVIEW_START_COPY = {
     { title: "피드백 받기", body: "끝나면 질문마다 괜찮았던 점과 고칠 점, 시선·자세까지 정리해 줘요." },
   ],
   formHeading: "면접 시작하기",
-  formHint: "리포트가 없어도 괜찮아요. 회사·직무와 자소서만 있으면 바로 시작해요.",
   letterPlaceholder: "제출할(또는 제출한) 자기소개서를 붙여 넣어 주세요. 문항이 여러 개면 모두 넣어도 돼요.",
   modeHint: {
     FULL: "실제 면접처럼 질문 여러 개와 꼬리 질문이 이어져요.",
