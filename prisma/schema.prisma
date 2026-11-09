@@ -722,6 +722,8 @@ model SiteVisit {
   utmSource String?  @map("utm_source") @db.VarChar(64)
   /// 첫 방문 핑의 인앱 브라우저 종류(client/src/lib/inAppBrowser.ts 의 kind). 일반 브라우저는 null.
   inAppBrowser String? @map("in_app_browser") @db.VarChar(32)
+  /// 폰 m · PC d(client/src/lib/siteVisits.ts deviceClass). 11-10 전 방문·옛 탭은 null.
+  device    String?  @db.VarChar(1)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)

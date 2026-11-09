@@ -73,13 +73,14 @@ describe("admin behavior — 사용 행동", () => {
     expect(deviceOf(null)).toBeNull();
   });
 
-  it("단계별 고유 수를 세고 이벤트 단계는 폰/PC 로 나눈다", async () => {
+  it("단계별 고유 수를 세고 방문~제출 단계는 폰/PC 로 나눈다", async () => {
     signups = [{ id: "u1" }, { id: "u2" }];
     mocks.prisma.siteVisit.findMany.mockResolvedValue([
-      { visitorId: "a", path: "/", createdAt: NOW },
-      { visitorId: "a", path: "/analyze", createdAt: NOW },
-      { visitorId: "b", path: "/analyze", createdAt: NOW },
-      { visitorId: "c", path: "/guide", createdAt: NOW },
+      // a: 방문 핑에 기기 없음(옛 탭) → 이벤트(m)로 채움, b: 방문 핑 d, c: 기기 모름
+      { visitorId: "a", path: "/", createdAt: NOW, device: null },
+      { visitorId: "a", path: "/analyze", createdAt: NOW, device: null },
+      { visitorId: "b", path: "/analyze", createdAt: NOW, device: "d" },
+      { visitorId: "c", path: "/guide", createdAt: NOW, device: null },
     ]);
     mocks.prisma.clientEvent.findMany.mockResolvedValue([
       { visitorId: "a", name: "analyze_form_start", detail: "m" },
@@ -105,6 +106,12 @@ describe("admin behavior — 사용 행동", () => {
       expect.objectContaining({ mobile: 1, desktop: 1 }),
     );
     expect(res.body.funnel.find((step) => step.key === "visit")).toEqual(
+      expect.objectContaining({ count: 3, mobile: 1, desktop: 1 }),
+    );
+    expect(res.body.funnel.find((step) => step.key === "analyzeView")).toEqual(
+      expect.objectContaining({ count: 2, mobile: 1, desktop: 1 }),
+    );
+    expect(res.body.funnel.find((step) => step.key === "signup")).toEqual(
       expect.objectContaining({ mobile: null, desktop: null }),
     );
   });

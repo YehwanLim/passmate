@@ -46,7 +46,7 @@ describe("POST /api/visits — 방문 핑", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ recorded: true });
     expect(db.siteVisit.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: { visitorId: VISITOR_ID, path: "/", userId: null, referrer: null, utmSource: null, inAppBrowser: null },
+      data: { visitorId: VISITOR_ID, path: "/", userId: null, referrer: null, utmSource: null, inAppBrowser: null, device: null },
     }));
     expect(db.user.findUnique).not.toHaveBeenCalled();
   });
@@ -133,6 +133,14 @@ describe("POST /api/visits — 방문 핑", () => {
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/", inAppBrowser: 3 })).toBeNull();
   });
 
+  it("방문 핑의 기기(m·d)를 저장하고, 다른 값이면 방문은 남기되 기기만 비운다", async () => {
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null });
+    await handler({ method: "POST", headers: {}, body: { visitorId: VISITOR_ID, path: "/", device: "m" } }, response());
+    await handler({ method: "POST", headers: {}, body: { visitorId: VISITOR_ID, path: "/", device: "tablet" } }, response());
+    expect(db.siteVisit.create.mock.calls[0][0].data.device).toBe("m");
+    expect(db.siteVisit.create.mock.calls[1][0].data.device).toBeNull();
+  });
+
   it("로그인 화면 이벤트(event 필드)는 방문이 아니라 client_events 에 쌓인다", async () => {
     db.user.findUnique.mockResolvedValue({ id: "user-1" });
     const handler = createSiteVisitHandler({ db, authenticate: async () => ({ id: "user-1" }) });
@@ -193,7 +201,7 @@ describe("POST /api/visits — 방문 핑", () => {
   });
 
   it("readVisitBody 는 관리자 경로·쿼리·초과 길이·모르는 필드를 거른다", () => {
-    expect(readVisitBody({ visitorId: VISITOR_ID, path: "/company-report" })).toEqual({ visitorId: VISITOR_ID, path: "/company-report", referrer: null, utmSource: null, inAppBrowser: null });
+    expect(readVisitBody({ visitorId: VISITOR_ID, path: "/company-report" })).toEqual({ visitorId: VISITOR_ID, path: "/company-report", referrer: null, utmSource: null, inAppBrowser: null, device: null });
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/admin" })).toBeNull();
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/admin/users" })).toBeNull();
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/?q=1" })).toBeNull();

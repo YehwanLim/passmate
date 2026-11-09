@@ -174,7 +174,7 @@ export async function sendVisit(
   const inApp = inAppBrowser === undefined ? consumeInAppBrowser() : inAppBrowser;
 
   return postToVisits(
-    { visitorId, path, ...(entry ?? {}), ...(inApp ? { inAppBrowser: inApp } : {}) },
+    { visitorId, path, device: deviceClass(), ...(entry ?? {}), ...(inApp ? { inAppBrowser: inApp } : {}) },
     { fetcher, getAccessToken },
   );
 }
