@@ -240,7 +240,7 @@ export default function InterviewPracticeList() {
             </div>
             <p className="text-[13px] leading-relaxed text-ink-4">
               {INTERVIEW_START_COPY.reportHint}{" "}
-              <Link href="/my" className="font-semibold text-ink-3 underline underline-offset-2">내 리포트 보기</Link>
+              <Link href="/my" className="font-semibold text-ink-3 underline underline-offset-2">내 리포트 불러오기</Link>
             </p>
           </form>
         </section>

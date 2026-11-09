@@ -109,7 +109,8 @@ export const INTERVIEW_START_COPY = {
   importHint: "답을 쓴 문항만 불러와요. 여기서 고쳐도 원래 지원서는 그대로예요.",
   importEmpty: "이 지원서에는 불러올 답변이 없어요.",
   importFailed: "지원서를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.",
-  reportHint: "자소서 리포트를 받았다면, 리포트의 예상 질문으로 시작하면 진단에서 약했던 곳까지 짚어 줘요.",
+  reportHint:
+    "자소서 리포트가 있다면 예상 질문으로 연습해 보세요. 약했던 부분을 위주로 집중 연습 할 수 있습니다. 분석한 리포트가 없어도 자소서를 붙여넣기만 하면 면접을 바로 시작할 수 있어요.",
 };
 
 export const DELIVERY_CATEGORY_LABEL: Record<"GAZE" | "POSTURE" | "FRAMING", string> = {
