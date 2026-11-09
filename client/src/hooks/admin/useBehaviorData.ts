@@ -1,4 +1,4 @@
-import type { AdminPeriod } from "@/lib/adminPeriod";
+import type { AdminDateRange, AdminPeriod } from "@/lib/adminPeriod";
 import { useAdminResource } from "./useAdminResource";
 
 /** 단계별 고유 수. mobile/desktop 은 기기 정보가 있는 단계(이벤트)에만 있고 나머지는 null. */
@@ -20,21 +20,38 @@ export interface BehaviorLogin {
   events: Record<string, number>;
 }
 export interface FeatureUsageRow { key: string; label: string; uses: number; users: number; }
+/** AI 모의 면접 단계별 세션 수·사람 수. 진행 시간은 이용권을 쓰고 끝낸 면접의 중앙값(없으면 null). */
+export interface InterviewStepRow { key: string; label: string; sessions: number; users: number; }
+export interface BehaviorInterviews {
+  steps: InterviewStepRow[];
+  interrupted: number;
+  refunded: number;
+  shortMode: number;
+  medianSeconds: number | null;
+}
 /** GET /api/admin/behavior (lib/admin-handlers/behavior.js) */
 export interface BehaviorData {
-  period: AdminPeriod;
+  period: AdminPeriod | "custom";
+  range?: AdminDateRange;
   funnel: FunnelStep[];
   sources: BehaviorSourceRow[];
   retention: BehaviorRetention;
   engagedTime: BehaviorEngagedTime;
   login: BehaviorLogin;
   features: FeatureUsageRow[];
+  interviews: BehaviorInterviews;
 }
 
 const POLL_MS = 5 * 60 * 1000;
 
-export function useBehaviorData(period: AdminPeriod) {
-  return useAdminResource<BehaviorData>(`/api/admin/behavior?period=${period}`, {
+/** range 가 있으면 직접 지정 기간(period=custom&from&to), 없으면 기간 버튼 값. */
+export function behaviorUrl(period: AdminPeriod, range: AdminDateRange | null = null): string {
+  if (!range) return `/api/admin/behavior?period=${period}`;
+  return `/api/admin/behavior?${new URLSearchParams({ period: "custom", from: range.from, to: range.to })}`;
+}
+
+export function useBehaviorData(period: AdminPeriod, range: AdminDateRange | null = null) {
+  return useAdminResource<BehaviorData>(behaviorUrl(period, range), {
     pollMs: POLL_MS,
     errorMessage: "사용 행동 데이터를 불러오지 못했습니다.",
   });

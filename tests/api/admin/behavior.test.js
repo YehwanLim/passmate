@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
     paymentEntitlement: { findMany: vi.fn() },
     experience: { findMany: vi.fn() },
     apiRateLimitBucket: { findMany: vi.fn() },
+    interviewSession: { findMany: vi.fn() },
+    interviewTurn: { groupBy: vi.fn() },
   },
   requireAdministrator: vi.fn(),
 }));
@@ -45,6 +47,8 @@ describe("admin behavior — 사용 행동", () => {
     mocks.prisma.paymentEntitlement.findMany.mockResolvedValue([]);
     mocks.prisma.experience.findMany.mockResolvedValue([]);
     mocks.prisma.apiRateLimitBucket.findMany.mockResolvedValue([]);
+    mocks.prisma.interviewSession.findMany.mockResolvedValue([]);
+    mocks.prisma.interviewTurn.groupBy.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -283,5 +287,56 @@ describe("admin behavior — 사용 행동", () => {
     mocks.prisma.siteVisit.findMany.mockResolvedValue([{ visitorId: "a", createdAt: NOW, utmSource: "threads" }]);
     const res = await run();
     expect(JSON.stringify(res.body)).not.toMatch(/@/);
+  });
+
+  it("직접 지정 기간은 끝 날짜 다음 날 0시(KST)까지 조회하고 범위를 돌려준다", async () => {
+    const res = await run({ period: "custom", from: "2026-09-08", to: "2026-09-08" });
+    const where = mocks.prisma.siteVisit.findMany.mock.calls[0][0].where.createdAt;
+    expect(where.gte.toISOString()).toBe("2026-09-07T15:00:00.000Z");
+    expect(where.lt.toISOString()).toBe("2026-09-08T15:00:00.000Z");
+    expect(res.body.period).toBe("custom");
+    expect(res.body.range).toEqual({ from: "2026-09-08", to: "2026-09-08" });
+  });
+
+  it("AI 모의 면접은 단계마다 세션·사람 수를 세고 운영자 면접은 뺀다", async () => {
+    admins = [{ id: "admin-1" }];
+    const t = (iso) => new Date(iso);
+    mocks.prisma.interviewSession.findMany.mockResolvedValue([
+      // 시작만 누르고 연결 안 됨 → 환불
+      { id: "s1", userId: "u1", status: "CANCELLED", mode: "FULL", firstTokenAt: null, endedAt: null, feedbackStatus: "NONE" },
+      // 연결됐지만 답 없이 끝 → 환불
+      { id: "s2", userId: "u1", status: "CANCELLED", mode: "FULL", firstTokenAt: t("2026-09-09T01:00:00Z"), endedAt: t("2026-09-09T01:01:00Z"), feedbackStatus: "NONE" },
+      // 끝까지 보고 피드백 받음(10분)
+      { id: "s3", userId: "u1", status: "ENDED", mode: "FULL", firstTokenAt: t("2026-09-09T02:00:00Z"), endedAt: t("2026-09-09T02:10:00Z"), feedbackStatus: "SUCCEEDED" },
+      // 다른 사람, 중간에 끊김(4분)
+      { id: "s4", userId: "u2", status: "INTERRUPTED", mode: "SHORT", firstTokenAt: t("2026-09-09T03:00:00Z"), endedAt: t("2026-09-09T03:04:00Z"), feedbackStatus: "NONE" },
+      // 운영자
+      { id: "s5", userId: "admin-1", status: "ENDED", mode: "FULL", firstTokenAt: t("2026-09-09T04:00:00Z"), endedAt: t("2026-09-09T04:20:00Z"), feedbackStatus: "SUCCEEDED" },
+    ]);
+    mocks.prisma.interviewTurn.groupBy.mockResolvedValue([
+      { sessionId: "s3", _count: { _all: 6 } },
+      { sessionId: "s4", _count: { _all: 2 } },
+    ]);
+
+    const res = await run();
+    const { interviews } = res.body;
+    const steps = Object.fromEntries(interviews.steps.map((row) => [row.key, [row.sessions, row.users]]));
+    expect(steps).toEqual({
+      created: [4, 2],
+      connected: [3, 2],
+      answered: [2, 2],
+      used: [2, 2],
+      feedback: [1, 1],
+    });
+    expect(interviews).toEqual(expect.objectContaining({ interrupted: 1, refunded: 2, shortMode: 1, medianSeconds: 420 }));
+    const turnWhere = mocks.prisma.interviewTurn.groupBy.mock.calls[0][0].where;
+    expect(turnWhere.sessionId.in).not.toContain("s5");
+  });
+
+  it("면접 세션이 없으면 발언을 조회하지 않는다", async () => {
+    const res = await run();
+    expect(mocks.prisma.interviewTurn.groupBy).not.toHaveBeenCalled();
+    expect(res.body.interviews.steps[0]).toEqual({ key: "created", label: "시작 누름", sessions: 0, users: 0 });
+    expect(res.body.interviews.medianSeconds).toBeNull();
   });
 });

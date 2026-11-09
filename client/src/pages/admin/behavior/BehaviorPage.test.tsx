@@ -2,7 +2,7 @@
 
 import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const adminApiFetch = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/adminApi", () => ({ adminApiFetch }));
@@ -40,6 +40,16 @@ describe("BehaviorPage", () => {
       },
       login: { visitors: 72, inAppVisitors: 16, inAppKinds: [{ kind: "kakaotalk", visitors: 10 }], events: { google_signin_failed: 2 } },
       features: [{ key: "resume", label: "자소서 분석", uses: 3, users: 3 }],
+      interviews: {
+        steps: [
+          { key: "created", label: "시작 누름", sessions: 8, users: 5 },
+          { key: "answered", label: "한 번 이상 답함", sessions: 3, users: 2 },
+        ],
+        interrupted: 1,
+        refunded: 4,
+        shortMode: 1,
+        medianSeconds: 540,
+      },
     });
 
     render(createElement(BehaviorPage));
@@ -54,5 +64,34 @@ describe("BehaviorPage", () => {
     expect(screen.getByText("1분 24초")).toBeTruthy(); // 체류 시간 중앙값
     expect(screen.getByText("시간을 잰 방문 40 / 전체 72")).toBeTruthy();
     expect(screen.getByText("75%")).toBeTruthy(); // 1~3분 30/40
+    expect(screen.getByText("한 번 이상 답함")).toBeTruthy();
+    expect(screen.getByText("38%")).toBeTruthy(); // 면접 답함 3/8
+    expect(screen.getByText(/진행 시간 중앙값 9분/)).toBeTruthy();
+  });
+
+  it("날짜 지정을 누르면 오늘 하루를 custom 으로 요청하고, 기간 버튼을 누르면 돌아간다", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-09T14:00:00.000Z")); // 11-09 23시 KST
+    adminApiFetch.mockResolvedValue({});
+    render(createElement(BehaviorPage));
+
+    fireEvent.click(screen.getByText("날짜 지정"));
+    await waitFor(() =>
+      expect(adminApiFetch).toHaveBeenLastCalledWith("/api/admin/behavior?period=custom&from=2026-11-09&to=2026-11-09"),
+    );
+
+    fireEvent.click(screen.getByLabelText("이전 기간"));
+    await waitFor(() =>
+      expect(adminApiFetch).toHaveBeenLastCalledWith("/api/admin/behavior?period=custom&from=2026-11-08&to=2026-11-08"),
+    );
+
+    fireEvent.change(screen.getByLabelText("시작 날짜"), { target: { value: "2026-11-01" } });
+    await waitFor(() =>
+      expect(adminApiFetch).toHaveBeenLastCalledWith("/api/admin/behavior?period=custom&from=2026-11-01&to=2026-11-08"),
+    );
+
+    fireEvent.click(screen.getByText("최근 30일"));
+    await waitFor(() => expect(adminApiFetch).toHaveBeenLastCalledWith("/api/admin/behavior?period=30d"));
+    vi.useRealTimers();
   });
 });
