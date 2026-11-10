@@ -125,3 +125,8 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `loreal.svg` | 로레알코리아 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:L%27Or%C3%A9al_logo.svg) | PD-textlogo, 상표 고지 있음 |
 | `whanin.svg` | 환인제약 | [환인제약 홈페이지](https://whanin.com/_theme/basic/img/ci.png) | 여백을 잘라 PNG를 SVG 래퍼에(작음) |
 | `ktnet.svg` | 한국무역정보통신 | [KTNET 홈페이지](https://www.ktnet.com/html/aw_img/renew/images/common/logo.svg) | 공식 SVG 그대로 |
+| `daesang.svg` | 대상 | [대상그룹 채용 홈페이지](https://career.daesang.com/ko/home) | 채용 홈페이지 프로필 이미지를 SVG 래퍼에 |
+| `kt-group.svg` | kt cs (KT그룹) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:KT_Corp_2D_logo.svg) | PD-textlogo, kt cs 전용 로고 대신 KT 마크 |
+| `samsung-life-service.svg` | 삼성생명서비스 | [삼성생명서비스 채용 홈페이지](https://samsunglifeservice.recruiter.co.kr) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `samsung-medison.svg` | 삼성메디슨 | [삼성메디슨 채용 홈페이지](https://samsungmedison.careerlink.kr) | 로고 PNG를 SVG 래퍼에(작음) |
+| `semes.svg` | 세메스 | [세메스 홈페이지](https://www.semes.com/resources/images/logo2.png) | 로고 PNG를 SVG 래퍼에 |
