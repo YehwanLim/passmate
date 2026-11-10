@@ -97,4 +97,4 @@
 | C5 | orion-cover-letter-questions | 오리온 | 21H2 지원·2차 면접 | 발행(10-27, 45c6dc5) |
 | C6 | sk-hynix-cover-letter-questions | SK하이닉스 | 없음(커피챗 관찰로만) | 초안(10-31, #32) |
 | C7 | lg-electronics-cover-letter-questions | LG전자 | 없음(커피챗 관찰로만) | 초안(11-03, #34) |
-| C8 | lg-display-cover-letter-questions | LG디스플레이 | 21H2 전형포기 → 22H1 AI·인적성 탈락 | 대기 |
+| C8 | lg-display-cover-letter-questions | LG디스플레이 | 21H2 전형포기 → 22H1 AI·인적성 탈락 | 초안(11-10, 2026 하반기 B2B영업 문항만 확인) |
