@@ -132,3 +132,11 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `semes.svg` | 세메스 | [세메스 홈페이지](https://www.semes.com/resources/images/logo2.png) | 로고 PNG를 SVG 래퍼에 |
 | `bukwang.svg` | 부광약품 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bukwang_Pharmaceutical_logo.svg) | PD-textlogo, 상표 고지 있음 |
 | `shinhan-bank.svg` | 신한은행 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Shinhan_Bank_Logo_(ENG).svg) | PD-textlogo, 상표 고지 있음 |
+| `ahnlab.svg` | 안랩 | [안랩 홈페이지](https://cloudimg.ccs.ahnlab.com/img_upload/assets/images/ko/logo-ahnlab-black.svg) | 공식 SVG 그대로 |
+| `kumho-tire.svg` | 금호타이어 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kumho_Tire_logo_(2023).svg) | 퍼블릭 도메인 |
+| `dongjin-semichem.svg` | 동진쎄미켐 | [동진쎄미켐 채용 사이트](https://img.inhr.co.kr/static/careerlink/LOGO/250611142551494NNT.png) | 여백을 잘라 PNG를 SVG 래퍼에 |
+| `sebang-group.svg` | 세방그룹 | [세방그룹 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/07/04/fe87de18-d46d-4f07-9f55-97bc6df1b920.png) | PNG를 SVG 래퍼에 |
+| `hankook-research.svg` | 한국리서치 | [한국리서치 홈페이지](https://www.hrc.co.kr/Content/Design/images/hrclogo.png) | 여백을 잘라 PNG를 SVG 래퍼에(작음) |
+| `sase.svg` | 사세 | [사세 채용 사이트](https://opening-attachments.greetinghr.com/2026-05-28/a2d13439-1939-45af-9c9e-1cb3d28d2e75/logo.png) | PNG를 줄여 SVG 래퍼에 |
+| `kyowon.svg` | 교원그룹 | [교원그룹 채용 사이트](https://image.ninehire.com/brand/bd1f80f0-1b53-11f1-bea7-7f4f8cbb58a4/952e8fc0-325d-11f1-b2fa-13075ba4a543.svg) | 실제 PNG를 SVG 래퍼에(작음) |
+| `kp-group.svg` | KP한석화학 | [KP그룹 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/09/29/a00259c7-7665-4afb-9bc0-232add2cc5a3.png) | 여백을 잘라 PNG를 줄여 SVG 래퍼에 |
