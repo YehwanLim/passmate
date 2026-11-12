@@ -9,19 +9,20 @@ import { sendFunnelEvent } from "@/lib/siteVisits";
 
 /* ─────────────────────────────────────────────────────────
    InterviewLaunchPopup — AI 모의 면접 출시 안내 팝업(2026-11-08 시안 확정)
-   관리자 공지(SiteNotices)와 별개의 전용 디자인이다. 랜딩(/)과 마이페이지(/my…)에서만,
-   들어오고 5초 뒤에, 면접 이용권을 실제로 살 수 있을 때만 띄운다. 기념가가 끝나면 더 안 뜬다.
+   관리자 공지(SiteNotices)와 별개의 전용 디자인이다. 랜딩(/)·마이페이지(/my…)·공고(/jobs…)·가이드(/guide…)에서,
+   들어오고 2초 뒤에, 면접 이용권을 실제로 살 수 있을 때만 띄운다. 기념가가 끝나면 더 안 뜬다.
    ───────────────────────────────────────────────────────── */
 
 /** 기념가 마지막 날(12월 8일, 한국 시각) 자정까지 띄운다. 가격은 pricing.ts(그로블 상품 가격과 같아야 함)에서 읽는다. */
 export const INTERVIEW_LAUNCH_ENDS_AT = Date.parse("2026-12-09T00:00:00+09:00");
-export const INTERVIEW_LAUNCH_DELAY_MS = 5_000;
+export const INTERVIEW_LAUNCH_DELAY_MS = 2_000;
 const HIDE_AFTER_CLOSE_MS = 7 * 24 * 60 * 60 * 1000;
 const STORAGE_KEY = "preview:interview-launch-popup:hidden-until";
 
-/** 팝업을 띄울 화면: 랜딩과 마이페이지(하위 포함). 면접 화면 안에서는 띄우지 않는다. */
+/** 팝업을 띄울 화면: 랜딩·마이페이지·공고·가이드(하위 포함). 면접 화면 안에서는 띄우지 않는다. */
 export function isInterviewLaunchPopupPath(path: string): boolean {
   if (path === "/") return true;
+  if (["/jobs", "/guide"].some((base) => path === base || path.startsWith(`${base}/`))) return true;
   if (path.startsWith("/my/interview-practice")) return false;
   return path === "/my" || path.startsWith("/my/");
 }

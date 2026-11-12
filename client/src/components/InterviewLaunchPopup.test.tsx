@@ -60,7 +60,7 @@ afterEach(() => {
 });
 
 describe("isInterviewLaunchPopupPath", () => {
-  it("랜딩과 마이페이지에서만 띄우고 면접 화면에서는 안 띄운다", () => {
+  it("랜딩·마이페이지·공고·가이드에서만 띄우고 면접 화면에서는 안 띄운다", () => {
     expect(isInterviewLaunchPopupPath("/")).toBe(true);
     expect(isInterviewLaunchPopupPath("/my")).toBe(true);
     expect(isInterviewLaunchPopupPath("/my/entitlements")).toBe(true);
@@ -68,6 +68,11 @@ describe("isInterviewLaunchPopupPath", () => {
     expect(isInterviewLaunchPopupPath("/my/interview-practice/abc")).toBe(false);
     expect(isInterviewLaunchPopupPath("/analyze")).toBe(false);
     expect(isInterviewLaunchPopupPath("/mypage")).toBe(false);
+    expect(isInterviewLaunchPopupPath("/jobs")).toBe(true);
+    expect(isInterviewLaunchPopupPath("/jobs/samsung-2026")).toBe(true);
+    expect(isInterviewLaunchPopupPath("/guide")).toBe(true);
+    expect(isInterviewLaunchPopupPath("/guide/motivation")).toBe(true);
+    expect(isInterviewLaunchPopupPath("/jobsearch")).toBe(false);
   });
 });
 
