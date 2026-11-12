@@ -1244,7 +1244,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-10-29",
     closesAt: "2026-11-15T23:00:00+09:00",
     updated: "2026-10-31",
-    logo: "/company-logos/lg.svg",
+    logo: "/company-logos/biztechi.svg",
   },
   {
     slug: "coca-cola-beverage-2026-scm",
@@ -1256,7 +1256,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-11-05",
     closesAt: "2026-11-15T23:00:00+09:00",
     updated: "2026-11-05",
-    logo: "/company-logos/lg.svg",
+    logo: "/company-logos/coca-cola.svg",
   },
   {
     slug: "kyowon-wells-bm-chungcheong-2026-11",
@@ -1328,7 +1328,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-11-02",
     closesAt: "2026-11-15T23:59:00+09:00",
     updated: "2026-11-03",
-    logo: "/company-logos/shinsegae-group.svg",
+    logo: "/company-logos/wconcept.svg",
   },
   {
     slug: "loreal-korea-2027h1-intern",
@@ -1424,6 +1424,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-11-09",
     closesAt: "2026-11-16T17:00:00+09:00",
     updated: "2026-11-09",
+    logo: "/company-logos/shinhan-card.svg",
   },
   {
     slug: "nhabgroup-livestock-2026h2",
@@ -1507,6 +1508,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-11-03",
     closesAt: "2026-11-18T23:59:00+09:00",
     updated: "2026-11-03",
+    logo: "/company-logos/koh-young.svg",
   },
   {
     slug: "hankook-research-2027h1",
@@ -1626,6 +1628,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-11-09",
     closesAt: "2026-11-22T23:59:00+09:00",
     updated: "2026-11-09",
+    logo: "/company-logos/genesis-bbq.svg",
   },
   {
     slug: "daesang-2026h2",
@@ -1649,6 +1652,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-11-11",
     closesAt: "2026-11-22T23:59:00+09:00",
     updated: "2026-11-11",
+    logo: "/company-logos/yongma-logis.svg",
   },
   {
     slug: "kyobo-life-2026-intern",
@@ -1780,6 +1784,7 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     opensAt: "2026-11-12",
     closesAt: "2026-12-02T23:59:00+09:00",
     updated: "2026-11-12",
+    logo: "/company-logos/hitejinro-beverage.svg",
   },
 ];
 

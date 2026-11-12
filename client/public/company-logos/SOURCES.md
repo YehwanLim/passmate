@@ -141,3 +141,11 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `kyowon.svg` | 교원그룹 | [교원그룹 채용 사이트](https://image.ninehire.com/brand/bd1f80f0-1b53-11f1-bea7-7f4f8cbb58a4/952e8fc0-325d-11f1-b2fa-13075ba4a543.svg) | 실제 PNG를 SVG 래퍼에(작음) |
 | `kp-group.svg` | KP한석화학 | [KP그룹 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/09/29/a00259c7-7665-4afb-9bc0-232add2cc5a3.png) | 여백을 잘라 PNG를 줄여 SVG 래퍼에 |
 | `lg-hnh.svg` | LG생활건강 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:LG_Household_%26_Health_Care_logo_(korean).svg) | lghnh-2026-hr 공고용 |
+| `biztechi.svg` | 비즈테크아이 | [비즈테크아이 홈페이지](https://www.biztechi.com/resources/icons/ico_logo.svg) | 공식 사이트 SVG |
+| `coca-cola.svg` | 코카콜라음료 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Coca-Cola_logo.svg) | 상표 고지 있음 |
+| `wconcept.svg` | W컨셉 | [W컨셉 홈페이지](https://display.wconcept.co.kr/) | 헤더 로고 SVG |
+| `shinhan-card.svg` | 신한카드 | [신한카드 홈페이지](https://www.shinhancard.com/pconts/static/svg/ci.svg) | 공식 사이트 CI SVG |
+| `koh-young.svg` | 고영테크놀러지 | [고영테크놀러지 홈페이지](https://kohyoung.com/en/) | 로고 PNG를 SVG 래퍼에 |
+| `genesis-bbq.svg` | 제너시스비비큐 | [BBQ 홈페이지](https://bbq.co.kr/images/symbols/logo-red.svg) | 공식 사이트 SVG |
+| `yongma-logis.svg` | 용마로지스 | [용마로지스 홈페이지](https://yongmalogis.co.kr/resources/img/kr/yongma_logo.png) | 로고 PNG를 SVG 래퍼에 |
+| `hitejinro-beverage.svg` | 하이트진로음료 | [하이트진로음료 홈페이지](https://www.hitejinrobeverage.com/assets/images/logo.svg) | 공식 사이트 SVG |
