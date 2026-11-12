@@ -51,6 +51,42 @@ describe("POST /api/visits — 방문 핑", () => {
     expect(db.user.findUnique).not.toHaveBeenCalled();
   });
 
+  it("검색 로봇·자동화 브라우저의 방문·이벤트는 기록하지 않는다", async () => {
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null });
+    const crawlers = [
+      "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+      "Mozilla/5.0 (compatible; Yeti/1.1; +https://naver.me/spd)",
+      "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36",
+    ];
+    for (const ua of crawlers) {
+      const visitRes = response();
+      await handler({ method: "POST", headers: { "user-agent": ua }, body: { visitorId: VISITOR_ID, path: "/jobs/foo" } }, visitRes);
+      expect(visitRes.body).toEqual({ recorded: false });
+      const eventRes = response();
+      await handler({ method: "POST", headers: { "user-agent": ua }, body: { visitorId: VISITOR_ID, event: "engaged_time", detail: "d:3" } }, eventRes);
+      expect(eventRes.body).toEqual({ recorded: false });
+    }
+    expect(db.siteVisit.create).not.toHaveBeenCalled();
+    expect(db.clientEvent.create).not.toHaveBeenCalled();
+    expect(db.apiRateLimitBucket.upsert).not.toHaveBeenCalled();
+  });
+
+  it("사람 브라우저 UA(휴대폰 이름에 bot 이 들어가도)는 기록한다", async () => {
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null });
+    const people = [
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (Linux; Android 13; CUBOT_X70) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 14; SM-S918N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 KAKAOTALK 10.8.0",
+    ];
+    for (const ua of people) {
+      const res = response();
+      await handler({ method: "POST", headers: { "user-agent": ua }, body: { visitorId: VISITOR_ID, path: "/" } }, res);
+      expect(res.body).toEqual({ recorded: true });
+    }
+    expect(db.siteVisit.create).toHaveBeenCalledTimes(3);
+  });
+
   it("로그인 상태면 앱 계정 ID 를 붙인다", async () => {
     db.user.findUnique.mockResolvedValue({ id: "user-1" });
     const handler = createSiteVisitHandler({ db, authenticate: async () => ({ id: "user-1" }) });

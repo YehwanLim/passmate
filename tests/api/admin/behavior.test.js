@@ -116,6 +116,24 @@ describe("admin behavior — 사용 행동", () => {
     );
   });
 
+  it("링크 없이 앱 화면으로 곧장 들어와 튕긴 봇 세션은 방문·이벤트 모두에서 뺀다", async () => {
+    mocks.prisma.siteVisit.findMany.mockResolvedValue([
+      { visitorId: "bot", path: "/company-analysis", createdAt: NOW, device: "d" },
+      { visitorId: "bot", path: "/login", createdAt: NOW, device: "d" },
+      { visitorId: "human", path: "/", createdAt: NOW, device: "m" },
+    ]);
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([
+      // 머문 시간만 있는 건 사람 증거가 아니다
+      { visitorId: "bot", name: "engaged_time", detail: "d:2" },
+      { visitorId: "human", name: "engaged_time", detail: "m:40" },
+    ]);
+
+    const res = await run();
+
+    const visit = res.body.funnel.find((step) => step.key === "visit");
+    expect(visit).toEqual(expect.objectContaining({ count: 1, mobile: 1, desktop: 0 }));
+  });
+
   it("유입원별로 작성 시작과 가입까지 이어진 방문자를 센다", async () => {
     signups = [{ id: "u1" }];
     mocks.prisma.siteVisit.findMany.mockResolvedValue([

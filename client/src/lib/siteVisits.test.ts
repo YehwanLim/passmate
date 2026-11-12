@@ -76,6 +76,24 @@ describe("siteVisits", () => {
     }
   });
 
+  it("자동화 브라우저(navigator.webdriver)면 방문·이벤트를 보내지 않는다", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("navigator", { ...navigator, webdriver: true });
+    try {
+      const options = {
+        fetcher,
+        getAccessToken: async () => null,
+        visitorId: "8c4d2a70-3b1e-4d5f-9a6b-2c1d0e9f8a7b",
+        inAppBrowser: null,
+      };
+      expect(await sendVisit("/analyze", { ...options, source: null })).toBe(false);
+      expect(await sendClientEvent("landing_cta_click", "d:hero", options)).toBe(false);
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("경로와 방문자 ID 만 보내고, 로그인 토큰이 있으면 Authorization 을 붙인다", async () => {
     const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
     const fetcher: typeof fetch = async (input, init) => {
