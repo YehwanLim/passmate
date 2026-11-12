@@ -47,7 +47,7 @@
 | W8 | company-questions-template-3 | ○○ 자소서 문항 분석 (접수 중 공채 3) | 위와 같음 | 대기 |
 | W9 | read-company-news | 기업 분석 하는 법, 자소서 기업 분석 | 기사 10페이지 읽기: 기사는 회사가 뿌린 가이드 | 대기 |
 | W10 | read-job-posting | 채용 공고 읽는 법, 자격 요건 우대 사항 | 담당 업무의 동사를 경험 문장에 쓰기 | 대기 |
-| W11 | choose-job-role | 직무 선택, 직무 고르는 법 | 하고 싶은 일이 아니라 해 본 판단에서 고르기 | 대기 |
+| W11 | choose-job-role | 직무 선택, 직무 고르는 법 | 하고 싶은 일이 아니라 해 본 판단에서 고르기 | 초안(11-12, codex/guide-choose-job-role) |
 | W12 | first-half-schedule | 상반기 공채 일정, 공채 준비 순서 | 1~3월에 할 일의 순서 | 대기 |
 
 ## 금 — AI 활용 ↔ 면접 (격주)
