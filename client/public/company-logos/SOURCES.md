@@ -132,3 +132,4 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `semes.svg` | 세메스 | [세메스 홈페이지](https://www.semes.com/resources/images/logo2.png) | 로고 PNG를 SVG 래퍼에 |
 | `bukwang.svg` | 부광약품 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bukwang_Pharmaceutical_logo.svg) | PD-textlogo, 상표 고지 있음 |
 | `shinhan-bank.svg` | 신한은행 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Shinhan_Bank_Logo_(ENG).svg) | PD-textlogo, 상표 고지 있음 |
+| `lg-hnh.svg` | LG생활건강 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:LG_Household_%26_Health_Care_logo_(korean).svg) | lghnh-2026-hr 공고용 |
