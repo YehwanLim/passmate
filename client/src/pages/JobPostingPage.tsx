@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { ContentCtaBar } from "@/components/ContentCtaBar";
 import { GuideLayout } from "@/components/guide/GuideLayout";
+import { DraftQuickCheck } from "@/components/jobs/DraftQuickCheck";
 import { ProcessSteps } from "@/components/jobs/ProcessSteps";
 import { findJobPosting, type JobPostingListing } from "@/constants/jobPostings";
 import { JOB_POSTING_DETAILS, type JobPostingDetail } from "@/constants/jobPostingDetails";
@@ -197,6 +198,11 @@ export default function JobPostingPage() {
         </a>
         <p className="mt-2 text-[13px] text-ink-4">일정·자격은 바뀔 수 있어요. 지원 전에 공식 공고를 꼭 확인하세요.</p>
       </header>
+
+      {/* 공고만 읽고 10초 안에 떠나는 사람이 대부분이라, 본문보다 먼저 보이는 자리에 둔다. */}
+      <div className="mt-6 max-w-3xl">
+        <DraftQuickCheck listing={listing} />
+      </div>
 
       <div className="mt-8 grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
         <PostingBody detail={detail} />
