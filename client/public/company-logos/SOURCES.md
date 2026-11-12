@@ -130,3 +130,4 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `samsung-life-service.svg` | 삼성생명서비스 | [삼성생명서비스 채용 홈페이지](https://samsunglifeservice.recruiter.co.kr) | 헤더 로고 PNG를 SVG 래퍼에 |
 | `samsung-medison.svg` | 삼성메디슨 | [삼성메디슨 채용 홈페이지](https://samsungmedison.careerlink.kr) | 로고 PNG를 SVG 래퍼에(작음) |
 | `semes.svg` | 세메스 | [세메스 홈페이지](https://www.semes.com/resources/images/logo2.png) | 로고 PNG를 SVG 래퍼에 |
+| `lg-hnh.svg` | LG생활건강 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:LG_Household_%26_Health_Care_logo_(korean).svg) | lghnh-2026-hr 공고용 |
