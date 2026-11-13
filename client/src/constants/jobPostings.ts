@@ -1763,6 +1763,18 @@ export const JOB_POSTINGS: readonly JobPostingListing[] = [
     logo: "/company-logos/ahnlab.svg",
   },
   {
+    slug: "hyundai-motor-service-engineer-2027",
+    company: "현대자동차",
+    shortName: "현대자동차",
+    title: "2027 현대자동차 서비스엔지니어 채용전환형 인턴십",
+    subtitle: "High-Tech Talent Track · 3주 인턴십 후 최종면접·합격 시 입사 · 전국 22개 하이테크센터",
+    roles: "하이테크 진단/정비 (서비스엔지니어)",
+    opensAt: "2026-11-11",
+    closesAt: "2026-11-30T17:00:00+09:00",
+    updated: "2026-11-13",
+    logo: "/company-logos/hyundai-motor.svg",
+  },
+  {
     slug: "shinwon-2026-knit-sales",
     company: "신원",
     shortName: "신원",
