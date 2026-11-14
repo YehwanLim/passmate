@@ -98,3 +98,4 @@
 | C6 | sk-hynix-cover-letter-questions | SK하이닉스 | 없음(커피챗 관찰로만) | 초안(10-31, #32) |
 | C7 | lg-electronics-cover-letter-questions | LG전자 | 없음(커피챗 관찰로만) | 초안(11-03, #34) |
 | C8 | lg-display-cover-letter-questions | LG디스플레이 | 21H2 전형포기 → 22H1 AI·인적성 탈락 | 초안(11-10, 2026 하반기 B2B영업 문항만 확인) |
+| C9 | lx-international-cover-letter-questions | LX인터내셔널 | 21H2 자소서 준비(경험 칸 목록), 22H1 지원취소 | 초안(11-14, #55, 사용자 지정, 문항 3칸 틀) |
