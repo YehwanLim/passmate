@@ -9,7 +9,11 @@ const activeUser = async () => ({ applicationUser: { id: USER_ID, role: "user" }
 function createDb() {
   return {
     $queryRaw: vi.fn(async () => []),
-    project: { count: vi.fn(async () => 0), create: vi.fn(async () => ({ id: "p-new" })) },
+    project: {
+      count: vi.fn(async () => 0),
+      create: vi.fn(async () => ({ id: "p-new" })),
+      findFirst: vi.fn(async () => null),
+    },
   };
 }
 
@@ -71,6 +75,55 @@ describe("POST /api/projects", () => {
     expect(db.project.create).not.toHaveBeenCalled();
   });
 
+  it("담기(stage interest)는 관심 단계 지원서를 공고와 함께 만든다", async () => {
+    const db = createDb();
+    const res = createResponse();
+    await createProjectsHandler({ db, requireUser: activeUser })({
+      method: "POST", headers: {},
+      body: { company: "현대자동차", deadline: "2026-11-20T17:00:00+09:00", postingSlug: "hyundai-2026h2", stage: "interest", questions: [] },
+    }, res);
+    expect(res.statusCode).toBe(201);
+    expect(db.project.findFirst).toHaveBeenCalledWith({
+      where: { userId: USER_ID, postingSlug: "hyundai-2026h2" },
+      select: { id: true },
+    });
+    expect(db.project.create.mock.calls[0][0].data).toMatchObject({ stage: "interest", postingSlug: "hyundai-2026h2" });
+  });
+
+  it("같은 공고를 다시 담으면 새로 만들지 않고 200 existing", async () => {
+    const db = createDb();
+    db.project.findFirst.mockResolvedValue({ id: "p-old" });
+    const res = createResponse();
+    await createProjectsHandler({ db, requireUser: activeUser })({
+      method: "POST", headers: {},
+      body: { company: "현대자동차", postingSlug: "hyundai-2026h2", stage: "interest", questions: [] },
+    }, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ id: "p-old", existing: true });
+    expect(db.project.create).not.toHaveBeenCalled();
+  });
+
+  it("stage 를 안 보내면 기본값(DB writing)에 맡기고 중복 검사도 하지 않는다", async () => {
+    const db = createDb();
+    const res = createResponse();
+    await createProjectsHandler({ db, requireUser: activeUser })({
+      method: "POST", headers: {}, body: { company: "A", postingSlug: "a-2026", questions: [] },
+    }, res);
+    expect(res.statusCode).toBe(201);
+    expect(db.project.findFirst).not.toHaveBeenCalled();
+    expect(db.project.create.mock.calls[0][0].data).not.toHaveProperty("stage");
+  });
+
+  it("interest 가 아닌 stage 는 400", async () => {
+    const db = createDb();
+    const res = createResponse();
+    await createProjectsHandler({ db, requireUser: activeUser })({
+      method: "POST", headers: {}, body: { company: "A", stage: "offer" },
+    }, res);
+    expect(res.statusCode).toBe(400);
+    expect(db.project.create).not.toHaveBeenCalled();
+  });
+
   it("PUT 은 405", async () => {
     const handler = createProjectsHandler({ db: createDb(), requireUser: activeUser });
     const res = createResponse();
@@ -80,6 +133,20 @@ describe("POST /api/projects", () => {
 });
 
 describe("GET /api/projects 작업실 필드", () => {
+  it("현황판 필드(stage·stage_steps·rejected·posting_slug)를 내려주고, 비어 있으면 기본값", async () => {
+    const db = createDb();
+    const steps = [{ key: "interest" }, { key: "writing" }, { key: "submitted" }, { key: "c_k3m9x2ab", label: "인적성" }, { key: "doc_passed" }, { key: "interview" }, { key: "offer" }];
+    db.$queryRaw.mockResolvedValue([
+      { id: "p1", title: "t", company: "A", created_at: new Date(), analysis_count: 0, stage: "submitted", stage_steps: steps, rejected: true, posting_slug: "a-2026" },
+      { id: "p2", title: "t", company: "B", created_at: new Date(), analysis_count: 0 },
+    ]);
+    const res = createResponse();
+    await createProjectsHandler({ db, requireUser: activeUser })({ method: "GET", headers: {} }, res);
+    expect(res.body[0]).toMatchObject({ stage: "submitted", stage_steps: steps, rejected: true, posting_slug: "a-2026" });
+    expect(res.body[1]).toMatchObject({ stage: "writing", stage_steps: null, rejected: false, posting_slug: null });
+    const [strings] = db.$queryRaw.mock.calls[0];
+    expect(strings.join("?")).toContain("p.stage_steps");
+  });
   it("마감·수정 시각·문항 작성 진행을 내려준다", async () => {
     const db = createDb();
     db.$queryRaw.mockResolvedValue([{
