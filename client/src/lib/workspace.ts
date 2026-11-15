@@ -1,6 +1,7 @@
 import { getAuthorizationHeader } from "@/lib/apiAuth";
 import type { JobPostingSummary } from "@/types/jobPosting";
 import type { ProjectSummary } from "@/types/my";
+import type { StageStep } from "@/lib/applicationStages";
 
 /**
  * 내 지원서(작업실)·내 경험 API 클라이언트.
@@ -151,6 +152,19 @@ export function createApplication(input: {
 /** 내 지원서·기업 리포트 목록(/api/projects). 쓰는 쪽에서 kind 로 거른다. */
 export function listApplications(): Promise<ProjectSummary[]> {
   return request("/api/projects");
+}
+
+/** 공고 담기: 관심 단계 지원서를 만든다. 같은 공고를 이미 담았으면 서버가 그 지원서를 돌려준다(200 existing). */
+export function saveJobPosting(input: { postingSlug: string; company: string; deadline: string }): Promise<{ id: string; existing?: boolean }> {
+  return request("/api/projects", { method: "POST", body: JSON.stringify({ ...input, stage: "interest", questions: [] }) });
+}
+
+/** 지원 현황판 단계·직접 단계 목록·불합격 표시 저장. */
+export function updateApplicationStage(
+  id: string,
+  patch: { stage?: string; stageSteps?: StageStep[]; rejected?: boolean },
+): Promise<{ stage: string; stage_steps: StageStep[] | null; rejected: boolean }> {
+  return request(`/api/projects/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) });
 }
 
 /** 분석 기록 원문(GET /api/analysis/:id) 중 글을 다시 쓰는 데 필요한 칸만. 소유권은 서버가 본다. */

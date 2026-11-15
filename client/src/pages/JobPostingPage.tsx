@@ -4,6 +4,7 @@ import { Link, useParams } from "wouter";
 import { ContentCtaBar } from "@/components/ContentCtaBar";
 import { GuideLayout } from "@/components/guide/GuideLayout";
 import { DraftQuickCheck } from "@/components/jobs/DraftQuickCheck";
+import JobSaveButton from "@/components/jobs/JobSaveButton";
 import { ProcessSteps } from "@/components/jobs/ProcessSteps";
 import { findJobPosting, type JobPostingListing } from "@/constants/jobPostings";
 import { JOB_POSTING_DETAILS, type JobPostingDetail } from "@/constants/jobPostingDetails";
@@ -187,6 +188,8 @@ export default function JobPostingPage() {
           {now && !closed && <b className="ml-1.5 font-bold text-danger">{dDayLabel(listing.closesAt, now)}</b>}
         </p>
         <p className="mt-4 text-[16px] leading-[1.75] text-ink-2 [word-break:keep-all] md:text-[17px]">{detail.highlight}</p>
+        {/* 마감 여부를 모르는 프리렌더·첫 렌더(now=null)에는 그리지 않아 하이드레이션이 어긋나지 않는다. */}
+        {now !== null && !closed && <JobSaveButton listing={listing} />}
         {/* 지원·정정 확인은 공식 공고가 기준이다. 우리는 요약만 두고 원문은 링크로 보낸다. */}
         <a
           href={detail.source.url}
