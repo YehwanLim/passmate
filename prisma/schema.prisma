@@ -372,6 +372,9 @@ model Project {
   deadline    DateTime? @db.Timestamptz                    // 접수 마감(작업실)
   postingSlug String?   @map("posting_slug") @db.VarChar(120) // 공고 보드에서 시작한 지원서(P2)
   jobPostingId String?  @map("job_posting_id") @db.Uuid             // 작업실에 붙인 공고(초안·진단 기준)
+  stage        String  @default("writing") @db.VarChar(40) // 지원 현황판 현재 단계(11-15)
+  stageSteps   Json?   @map("stage_steps")                 // 이 지원서만의 단계 목록, NULL 이면 기본 6단계
+  rejected     Boolean @default(false)                     // 불합격 표시(현재 단계에서 멈춤)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
