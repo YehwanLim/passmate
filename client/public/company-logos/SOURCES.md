@@ -149,3 +149,7 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `genesis-bbq.svg` | 제너시스비비큐 | [BBQ 홈페이지](https://bbq.co.kr/images/symbols/logo-red.svg) | 공식 사이트 SVG |
 | `yongma-logis.svg` | 용마로지스 | [용마로지스 홈페이지](https://yongmalogis.co.kr/resources/img/kr/yongma_logo.png) | 로고 PNG를 SVG 래퍼에 |
 | `hitejinro-beverage.svg` | 하이트진로음료 | [하이트진로음료 홈페이지](https://www.hitejinrobeverage.com/assets/images/logo.svg) | 공식 사이트 SVG |
+| `woori-financial-capital.svg` | 우리금융캐피탈 | [우리금융캐피탈 홈페이지](https://www.woorifcapital.com/images/error/logo_wfc.png) | 공식 사이트 로고 PNG를 SVG 래퍼에 |
+| `bkl.svg` | 법무법인 태평양 | [태평양 채용 홈페이지](https://recruit.bkl.co.kr/ko/home) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `bos-semiconductor.svg` | 보스반도체 | [보스반도체 홈페이지](https://www.bos-semi.com) | 공식 홈페이지 로고 PNG 크롭·축소 후 SVG 래퍼 |
+| `kim-chang.svg` | 김앤장 법률사무소 | [김·장 채용 사이트 공고 이미지의 KIM & CHANG 워드마크](https://careers.kimchang.com/upload/editor/1794533376059.jpg) | PNG 크롭(배경 투명 처리)을 SVG 래퍼에 |
