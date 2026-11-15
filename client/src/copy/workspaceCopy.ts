@@ -1,10 +1,7 @@
 // 내 지원서·내 경험 화면 문구. 사용자 검수 전 임시안 — 여기만 고치면 화면 전체가 바뀐다.
 export const WORKSPACE_COPY = {
   tabs: { applications: "자기소개서", experiences: "경험 카드", company: "기업 리포트" },
-  status: { draft: "작성 중", analyzing: "분석 중", done: "분석 완료" },
-  filters: { all: "전체", draft: "작성 중", done: "분석 완료" },
-  table: { application: "회사 · 직무", deadline: "마감", status: "상태", summary: "최근 분석 요약", company: "회사", analyzedAt: "분석한 날" },
-  noSummary: "아직 분석 전이에요",
+  table: { application: "회사 · 직무", deadline: "마감", summary: "최근 분석 요약", company: "회사", analyzedAt: "분석한 날" },
   analyzingSummary: "분석하고 있어요",
   passedDeadline: "마감 지남",
   open: (name: string) => `${name} 열기`,
