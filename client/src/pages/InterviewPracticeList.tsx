@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { ArrowRight, Loader2 } from "lucide-react";
 
@@ -39,6 +39,9 @@ export default function InterviewPracticeList() {
   const search = useSearch();
   const [, navigate] = useLocation();
   const analysisId = new URLSearchParams(search).get("analysisId") ?? undefined;
+  // 지원 현황판의 "낸 자소서로 면접 연습"(11-15)에서 온 지원서. 목록이 온 뒤 한 번만 고른다.
+  const presetApplication = new URLSearchParams(search).get("application");
+  const presetDone = useRef(false);
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const { summary } = useCreditSummary(isAuthenticated);
   const [sessions, setSessions] = useState<InterviewSession[] | null>(null);
@@ -89,6 +92,13 @@ export default function InterviewPracticeList() {
       setImporting(false);
     }
   };
+
+  // 목록에 없는 id(남의 것·글이 없는 것)는 조용히 무시한다. importApplication 은 최신 applications 를 닫고 있다.
+  useEffect(() => {
+    if (presetDone.current || !presetApplication || applications.length === 0) return;
+    presetDone.current = true;
+    if (applications.some((application) => application.id === presetApplication)) void importApplication(presetApplication);
+  }, [applications, presetApplication]);
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
