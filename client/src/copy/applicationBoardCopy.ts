@@ -29,7 +29,7 @@ export const APPLICATION_BOARD_COPY = {
     diagnose: { label: "내기 전에 진단받기", reason: "작성 중 · 채용 담당자 시선으로 먼저 봐요" },
     report: { label: "진단 리포트 보기", reason: "진단 완료 · 고칠 곳을 다시 확인해요" },
     prepare: { label: "면접 미리 준비", reason: "서류 결과를 기다리는 동안 예상 질문으로 연습해요" },
-    interview: { label: "낸 자소서로 면접 연습", reason: "면접 · 낸 자소서에서 나올 질문으로 연습해요" },
+    interview: { label: "낸 자소서로 면접 연습", reason: "제출한 자소서 기반 예상 질문으로 연습해요" },
     paste: { label: "낸 자소서 붙여 넣기", reason: "붙여 넣으면 이 글로 면접 연습을 할 수 있어요" },
     interviewGuide: "이 회사 면접 후기",
     offer: "최종 합격을 축하해요",
