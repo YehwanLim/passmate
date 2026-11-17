@@ -149,3 +149,8 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `genesis-bbq.svg` | 제너시스비비큐 | [BBQ 홈페이지](https://bbq.co.kr/images/symbols/logo-red.svg) | 공식 사이트 SVG |
 | `yongma-logis.svg` | 용마로지스 | [용마로지스 홈페이지](https://yongmalogis.co.kr/resources/img/kr/yongma_logo.png) | 로고 PNG를 SVG 래퍼에 |
 | `hitejinro-beverage.svg` | 하이트진로음료 | [하이트진로음료 홈페이지](https://www.hitejinrobeverage.com/assets/images/logo.svg) | 공식 사이트 SVG |
+| `toray.svg` | 도레이첨단소재 | [도레이첨단소재 채용 사이트](https://www.torayamk-recruit.com/assets/images/brandLogo.svg) | 공식 사이트 SVG |
+| `lsitc.svg` | LS ITC | [LS ITC 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2024/06/17/5f85b5ad-e63c-4809-a974-dbfd88e2d110.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `neople.svg` | 네오플 | [네오플 홈페이지](https://www.neople.co.kr/images/LOGO.gif) | 헤더 로고 GIF를 SVG 래퍼에(작음) |
+| `mbc.svg` | MBC | [MBC 채용 사이트](https://img.inhr.co.kr/static/careerlink/LOGO/260529174136490o4u.png) | 로고 PNG를 SVG 래퍼에 |
+| `kt-telecop.svg` | KT텔레캅 | [KT텔레캅 홈페이지](https://www.kttelecop.co.kr/front/skin/image/header/logo.png) | 헤더 로고 PNG를 SVG 래퍼에 |
