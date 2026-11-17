@@ -21,7 +21,7 @@
 | M6 | different-major | 전공 무관 직무 지원 자소서, 비전공 자소서 | 산업·전공 경험이 없어도 역량 구조로 엮기 | 대기 |
 | M7 | gap-period | 자소서 공백기 | 숨기지 않고 한 문장으로 끝내는 법 | 대기 |
 | M8 | club-activities-only | 동아리 경험 자소서, 대외활동 자소서 | 운영 숫자와 전후 비교로 직무 언어 만들기 | 대기 |
-| M9 | experience-library | 자소서 경험 정리, 자소서 돌려쓰기 | 경험 표 + 키워드, 재탕 가능한 문항 판단법 | 대기 |
+| M9 | experience-library | 자소서 경험 정리, 자소서 돌려쓰기 | 경험 표 + 키워드, 재탕 가능한 문항 판단법 | 초안(11-16, codex/guide-experience-library) |
 | M10 | one-line-positioning | 자소서 컨셉, 나를 한 문장으로 | 경험이 많은데 기억에 안 남는 자소서 | 대기 |
 | M11 | same-experience-many-questions | 자소서 같은 경험 여러 문항 | 같은 경험의 다른 장면을 쓰는 법 | 대기 |
 | M12 | social-issue-question | 자소서 사회 이슈 문항 | 의견이 아니라 직무와 닿는 관찰을 쓰기 | 대기 |
