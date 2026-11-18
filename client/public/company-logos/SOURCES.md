@@ -154,3 +154,14 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `neople.svg` | 네오플 | [네오플 홈페이지](https://www.neople.co.kr/images/LOGO.gif) | 헤더 로고 GIF를 SVG 래퍼에(작음) |
 | `mbc.svg` | MBC | [MBC 채용 사이트](https://img.inhr.co.kr/static/careerlink/LOGO/260529174136490o4u.png) | 로고 PNG를 SVG 래퍼에 |
 | `kt-telecop.svg` | KT텔레캅 | [KT텔레캅 홈페이지](https://www.kttelecop.co.kr/front/skin/image/header/logo.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `hl-dni-halla.svg` | HL디앤아이한라 | [HL그룹 채용 공고 이미지](https://hlcompany.recruiter.co.kr/upload/42339/image/202611/c76f3e9c-bc25-43d0-9b0c-57f2b12a8b01.png) | 공고 이미지 속 로고를 잘라 SVG 래퍼에(배경 투명 처리) |
+| `hwaseung-corp.svg` | 화승코퍼레이션 | [화승 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/10/31/680092ce-dbce-4cb4-8c56-7d6844ae7eba.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `banksalad.svg` | 뱅크샐러드금융서비스 | [뱅크샐러드금융서비스 채용 사이트](https://www.banksaladfs.com/static/career/header-logo-wordmark.svg) | 헤더 심볼·워드마크 SVG를 합침 |
+| `hwashin.svg` | 화신 | [화신 채용 사이트 헤더 로고](https://image.ninehire.com/homepage/95c9ec20-fa88-11f0-b8b6-31fc59f0a2fc/logo/1b7850e0-8a2c-11f1-85e8-53166c0c6c9b.svg) | 원본 SVG |
+| `mobidays.svg` | 모비데이즈 | [모비데이즈 인턴십 사이트](https://intern.mobidays.com/mobidays.png) | 로고 PNG 여백을 잘라 SVG 래퍼에 |
+| `philip-morris-korea.svg` | 한국필립모리스 | [PMI 채용 사이트](https://cdn.phenompeople.com/CareerConnectResources/PMIPMIGB/images/pmi_logo-1675155245259[1]-1739727621035.png) | PMI 그룹 로고(한국 법인 사이트도 같은 로고 사용), PNG를 SVG 래퍼에 |
+| `donga-st.svg` | 동아ST | [동아ST 홈페이지](https://www.donga-st.com/resources/img/logo.png) | 헤더 로고 PNG를 SVG 래퍼에(작음) |
+| `suprema.svg` | 슈프리마 | [슈프리마 채용 공고 첨부 로고](https://opening-attachments.greetinghr.com/20230802/47758dc6-0da9-43e4-b0f5-b5ffd5bf5a68/Suprema_logo_basic.png) | 여백을 잘라 PNG를 SVG 래퍼에 |
+| `hermes-korea.svg` | 에르메스코리아 | [에르메스 채용 사이트](https://d3012g9bf68pr4.cloudfront.net/logo/HERMES_LOGO_NEW.svg) | 공식 SVG |
+| `changsung.svg` | 창성 | [창성 채용 공고 상단 이미지](https://www.saraminimage.co.kr/recruit/bbs_recruit26/42_changsung_top_261105.png) | 공고 이미지 속 로고를 잘라 SVG 래퍼에 |
+| `husteel.svg` | 휴스틸 | [휴스틸 홈페이지](https://www.husteel.com/common/images/logo-kor.png) | 로고 PNG를 줄여 SVG 래퍼에 |
