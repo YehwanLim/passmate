@@ -18,6 +18,7 @@ import { MentorCommentSection } from "@/components/report/sections/MentorComment
 import { PostingFitSection } from "@/components/report/sections/PostingFitSection";
 import { ReportClosing } from "@/components/report/sections/ReportClosing";
 import { ReportBlock } from "@/components/report/sections/ReportBlock";
+import InterviewPracticeCard from "@/components/report/InterviewPracticeCard";
 import SaveExperiencesCard, { resumeTextForExtract } from "@/components/report/SaveExperiencesCard";
 import { UI_LABELS } from "@/constants/labels";
 import { RESUME_REPORT_SAMPLE } from "@/constants/resumeReportSample";
@@ -334,6 +335,9 @@ function ReportContent({
           >
             <InterviewDrillSection items={reportData.interviewQA} isPrinting={isPrinting} />
           </ReportBlock>
+
+          {/* 공개 예시에는 없고, 저장된 내 리포트에서만. 스위치가 꺼져 있으면 카드 스스로 숨는다. */}
+          {sample || !activeAnalysisId ? null : <InterviewPracticeCard analysisId={activeAnalysisId} />}
 
           <ReportBlock
             id="section-action-plan"

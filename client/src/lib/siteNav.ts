@@ -32,9 +32,21 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
       { label: "기업 분석", target: "/company-analysis", description: "지원할 회사의 사업·이슈·직무 정리" },
     ],
   },
+  // AI 면접은 출시하며 분석하기 펼침 안에서 꺼내 한 칸을 줬다(11-08). 11-09 부터 랜딩 칸 대신 소개 화면(/my/interview-practice)으로 보낸다.
+  // 그 화면에 소개·시작 입력·지난 면접이 다 있어 마이페이지 펼침의 'AI 모의 면접 기록'은 뺐다(같은 주소라 두 칸이 동시에 켜졌다).
+  { label: "AI 모의 면접", type: "route", target: "/my/interview-practice" },
   { label: "취업 가이드", type: "route", target: "/guide" },
   // 멘토링(/mentoring)은 페이지·파운더 섹션 링크·sitemap 은 그대로 두고, 손볼 것이 남아 상단 메뉴에서만 잠시 뺐다(09-27).
-  { label: "이용권", type: "route", target: "/entitlements" },
+  // 펼치면 분석 이용권과 AI 모의 면접 이용권(#interview)으로 바로 간다(11-08).
+  {
+    label: "이용권",
+    type: "route",
+    target: "/entitlements",
+    children: [
+      { label: "분석 이용권", target: "/entitlements", description: "자소서·기업 분석 횟수권" },
+      { label: "AI 모의 면접 이용권", target: "/entitlements#interview", description: "실시간 화상 면접 1회권·3회권" },
+    ],
+  },
   // 마이페이지는 맨 오른쪽 — 내 것(지원서·경험·기업)을 모아 보는 곳이라 "할 수 있는 일" 다음에 둔다(10-08).
   // 펼치면 마이페이지 탭(해시)과 내 이용권으로 바로 간다(10-09).
   {
@@ -45,13 +57,20 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
       { label: "자기소개서", target: "/my", description: "채용 공고별로 쓴 자소서와 분석 리포트" },
       { label: "경험 카드", target: "/my#experiences", description: "경험 관리하고 자소서 초안 쓰기" },
       { label: "기업 리포트", target: "/my#company", description: "분석한 회사 리포트 모아 보기" },
-      { label: "내 이용권", target: "/my/entitlements", description: "남은 분석 이용권 확인 및 구매" },
+      { label: "내 이용권", target: "/my/entitlements", description: "이용권 남은 횟수 확인 및 구매" },
     ],
   },
 ];
 
 /** 현재 경로가 이 항목(또는 펼침 메뉴 항목)의 페이지이거나 그 하위인가. aria-current 표시에 쓴다. */
+function matchesPath(target: string, pathname: string) {
+  return pathname === target || pathname.startsWith(`${target}/`);
+}
+
 export function isCurrentNavItem(item: SiteNavItem, pathname: string): boolean {
+  // 다른 칸이 이 주소를 자기 주소로 더 길게 가지면 그 칸만 켠다(/my/interview-practice 는 마이페이지가 아니라 AI 모의 면접).
+  const ownedByOther = SITE_NAV_ITEMS.some(other => other !== item && other.target.length > item.target.length && matchesPath(other.target, pathname));
+  if (ownedByOther) return false;
   const targets = [item.target, ...(item.children ?? []).map(child => child.target.split("#")[0])];
-  return targets.some(target => pathname === target || pathname.startsWith(`${target}/`));
+  return targets.some(target => matchesPath(target, pathname));
 }

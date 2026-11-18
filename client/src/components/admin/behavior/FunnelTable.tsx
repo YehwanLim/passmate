@@ -87,7 +87,7 @@ export function FunnelTable({ steps, periodLabel, isLoading }: { steps: FunnelSt
             </Table>
           </div>
         )}
-        <p className="text-[11px] text-muted-foreground">폰·PC 는 기기를 기록하는 단계(작성 시작·제출 클릭)에만 있습니다.</p>
+        <p className="text-[11px] text-muted-foreground">폰·PC 는 방문~제출 클릭 단계에만 있고, 기기를 모르는 방문(11-10 전 방문 등)은 빠져서 합이 전체보다 작을 수 있어요.</p>
       </CardContent>
     </Card>
   );

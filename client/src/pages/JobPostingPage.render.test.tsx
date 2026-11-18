@@ -23,6 +23,8 @@ vi.mock("wouter", () => ({
   ),
 }));
 vi.mock("@/components/AuthButton", () => ({ default: () => null }));
+// 접수 중 공고의 '공고 담기' 버튼은 AuthProvider 가 필요하다. 버튼 자체는 JobSaveButton.test.tsx 가 본다.
+vi.mock("@/components/jobs/JobSaveButton", () => ({ default: () => null }));
 vi.mock("@/lib/siteVisits", async importOriginal => ({
   ...(await importOriginal<typeof import("@/lib/siteVisits")>()),
   sendFunnelEvent: mocks.sendFunnelEvent,

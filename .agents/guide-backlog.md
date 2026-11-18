@@ -7,6 +7,13 @@
 상태: `대기` → `초안`(PR 열림) → `발행`(머지됨). 작성 규격은 `.agents/guide-style.md`(v2).
 검색량은 도구 없이 추정했다. 주간 SEO 회고에서 Search Console에 실제로 잡힌 검색어로 순서를 바꾸고 글감을 더한다.
 
+**블로그 시리즈 우선 순서(11-04 추가, 계획: `.agents/blog-guide-posts/series-plan.md`).** 아래 순서에 `대기`가 남아 있으면 표의 위아래 순서보다 먼저 고른다. 기록 근거 3개 규칙은 그대로이고, 근거가 모자라면 다음 글감으로 넘어간다.
+- 월: M9 → M14
+- 수: W11 → W1 → W2 (W3 은 PR #36 초안)
+- 금: F13 → F4 → F9 → F5 → F14 → F7
+- W13 은 기록이 엇갈려 보류다. 계정 주인이 어느 쪽인지 정해 주기 전에는 고르지 않는다.
+- 면접 준비 글의 category 는 `자소서` 로 둔다(면접 후기 커버 필드가 필요 없는 글이라서).
+
 이미 발행된 주제(겹치지 않게): 지원동기 구조, 성장과정, 성격의 장단점, 입사 후 포부, 실패·도전 경험, 인턴 경험 없음,
 첫 10초 첫인상, 피드백 뒤 고치는 순서, AI 첨삭 전 체크리스트, AI 티 나는 표현, 면접 후기 4편(현대오토에버·현대차·삼성 DX ③④),
 직무 역량(job-competency-question), 협업 경험(teamwork-experience-question).
@@ -41,7 +48,7 @@
 | --- | --- | --- | --- | --- |
 | W1 | marketing-resume | 마케팅 직무 자소서 | 마케터에게서 읽는 사람이 찾는 것(숫자로 판단, 커뮤니케이션) | 대기 |
 | W2 | service-planning-resume | 서비스 기획 자소서 | 기획자의 +α와 다직무 협업 경험 | 대기 |
-| W3 | sales-resume | 영업 직무 자소서, 영업관리 자소서 | 상대가 원하는 것을 읽은 경험 | 대기 |
+| W3 | sales-resume | 영업 직무 자소서, 영업관리 자소서 | 상대가 원하는 것을 읽은 경험 | 발행 |
 | W4 | hr-resume | 인사 직무 자소서 | 사람을 좋아한다는 말 대신 제도와 운영 | 대기 |
 | W5 | finance-resume | 재무·회계 직무 자소서 | 꼼꼼함을 행동으로 증명하기 | 대기 |
 | W6 | company-questions-template-1 | ○○ 자소서 문항 분석 (접수 중 공채 1) | 문항마다 회사가 실제로 묻는 것 + 기사에서 가져올 단어 | 제외(10-09, 아래 "기업" 표로 옮김) |
@@ -51,6 +58,7 @@
 | W10 | read-job-posting | 채용 공고 읽는 법, 자격 요건 우대 사항 | 담당 업무의 동사를 경험 문장에 쓰기 | 대기 |
 | W11 | choose-job-role | 직무 선택, 직무 고르는 법 | 하고 싶은 일이 아니라 해 본 판단에서 고르기 | 대기 |
 | W12 | first-half-schedule | 상반기 공채 일정, 공채 준비 순서 | 1~3월에 할 일의 순서 | 대기 |
+| W13 | company-research-depth | 회사 조사 어디까지, 자소서 기업 조사 | 다 알아야 하나, 답변으로 나오는 만큼이면 되나 | 보류(11-04, 기록이 엇갈림. 계정 주인 확인 필요) |
 
 ## 금 — AI 활용 ↔ 면접 (격주)
 
@@ -70,6 +78,8 @@
 | F10 | blog-import-samsung-1-2 | (이관) 삼성전자 DX 합격 후기 ①② | 네이버 블로그 원문 그대로 | 대기 |
 | F11 | ai-vs-human-review | 자소서 첨삭 AI vs 사람 | 각각이 잘 보는 것과 못 보는 것 | 대기 |
 | F12 | ai-resume-workflow | AI로 자소서 쓰는 순서 | 초안은 내가, 점검은 AI가 | 대기 |
+| F13 | interview-where-to-start | 면접 준비 방법, 면접 준비 순서 | 면접이 잡히면 뭐부터 하나 | 대기 |
+| F14 | personality-questions | 인성 면접 질문, 면접 인성 질문 | 모의면접에 거의 똑같이 들어간 질문 6개 | 대기 |
 
 ## 기업 — 기업별 자소서 문항 해설 (화·금)
 
@@ -85,6 +95,7 @@
 | C3 | cj-cover-letter-questions | CJ그룹 | 21H2 서류 통과 → AI·인적성 탈락, 블로그 글에서 문항 확인 | 초안(10-13, #8) |
 | C4 | posco-international-cover-letter-questions | 포스코인터내셔널 | 21H2 2차(최종) 면접, 22H1 인턴 서류탈락 | 발행(10-27, #16) |
 | C5 | orion-cover-letter-questions | 오리온 | 21H2 지원·2차 면접 | 발행(10-27, 45c6dc5) |
-| C6 | sk-hynix-cover-letter-questions | SK하이닉스 | 없음(커피챗 관찰로만) | 대기 |
-| C7 | lg-electronics-cover-letter-questions | LG전자 | 없음(커피챗 관찰로만) | 대기 |
-| C8 | lg-display-cover-letter-questions | LG디스플레이 | 21H2 전형포기 → 22H1 AI·인적성 탈락 | 대기 |
+| C6 | sk-hynix-cover-letter-questions | SK하이닉스 | 없음(커피챗 관찰로만) | 초안(10-31, #32) |
+| C7 | lg-electronics-cover-letter-questions | LG전자 | 없음(커피챗 관찰로만) | 초안(11-03, #34) |
+| C8 | lg-display-cover-letter-questions | LG디스플레이 | 21H2 전형포기 → 22H1 AI·인적성 탈락 | 초안(11-10, 2026 하반기 B2B영업 문항만 확인) |
+| C9 | lx-international-cover-letter-questions | LX인터내셔널 | 21H2 자소서 준비(경험 칸 목록), 22H1 지원취소 | 초안(11-14, #55, 사용자 지정, 문항 3칸 틀) |

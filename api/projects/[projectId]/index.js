@@ -3,7 +3,7 @@ import { ApiError, sendError, sendJson, withApiHandler } from "../../../lib/api-
 import { requireActiveApplicationUser } from "../../../lib/auth.js";
 // 목록(api/projects.js)과 같은 규칙으로 요약을 읽는다. 예전엔 여기만 구버전 summary 필드만 봤다.
 import { extractSummary } from "../../../lib/analysis/report-fields.js";
-import { normalizeProjectMeta, normalizeQuestionSave } from "../../../lib/application-drafts.js";
+import { normalizeProjectMeta, normalizeQuestionSave, stageKeysOf } from "../../../lib/application-drafts.js";
 import { buildProjectTitle } from "../../../lib/analysis/resume-analysis.js";
 
 const DETAIL_SELECT = {
@@ -71,9 +71,15 @@ export function createProjectDetailHandler({
         const data = normalizeProjectMeta(req.body);
         const current = await db.project.findFirst({
           where,
-          select: { id: true, company: true, jobKeyword: true },
+          select: { id: true, company: true, jobKeyword: true, stage: true, stageSteps: true },
         });
         if (!current) throw new ApiError("NOT_FOUND", 404);
+        // 바꾼 뒤의 현재 단계가 바꾼 뒤의 단계 목록 안에 있어야 한다(현재 단계를 지우는 목록도 여기서 막힌다).
+        if ("stage" in data || "stageSteps" in data) {
+          const keys = stageKeysOf("stageSteps" in data ? data.stageSteps : current.stageSteps);
+          const stage = "stage" in data ? data.stage : current.stage;
+          if (!keys.includes(stage)) throw new ApiError("INVALID_REQUEST", 400);
+        }
         if (typeof data.jobPostingId === "string") {
           const posting = await db.jobPosting.findFirst({
             where: { id: data.jobPostingId, userId: applicationUser.id },
@@ -89,7 +95,10 @@ export function createProjectDetailHandler({
         const updated = await db.project.update({
           where: { id: current.id },
           data,
-          select: { id: true, title: true, company: true, jobKeyword: true, deadline: true, jobPostingId: true },
+          select: {
+            id: true, title: true, company: true, jobKeyword: true, deadline: true, jobPostingId: true,
+            stage: true, stageSteps: true, rejected: true,
+          },
         });
         return sendJson(res, 200, {
           id: updated.id,
@@ -98,6 +107,9 @@ export function createProjectDetailHandler({
           job_role: updated.jobKeyword ?? null,
           deadline: updated.deadline ?? null,
           job_posting_id: updated.jobPostingId ?? null,
+          stage: updated.stage ?? "writing",
+          stage_steps: updated.stageSteps ?? null,
+          rejected: updated.rejected ?? false,
         }, requestId);
       }
 
@@ -143,6 +155,10 @@ export function createProjectDetailHandler({
           }
           // 목록의 "최근 수정" 정렬이 projects.updated_at 을 보므로 문항 저장 때 지원서 행도 건드린다.
           await tx.project.update({ where: { id: owned.id }, data: { updatedAt: new Date() } });
+          // 공고만 담아 둔(관심) 지원서에 글을 쓰기 시작하면 '작성 중'으로 넘긴다. 다른 단계는 사용자만 바꾼다.
+          if (questions.some((q) => q.answer.trim().length > 0)) {
+            await tx.project.updateMany({ where: { id: owned.id, stage: "interest" }, data: { stage: "writing" } });
+          }
           const after = await tx.applicationQuestion.aggregate({
             where: { projectId: owned.id },
             _max: { updatedAt: true },

@@ -6,6 +6,7 @@ import { getSupabaseAdminClient } from "../../lib/auth.js";
 import { ApiError, sendJson, withApiHandler } from "../../lib/api-handler.js";
 import { runInstagramMaintenance } from "../../lib/instagram-dm/credential.js";
 import { createGraphClient } from "../../lib/instagram-dm/graph-client.js";
+import { expireStaleInterviewSessions } from "../../lib/interview/interview-lifecycle.js";
 import prisma from "../../lib/prisma.js";
 import { purgeExpiredRateLimitBuckets } from "../../lib/rate-limit.js";
 
@@ -35,6 +36,7 @@ export function createPurgeDeletedAccountsHandler({
   getAdminClient = getSupabaseAdminClient,
   purgeAccounts = purgeDueAccounts,
   instagramMaintenance = () => runInstagramMaintenance({ db, graph: createGraphClient() }),
+  expireInterviewSessions = () => expireStaleInterviewSessions({ db }),
 } = {}) {
   return async function purgeDeletedAccountsHandler(req, res) {
     return withApiHandler(req, res, async (requestId) => {
@@ -64,7 +66,15 @@ export function createPurgeDeletedAccountsHandler({
       } catch {
         console.warn("[instagram-dm] maintenance failed");
       }
-      return sendJson(res, 200, { purged: result.purged }, requestId);
+      // AI 면접 연습: 브라우저가 끝을 알리지 못한 세션 정리(취소·환불, 마감 처리, 24시간 뒤 예약 확정).
+      // 사용자 요청 때도 본인 것은 정리되지만, 다시 안 들어오는 사용자의 예약은 여기서만 확정된다.
+      let expiredInterviewSessions = 0;
+      try {
+        expiredInterviewSessions = await expireInterviewSessions();
+      } catch {
+        console.warn("[interview] stale session cleanup failed");
+      }
+      return sendJson(res, 200, { purged: result.purged, expiredInterviewSessions }, requestId);
     });
   };
 }

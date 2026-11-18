@@ -53,17 +53,40 @@ describe("SiteHeader", () => {
   });
 
   it("puts 채용 공고 first and folds 자소서·기업 분석 under 분석하기, my pages under 마이페이지", () => {
-    expect(SITE_NAV_ITEMS.map(item => item.label)).toEqual(["채용 공고", "분석하기", "취업 가이드", "이용권", "마이페이지"]);
+    expect(SITE_NAV_ITEMS.map(item => item.label)).toEqual(["채용 공고", "분석하기", "AI 모의 면접", "취업 가이드", "이용권", "마이페이지"]);
     render(<SiteHeader />);
     const hrefs = screen.getAllByRole("link").map(link => link.getAttribute("href"));
-    for (const href of ["/jobs", "/analyze", "/company-analysis", "/my", "/my#experiences", "/my#company", "/my/entitlements"]) {
+    for (const href of [
+      "/jobs",
+      "/analyze",
+      "/company-analysis",
+      "/my/interview-practice",
+      "/entitlements",
+      "/entitlements#interview",
+      "/my",
+      "/my#experiences",
+      "/my#company",
+      "/my/entitlements",
+    ]) {
       expect(hrefs, href).toContain(href);
     }
+  });
+
+  it("AI 면접 칸은 소개 화면(/my/interview-practice)으로 가고, 랜딩에서 현재 페이지로 표시하지 않는다(11-09)", () => {
+    mocks.location = "/";
+    render(<SiteHeader />);
+    const link = screen.getAllByRole("link").find(candidate => candidate.getAttribute("href") === "/my/interview-practice");
+    expect(link?.textContent).toBe("AI 모의 면접");
+    expect(link?.getAttribute("aria-current")).toBeNull();
+    expect(screen.getAllByRole("link").filter(candidate => candidate.getAttribute("aria-current") === "page")).toHaveLength(0);
   });
 
   it.each([
     ["/company-analysis", "/analyze"],
     ["/my/entitlements", "/my"],
+    ["/my/interview-practice", "/my/interview-practice"],
+    ["/my/interview-practice/start", "/my/interview-practice"],
+    ["/entitlements", "/entitlements"],
     ["/jobs/shinsegae-2027", "/jobs"],
   ])("marks the parent current on %s", (location, parentHref) => {
     mocks.location = location;

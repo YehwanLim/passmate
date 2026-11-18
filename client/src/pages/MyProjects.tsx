@@ -11,11 +11,14 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import ExperienceVault from "@/components/my/ExperienceVault";
 import MyCreditsPanel from "@/components/my/MyCreditsPanel";
-import { applicationStatus, sortApplications } from "@/lib/workspace";
+import { sortApplications, updateApplicationStage } from "@/lib/workspace";
+import { splitBoard } from "@/lib/applicationStages";
+import type { StagePatch } from "@/components/my/StageMenu";
+import { APPLICATION_BOARD_COPY } from "@/copy/applicationBoardCopy";
 import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
 
 type Tab = "applications" | "experiences" | "company";
-type Filter = "all" | "draft" | "done";
+type Filter = "active" | "finished";
 const TAB_BY_HASH: Record<string, Tab> = { "#experiences": "experiences", "#company": "company" };
 const HASH_BY_TAB: Record<Tab, string> = { applications: "", experiences: "#experiences", company: "#company" };
 
@@ -31,7 +34,8 @@ export default function MyProjects() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>("active");
+  const [stageError, setStageError] = useState<string | null>(null);
   // 경험 카드 제목 옆 숫자. 금고(ExperienceVault)가 불러오고 바뀔 때마다 알려 준다.
   const [experienceCount, setExperienceCount] = useState<number | null>(null);
 
@@ -87,10 +91,32 @@ export default function MyProjects() {
 
   const applications = projects.filter((project) => project.kind !== "COMPANY");
   const companies = projects.filter((project) => project.kind === "COMPANY");
-  const draftCount = applications.filter((project) => applicationStatus(project) === "draft").length;
-  const doneCount = applications.filter((project) => applicationStatus(project) === "done").length;
-  const filtered =
-    filter === "all" ? applications : applications.filter((project) => applicationStatus(project) === filter);
+  const board = splitBoard(applications);
+  const filtered = filter === "active" ? board.active : board.finished;
+
+  // 지원 현황판 단계 저장. 낙관적으로 바꾸고, 실패하면 이전 목록으로 되돌린다.
+  const changeStage = async (project: ProjectSummary, patch: StagePatch) => {
+    const before = projects;
+    setStageError(null);
+    setProjects((rows) =>
+      rows.map((row) =>
+        row.id === project.id
+          ? {
+              ...row,
+              ...("stage" in patch ? { stage: patch.stage } : {}),
+              ...("stageSteps" in patch ? { stage_steps: patch.stageSteps } : {}),
+              ...("rejected" in patch ? { rejected: patch.rejected } : {}),
+            }
+          : row,
+      ),
+    );
+    try {
+      await updateApplicationStage(project.id, patch);
+    } catch {
+      setProjects(before);
+      setStageError(APPLICATION_BOARD_COPY.menu.saveFailed);
+    }
+  };
   const counts: Record<Tab, number | null> = {
     applications: isLoading ? null : applications.length,
     experiences: experienceCount,
@@ -167,9 +193,8 @@ export default function MyProjects() {
                 <div role="group" aria-label="지원서 거르기" className="inline-flex gap-0.5 rounded-xl bg-fill p-1">
                   {(
                     [
-                      ["all", applications.length],
-                      ["draft", draftCount],
-                      ["done", doneCount],
+                      ["active", board.active.length],
+                      ["finished", board.finished.length],
                     ] as const
                   ).map(([key, count]) => (
                     <button
@@ -181,7 +206,7 @@ export default function MyProjects() {
                         filter === key ? "bg-surface font-bold text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : "font-semibold text-ink-4 hover:text-ink-2"
                       }`}
                     >
-                      {WORKSPACE_COPY.filters[key]}
+                      {APPLICATION_BOARD_COPY.filters[key]}
                       <span className={`ml-1.5 ${filter === key ? "text-brand" : "text-ink-5"}`}>{count}</span>
                     </button>
                   ))}
@@ -202,11 +227,15 @@ export default function MyProjects() {
                     ctaLabel="자소서 분석하러 가기"
                   />
                 ) : (
-                  <ApplicationList
-                    projects={filtered}
-                    onOpen={(project) => navigate(`/my/${project.id}`)}
-                    onDelete={(project) => handleDelete(project.id)}
-                  />
+                  <>
+                    {stageError && <p role="alert" className="mb-3 text-[13.5px] text-danger">{stageError}</p>}
+                    <ApplicationList
+                      projects={filtered}
+                      onStageChange={changeStage}
+                      onOpen={(project) => navigate(`/my/${project.id}`)}
+                      onDelete={(project) => handleDelete(project.id)}
+                    />
+                  </>
                 ))}
             </>
           )}

@@ -91,8 +91,9 @@ export default function Analyze() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   // 카카오 로그인(전체 페이지 리다이렉트)에서 돌아온 경우 떠나기 전 저장한 초안이 있다. 마운트 때 한 번만 꺼낸다.
   const [draft] = useState(() => takeAnalyzeDraft());
-  // 채용 공고 한 장(/jobs/:slug)의 "다 쓴 자소서 분석하기"가 ?job= 으로 공고를 넘긴다. 초안이 있으면 초안이 우선이다.
-  const [jobListing] = useState(() => (draft ? undefined : findJobPosting(readQueryParam("job", 80))));
+  // 채용 공고 한 장(/jobs/:slug)의 "다 쓴 자소서 분석하기"가 ?job= 으로 공고를 넘긴다. 초안에 공고가 담겨 있으면 초안이 우선이다.
+  // 공고 화면의 30초 점검은 글만 초안으로 넘기고 공고는 ?job= 으로 넘기므로, 공고 없는 초안이면 ?job= 을 읽는다.
+  const [jobListing] = useState(() => (draft?.jobPosting ? undefined : findJobPosting(readQueryParam("job", 80))));
   // /company-report 의 CTA 가 회사·직무를 쿼리로 넘긴다. 없으면 빈 값.
   const [company, setCompany] = useState(
     () => draft?.company ?? (readQueryParam("company") || jobListing?.company || "")

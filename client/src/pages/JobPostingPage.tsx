@@ -3,6 +3,8 @@ import { ChevronLeft } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { ContentCtaBar } from "@/components/ContentCtaBar";
 import { GuideLayout } from "@/components/guide/GuideLayout";
+import { DraftQuickCheck } from "@/components/jobs/DraftQuickCheck";
+import JobSaveButton from "@/components/jobs/JobSaveButton";
 import { ProcessSteps } from "@/components/jobs/ProcessSteps";
 import { findJobPosting, jobPostingPath, JOB_POSTINGS, type JobPostingListing } from "@/constants/jobPostings";
 import { JOB_POSTING_DETAILS, type JobPostingDetail } from "@/constants/jobPostingDetails";
@@ -231,6 +233,8 @@ export default function JobPostingPage() {
           {now && !closed && <b className="ml-1.5 font-bold text-danger">{dDayLabel(listing.closesAt, now)}</b>}
         </p>
         <p className="mt-4 text-[16px] leading-[1.75] text-ink-2 [word-break:keep-all] md:text-[17px]">{detail.highlight}</p>
+        {/* 마감 여부를 모르는 프리렌더·첫 렌더(now=null)에는 그리지 않아 하이드레이션이 어긋나지 않는다. */}
+        {now !== null && !closed && <JobSaveButton listing={listing} />}
         {/* 지원·정정 확인은 공식 공고가 기준이다. 우리는 요약만 두고 원문은 링크로 보낸다. */}
         <a
           href={detail.source.url}
@@ -242,6 +246,11 @@ export default function JobPostingPage() {
         </a>
         <p className="mt-2 text-[13px] text-ink-4">일정·자격은 바뀔 수 있어요. 지원 전에 공식 공고를 꼭 확인하세요.</p>
       </header>
+
+      {/* 공고만 읽고 10초 안에 떠나는 사람이 대부분이라, 본문보다 먼저 보이는 자리에 둔다. */}
+      <div className="mt-6 max-w-3xl">
+        <DraftQuickCheck listing={listing} />
+      </div>
 
       <div className="mt-8 grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
         <PostingBody detail={detail} />

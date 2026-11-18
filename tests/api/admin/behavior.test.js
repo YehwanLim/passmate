@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
     paymentEntitlement: { findMany: vi.fn() },
     experience: { findMany: vi.fn() },
     apiRateLimitBucket: { findMany: vi.fn() },
+    interviewSession: { findMany: vi.fn() },
+    interviewTurn: { groupBy: vi.fn() },
+    siteNotice: { findMany: vi.fn() },
   },
   requireAdministrator: vi.fn(),
 }));
@@ -45,6 +48,9 @@ describe("admin behavior — 사용 행동", () => {
     mocks.prisma.paymentEntitlement.findMany.mockResolvedValue([]);
     mocks.prisma.experience.findMany.mockResolvedValue([]);
     mocks.prisma.apiRateLimitBucket.findMany.mockResolvedValue([]);
+    mocks.prisma.interviewSession.findMany.mockResolvedValue([]);
+    mocks.prisma.interviewTurn.groupBy.mockResolvedValue([]);
+    mocks.prisma.siteNotice.findMany.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -67,13 +73,14 @@ describe("admin behavior — 사용 행동", () => {
     expect(deviceOf(null)).toBeNull();
   });
 
-  it("단계별 고유 수를 세고 이벤트 단계는 폰/PC 로 나눈다", async () => {
+  it("단계별 고유 수를 세고 방문~제출 단계는 폰/PC 로 나눈다", async () => {
     signups = [{ id: "u1" }, { id: "u2" }];
     mocks.prisma.siteVisit.findMany.mockResolvedValue([
-      { visitorId: "a", path: "/", createdAt: NOW },
-      { visitorId: "a", path: "/analyze", createdAt: NOW },
-      { visitorId: "b", path: "/analyze", createdAt: NOW },
-      { visitorId: "c", path: "/guide", createdAt: NOW },
+      // a: 방문 핑에 기기 없음(옛 탭) → 이벤트(m)로 채움, b: 방문 핑 d, c: 기기 모름
+      { visitorId: "a", path: "/", createdAt: NOW, device: null },
+      { visitorId: "a", path: "/analyze", createdAt: NOW, device: null },
+      { visitorId: "b", path: "/analyze", createdAt: NOW, device: "d" },
+      { visitorId: "c", path: "/guide", createdAt: NOW, device: null },
     ]);
     mocks.prisma.clientEvent.findMany.mockResolvedValue([
       { visitorId: "a", name: "analyze_form_start", detail: "m" },
@@ -99,8 +106,32 @@ describe("admin behavior — 사용 행동", () => {
       expect.objectContaining({ mobile: 1, desktop: 1 }),
     );
     expect(res.body.funnel.find((step) => step.key === "visit")).toEqual(
+      expect.objectContaining({ count: 3, mobile: 1, desktop: 1 }),
+    );
+    expect(res.body.funnel.find((step) => step.key === "analyzeView")).toEqual(
+      expect.objectContaining({ count: 2, mobile: 1, desktop: 1 }),
+    );
+    expect(res.body.funnel.find((step) => step.key === "signup")).toEqual(
       expect.objectContaining({ mobile: null, desktop: null }),
     );
+  });
+
+  it("링크 없이 앱 화면으로 곧장 들어와 튕긴 봇 세션은 방문·이벤트 모두에서 뺀다", async () => {
+    mocks.prisma.siteVisit.findMany.mockResolvedValue([
+      { visitorId: "bot", path: "/company-analysis", createdAt: NOW, device: "d" },
+      { visitorId: "bot", path: "/login", createdAt: NOW, device: "d" },
+      { visitorId: "human", path: "/", createdAt: NOW, device: "m" },
+    ]);
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([
+      // 머문 시간만 있는 건 사람 증거가 아니다
+      { visitorId: "bot", name: "engaged_time", detail: "d:2" },
+      { visitorId: "human", name: "engaged_time", detail: "m:40" },
+    ]);
+
+    const res = await run();
+
+    const visit = res.body.funnel.find((step) => step.key === "visit");
+    expect(visit).toEqual(expect.objectContaining({ count: 1, mobile: 1, desktop: 0 }));
   });
 
   it("유입원별로 작성 시작과 가입까지 이어진 방문자를 센다", async () => {
@@ -229,9 +260,145 @@ describe("admin behavior — 사용 행동", () => {
     expect(res.body.period).toBe("7d");
   });
 
+  it("체류 시간은 방문자별 최댓값으로 중앙값·평균·구간을 내고, 시간을 못 잰 방문은 전체 수에만 남는다", async () => {
+    mocks.prisma.siteVisit.findMany.mockResolvedValue(
+      ["a", "b", "c", "d", "bot"].map((visitorId) => ({ visitorId, createdAt: NOW })),
+    );
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([
+      // a 는 누적값이 두 번 왔다 — 더하지 않고 큰 값만 쓴다
+      { visitorId: "a", name: "engaged_time", detail: "m:5" },
+      { visitorId: "a", name: "engaged_time", detail: "m:20" },
+      { visitorId: "b", name: "engaged_time", detail: "d:40" },
+      { visitorId: "c", name: "engaged_time", detail: "m:100" },
+      // 자리를 비운 탭은 1시간에서 자른다
+      { visitorId: "d", name: "engaged_time", detail: "d:90000" },
+      // 다른 이벤트의 detail 이나 꼴이 틀린 값은 시간으로 읽지 않는다
+      { visitorId: "bot", name: "analyze_form_start", detail: "m:999" },
+      { visitorId: "bot", name: "engaged_time", detail: "m:abc" },
+    ]);
+
+    const res = await run();
+
+    expect(res.body.engagedTime).toEqual({
+      visitors: 5,
+      measured: 4,
+      medianSeconds: 70,
+      averageSeconds: 940,
+      buckets: [
+        { label: "10초 미만", count: 0 },
+        { label: "10~30초", count: 1 },
+        { label: "30초~1분", count: 1 },
+        { label: "1~3분", count: 1 },
+        { label: "3~10분", count: 0 },
+        { label: "10분 이상", count: 1 },
+      ],
+    });
+  });
+
+  it("체류 시간을 잰 방문이 없으면 초 값은 null 이고, 운영자 탭의 시간은 뺀다", async () => {
+    admins = [{ id: "admin-1" }];
+    mocks.prisma.siteVisit.findMany.mockResolvedValue([
+      { visitorId: "me", createdAt: NOW, userId: "admin-1" },
+      { visitorId: "guest", createdAt: NOW },
+    ]);
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([{ visitorId: "me", name: "engaged_time", detail: "d:500" }]);
+
+    const res = await run();
+
+    expect(res.body.engagedTime).toEqual(
+      expect.objectContaining({ visitors: 1, measured: 0, medianSeconds: null, averageSeconds: null }),
+    );
+  });
+
   it("응답에 이메일이 실리지 않는다", async () => {
     mocks.prisma.siteVisit.findMany.mockResolvedValue([{ visitorId: "a", createdAt: NOW, utmSource: "threads" }]);
     const res = await run();
     expect(JSON.stringify(res.body)).not.toMatch(/@/);
+  });
+
+  it("직접 지정 기간은 끝 날짜 다음 날 0시(KST)까지 조회하고 범위를 돌려준다", async () => {
+    const res = await run({ period: "custom", from: "2026-09-08", to: "2026-09-08" });
+    const where = mocks.prisma.siteVisit.findMany.mock.calls[0][0].where.createdAt;
+    expect(where.gte.toISOString()).toBe("2026-09-07T15:00:00.000Z");
+    expect(where.lt.toISOString()).toBe("2026-09-08T15:00:00.000Z");
+    expect(res.body.period).toBe("custom");
+    expect(res.body.range).toEqual({ from: "2026-09-08", to: "2026-09-08" });
+  });
+
+  it("AI 모의 면접은 단계마다 세션·사람 수를 세고 운영자 면접은 뺀다", async () => {
+    admins = [{ id: "admin-1" }];
+    const t = (iso) => new Date(iso);
+    mocks.prisma.interviewSession.findMany.mockResolvedValue([
+      // 시작만 누르고 연결 안 됨 → 환불
+      { id: "s1", userId: "u1", status: "CANCELLED", mode: "FULL", firstTokenAt: null, endedAt: null, feedbackStatus: "NONE" },
+      // 연결됐지만 답 없이 끝 → 환불
+      { id: "s2", userId: "u1", status: "CANCELLED", mode: "FULL", firstTokenAt: t("2026-09-09T01:00:00Z"), endedAt: t("2026-09-09T01:01:00Z"), feedbackStatus: "NONE" },
+      // 끝까지 보고 피드백 받음(10분)
+      { id: "s3", userId: "u1", status: "ENDED", mode: "FULL", firstTokenAt: t("2026-09-09T02:00:00Z"), endedAt: t("2026-09-09T02:10:00Z"), feedbackStatus: "SUCCEEDED" },
+      // 다른 사람, 중간에 끊김(4분)
+      { id: "s4", userId: "u2", status: "INTERRUPTED", mode: "SHORT", firstTokenAt: t("2026-09-09T03:00:00Z"), endedAt: t("2026-09-09T03:04:00Z"), feedbackStatus: "NONE" },
+      // 운영자
+      { id: "s5", userId: "admin-1", status: "ENDED", mode: "FULL", firstTokenAt: t("2026-09-09T04:00:00Z"), endedAt: t("2026-09-09T04:20:00Z"), feedbackStatus: "SUCCEEDED" },
+    ]);
+    mocks.prisma.interviewTurn.groupBy.mockResolvedValue([
+      { sessionId: "s3", _count: { _all: 6 } },
+      { sessionId: "s4", _count: { _all: 2 } },
+    ]);
+
+    const res = await run();
+    const { interviews } = res.body;
+    const steps = Object.fromEntries(interviews.steps.map((row) => [row.key, [row.sessions, row.users]]));
+    expect(steps).toEqual({
+      created: [4, 2],
+      connected: [3, 2],
+      answered: [2, 2],
+      used: [2, 2],
+      feedback: [1, 1],
+    });
+    expect(interviews).toEqual(expect.objectContaining({ interrupted: 1, refunded: 2, shortMode: 1, medianSeconds: 420 }));
+    const turnWhere = mocks.prisma.interviewTurn.groupBy.mock.calls[0][0].where;
+    expect(turnWhere.sessionId.in).not.toContain("s5");
+  });
+
+  it("면접 세션이 없으면 발언을 조회하지 않는다", async () => {
+    const res = await run();
+    expect(mocks.prisma.interviewTurn.groupBy).not.toHaveBeenCalled();
+    expect(res.body.interviews.steps[0]).toEqual({ key: "created", label: "시작 누름", sessions: 0, users: 0 });
+    expect(res.body.interviews.medianSeconds).toBeNull();
+  });
+
+  it("팝업마다 뜬 사람·누른 사람·닫은 사람을 세고 공지 제목을 붙인다", async () => {
+    const noticeId = "11111111-2222-3333-4444-555555555555";
+    const goneId = "99999999-2222-3333-4444-555555555555";
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([
+      { visitorId: "v1", name: "content_cta_click", detail: "m:interview-popup:open" },
+      { visitorId: "v1", name: "content_cta_click", detail: "m:interview-popup:go" },
+      { visitorId: "v2", name: "content_cta_click", detail: "d:interview-popup:open" },
+      { visitorId: "v2", name: "content_cta_click", detail: "d:interview-popup:never" },
+      { visitorId: "v3", name: "content_cta_click", detail: "d:interview-popup:open" },
+      { visitorId: "v3", name: "content_cta_click", detail: "d:interview-popup:open" },
+      { visitorId: "v3", name: "content_cta_click", detail: "d:interview-popup:close" },
+      { visitorId: "v1", name: "content_cta_click", detail: `m:notice-popup:${noticeId}:open` },
+      { visitorId: "v1", name: "content_cta_click", detail: `m:notice-popup:${noticeId}:today` },
+      { visitorId: "v4", name: "content_cta_click", detail: `d:notice-popup:${goneId}:open` },
+      // 팝업이 아닌 것·꼴이 다른 것은 버린다
+      { visitorId: "v5", name: "content_cta_click", detail: "m:guide-end:slug" },
+      { visitorId: "v5", name: "content_cta_click", detail: "m:notice-popup:------------------------------------:open" },
+    ]);
+    mocks.prisma.siteNotice.findMany.mockResolvedValue([{ id: noticeId, title: "11월 이벤트" }]);
+
+    const res = await run();
+    expect(mocks.prisma.siteNotice.findMany.mock.calls[0][0].where.id.in.sort()).toEqual([noticeId, goneId].sort());
+    expect(res.body.popups).toEqual([
+      { key: "interview", label: "AI 모의 면접 출시 팝업", kind: "interview", shown: 3, clicked: 1, closed: 1, hidden: 1 },
+      { key: `notice:${noticeId}`, label: "11월 이벤트", kind: "notice", shown: 1, clicked: 0, closed: 0, hidden: 1 },
+      { key: `notice:${goneId}`, label: "지운 공지 팝업", kind: "notice", shown: 1, clicked: 0, closed: 0, hidden: 0 },
+    ]);
+  });
+
+  it("팝업 기록이 없으면 공지를 조회하지 않고 빈 목록을 준다", async () => {
+    const res = await run();
+    expect(mocks.prisma.siteNotice.findMany).not.toHaveBeenCalled();
+    expect(res.body.popups).toEqual([]);
   });
 });

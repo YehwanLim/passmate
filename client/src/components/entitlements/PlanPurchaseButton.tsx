@@ -26,6 +26,8 @@ export function PlanPurchaseButton({
   onLogin: () => void;
 }) {
   const plan = PRICING[product];
+  // 카드 제목에 이미 "AI 모의 면접"이 있어 버튼은 짧게 "모의 면접 1회 구매하기"로(11-09 사용자 요청).
+  const buttonLabel = `${plan.label.replace(/^AI /, "")} 구매하기`;
   const buttonClassName = `h-12 w-full rounded-[10px] text-[15px] font-bold transition-colors disabled:opacity-50 ${PLAN_BUTTON_CLASS[product]}`;
 
   // 아직 결제 URL을 모르는 동안은 "판매 준비 중"이 아니라 비활성 버튼을 보여준다 —
@@ -33,7 +35,7 @@ export function PlanPurchaseButton({
   if (authLoading || (isAuthenticated && isLoading)) {
     return (
       <button type="button" disabled className={buttonClassName}>
-        {plan.label} 구매하기
+        {buttonLabel}
       </button>
     );
   }
@@ -49,7 +51,7 @@ export function PlanPurchaseButton({
   if (!isAuthenticated) {
     return (
       <button type="button" onClick={onLogin} className={buttonClassName}>
-        {plan.label} 구매하기
+        {buttonLabel}
       </button>
     );
   }
@@ -68,7 +70,7 @@ export function PlanPurchaseButton({
       onClick={() => onBuy(product)}
       className={buttonClassName}
     >
-      {`${plan.label} 구매하기`}
+      {buttonLabel}
     </button>
   );
 }

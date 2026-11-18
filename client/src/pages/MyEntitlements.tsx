@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, Building2, FileText, PenLine, RefreshCw } from "lucide-react";
+import { ArrowRight, Building2, FileText, PenLine, RefreshCw, Video } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import { getLoginRedirectPath, useRequireAuth } from "@/hooks/useRequireAuth";
 import {
@@ -259,7 +259,9 @@ export default function MyEntitlements() {
     summary?.companyAnalysisEnabled && summary.companyRemaining > 0
   );
 
-  const needsPurchase = Boolean(summary && !hasEssayCredit && !hasCompanyCredit);
+  const hasInterviewCredit = (summary?.interviewRemaining ?? 0) > 0;
+
+  const needsPurchase = Boolean(summary && !hasEssayCredit && !hasCompanyCredit && !hasInterviewCredit);
 
   return (
     <div className="min-h-screen bg-stage pb-28 text-ink">
@@ -279,7 +281,7 @@ export default function MyEntitlements() {
                 내 이용권
               </h1>
               <p className="mt-1.5 text-[15px] text-ink-4">
-                보유한 분석 이용권을 확인할 수 있어요.
+                보유한 이용권을 확인할 수 있어요.
               </p>
             </div>
             <button
@@ -345,6 +347,16 @@ export default function MyEntitlements() {
                 remaining={summary.companyRemaining}
               />
 
+              {/* AI 모의 면접(11-08). 판매가 꺼져 있어도 남은 횟수가 있으면 보여 준다. */}
+              {summary.interviewEnabled || summary.interviewRemaining > 0 ? (
+                <CreditGroupCard
+                  icon={<Video className="h-4 w-4" />}
+                  title="AI 모의 면접"
+                  description="자소서 리포트에서 시작해요. 면접을 시작하면 1회 차감돼요."
+                  remaining={summary.interviewRemaining}
+                />
+              ) : null}
+
               {summary.freeTools ? <FreeToolsCard tools={summary.freeTools} /> : null}
             </div>
           ) : null}
@@ -363,6 +375,15 @@ export default function MyEntitlements() {
                 onClick={() => navigate("/company-analysis")}
               >
                 기업 분석하기
+              </ActionButton>
+            ) : null}
+
+            {hasInterviewCredit ? (
+              <ActionButton
+                primary={false}
+                onClick={() => navigate("/my/interview-practice")}
+              >
+                AI 모의 면접 보기
               </ActionButton>
             ) : null}
 

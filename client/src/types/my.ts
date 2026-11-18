@@ -5,6 +5,8 @@
 // fetch 결과를 별도 매핑 없이 그대로 사용합니다.
 // =============================================================================
 
+import type { StageStep } from "@/lib/applicationStages";
+
 /** Project 리스트에서 사용하는 요약 구조 */
 export interface ProjectSummary {
   id: string;
@@ -41,6 +43,14 @@ export interface ProjectSummary {
   draft_question_count?: number;
   /** 답변을 쓴 문항 수 */
   answered_count?: number;
+  /** 지원 현황판 현재 단계 키(기본 6단계 또는 c_xxxxxxxx). 구버전 응답엔 없다 → 작성 중으로 본다. */
+  stage?: string;
+  /** 이 지원서만의 단계 목록. null 이면 기본 6단계. */
+  stage_steps?: StageStep[] | null;
+  /** 불합격 표시(현재 단계에서 멈춤). */
+  rejected?: boolean;
+  /** 공고판에서 담았거나 시작한 지원서의 공고 slug. */
+  posting_slug?: string | null;
 }
 
 /** 분석 상태 enum — DB AnalysisStatus와 동일 */

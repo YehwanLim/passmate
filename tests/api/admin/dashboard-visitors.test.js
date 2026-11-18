@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     analysis: { count: vi.fn(), findMany: vi.fn() },
     tokenUsage: { findMany: vi.fn() },
     siteVisit: { findMany: vi.fn() },
+    clientEvent: { findMany: vi.fn() },
     paymentEntitlement: { findMany: vi.fn() },
     purchaseProductSetting: { findMany: vi.fn() },
   },
@@ -40,6 +41,7 @@ describe("admin dashboard — 방문자 집계", () => {
     mocks.prisma.analysis.findMany.mockResolvedValue([]);
     mocks.prisma.tokenUsage.findMany.mockResolvedValue([]);
     mocks.prisma.siteVisit.findMany.mockResolvedValue([]);
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([]);
     mocks.prisma.paymentEntitlement.findMany.mockResolvedValue([]);
     mocks.prisma.purchaseProductSetting.findMany.mockResolvedValue([]);
   });
@@ -156,5 +158,35 @@ describe("admin dashboard — 방문자 집계", () => {
     expect(res.body.kpi.todayVisitors).toBe(2);
     expect(res.body.kpi.todayPageViews).toBe(2);
     expect(mocks.prisma.siteVisit.findMany.mock.calls[0][0].select).toEqual(expect.objectContaining({ userId: true }));
+  });
+
+  it("링크 없이 앱 화면으로 곧장 들어와 로그인 화면으로 튕긴 세션은 봇으로 보고 뺀다", async () => {
+    const now = new Date();
+    mocks.prisma.siteVisit.findMany.mockResolvedValue([
+      // 봇: 유입원 없이 /company-analysis → /login, 로그인 안 함, 행동 없음
+      { visitorId: "bot-1", path: "/company-analysis", createdAt: new Date(now.getTime() - 2000) },
+      { visitorId: "bot-1", path: "/login", createdAt: now },
+      { visitorId: "bot-2", path: "/analyze", createdAt: now },
+      // 사람: 같은 /analyze 직행이라도 뭔가 눌렀다
+      { visitorId: "typed", path: "/analyze", createdAt: now },
+      // 사람: 유입원이 있다
+      { visitorId: "from-blog", path: "/analyze", utmSource: "naverblog", createdAt: now },
+      // 사람: 로그인했다
+      { visitorId: "member", path: "/my/new", userId: "user-2", createdAt: now },
+      // 사람: 앱 화면에서 랜딩으로 넘어갔다
+      { visitorId: "wander", path: "/analyze", createdAt: new Date(now.getTime() - 2000) },
+      { visitorId: "wander", path: "/", createdAt: now },
+      // 사람: 로그인 화면으로 바로 온 건 로그인 실패 신호일 수 있어 봇으로 보지 않는다
+      { visitorId: "login-direct", path: "/login", createdAt: now },
+      // 사람: 공고로 들어왔다
+      { visitorId: "reader", path: "/jobs/foo", createdAt: now },
+    ]);
+    mocks.prisma.clientEvent.findMany.mockResolvedValue([{ visitorId: "typed" }]);
+
+    const res = createResponse();
+    await dashboardHandler({ method: "GET", query: {} }, res);
+
+    expect(res.body.kpi.todayVisitors).toBe(6);
+    expect(mocks.prisma.clientEvent.findMany.mock.calls[0][0].where.name).toEqual({ not: "engaged_time" });
   });
 });

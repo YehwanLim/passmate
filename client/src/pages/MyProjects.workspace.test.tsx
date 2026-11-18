@@ -3,7 +3,10 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn(), listExperiences: vi.fn() }));
-vi.mock("wouter", () => ({ useLocation: () => ["/my", mocks.navigate], Link: ({ children }: { children: unknown }) => children }));
+vi.mock("wouter", () => ({
+  useLocation: () => ["/my", mocks.navigate],
+  Link: ({ children, href }: { children: unknown; href: string }) => <a href={href}>{children as never}</a>,
+}));
 vi.mock("@/hooks/useRequireAuth", () => ({ useRequireAuth: () => ({ user: { id: "u1" }, isLoading: false }) }));
 vi.mock("@/components/SiteHeader", () => ({ default: () => null }));
 vi.mock("@/components/my/ExperienceVault", () => ({ default: () => <div>경험 탭 내용</div> }));
@@ -52,7 +55,7 @@ describe("마이페이지 · 자기소개서", () => {
     expect(screen.queryByText("마이페이지")).toBeNull();
   });
 
-  it("작성 중을 위로, 마감 가까운 순 — 상태는 '작성 중'만(문항 수·막대 없음)", async () => {
+  it("작성 중을 위로, 마감 가까운 순 — 단계 배지와 지금 할 일(문항 수·막대 없음)", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json([
       row("done-soon", "2026-10-04T14:59:00Z", { latest_analysis_id: "a1", latest_status: "SUCCESS", summary: "요약 문장" }),
       row("later", "2026-10-19T08:00:00Z"),
@@ -63,24 +66,37 @@ describe("마이페이지 · 자기소개서", () => {
     const rows = await rowsOf();
     expect(rows.map(nameOf)).toEqual(["soon 열기", "later 열기", "done-soon 열기", "past 열기"]);
     expect(within(rows[0]).getByText("D-2")).toBeTruthy();
-    expect(within(rows[0]).getByText("작성 중")).toBeTruthy();
+    expect(within(rows[0]).getByRole("button", { name: /작성 중/ })).toBeTruthy();
+    expect(within(rows[0]).getByRole("link", { name: "내기 전에 진단받기" })).toBeTruthy();
     expect(within(rows[0]).queryByText(/문항/)).toBeNull();
-    expect(within(rows[2]).getByText("분석 완료")).toBeTruthy();
-    expect(within(rows[2]).getByText("요약 문장")).toBeTruthy();
+    expect(within(rows[2]).getByRole("link", { name: "진단 리포트 보기" })).toBeTruthy();
     expect(within(rows[3]).getByText("마감 지남")).toBeTruthy();
   });
 
-  it("상태로 거른다(전체·작성 중·분석 완료)", async () => {
+  it("진행 중 / 결과 나옴으로 거른다(최종 합격·불합격은 결과 나옴)", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json([
-      row("draft", null),
-      row("done", null, { latest_analysis_id: "a1", latest_status: "SUCCESS" }),
+      row("going", null, { stage: "interview" }),
+      row("passed", null, { stage: "offer" }),
+      row("failed", null, { stage: "submitted", rejected: true }),
     ])));
     render(<MyProjects />);
-    await rowsOf();
-    fireEvent.click(screen.getByRole("button", { name: /^분석 완료/ }));
-    expect((await rowsOf()).map(nameOf)).toEqual(["done 열기"]);
-    fireEvent.click(screen.getByRole("button", { name: /^작성 중/ }));
-    expect((await rowsOf()).map(nameOf)).toEqual(["draft 열기"]);
+    expect((await rowsOf()).map(nameOf)).toEqual(["going 열기"]);
+    fireEvent.click(screen.getByRole("button", { name: /^결과 나옴/ }));
+    expect((await rowsOf()).map(nameOf)).toEqual(["passed 열기", "failed 열기"]);
+    expect(within((await rowsOf())[1]).getByRole("button", { name: /서류 제출에서 불합격/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /^진행 중/ }));
+    expect((await rowsOf()).map(nameOf)).toEqual(["going 열기"]);
+  });
+
+  it("단계를 바꾸면 바로 PATCH 하고, 실패하면 배지를 되돌린다", async () => {
+    render(<MyProjects />);
+    const [first] = await rowsOf();
+    vi.mocked(fetch).mockResolvedValueOnce(new Response("{}", { status: 500 }));
+    fireEvent.click(within(first).getByRole("button", { name: /작성 중/ }));
+    fireEvent.click(within(first).getByRole("menuitemradio", { name: "서류 제출" }));
+    await waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([url, init]) => String(url).includes("/api/projects/soon") && (init as RequestInit | undefined)?.method === "PATCH")).toBe(true));
+    expect(await screen.findByText("단계를 저장하지 못했어요. 다시 눌러 주세요.")).toBeTruthy();
+    expect(within((await rowsOf())[0]).getByRole("button", { name: /작성 중/ })).toBeTruthy();
   });
 
   it("줄 아무 데나 누르면 지원서 화면으로 간다", async () => {
