@@ -47,12 +47,13 @@ describe("admin product settings", () => {
     const res = await invoke();
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.products.map((row) => row.product)).toEqual(["SINGLE", "COMPANY_SINGLE", "STANDARD", "PREMIUM", "TRIPLE"]);
+    expect(res.body.products.map((row) => row.product)).toEqual(["SINGLE", "COMPANY_SINGLE", "STANDARD", "PREMIUM", "TRIPLE", "INTERVIEW_SINGLE", "INTERVIEW_TRIPLE"]);
     // SINGLE 은 아직 행에 저장된 contentId 가 없어 env fallback 값만 참고용으로 노출한다.
-    expect(res.body.products[0]).toEqual({ product: "SINGLE", contentId: null, fallbackContentId: "env-single", paymentUrl: "", active: false, resumeCredits: 1, companyCredits: 0 });
-    expect(res.body.products[2]).toEqual({ product: "STANDARD", contentId: "4SGBV5", fallbackContentId: null, paymentUrl: "https://www.groble.im/payment/4SGBV5", active: true, resumeCredits: 2, companyCredits: 1 });
+    expect(res.body.products[0]).toEqual({ product: "SINGLE", contentId: null, fallbackContentId: "env-single", paymentUrl: "", active: false, resumeCredits: 1, companyCredits: 0, interviewCredits: 0 });
+    expect(res.body.products[2]).toEqual({ product: "STANDARD", contentId: "4SGBV5", fallbackContentId: null, paymentUrl: "https://www.groble.im/payment/4SGBV5", active: true, resumeCredits: 2, companyCredits: 1, interviewCredits: 0 });
     // 구 3회권 env contentId 는 STANDARD 행이 이미 쓰므로 TRIPLE 에는 붙지 않는다(컷오버 완료 상태).
-    expect(res.body.products[4]).toEqual({ product: "TRIPLE", contentId: null, fallbackContentId: null, paymentUrl: "", active: false, resumeCredits: 3, companyCredits: 0 });
+    expect(res.body.products[4]).toEqual({ product: "TRIPLE", contentId: null, fallbackContentId: null, paymentUrl: "", active: false, resumeCredits: 3, companyCredits: 0, interviewCredits: 0 });
+    expect(res.body.products[5]).toEqual({ product: "INTERVIEW_SINGLE", contentId: null, fallbackContentId: null, paymentUrl: "", active: false, resumeCredits: 0, companyCredits: 0, interviewCredits: 1 });
   });
 
   it("upserts one product's settings from a PATCH and returns the refreshed list", async () => {
@@ -64,7 +65,7 @@ describe("admin product settings", () => {
       create: { product: "PREMIUM", grobleContentId: "prm001", paymentUrl: "https://www.groble.im/payment/PRM", active: true },
       update: { grobleContentId: "prm001", paymentUrl: "https://www.groble.im/payment/PRM", active: true },
     });
-    expect(res.body.products).toHaveLength(5);
+    expect(res.body.products).toHaveLength(7);
   });
 
   it("clears a content id with null and trims whitespace", async () => {

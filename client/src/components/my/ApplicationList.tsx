@@ -1,7 +1,12 @@
+import { Link } from "wouter";
 import type { ProjectSummary } from "@/types/my";
 import KebabMenu, { createDefaultKebabItems } from "./KebabMenu";
-import { applicationStatus, daysUntil, monthDay, type ApplicationStatus } from "@/lib/workspace";
+import StageMenu, { type StagePatch } from "./StageMenu";
+import { daysUntil } from "@/lib/workspace";
+import { nextAction, type NextAction } from "@/lib/nextAction";
+import { sendFunnelEvent } from "@/lib/siteVisits";
 import { WORKSPACE_COPY } from "@/copy/workspaceCopy";
+import { APPLICATION_BOARD_COPY } from "@/copy/applicationBoardCopy";
 
 type Deadline = { label: string; tone: "urgent" | "normal" | "muted" | "passed" };
 
@@ -21,50 +26,51 @@ const DEADLINE_CLASS: Record<Deadline["tone"], string> = {
   passed: "text-[13px] text-ink-5",
 };
 
-const STATUS_CLASS: Record<ApplicationStatus, string> = {
-  draft: "bg-brand-soft text-brand-ink",
-  analyzing: "bg-fill text-ink-3",
-  done: "bg-ok-soft text-ok",
-};
-
-function StatusTag({ status }: { status: ApplicationStatus }) {
+/** 카드의 주인공: 지금 단계에 맞는 행동 하나(설계 3.4절). 카드 전체 링크 위에 떠야 해서 z-10. */
+function NextActionCell({ action }: { action: NextAction | null }) {
+  if (!action) return <span className="text-[13.5px] text-ink-4">{APPLICATION_BOARD_COPY.next.offer}</span>;
   return (
-    <span className={`inline-flex h-6 items-center whitespace-nowrap rounded-[7px] px-2 text-[12px] font-bold ${STATUS_CLASS[status]}`}>
-      {WORKSPACE_COPY.status[status]}
-    </span>
+    <div className="relative z-10" onClick={(e) => e.stopPropagation()}>
+      <p className="text-[12.5px] text-ink-4 break-keep">{action.reason}</p>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Link
+          href={action.href}
+          onClick={() => void sendFunnelEvent("content_cta_click", action.track)}
+          className="inline-flex h-9 items-center rounded-[10px] bg-brand px-3.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-brand-hover"
+        >
+          {action.label}
+        </Link>
+        {action.secondary && (
+          <Link href={action.secondary.href} className="text-[13px] font-semibold text-ink-3 underline-offset-2 hover:underline">
+            {action.secondary.label}
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }
 
-function summaryOf(project: ProjectSummary, status: ApplicationStatus): string | null {
-  if (status === "draft") return null;
-  if (status === "analyzing") return WORKSPACE_COPY.analyzingSummary;
-  return project.summary?.trim() || null;
-}
-
 /**
- * 내 지원서 목록. 넓은 화면은 지원 현황표(회사·직무 | 마감 | 상태 | 최근 분석 요약), 폰은 같은 순서의 작은 카드.
+ * 내 지원서 목록. 넓은 화면은 지원 현황표(회사·직무 | 마감 | 단계 | 지금 할 일), 폰은 같은 순서의 작은 카드.
  * 줄(카드) 아무 데나 누르면 지원서 화면으로 간다. 더보기(삭제)만 그 위에 따로 동작한다. 순서는 부모가 정해 넘긴다.
  */
 export default function ApplicationList({
   projects,
   onOpen,
   onDelete,
+  onStageChange,
 }: {
   projects: ProjectSummary[];
   onOpen: (project: ProjectSummary) => void;
   onDelete: (project: ProjectSummary) => void;
+  onStageChange: (project: ProjectSummary, patch: StagePatch) => Promise<void>;
 }) {
-  const rows = projects.map((project) => {
-    const status = applicationStatus(project);
-    return {
-      project,
-      status,
-      deadline: deadlineOf(project.deadline),
-      summary: summaryOf(project, status),
-      analyzedOn: status === "done" ? monthDay(project.latest_analyzed_at) : null,
-      name: project.company_name || project.title || "기업 미지정",
-    };
-  });
+  const rows = projects.map((project) => ({
+    project,
+    deadline: deadlineOf(project.deadline),
+    action: nextAction(project),
+    name: project.company_name || project.title || "기업 미지정",
+  }));
 
   return (
     <>
@@ -73,13 +79,13 @@ export default function ApplicationList({
           <tr className="border-b border-line bg-fill-soft text-left text-[13px] font-semibold text-ink-4">
             <th className="w-[26%] px-5 py-3.5 font-semibold">{WORKSPACE_COPY.table.application}</th>
             <th className="w-[12%] px-5 py-3.5 font-semibold">{WORKSPACE_COPY.table.deadline}</th>
-            <th className="w-[12%] px-5 py-3.5 font-semibold">{WORKSPACE_COPY.table.status}</th>
-            <th className="px-5 py-3.5 font-semibold">{WORKSPACE_COPY.table.summary}</th>
+            <th className="w-[16%] px-5 py-3.5 font-semibold">{APPLICATION_BOARD_COPY.table.stage}</th>
+            <th className="px-5 py-3.5 font-semibold">{APPLICATION_BOARD_COPY.table.next}</th>
             <th className="w-12" aria-hidden="true" />
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ project, status, deadline, summary, analyzedOn, name }) => (
+          {rows.map(({ project, deadline, action, name }) => (
             <tr
               key={project.id}
               data-testid="application-row"
@@ -98,10 +104,11 @@ export default function ApplicationList({
                 </button>
               </td>
               <td className="px-5 py-4 align-middle"><span className={DEADLINE_CLASS[deadline.tone]}>{deadline.label}</span></td>
-              <td className="px-5 py-4 align-middle"><StatusTag status={status} /></td>
-              <td className="px-5 py-4 align-middle text-[14px] leading-[1.55] text-ink-2 break-keep">
-                {analyzedOn && <span className="block text-[12.5px] text-ink-4">{WORKSPACE_COPY.analyzedOn(analyzedOn)}</span>}
-                {summary ?? <span className="text-ink-4">{WORKSPACE_COPY.noSummary}</span>}
+              <td className="px-5 py-4 align-middle">
+                <StageMenu project={project} onChange={(patch) => onStageChange(project, patch)} />
+              </td>
+              <td className="px-5 py-4 align-middle">
+                <NextActionCell action={action} />
               </td>
               <td className="pr-3 align-middle">
                 <KebabMenu items={createDefaultKebabItems({ onDelete: () => onDelete(project) })} />
@@ -112,7 +119,7 @@ export default function ApplicationList({
       </table>
 
       <ul className="space-y-2.5 md:hidden">
-        {rows.map(({ project, status, deadline, summary, analyzedOn, name }) => (
+        {rows.map(({ project, deadline, action, name }) => (
           <li
             key={project.id}
             data-testid="application-card"
@@ -128,7 +135,7 @@ export default function ApplicationList({
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <h3 className="text-[16px] font-bold text-ink break-keep">{name}</h3>
-                  <StatusTag status={status} />
+                  <StageMenu project={project} onChange={(patch) => onStageChange(project, patch)} />
                 </div>
                 {project.job_role && <p className="mt-0.5 text-[13px] text-ink-3 break-keep">{project.job_role}</p>}
               </div>
@@ -137,8 +144,9 @@ export default function ApplicationList({
                 <KebabMenu items={createDefaultKebabItems({ onDelete: () => onDelete(project) })} />
               </div>
             </div>
-            {analyzedOn && <p className="mt-2.5 text-[12.5px] text-ink-4">{WORKSPACE_COPY.analyzedOn(analyzedOn)}</p>}
-            {summary && <p className={`${analyzedOn ? "mt-0.5" : "mt-2.5"} text-[13.5px] leading-[1.55] text-ink-2 break-keep`}>{summary}</p>}
+            <div className="mt-3">
+              <NextActionCell action={action} />
+            </div>
           </li>
         ))}
       </ul>

@@ -88,3 +88,69 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `nice-ratings.svg` | NICE신용평가 | [NICE신용평가 홈페이지](https://www.nicerating.com/images/common/nicerating_symbol_kor_20240701.png) | PNG를 줄여 SVG 래퍼에 |
 | `ulsan-aluminum.svg` | 울산알루미늄 | [울산알루미늄 홈페이지](https://ulsanaluminum.com/images/sprite/logo.png) | 스프라이트 PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
 | `daewoong.svg` | 대웅그룹 | [대웅제약 홈페이지](https://www.daewoong.co.kr/images/daewoong-logo-basic.svg) | 공식 SVG 그대로 |
+| `yuanta-securities.svg` | 유안타증권 | [유안타증권 홈페이지 CI](https://www.yuantakorea.com/images/sub/1/1/5/cont2.jpg) | 국문 로고타입 한 줄을 잘라 PNG를 SVG 래퍼에 |
+| `kumho-express.svg` | 금호익스프레스 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%EA%B8%88%ED%98%B8%EA%B3%A0%EC%86%8DCI.png) | 금호고속 CI, 퍼블릭 도메인, PNG를 잘라 SVG 래퍼에 |
+| `suhyup.svg` | 수협중앙회 | [수협중앙회 채용 사이트](https://raspfiles2.incruit.com/suhyup/data/101/SuccessData/addFile/수협중앙회_0000000_135x90.png) | PNG를 잘라 SVG 래퍼에 |
+| `hyundai-lnc.svg` | 현대엘앤씨 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/Special:FilePath/Hyundai_L%26C_Logo.svg) | 라이선스 문구 미확인 |
+| `fanuc.svg` | 한국화낙 | [Wikimedia Commons](https://upload.wikimedia.org/wikipedia/commons/b/bb/Fanuc_logo.svg) | 영문 FANUC 워드마크, viewBox만 추가 |
+| `hyundai-steel.svg` | 현대제철 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hyundai_Steel_logo.svg) | Public domain(상표 제한) |
+| `ecount.svg` | 이카운트 | [이카운트 홈페이지](https://www.ecount.com/kr/common/images/common/logo.svg) | 공식 SVG 그대로 |
+| `cr-holdings.svg` | 조선내화 | [CR홀딩스 홈페이지](https://www.crholdings.co.kr/assets/images/common/logo-sprite.png) | 그룹 로고, 스프라이트 PNG를 잘라 SVG 래퍼에(작음) |
+| `im-securities.svg` | iM증권 | [iM증권 홈페이지](https://www.imfnsec.com/images/main/2017/logo_2024CI_iMsec.png) | PNG를 viewBox로 잘라 SVG 래퍼에(작음) |
+| `kooksoondang.svg` | 국순당 | [국순당 채용 사이트](https://recruit.ksdb.co.kr/images/sublogos.png) | PNG를 SVG 래퍼에(작음) |
+| `modetour.svg` | 모두투어네트워크 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:모두투어_로고.png) | PNG를 SVG 래퍼에 |
+| `kunwon.svg` | 건원엔지니어링 | [건원엔지니어링 홈페이지](https://www.kunwoneng.com/images/logo/kunwon_logo_black.svg) | 공식 SVG 그대로 |
+| `hanssem.svg` | 한샘 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hanssem_logo.svg) | Public domain |
+| `gabia.svg` | 가비아 | [가비아 홈페이지](https://static.gabia.com/www/common/img/logo.svg) | 공식 SVG, viewBox만 조정 |
+| `psk.svg` | 피에스케이 | [피에스케이 홈페이지](https://www.pskinc.com/img/psk_logo.svg) | 공식 SVG, class 스타일을 fill 속성으로 |
+| `hanmi-global.svg` | 한미글로벌 | [한미글로벌 홈페이지](https://www.hanmiglobal.com/en/images/logo.png) | PNG를 SVG 래퍼에(한미약품 hanmi.svg 와 다른 회사) |
+| `hana.svg` | 하나저축은행 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hana_Financial_Group_Logo_(kor).svg) | 하나금융그룹 로고에서 심볼만 |
+| `korea-alcohol.svg` | 한국알콜그룹 | [이엔에프테크놀로지 홈페이지](https://www.enftech.com/wp-content/themes/kai-child/images/layout/footer-kai-pic.svg) | KAI(한국알콜산업) 로고, 공식 SVG 정리 |
+| `incheon-total-energy.svg` | 인천종합에너지 | [인천종합에너지 홈페이지](https://www.e-inteco.co.kr/pub/images/logo_g.svg) | 공식 SVG 그대로(title만 추가) |
+| `hyundai-welding.svg` | 현대종합금속 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Hyundai_Welding.png) | PNG 여백을 잘라 SVG 래퍼에 |
+| `nongshim.svg` | 농심 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nongshim_Logo.svg) | 공식 SVG 그대로 |
+| `hyundai-bngsteel.svg` | 현대비앤지스틸 | [현대비앤지스틸 홈페이지](https://www.bngsteel.com/kr/images/gnb/logo.png) | PNG를 SVG 래퍼에 |
+| `foosung.svg` | 후성그룹 | [후성그룹 채용 홈페이지](https://img.inhr.co.kr/static/careerlink/LOGO/251028181710522fZa.png) | 채용 사이트 등록 로고 PNG를 SVG 래퍼에 |
+| `yuhan-kimberly.svg` | 유한킴벌리 | [유한킴벌리 홈페이지](https://www.yuhan-kimberly.co.kr/images/renewal2022/header/logo.png) | PNG를 SVG 래퍼에 |
+| `toyota.svg` | 한국토요타자동차 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Toyota_logo_(Red).svg) | Public domain, `<title>`만 추가 |
+| `shinyoung-securities.svg` | 신영증권 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%EC%8B%A0%EC%98%81%EC%A6%9D%EA%B6%8C%EB%A1%9C%EA%B3%A01.png) | CC BY-SA 4.0, PNG 여백 자르고 SVG 래퍼에 |
+| `apr.svg` | 에이피알 | [에이피알 공식 채용 페이지](https://img.inhr.co.kr/static/careerlink/DSGN/261027205832892Ylx.svg) | 공식 SVG, `<title>`만 추가 |
+| `boryung.svg` | 보령 | [보령 홈페이지](https://www.boryung.co.kr/images/mo/logo.png) | PNG를 SVG 래퍼에(회색) |
+| `jeisys.svg` | 제이시스메디칼 | [제이시스메디칼 홈페이지](https://www.jeisys.co.kr/kor/pub/images/logo.svg) | 흰색 원본을 채용 사이트 색 #21358D 로 |
+| `shinwon.svg` | 신원 | [신원 공식 채용 사이트](https://opening-attachments.greetinghr.com/2024-12-23/9a90e554-a22f-40a1-b73a-018c6305e5a7/.png) | PNG를 SVG 래퍼에 |
+| `shinyoung-group.svg` | 신영그룹 | [신영그룹 홈페이지](https://www.shinyounggroup.com/resources/images/shinyoungGroup/common/group_logo.svg) | 공식 SVG 그대로 |
+| `hyundai-department.svg` | 현대백화점그룹 | [현대백화점그룹 채용 홈페이지](https://recruit.ehyundai.com/common/images/logo-bk.svg) | 공식 SVG 그대로 |
+| `logisall.svg` | 한국컨테이너풀 | [로지스올 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2024/11/27/655ffdb9-9048-4b86-9556-5bc216fe96d7.png) | 그룹(로지스올) 로고, 여백을 잘라 PNG를 SVG 래퍼에 |
+| `kctech.svg` | 케이씨텍 | [케이씨텍 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/05/28/41d72399-a205-4d48-b866-c87a5e3e1e66.png) | PNG를 줄여 SVG 래퍼에 |
+| `loreal.svg` | 로레알코리아 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:L%27Or%C3%A9al_logo.svg) | PD-textlogo, 상표 고지 있음 |
+| `whanin.svg` | 환인제약 | [환인제약 홈페이지](https://whanin.com/_theme/basic/img/ci.png) | 여백을 잘라 PNG를 SVG 래퍼에(작음) |
+| `ktnet.svg` | 한국무역정보통신 | [KTNET 홈페이지](https://www.ktnet.com/html/aw_img/renew/images/common/logo.svg) | 공식 SVG 그대로 |
+| `daesang.svg` | 대상 | [대상그룹 채용 홈페이지](https://career.daesang.com/ko/home) | 채용 홈페이지 프로필 이미지를 SVG 래퍼에 |
+| `kt-group.svg` | kt cs (KT그룹) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:KT_Corp_2D_logo.svg) | PD-textlogo, kt cs 전용 로고 대신 KT 마크 |
+| `samsung-life-service.svg` | 삼성생명서비스 | [삼성생명서비스 채용 홈페이지](https://samsunglifeservice.recruiter.co.kr) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `samsung-medison.svg` | 삼성메디슨 | [삼성메디슨 채용 홈페이지](https://samsungmedison.careerlink.kr) | 로고 PNG를 SVG 래퍼에(작음) |
+| `semes.svg` | 세메스 | [세메스 홈페이지](https://www.semes.com/resources/images/logo2.png) | 로고 PNG를 SVG 래퍼에 |
+| `bukwang.svg` | 부광약품 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bukwang_Pharmaceutical_logo.svg) | PD-textlogo, 상표 고지 있음 |
+| `shinhan-bank.svg` | 신한은행 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Shinhan_Bank_Logo_(ENG).svg) | PD-textlogo, 상표 고지 있음 |
+| `ahnlab.svg` | 안랩 | [안랩 홈페이지](https://cloudimg.ccs.ahnlab.com/img_upload/assets/images/ko/logo-ahnlab-black.svg) | 공식 SVG 그대로 |
+| `kumho-tire.svg` | 금호타이어 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kumho_Tire_logo_(2023).svg) | 퍼블릭 도메인 |
+| `dongjin-semichem.svg` | 동진쎄미켐 | [동진쎄미켐 채용 사이트](https://img.inhr.co.kr/static/careerlink/LOGO/250611142551494NNT.png) | 여백을 잘라 PNG를 SVG 래퍼에 |
+| `sebang-group.svg` | 세방그룹 | [세방그룹 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/07/04/fe87de18-d46d-4f07-9f55-97bc6df1b920.png) | PNG를 SVG 래퍼에 |
+| `hankook-research.svg` | 한국리서치 | [한국리서치 홈페이지](https://www.hrc.co.kr/Content/Design/images/hrclogo.png) | 여백을 잘라 PNG를 SVG 래퍼에(작음) |
+| `sase.svg` | 사세 | [사세 채용 사이트](https://opening-attachments.greetinghr.com/2026-05-28/a2d13439-1939-45af-9c9e-1cb3d28d2e75/logo.png) | PNG를 줄여 SVG 래퍼에 |
+| `kyowon.svg` | 교원그룹 | [교원그룹 채용 사이트](https://image.ninehire.com/brand/bd1f80f0-1b53-11f1-bea7-7f4f8cbb58a4/952e8fc0-325d-11f1-b2fa-13075ba4a543.svg) | 실제 PNG를 SVG 래퍼에(작음) |
+| `kp-group.svg` | KP한석화학 | [KP그룹 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/09/29/a00259c7-7665-4afb-9bc0-232add2cc5a3.png) | 여백을 잘라 PNG를 줄여 SVG 래퍼에 |
+| `lg-hnh.svg` | LG생활건강 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:LG_Household_%26_Health_Care_logo_(korean).svg) | lghnh-2026-hr 공고용 |
+| `biztechi.svg` | 비즈테크아이 | [비즈테크아이 홈페이지](https://www.biztechi.com/resources/icons/ico_logo.svg) | 공식 사이트 SVG |
+| `coca-cola.svg` | 코카콜라음료 | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Coca-Cola_logo.svg) | 상표 고지 있음 |
+| `wconcept.svg` | W컨셉 | [W컨셉 홈페이지](https://display.wconcept.co.kr/) | 헤더 로고 SVG |
+| `shinhan-card.svg` | 신한카드 | [신한카드 홈페이지](https://www.shinhancard.com/pconts/static/svg/ci.svg) | 공식 사이트 CI SVG |
+| `koh-young.svg` | 고영테크놀러지 | [고영테크놀러지 홈페이지](https://kohyoung.com/en/) | 로고 PNG를 SVG 래퍼에 |
+| `genesis-bbq.svg` | 제너시스비비큐 | [BBQ 홈페이지](https://bbq.co.kr/images/symbols/logo-red.svg) | 공식 사이트 SVG |
+| `yongma-logis.svg` | 용마로지스 | [용마로지스 홈페이지](https://yongmalogis.co.kr/resources/img/kr/yongma_logo.png) | 로고 PNG를 SVG 래퍼에 |
+| `hitejinro-beverage.svg` | 하이트진로음료 | [하이트진로음료 홈페이지](https://www.hitejinrobeverage.com/assets/images/logo.svg) | 공식 사이트 SVG |
+| `toray.svg` | 도레이첨단소재 | [도레이첨단소재 채용 사이트](https://www.torayamk-recruit.com/assets/images/brandLogo.svg) | 공식 사이트 SVG |
+| `lsitc.svg` | LS ITC | [LS ITC 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2024/06/17/5f85b5ad-e63c-4809-a974-dbfd88e2d110.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `neople.svg` | 네오플 | [네오플 홈페이지](https://www.neople.co.kr/images/LOGO.gif) | 헤더 로고 GIF를 SVG 래퍼에(작음) |
+| `mbc.svg` | MBC | [MBC 채용 사이트](https://img.inhr.co.kr/static/careerlink/LOGO/260529174136490o4u.png) | 로고 PNG를 SVG 래퍼에 |
+| `kt-telecop.svg` | KT텔레캅 | [KT텔레캅 홈페이지](https://www.kttelecop.co.kr/front/skin/image/header/logo.png) | 헤더 로고 PNG를 SVG 래퍼에 |

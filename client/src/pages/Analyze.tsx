@@ -93,8 +93,9 @@ export default function Analyze() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   // 카카오 로그인(전체 페이지 리다이렉트)에서 돌아온 경우 떠나기 전 저장한 초안이 있다. 마운트 때 한 번만 꺼낸다.
   const [draft] = useState(() => takeAnalyzeDraft());
-  // 채용 공고 한 장(/jobs/:slug)의 "다 쓴 자소서 분석하기"가 ?job= 으로 공고를 넘긴다. 초안이 있으면 초안이 우선이다.
-  const [jobListing] = useState(() => (draft ? undefined : findJobPosting(readQueryParam("job", 80))));
+  // 채용 공고 한 장(/jobs/:slug)의 "다 쓴 자소서 분석하기"가 ?job= 으로 공고를 넘긴다. 초안에 공고가 담겨 있으면 초안이 우선이다.
+  // 공고 화면의 30초 점검은 글만 초안으로 넘기고 공고는 ?job= 으로 넘기므로, 공고 없는 초안이면 ?job= 을 읽는다.
+  const [jobListing] = useState(() => (draft?.jobPosting ? undefined : findJobPosting(readQueryParam("job", 80))));
   // 면접 후기 글에서 온 방문(?intent=interview). 로그인 왕복 뒤에는 초안이, 초안이 없으면 돌아온 주소가 들고 온다.
   // 서버로 보내지 않는다 — 안내 한 줄을 띄우고, 대기 화면을 거쳐 리포트를 예상 질문부터 열 때만 쓴다.
   const [intent] = useState(() => draft?.intent ?? readAnalyzeIntent());

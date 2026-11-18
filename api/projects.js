@@ -30,6 +30,15 @@ export function createProjectsHandler({
 
       if (req.method === "POST") {
         const draft = normalizeProjectCreate(req.body);
+        // 공고 담기는 같은 공고를 두 번 담아도 하나만 둔다. 유니크 제약은 걸지 않는다
+        // (예전 "내 경험으로 초안 쓰기"로 같은 slug 지원서가 이미 여럿일 수 있다).
+        if (draft.stage === "interest" && draft.postingSlug) {
+          const existing = await db.project.findFirst({
+            where: { userId: applicationUser.id, postingSlug: draft.postingSlug },
+            select: { id: true },
+          });
+          if (existing) return sendJson(res, 200, { id: existing.id, existing: true }, requestId);
+        }
         const owned = await db.project.count({ where: { userId: applicationUser.id } });
         if (owned >= MAX_PROJECTS_PER_USER) {
           throw new ApiError("PROJECT_LIMIT_REACHED", 409);
@@ -42,6 +51,7 @@ export function createProjectsHandler({
             jobKeyword: draft.jobKeyword,
             deadline: draft.deadline,
             postingSlug: draft.postingSlug,
+            ...(draft.stage ? { stage: draft.stage } : {}),
             questions: { create: draft.questions },
           },
           select: { id: true },
@@ -60,6 +70,10 @@ export function createProjectsHandler({
           p.created_at,
           p.deadline,
           p.updated_at,
+          p.stage,
+          p.stage_steps,
+          p.rejected,
+          p.posting_slug,
           (SELECT count(*)::int FROM application_questions q WHERE q.project_id = p.id) AS draft_question_count,
           (SELECT count(*)::int FROM application_questions q
              WHERE q.project_id = p.id AND length(btrim(q.answer)) > 0) AS answered_count,
@@ -111,6 +125,10 @@ export function createProjectsHandler({
         updated_at: row.updated_at ?? row.created_at,
         draft_question_count: row.draft_question_count ?? 0,
         answered_count: row.answered_count ?? 0,
+        stage: row.stage ?? "writing",
+        stage_steps: row.stage_steps ?? null,
+        rejected: row.rejected ?? false,
+        posting_slug: row.posting_slug ?? null,
       })), requestId);
     });
   };

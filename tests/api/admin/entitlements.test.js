@@ -66,14 +66,14 @@ describe("admin premium sales switch", () => {
     const res = await invoke();
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: false });
+    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: false, interviewEnabled: false });
   });
 
   it("turns premium sales on through a single-key PATCH", async () => {
     const res = await invoke({ body: { premiumEnabled: true }, method: "PATCH" });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ premiumEnabled: true, companyAnalysisEnabled: false });
+    expect(res.body).toEqual({ premiumEnabled: true, companyAnalysisEnabled: false, interviewEnabled: false });
     expect(mocks.prisma.entitlementSetting.update).toHaveBeenCalledWith({
       where: { id: "singleton" },
       data: { premiumEnabled: true },
@@ -89,10 +89,27 @@ describe("admin premium sales switch", () => {
     const res = await invoke({ method: "PATCH", body: { companyAnalysisEnabled: true } });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: true });
+    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: true, interviewEnabled: false });
     expect(mocks.prisma.entitlementSetting.update).toHaveBeenCalledWith({
       where: { id: "singleton" },
       data: { companyAnalysisEnabled: true },
+    });
+  });
+
+  it("toggles the AI interview practice switch with a single-key PATCH", async () => {
+    mocks.prisma.entitlementSetting.update.mockResolvedValue({
+      premiumEnabled: false,
+      companyAnalysisEnabled: false,
+      interviewEnabled: true,
+    });
+
+    const res = await invoke({ method: "PATCH", body: { interviewEnabled: true } });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ premiumEnabled: false, companyAnalysisEnabled: false, interviewEnabled: true });
+    expect(mocks.prisma.entitlementSetting.update).toHaveBeenCalledWith({
+      where: { id: "singleton" },
+      data: { interviewEnabled: true },
     });
   });
 

@@ -193,6 +193,8 @@ export const PRERENDER_ROUTES: readonly PrerenderRoute[] = [
 
 /** 로그인이 필요하거나 개인 데이터를 보이는 접두 경로. robots.txt 의 Disallow 와 별개로 meta noindex 를 단다. */
 const PRIVATE_ROUTE_TITLES: ReadonlyArray<[prefix: string, title: string]> = [
+  // 앞에서부터 찾으므로 더 긴 접두를 /my 보다 먼저 둔다.
+  ["/my/interview-practice", "AI 모의 면접 | Pre:View"],
   ["/my", "내 프로젝트 | Pre:View"],
   ["/admin", "관리자 | Pre:View"],
   ["/checkout", "결제 | Pre:View"],

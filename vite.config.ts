@@ -26,6 +26,8 @@ function apiRoute(pathname: string) {
     return { file: "api/analyze.js", query: { extract: "1" } };
   if (pathname === "/api/analyze/keywords")
     return { file: "api/analyze.js", query: { keywords: "1" } };
+  if (pathname === "/api/analyze/interview-feedback")
+    return { file: "api/analyze.js", query: { interview_feedback: "1" } };
   if (pathname === "/api/entitlements") return { file: "api/entitlements.js", query: {} };
   if (pathname === "/api/entitlements/purchase-intents")
     return { file: "api/entitlements.js", query: { purchaseIntent: "1" } };
@@ -51,6 +53,8 @@ function apiRoute(pathname: string) {
   if (pathname === "/api/account/mentoring/slots" || pathname === "/api/account/mentoring/bookings")
     return { file: "api/account/[...route].js", query: {} };
   if (pathname === "/api/account/experiences" || /^\/api\/account\/experiences\/[^/]+$/.test(pathname))
+    return { file: "api/account/[...route].js", query: {} };
+  if (/^\/api\/account\/interview-sessions(\/[^/]+(\/(token|turns|end))?)?$/.test(pathname))
     return { file: "api/account/[...route].js", query: {} };
 
   const projectAnalysis = pathname.match(/^\/api\/projects\/([^/]+)\/analyses$/);

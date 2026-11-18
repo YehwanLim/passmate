@@ -46,9 +46,45 @@ describe("POST /api/visits — 방문 핑", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ recorded: true });
     expect(db.siteVisit.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: { visitorId: VISITOR_ID, path: "/", userId: null, referrer: null, utmSource: null, inAppBrowser: null },
+      data: { visitorId: VISITOR_ID, path: "/", userId: null, referrer: null, utmSource: null, inAppBrowser: null, device: null },
     }));
     expect(db.user.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("검색 로봇·자동화 브라우저의 방문·이벤트는 기록하지 않는다", async () => {
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null });
+    const crawlers = [
+      "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+      "Mozilla/5.0 (compatible; Yeti/1.1; +https://naver.me/spd)",
+      "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36",
+    ];
+    for (const ua of crawlers) {
+      const visitRes = response();
+      await handler({ method: "POST", headers: { "user-agent": ua }, body: { visitorId: VISITOR_ID, path: "/jobs/foo" } }, visitRes);
+      expect(visitRes.body).toEqual({ recorded: false });
+      const eventRes = response();
+      await handler({ method: "POST", headers: { "user-agent": ua }, body: { visitorId: VISITOR_ID, event: "engaged_time", detail: "d:3" } }, eventRes);
+      expect(eventRes.body).toEqual({ recorded: false });
+    }
+    expect(db.siteVisit.create).not.toHaveBeenCalled();
+    expect(db.clientEvent.create).not.toHaveBeenCalled();
+    expect(db.apiRateLimitBucket.upsert).not.toHaveBeenCalled();
+  });
+
+  it("사람 브라우저 UA(휴대폰 이름에 bot 이 들어가도)는 기록한다", async () => {
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null });
+    const people = [
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
+      "Mozilla/5.0 (Linux; Android 13; CUBOT_X70) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+      "Mozilla/5.0 (Linux; Android 14; SM-S918N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 KAKAOTALK 10.8.0",
+    ];
+    for (const ua of people) {
+      const res = response();
+      await handler({ method: "POST", headers: { "user-agent": ua }, body: { visitorId: VISITOR_ID, path: "/" } }, res);
+      expect(res.body).toEqual({ recorded: true });
+    }
+    expect(db.siteVisit.create).toHaveBeenCalledTimes(3);
   });
 
   it("로그인 상태면 앱 계정 ID 를 붙인다", async () => {
@@ -133,6 +169,14 @@ describe("POST /api/visits — 방문 핑", () => {
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/", inAppBrowser: 3 })).toBeNull();
   });
 
+  it("방문 핑의 기기(m·d)를 저장하고, 다른 값이면 방문은 남기되 기기만 비운다", async () => {
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null });
+    await handler({ method: "POST", headers: {}, body: { visitorId: VISITOR_ID, path: "/", device: "m" } }, response());
+    await handler({ method: "POST", headers: {}, body: { visitorId: VISITOR_ID, path: "/", device: "tablet" } }, response());
+    expect(db.siteVisit.create.mock.calls[0][0].data.device).toBe("m");
+    expect(db.siteVisit.create.mock.calls[1][0].data.device).toBeNull();
+  });
+
   it("로그인 화면 이벤트(event 필드)는 방문이 아니라 client_events 에 쌓인다", async () => {
     db.user.findUnique.mockResolvedValue({ id: "user-1" });
     const handler = createSiteVisitHandler({ db, authenticate: async () => ({ id: "user-1" }) });
@@ -182,6 +226,7 @@ describe("POST /api/visits — 방문 핑", () => {
       "content_cta_click",
       "report_mock_interview_click",
       "report_mock_interview_apply",
+      "engaged_time",
     ]);
     expect(readClientEventBody({ visitorId: VISITOR_ID, event: "landing_cta_click", detail: "m:hero" })).toEqual({
       visitorId: VISITOR_ID, name: "landing_cta_click", detail: "m:hero", inAppBrowser: null,
@@ -192,7 +237,7 @@ describe("POST /api/visits — 방문 핑", () => {
   });
 
   it("readVisitBody 는 관리자 경로·쿼리·초과 길이·모르는 필드를 거른다", () => {
-    expect(readVisitBody({ visitorId: VISITOR_ID, path: "/company-report" })).toEqual({ visitorId: VISITOR_ID, path: "/company-report", referrer: null, utmSource: null, inAppBrowser: null });
+    expect(readVisitBody({ visitorId: VISITOR_ID, path: "/company-report" })).toEqual({ visitorId: VISITOR_ID, path: "/company-report", referrer: null, utmSource: null, inAppBrowser: null, device: null });
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/admin" })).toBeNull();
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/admin/users" })).toBeNull();
     expect(readVisitBody({ visitorId: VISITOR_ID, path: "/?q=1" })).toBeNull();
@@ -245,6 +290,19 @@ describe("POST /api/visits — IP 상한", () => {
     expect(visitCall.subjectKey).toBe(eventCall.subjectKey);
     expect(visitCall.subjectKey).toMatch(/^ip:[0-9a-f]{32}$/);
     expect(visitCall.subjectKey).not.toContain("198.51.100.7");
+  });
+
+  it("체류 시간은 퍼널 이벤트와 다른 버킷을 써서 제출·가입 기록을 밀어내지 않는다", async () => {
+    const db = createDb();
+    const consumeRateLimit = vi.fn(async () => ({ allowed: true }));
+    const handler = createSiteVisitHandler({ db, authenticate: async () => null, consumeRateLimit });
+
+    await handler({ method: "POST", headers: {}, body: { visitorId: VISITOR_ID, event: "engaged_time", detail: "m:42" } }, response());
+
+    expect(consumeRateLimit.mock.calls[0][1].policy.route).toBe("engaged-time");
+    expect(db.clientEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ name: "engaged_time", detail: "m:42", userId: null }),
+    }));
   });
 
   it("잘못된 본문은 상한을 쓰기 전에 400 으로 거절한다", async () => {

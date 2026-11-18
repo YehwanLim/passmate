@@ -41,6 +41,31 @@ describe("admin period", () => {
     expect(months.bucketOf(new Date("2026-02-28T14:59:00.000Z"))).toBe("2026-02");
   });
 
+  it("직접 지정은 from~to 를 하루 칸으로 나누고 to 다음 날 0시(KST)에 끝난다", () => {
+    const custom = readPeriod({ period: "custom", from: "2026-08-30", to: "2026-09-02" }, NOW);
+    expect(custom.key).toBe("custom");
+    expect(custom.labels).toEqual(["08/30", "08/31", "09/01", "09/02"]);
+    expect(custom.start.toISOString()).toBe("2026-08-29T15:00:00.000Z");
+    expect(custom.end.toISOString()).toBe("2026-09-02T15:00:00.000Z");
+
+    const today = readPeriod({ period: "custom", from: "2026-09-10", to: "2026-09-10" }, NOW);
+    expect(today.labels).toEqual(["09/10"]);
+  });
+
+  it("직접 지정이 이상하면(미래·거꾸로·없는 날짜·92일 초과) 최근 7일", () => {
+    for (const query of [
+      { from: "2026-09-10", to: "2026-09-11" },
+      { from: "2026-09-05", to: "2026-09-01" },
+      { from: "2026-02-30", to: "2026-03-01" },
+      { from: "2026-06-01", to: "2026-09-01" },
+      { from: "2026/09/01", to: "2026-09-02" },
+      {},
+    ]) {
+      expect(readPeriod({ period: "custom", ...query }, NOW).key).toBe("7d");
+    }
+    expect(readPeriod({ period: "custom", from: "2026-06-11", to: "2026-09-10" }, NOW).labels).toHaveLength(92);
+  });
+
   it("허용 밖 값은 최근 7일", () => {
     expect(readPeriod({ period: "90d" }, NOW).key).toBe("7d");
     expect(readPeriod({}, NOW).key).toBe("7d");

@@ -139,7 +139,7 @@ describe("GuideArticle", () => {
 
     const { card, analyze, sample, bar } = ctaLinks();
     const expectedHref = guide.company ? `/analyze?company=${encodeURIComponent(guide.company)}` : "/analyze";
-    expect(card.querySelector("h2")?.textContent).toBe("다 쓴 자소서, 내기 전에 한 번 읽혀 보세요");
+    expect(card.querySelector("h2")?.textContent).toBe("내 자소서, 인사담당자 눈에는 어떻게 읽힐까요?");
     expect(analyze.textContent).toBe("내 자소서 무료로 분석하기");
     expect(analyze.getAttribute("href")).toBe(expectedHref);
     expect(sample.getAttribute("href")).toBe("/report-new?sample=1");

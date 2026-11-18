@@ -129,7 +129,7 @@ describe("entitlement APIs", () => {
       bonusRemaining: 0,
       groblePaymentUrl: null,
       grobleSinglePaymentUrl: null,
-      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null },
+      checkoutUrls: { single: null, company: null, standard: null, premium: null, triple: null, interview: null, interview3: null },
       premiumEnabled: false,
       premiumRemaining: 0,
       remaining: 1,
@@ -219,6 +219,8 @@ describe("entitlement APIs", () => {
       standard: CHECKOUT_URL,
       premium: PREMIUM_CHECKOUT_URL,
       triple: null, // 판매 종료(행 비활성·URL 없음)
+      interview: null, // 면접 스위치 꺼짐·행 없음
+      interview3: null,
     });
     expect(response.body.groblePaymentUrl).toBe(CHECKOUT_URL);
     expect(response.body.grobleSinglePaymentUrl).toBe(SINGLE_CHECKOUT_URL);
@@ -253,6 +255,8 @@ describe("entitlement APIs", () => {
       standard: CHECKOUT_URL,
       premium: PREMIUM_CHECKOUT_URL,
       triple: null, // 판매 종료(행 비활성·URL 없음)
+      interview: null, // 면접 스위치 꺼짐·행 없음
+      interview3: null,
     });
   });
 
@@ -566,7 +570,7 @@ describe("GET /api/entitlements?availability=1 (public sales availability)", () 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({
       companyAnalysisEnabled: true,
-      purchasable: { single: true, company: true, standard: true, premium: true, triple: false },
+      purchasable: { single: true, company: true, standard: true, premium: true, triple: false, interview: false, interview3: false },
     });
     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=60, stale-while-revalidate=300");
   });
@@ -606,6 +610,8 @@ describe("GET /api/entitlements?availability=1 (public sales availability)", () 
       standard: false,
       premium: false,
       triple: false,
+      interview: false,
+      interview3: false,
     });
   });
 

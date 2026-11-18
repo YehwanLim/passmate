@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MAX_POSTING_CHARS, MIN_POSTING_CHARS } from "@/lib/jobPosting";
@@ -51,8 +51,40 @@ describe("JOB_POSTINGS", () => {
 
   it("points each logo at a file in client/public/company-logos", () => {
     for (const posting of JOB_POSTINGS) {
-      if (!posting.logo) continue;
-      expect(existsSync(resolve(process.cwd(), "client/public", posting.logo.slice(1))), posting.slug).toBe(true);
+      expect(posting.logo, `${posting.slug}: 로고가 없다 — 회사 공식 사이트에서 받아 넣는다`).toBeTruthy();
+      expect(existsSync(resolve(process.cwd(), "client/public", posting.logo!.slice(1))), posting.slug).toBe(true);
+    }
+  });
+
+  // 재발 방지: 다른 회사 로고(예: 코카콜라음료에 LG 로고)가 붙는 사고를 막는다.
+  // 규칙 1) 로고 파일은 SOURCES.md 표에 '기업' 이름과 출처가 적혀 있어야 한다.
+  // 규칙 2) 공고의 회사 이름이 그 '기업' 이름과 겹쳐야 한다(한쪽이 다른 쪽을 포함).
+  // 규칙 3) 겹치지 않는데 쓰고 싶으면(같은 그룹 로고 공용) 아래 GROUP_LOGO_ALLOW 에 파일·회사를 직접 적는다.
+  //         계열사라는 이유만으로 그룹 로고를 쓰지 말고, 회사 자체 로고가 있으면 그걸 쓴다.
+  const GROUP_LOGO_ALLOW: Record<string, readonly string[]> = {
+    "sk.svg": ["SK이노베이션 E&S 계열 도시가스사", "SK이터닉스", "SK키파운드리"],
+    "bnk.svg": ["BNK투자증권"],
+    "spc.svg": ["삼립"],
+    "nonghyup.svg": ["농협양곡", "농협경제지주"],
+    "gm.svg": ["GM테크니컬센터코리아"],
+    "kyobo.svg": ["교보생명"],
+    "hyundai-lnc.svg": ["현대L&C"],
+  };
+  const normalizeName = (name: string) => name.replace(/[\s·\-&]|그룹|주식회사|\(.*?\)/g, "").toLowerCase();
+
+  it("never reuses another company's logo (SOURCES.md owner must match the posting's company)", () => {
+    const sources = readFileSync(resolve(process.cwd(), "client/public/company-logos/SOURCES.md"), "utf8");
+    const owners = new Map<string, string>();
+    for (const row of sources.matchAll(/^\| `([^`]+\.svg)`\s*\|\s*([^|]+?)\s*\|/gm)) owners.set(row[1], row[2]);
+    for (const posting of JOB_POSTINGS) {
+      const file = posting.logo!.split("/").pop()!;
+      const owner = owners.get(file);
+      expect(owner, `${posting.slug}: ${file} 가 SOURCES.md 표에 없다`).toBeTruthy();
+      const company = normalizeName(posting.company);
+      const logoOwner = normalizeName(owner!);
+      const matches = company.includes(logoOwner) || logoOwner.includes(company);
+      const allowed = GROUP_LOGO_ALLOW[file]?.includes(posting.company) ?? false;
+      expect(matches || allowed, `${posting.slug}: ${posting.company} 공고에 ${owner} 로고(${file})가 붙었다`).toBe(true);
     }
   });
 

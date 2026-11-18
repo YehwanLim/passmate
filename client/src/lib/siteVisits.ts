@@ -135,12 +135,23 @@ interface SendVisitOptions extends SendOptions {
   source?: VisitEntrySource | null;
 }
 
+/** 브라우저 자동화 표준 플래그(navigator.webdriver). 사람 브라우저에서는 false 다. */
+export function isAutomatedBrowser(): boolean {
+  try {
+    return typeof navigator !== "undefined" && navigator.webdriver === true;
+  } catch {
+    return false;
+  }
+}
+
 async function postToVisits(
   body: Record<string, unknown>,
   { fetcher, getAccessToken = readAccessToken }: Pick<SendOptions, "fetcher" | "getAccessToken">,
 ): Promise<boolean> {
   // 운영자 브라우저의 방문·이벤트는 대시보드 집계를 흐리므로 보내지 않는다.
   if (isInternalBrowser()) return false;
+  // 자동화 도구(Playwright·Puppeteer·Selenium 등)가 띄운 브라우저도 사람 방문이 아니다.
+  if (isAutomatedBrowser()) return false;
   const doFetch = fetcher ?? (typeof fetch === "function" ? fetch : null);
   if (!doFetch) return false;
 
@@ -174,7 +185,7 @@ export async function sendVisit(
   const inApp = inAppBrowser === undefined ? consumeInAppBrowser() : inAppBrowser;
 
   return postToVisits(
-    { visitorId, path, ...(entry ?? {}), ...(inApp ? { inAppBrowser: inApp } : {}) },
+    { visitorId, path, device: deviceClass(), ...(entry ?? {}), ...(inApp ? { inAppBrowser: inApp } : {}) },
     { fetcher, getAccessToken },
   );
 }
@@ -197,7 +208,8 @@ export type FunnelEventName =
   | "report_experience_saved"
   | "content_cta_click"
   | "report_mock_interview_click"
-  | "report_mock_interview_apply";
+  | "report_mock_interview_apply"
+  | "engaged_time";
 
 /** 폰(m)·PC(d) 구분. 손가락 입력이 주 포인터면 폰으로 친다. 판별이 안 되면 d. */
 export function deviceClass(): "m" | "d" {

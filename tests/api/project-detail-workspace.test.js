@@ -15,7 +15,7 @@ const POSTING_OTHER = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 function projectRecord(overrides = {}) {
   return {
     id: PROJECT_ID, title: "A 지원서", company: "A", jobKeyword: null, createdAt: T1,
-    deadline: null, postingSlug: null,
+    deadline: null, postingSlug: null, stage: "writing", stageSteps: null, rejected: false,
     _count: { analyses: 0 },
     analyses: [],
     questions: [],
@@ -29,6 +29,7 @@ function createDb(project = projectRecord()) {
       findFirst: vi.fn(async ({ where }) => (where.userId === USER_ID ? project : null)),
       update: vi.fn(async ({ data }) => ({ ...project, ...data })),
       deleteMany: vi.fn(async () => ({ count: 1 })),
+      updateMany: vi.fn(async () => ({ count: 1 })),
     },
     applicationQuestion: {
       aggregate: vi.fn(async () => ({ _max: { updatedAt: T1 } })),
@@ -251,5 +252,98 @@ describe("경험 초안 연결", () => {
     const res = createResponse();
     await createProjectDetailHandler({ db: createDb(), requireUser: activeUser })(req({ method: "GET" }), res);
     expect(res.body.job_posting).toBeNull();
+  });
+});
+
+const STEPS_WITH_TEST = [
+  { key: "interest" }, { key: "writing" }, { key: "submitted" },
+  { key: "c_k3m9x2ab", label: "인적성" },
+  { key: "doc_passed" }, { key: "interview" }, { key: "offer" },
+];
+
+describe("PATCH /api/projects/:id 현황판 단계", () => {
+  const patch = async (body, project) => {
+    const db = createDb(projectRecord(project));
+    const res = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(req({ method: "PATCH", body }), res);
+    return { db, res };
+  };
+
+  it("단계·불합격 표시를 저장하고 응답에 돌려준다", async () => {
+    const { db, res } = await patch({ stage: "interview", rejected: true });
+    expect(res.statusCode).toBe(200);
+    expect(db.project.update).toHaveBeenCalledWith(expect.objectContaining({ data: { stage: "interview", rejected: true } }));
+    expect(res.body).toMatchObject({ stage: "interview", rejected: true });
+  });
+
+  it("직접 넣은 단계를 목록과 함께 저장하고 그 단계로 옮길 수 있다", async () => {
+    const { db, res } = await patch({ stageSteps: STEPS_WITH_TEST, stage: "c_k3m9x2ab" });
+    expect(res.statusCode).toBe(200);
+    expect(db.project.update.mock.calls[0][0].data).toEqual({ stageSteps: STEPS_WITH_TEST, stage: "c_k3m9x2ab" });
+  });
+
+  it("저장된 목록에 있는 직접 단계로는 목록 없이 옮길 수 있다", async () => {
+    const { res } = await patch({ stage: "c_k3m9x2ab" }, { stageSteps: STEPS_WITH_TEST });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it.each([
+    ["목록에 없는 단계", { stage: "c_zzzzzzzz" }],
+    ["null 목록", { stageSteps: null }],
+    ["13개", { stageSteps: [...STEPS_WITH_TEST.slice(0, 3), ...Array.from({ length: 7 }, (_, i) => ({ key: `c_aaaaaaa${i}`, label: "x" })), ...STEPS_WITH_TEST.slice(4)] }],
+    ["21자 이름", { stageSteps: STEPS_WITH_TEST.map((s) => (s.label ? { ...s, label: "가".repeat(21) } : s)) }],
+    ["기본 단계 누락", { stageSteps: STEPS_WITH_TEST.filter((s) => s.key !== "submitted") }],
+    ["순서 바뀜", { stageSteps: [STEPS_WITH_TEST[1], STEPS_WITH_TEST[0], ...STEPS_WITH_TEST.slice(2)] }],
+    ["offer 뒤에 단계", { stageSteps: [...STEPS_WITH_TEST, { key: "c_bbbbbbbb", label: "입사" }] }],
+    ["키 형식", { stageSteps: STEPS_WITH_TEST.map((s) => (s.label ? { ...s, key: "custom" } : s)) }],
+    ["rejected 문자열", { rejected: "yes" }],
+  ])("%s 는 400 이고 저장하지 않는다", async (_name, body) => {
+    const { db, res } = await patch(body);
+    expect(res.statusCode).toBe(400);
+    expect(db.project.update).not.toHaveBeenCalled();
+  });
+
+  it("현재 단계를 지우는 목록은 400", async () => {
+    const { db, res } = await patch(
+      { stageSteps: STEPS_WITH_TEST.filter((s) => s.key !== "c_k3m9x2ab") },
+      { stage: "c_k3m9x2ab", stageSteps: STEPS_WITH_TEST },
+    );
+    expect(res.statusCode).toBe(400);
+    expect(db.project.update).not.toHaveBeenCalled();
+  });
+
+  it("남의 지원서 단계는 404", async () => {
+    const db = createDb();
+    const res = createResponse();
+    await createProjectDetailHandler({
+      db, requireUser: async () => ({ applicationUser: { id: "intruder", role: "user" } }),
+    })(req({ method: "PATCH", body: { stage: "offer" } }), res);
+    expect(res.statusCode).toBe(404);
+    expect(db.project.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("PUT 문항 저장 때 관심 → 작성 중", () => {
+  const put = async (answer) => {
+    const db = createDb();
+    db.applicationQuestion.aggregate.mockResolvedValueOnce({ _max: { updatedAt: T1 } }).mockResolvedValueOnce({ _max: { updatedAt: T2 } });
+    const res = createResponse();
+    await createProjectDetailHandler({ db, requireUser: activeUser })(
+      req({ method: "PUT", body: { questions: [{ prompt: "지원 동기", answer }], baseUpdatedAt: T1.toISOString() } }), res);
+    return { db, res };
+  };
+
+  it("답이 한 글자라도 있으면 관심 단계만 작성 중으로 바꾼다", async () => {
+    const { db, res } = await put("초안");
+    expect(res.statusCode).toBe(200);
+    expect(db.project.updateMany).toHaveBeenCalledWith({
+      where: { id: PROJECT_ID, stage: "interest" },
+      data: { stage: "writing" },
+    });
+  });
+
+  it("답이 모두 비어 있으면 단계를 건드리지 않는다", async () => {
+    const { db } = await put("   ");
+    expect(db.project.updateMany).not.toHaveBeenCalled();
   });
 });

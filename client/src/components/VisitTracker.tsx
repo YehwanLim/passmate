@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 
 import { trackPageView } from "@/lib/analytics";
+import { startEngagedTimeTracking } from "@/lib/engagedTime";
 import { isInternalBrowser } from "@/lib/internalTraffic";
 import { routeKey } from "@/lib/seo";
 import { sendVisit, shouldTrackPath } from "@/lib/siteVisits";
@@ -43,6 +44,12 @@ export function resetVisitTrackerForTests(): void {
  */
 export function VisitTracker({ enabled = TRACKING_ENABLED }: { enabled?: boolean } = {}) {
   const [location] = useLocation();
+
+  // 라우트와 상관없이 탭 하나의 체류 시간을 잰다. 운영자 브라우저는 보낼 때 걸러진다(postToVisits).
+  useEffect(() => {
+    if (!enabled) return;
+    return startEngagedTimeTracking();
+  }, [enabled]);
 
   useEffect(() => {
     // 운영자 브라우저는 관리자 화면에서 표시되므로 같은 탭에서 사이트로 넘어와도 렌더마다 다시 읽는다.

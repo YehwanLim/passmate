@@ -76,6 +76,24 @@ describe("siteVisits", () => {
     }
   });
 
+  it("자동화 브라우저(navigator.webdriver)면 방문·이벤트를 보내지 않는다", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("navigator", { ...navigator, webdriver: true });
+    try {
+      const options = {
+        fetcher,
+        getAccessToken: async () => null,
+        visitorId: "8c4d2a70-3b1e-4d5f-9a6b-2c1d0e9f8a7b",
+        inAppBrowser: null,
+      };
+      expect(await sendVisit("/analyze", { ...options, source: null })).toBe(false);
+      expect(await sendClientEvent("landing_cta_click", "d:hero", options)).toBe(false);
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("경로와 방문자 ID 만 보내고, 로그인 토큰이 있으면 Authorization 을 붙인다", async () => {
     const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
     const fetcher: typeof fetch = async (input, init) => {
@@ -99,6 +117,7 @@ describe("siteVisits", () => {
     expect(JSON.parse(String(init?.body))).toEqual({
       visitorId: "8c4d2a70-3b1e-4d5f-9a6b-2c1d0e9f8a7b",
       path: "/analyze",
+      device: "d",
     });
   });
 
@@ -120,8 +139,8 @@ describe("siteVisits", () => {
     await sendVisit("/", { fetcher, getAccessToken: async () => null, visitorId: "visitor-1234", source: { referrer: null, utmSource: "threads" } });
     await sendVisit("/analyze", { fetcher, getAccessToken: async () => null, visitorId: "visitor-1234", source: null });
     expect(bodies).toEqual([
-      { visitorId: "visitor-1234", path: "/", referrer: null, utmSource: "threads" },
-      { visitorId: "visitor-1234", path: "/analyze" },
+      { visitorId: "visitor-1234", path: "/", device: "d", referrer: null, utmSource: "threads" },
+      { visitorId: "visitor-1234", path: "/analyze", device: "d" },
     ]);
   });
 
@@ -140,10 +159,10 @@ describe("siteVisits", () => {
     await sendVisit("/", base);
     await sendVisit("/guide", base);
 
-    expect(bodies[0]).toEqual({ visitorId: "visitor-1234", path: "/", inAppBrowser: "kakaotalk" });
-    expect(bodies[1]).toEqual({ visitorId: "visitor-1234", path: "/analyze" });
-    expect(bodies[2]).toEqual({ visitorId: "visitor-1234", path: "/" });
-    expect(bodies[3]).toEqual({ visitorId: "visitor-1234", path: "/guide" });
+    expect(bodies[0]).toEqual({ visitorId: "visitor-1234", path: "/", device: "d", inAppBrowser: "kakaotalk" });
+    expect(bodies[1]).toEqual({ visitorId: "visitor-1234", path: "/analyze", device: "d" });
+    expect(bodies[2]).toEqual({ visitorId: "visitor-1234", path: "/", device: "d" });
+    expect(bodies[3]).toEqual({ visitorId: "visitor-1234", path: "/guide", device: "d" });
   });
 
   it("로그인 화면 이벤트는 같은 엔드포인트에 event 필드로 보내고, 실패는 삼킨다", async () => {
