@@ -165,3 +165,5 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `hermes-korea.svg` | 에르메스코리아 | [에르메스 채용 사이트](https://d3012g9bf68pr4.cloudfront.net/logo/HERMES_LOGO_NEW.svg) | 공식 SVG |
 | `changsung.svg` | 창성 | [창성 채용 공고 상단 이미지](https://www.saraminimage.co.kr/recruit/bbs_recruit26/42_changsung_top_261105.png) | 공고 이미지 속 로고를 잘라 SVG 래퍼에 |
 | `husteel.svg` | 휴스틸 | [휴스틸 홈페이지](https://www.husteel.com/common/images/logo-kor.png) | 로고 PNG를 줄여 SVG 래퍼에 |
+| `elandretail.svg` | 이랜드리테일 | [이랜드리테일 채용 사이트](https://recruit.elandretail.com/assets/erl-logo-tp.png) | 헤더 로고 PNG를 줄여 SVG 래퍼에 |
+| `woomi.svg` | 우미건설 | [우미 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/10/22/8e7e81cc-82f4-44b4-879c-5971af01de64.png) | 헤더 로고 PNG(142px)를 SVG 래퍼에, 해상도 낮음 |
