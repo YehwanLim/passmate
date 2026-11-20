@@ -64,7 +64,7 @@
 | F6 | last-words-interview | 면접 마지막 할 말 | 다짐 대신 확인하고 싶은 것 하나 | 대기 |
 | F7 | job-vs-executive-interview | 직무면접 임원면접 차이 | 직무면접=전문성, 임원면접=인성·간결 | 대기 |
 | F8 | pt-interview | PT 면접 준비 | 분석 틀로 과정을 보여 주기 | 대기 |
-| F9 | answer-structure | 면접 답변 구조, 두괄식 답변 | 넘버링과 1분~1분 30초 | 대기 |
+| F9 | answer-structure | 면접 답변 구조, 두괄식 답변 | 넘버링과 1분~1분 30초 | 초안(11-19, codex/guide-answer-structure) |
 | F10 | blog-import-samsung-1-2 | (이관) 삼성전자 DX 합격 후기 ①② | 네이버 블로그 원문 그대로 | 대기 |
 | F11 | ai-vs-human-review | 자소서 첨삭 AI vs 사람 | 각각이 잘 보는 것과 못 보는 것 | 대기 |
 | F12 | ai-resume-workflow | AI로 자소서 쓰는 순서 | 초안은 내가, 점검은 AI가 | 대기 |
