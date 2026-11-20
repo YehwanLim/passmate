@@ -165,3 +165,6 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `hermes-korea.svg` | 에르메스코리아 | [에르메스 채용 사이트](https://d3012g9bf68pr4.cloudfront.net/logo/HERMES_LOGO_NEW.svg) | 공식 SVG |
 | `changsung.svg` | 창성 | [창성 채용 공고 상단 이미지](https://www.saraminimage.co.kr/recruit/bbs_recruit26/42_changsung_top_261105.png) | 공고 이미지 속 로고를 잘라 SVG 래퍼에 |
 | `husteel.svg` | 휴스틸 | [휴스틸 홈페이지](https://www.husteel.com/common/images/logo-kor.png) | 로고 PNG를 줄여 SVG 래퍼에 |
+| `hyundai-futurenet.svg` | 현대퓨처넷 | [현대퓨처넷 홈페이지](https://d1hjp4t11h6cqk.cloudfront.net/ibuilder/template/theme_skin/theme100/images/common/logo_w.png) | 공식 사이트 헤더 로고(흰색 PNG)를 어두운 사각형 배경과 함께 SVG 래퍼에 |
+| `sfac.svg` | 서울문화재단 | [서울문화재단 홈페이지](https://www.sfac.or.kr/common/sfac2023/images/common/logo_sfac_header.svg) | 공식 헤더 SVG |
+| `yonsei.svg` | 연세대학교 | [연세대학교 홈페이지](https://www.yonsei.ac.kr/sites/sc/images/common/img-header-logo-color.png) | 헤더 로고 PNG를 SVG 래퍼에 |
