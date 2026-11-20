@@ -220,3 +220,108 @@ describe("Analyze login prompt", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+// 면접 후기 글의 입구(/analyze?company=...&intent=interview). intent 는 서버로 보내지 않고, 폼 안내와 리포트 첫 위치만 바꾼다.
+describe("Analyze interview intent", () => {
+  const NOTICE = "이미 낸 자소서를 그대로 넣으면 돼요. 리포트에서 예상 질문부터 보여 드릴게요.";
+  const RECEIPT = {
+    analysis_request_id: "req-1",
+    analysis_id: "an-1",
+    project_id: "p-1",
+    requestId: "rid-1",
+    status: "PENDING",
+  };
+
+  beforeEach(() => {
+    mocks.useAuth.mockReturnValue(LOGGED_OUT);
+    mocks.navigate.mockReset();
+    window.sessionStorage.clear();
+  });
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    window.sessionStorage.clear();
+  });
+
+  it("shows the one-line notice only when the visitor came with intent=interview", () => {
+    window.history.replaceState({}, "", `/analyze?company=${encodeURIComponent("삼성전자")}&intent=interview`);
+    render(<Analyze />);
+    expect(screen.getByText(NOTICE)).toBeTruthy();
+    expect(screen.getByDisplayValue("삼성전자")).toBeTruthy();
+    cleanup();
+
+    window.history.replaceState({}, "", "/analyze?intent=somethingelse");
+    render(<Analyze />);
+    expect(screen.queryByText(NOTICE)).toBeNull();
+  });
+
+  it("keeps intent across the Kakao redirect in both the return path and the stashed draft", async () => {
+    const signInWithKakao = vi.fn().mockResolvedValue(undefined);
+    mocks.useAuth.mockReturnValue({ ...LOGGED_OUT, signInWithKakao });
+    window.history.replaceState({}, "", "/analyze?intent=interview");
+    render(<Analyze />);
+
+    fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), { target: { value: LONG_ANSWER } });
+    fireEvent.click(screen.getByRole("button", { name: "자소서 분석하기" }));
+    fireEvent.click(screen.getByRole("button", { name: "카카오로 계속하기" }));
+
+    const stored = JSON.parse(window.sessionStorage.getItem(ANALYZE_DRAFT_KEY) ?? "null");
+    expect(stored?.intent).toBe("interview");
+    await waitFor(() => expect(signInWithKakao).toHaveBeenCalledTimes(1));
+    expect(signInWithKakao).toHaveBeenCalledWith({
+      redirectTo: `${window.location.origin}/login?redirect=${encodeURIComponent("/analyze?intent=interview")}`,
+    });
+  });
+
+  it("restores intent from the draft after the round-trip and carries it to /analysis-pending", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response(JSON.stringify(RECEIPT), { status: 202 }));
+    vi.stubGlobal("fetch", fetchSpy);
+    window.sessionStorage.setItem(
+      ANALYZE_DRAFT_KEY,
+      JSON.stringify({
+        savedAt: Date.now(),
+        company: "삼성전자",
+        jobRole: "마케팅",
+        questions: [{ id: "q1", question: "지원 동기", answer: LONG_ANSWER }],
+        jobPosting: null,
+        submitOnReturn: true,
+        intent: "interview",
+      })
+    );
+    // 주소에 intent 가 없어도(초안만 남은 경우) 초안이 잇는다.
+    window.history.replaceState({}, "", "/analyze");
+    mocks.useAuth.mockReturnValue(LOGGED_IN);
+    render(<Analyze />);
+
+    expect(screen.getByText(NOTICE)).toBeTruthy();
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/analysis-pending?requestId=req-1&intent=interview"));
+    // 서버로 가는 분석 입력에는 intent 가 없다 — 분석·크레딧은 평소와 같다.
+    expect(JSON.parse(fetchSpy.mock.calls[0][1].body)).not.toHaveProperty("intent");
+  });
+
+  it("keeps intent in memory through the in-page (Google) login and carries it to /analysis-pending", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response(JSON.stringify(RECEIPT), { status: 202 }));
+    vi.stubGlobal("fetch", fetchSpy);
+    window.history.replaceState({}, "", "/analyze?intent=interview");
+    const view = render(<Analyze />);
+    fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), { target: { value: LONG_ANSWER } });
+    fireEvent.click(screen.getByRole("button", { name: "자소서 분석하기" }));
+
+    mocks.useAuth.mockReturnValue(LOGGED_IN);
+    view.rerender(<Analyze />);
+
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/analysis-pending?requestId=req-1&intent=interview"));
+  });
+
+  it("goes to /analysis-pending without intent for an ordinary visit", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response(JSON.stringify(RECEIPT), { status: 202 }));
+    vi.stubGlobal("fetch", fetchSpy);
+    window.history.replaceState({}, "", "/analyze");
+    mocks.useAuth.mockReturnValue(LOGGED_IN);
+    render(<Analyze />);
+    fireEvent.change(screen.getByPlaceholderText("여기에 답변을 작성해 주세요."), { target: { value: LONG_ANSWER } });
+    fireEvent.click(screen.getByRole("button", { name: "자소서 분석하기" }));
+
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/analysis-pending?requestId=req-1"));
+  });
+});

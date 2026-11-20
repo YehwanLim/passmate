@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthenticationRequiredError, getAuthorizationHeader } from "@/lib/apiAuth";
 import { trackAnalysisComplete, trackAnalysisFailed } from "@/lib/analytics";
+import { readAnalyzeIntent, withAnalyzeIntent } from "@/lib/analyze/analyzeIntent";
 import { parseAnalysisRequestStatus, type AnalysisKind } from "@/lib/analysisRequest";
 import { COMPANY_PENDING_STEPS, pickCompanyPendingStep } from "@/copy/companyPendingCopy";
 import { RESUME_PENDING_STEPS } from "@/copy/resumePendingCopy";
@@ -33,6 +34,8 @@ export default function AnalysisPending() {
   const [, navigate] = useLocation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const requestId = readRequestId();
+  // 면접 후기 글에서 온 분석이면(?intent=interview) 리포트도 예상 질문부터 연다. 자소서 분석에만 붙인다.
+  const intent = readAnalyzeIntent();
   const mountedAt = useRef(performance.now());
   const [retryCount, setRetryCount] = useState(0);
   const [view, setView] = useState<PendingView>("checking");
@@ -86,7 +89,7 @@ export default function AnalysisPending() {
           trackAnalysisComplete(analyticsType, Math.round(performance.now() - mountedAt.current));
           navigate(status.kind === "COMPANY"
             ? `/company-report?analysisId=${encodeURIComponent(status.analysisId)}`
-            : `/report-new?analysisId=${encodeURIComponent(status.analysisId)}`);
+            : withAnalyzeIntent(`/report-new?analysisId=${encodeURIComponent(status.analysisId)}`, intent));
           return;
         }
         if (status.status === "FAILED") {
@@ -121,7 +124,7 @@ export default function AnalysisPending() {
       controller?.abort();
       if (timer) clearTimeout(timer);
     };
-  }, [authLoading, isAuthenticated, navigate, requestId, retryCount]);
+  }, [authLoading, intent, isAuthenticated, navigate, requestId, retryCount]);
 
   const retryStatusCheck = () => {
     mountedAt.current = performance.now();
@@ -218,7 +221,7 @@ export default function AnalysisPending() {
                 : "입력 내용은 브라우저에 저장하지 않았습니다. 새 분석을 시작해 주세요."}{" "}
               이번 분석의 이용권은 차감되지 않았어요.
             </p>
-            <Button className="mt-7 h-11 rounded-xl bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-hover" onClick={() => navigate(kind === "COMPANY" ? "/company-analysis" : "/analyze")}>
+            <Button className="mt-7 h-11 rounded-xl bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-hover" onClick={() => navigate(kind === "COMPANY" ? "/company-analysis" : withAnalyzeIntent("/analyze", intent))}>
               {isCompany ? "새 기업 분석 시작" : "새 분석 시작"}
             </Button>
             <p className="mt-5 text-xs leading-5 text-ink-4">
