@@ -168,3 +168,10 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `hyundai-futurenet.svg` | 현대퓨처넷 | [현대퓨처넷 홈페이지](https://d1hjp4t11h6cqk.cloudfront.net/ibuilder/template/theme_skin/theme100/images/common/logo_w.png) | 공식 사이트 헤더 로고(흰색 PNG)를 어두운 사각형 배경과 함께 SVG 래퍼에 |
 | `sfac.svg` | 서울문화재단 | [서울문화재단 홈페이지](https://www.sfac.or.kr/common/sfac2023/images/common/logo_sfac_header.svg) | 공식 헤더 SVG |
 | `yonsei.svg` | 연세대학교 | [연세대학교 홈페이지](https://www.yonsei.ac.kr/sites/sc/images/common/img-header-logo-color.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `i3system.svg` | 아이쓰리시스템 | [아이쓰리시스템 채용 사이트](https://i3system.career.greetinghr.com/ko/intro) | 공식 채용 사이트 로고를 SVG 래퍼에 |
+| `kofsi.svg` | 식품안전정보원 | [식품안전정보원 채용 사이트](https://nhnfiles.career.co.kr/foodinfo/data/logo/20260127175021_2547.png) | 채용 사이트 헤더 로고 PNG를 줄여 SVG 래퍼에 |
+| `kyungshin-cable.svg` | 경신전선 | [경신전선 홈페이지](https://www.kscable.co.kr/images/inc/logo_color.png) | 공식 사이트 로고 PNG를 SVG 래퍼에(원본 160x45로 작음) |
+| `linde-korea.svg` | 린데코리아 | [Linde 공식 사이트](https://assets.linde.com/-/media/shared/logo/linde-logo-desktop.png) | 린데 브랜드 로고 PNG를 SVG 래퍼에(린데코리아 전용 파일은 못 찾음, 원본 196x98로 작음) |
+| `nhn-enterprise.svg` | NHN Enterprise | [NHN Careers](https://careers.nhn.com/nstatic/corporation-logo/ENTERPRISE_24.svg) | 공식 채용 사이트의 NHN Enterprise 전용 SVG, 여백만 자름 |
+| `sk-shieldus.svg` | SK쉴더스 | [SK쉴더스 교육 사이트](https://sslc.kr/images/footer_ci_sk_shieldus.png) | 사이트 푸터 CI PNG를 SVG 래퍼에 |
+| `toss-securities.svg` | 토스증권 | [토스 정적 경로](https://static.toss.im/png-icons/securities/logo_securities_mono_black_korean_300.png) | 토스증권 로고(흑백) PNG를 SVG 래퍼에 |
