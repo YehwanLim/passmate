@@ -168,3 +168,11 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `hyundai-futurenet.svg` | 현대퓨처넷 | [현대퓨처넷 홈페이지](https://d1hjp4t11h6cqk.cloudfront.net/ibuilder/template/theme_skin/theme100/images/common/logo_w.png) | 공식 사이트 헤더 로고(흰색 PNG)를 어두운 사각형 배경과 함께 SVG 래퍼에 |
 | `sfac.svg` | 서울문화재단 | [서울문화재단 홈페이지](https://www.sfac.or.kr/common/sfac2023/images/common/logo_sfac_header.svg) | 공식 헤더 SVG |
 | `yonsei.svg` | 연세대학교 | [연세대학교 홈페이지](https://www.yonsei.ac.kr/sites/sc/images/common/img-header-logo-color.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `aj-networks.svg` | AJ네트웍스 | [AJ네트웍스 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/09/05/cf4960c5-c4d8-431b-b4b4-dd7ef3823523.png) | 채용 사이트 헤더 로고 PNG를 SVG 래퍼에 |
+| `dreamline.svg` | 드림라인 | [드림라인 채용 공고 이미지](https://www.saraminimage.co.kr/recruit/os_hk_26/09_dream_logo_260519.png) | 회사 공고 속 자체 로고 PNG 여백을 잘라 SVG 래퍼에 |
+| `korea-petroleum.svg` | 한국석유공업 | [한국석유공업 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/11/18/2c474d10-e2d1-4e01-816a-eb4017b251f4.png) | 채용 사이트 헤더 로고 PNG를 SVG 래퍼에 |
+| `linde-korea.svg` | 린데코리아 | [린데코리아 채용 사이트](https://dws.intojob.co.kr/image/dware/t1/tm37n/images/linde_logo.svg) | 공식 채용 사이트 SVG(흰 로고라 파란 배경 추가) |
+| `namsung.svg` | 남성해운 | [남성해운 홈페이지](https://namsung.co.kr/ns/images/logo.png) | 헤더 로고 PNG를 3색 벡터 SVG로 다시 그림 |
+| `ok-financial-group.svg` | OK금융그룹 | [OK금융그룹 채용 사이트](https://opening-attachments.greetinghr.com/2026-05-12/a673fb3f-13da-4b29-942b-0a650721e257/5fe201a7-eb0a-402d-b019-f98e991a1931.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `sunwoo-eng.svg` | 선우ENG | [선우ENG 홈페이지](https://www.sunwooeng.com/images/logo.jpg) | 헤더 로고 JPG 여백을 잘라 SVG 래퍼에 |
+| `yonhap-infomax.svg` | 연합인포맥스 | [연합인포맥스 채용 사이트](https://recruit.einfomax.co.kr/img/common/logo_dn.gif) | 헤더 로고 GIF를 PNG로 바꿔 SVG 래퍼에 |
