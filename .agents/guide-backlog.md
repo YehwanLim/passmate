@@ -26,7 +26,7 @@
 | M11 | same-experience-many-questions | 자소서 같은 경험 여러 문항 | 같은 경험의 다른 장면을 쓰는 법 | 대기 |
 | M12 | social-issue-question | 자소서 사회 이슈 문항 | 의견이 아니라 직무와 닿는 관찰을 쓰기 | 대기 |
 | M13 | no-results-experience | 성과 없는 경험 자소서 | 결과 대신 논리와 역할 | 대기 |
-| M14 | rejection-review | 서류 탈락 이유, 자소서 복기 | 탈락 뒤 자소서를 다시 읽는 순서 | 대기 |
+| M14 | rejection-review | 서류 탈락 이유, 자소서 복기 | 탈락 뒤 자소서를 다시 읽는 순서 | 초안(11-23, codex/guide-rejection-review) |
 | M15 | winter-prep | 상반기 공채 준비, 자소서 미리 쓰기 | 공고가 없을 때 써 둘 수 있는 것 | 대기 |
 | M16 | intern-application | 체험형 인턴 자소서 | 신입 공채 자소서와 다른 점 | 대기 |
 
