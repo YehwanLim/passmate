@@ -168,3 +168,4 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `hyundai-futurenet.svg` | 현대퓨처넷 | [현대퓨처넷 홈페이지](https://d1hjp4t11h6cqk.cloudfront.net/ibuilder/template/theme_skin/theme100/images/common/logo_w.png) | 공식 사이트 헤더 로고(흰색 PNG)를 어두운 사각형 배경과 함께 SVG 래퍼에 |
 | `sfac.svg` | 서울문화재단 | [서울문화재단 홈페이지](https://www.sfac.or.kr/common/sfac2023/images/common/logo_sfac_header.svg) | 공식 헤더 SVG |
 | `yonsei.svg` | 연세대학교 | [연세대학교 홈페이지](https://www.yonsei.ac.kr/sites/sc/images/common/img-header-logo-color.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `teczen.svg` | 테크젠 | [테크젠 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/03/18/f73ad443-ef3b-4387-bbb1-32844ce69bd1.png) | 채용 사이트 헤더 로고 PNG를 SVG 래퍼에 |
