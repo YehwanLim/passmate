@@ -99,3 +99,22 @@
 | C7 | lg-electronics-cover-letter-questions | LG전자 | 없음(커피챗 관찰로만) | 초안(11-03, #34) |
 | C8 | lg-display-cover-letter-questions | LG디스플레이 | 21H2 전형포기 → 22H1 AI·인적성 탈락 | 초안(11-10, 2026 하반기 B2B영업 문항만 확인) |
 | C9 | lx-international-cover-letter-questions | LX인터내셔널 | 21H2 자소서 준비(경험 칸 목록), 22H1 지원취소 | 초안(11-14, #55, 사용자 지정, 문항 3칸 틀) |
+| C10 | gs-energy-cover-letter-questions | GS에너지 | 22H1 서류 통과 → AI면접 전형포기, 성장과정 문항 메모 | 대기 |
+| C11 | sk-chemicals-cover-letter-questions | SK케미칼 | 22H1 서류 통과 → 인적성 탈락, 기업분석 페이지 | 대기 |
+| C12 | sk-telecom-cover-letter-questions | SK텔레콤 | 서류 통과 → AI·인적성 탈락 | 대기 |
+| C13 | samyang-foods-cover-letter-questions | 삼양식품 | 서류 통과 → 인적성 탈락 | 대기 |
+| C14 | lg-uplus-cover-letter-questions | LG유플러스 | 22H1 지원(서류발표 3/21→4/13), 결과 기록 없음. LG전자·LGD 편과 틀 겹침 확인 | 대기 |
+| C15 | kotra-cover-letter-questions | KOTRA | 21-04 청년인턴 면접 합격. 신입 공채 문항 틀인지 확인 | 대기 |
+| C16 | samsung-c-and-t-cover-letter-questions | 삼성물산 | 없음(커피챗 근거 2개 이상 있을 때만) | 대기 |
+| C17 | samsung-sds-cover-letter-questions | 삼성SDS | 없음(커피챗 근거 2개 이상 있을 때만) | 대기 |
+| C18 | sk-innovation-cover-letter-questions | SK이노베이션 | 없음(위와 같음) | 대기 |
+| C19 | lg-chem-cover-letter-questions | LG화학 | 없음(위와 같음). LG 계열 틀 겹침 확인 | 대기 |
+| C20 | lg-energy-solution-cover-letter-questions | LG에너지솔루션 | 없음(위와 같음). LG 계열 틀 겹침 확인 | 대기 |
+| C21 | lotte-cover-letter-questions | 롯데 | 없음(위와 같음) | 대기 |
+| C22 | hanwha-cover-letter-questions | 한화 | 없음(위와 같음) | 대기 |
+| C23 | doosan-cover-letter-questions | 두산 | 없음(위와 같음) | 대기 |
+| C24 | gs-caltex-cover-letter-questions | GS칼텍스 | 없음(위와 같음) | 대기 |
+| C25 | kt-cover-letter-questions | KT | 없음(위와 같음) | 대기 |
+| C26 | nongshim-cover-letter-questions | 농심 | 없음(위와 같음) | 대기 |
+| C27 | shinsegae-cover-letter-questions | 신세계 | 없음(위와 같음) | 대기 |
+| C28 | public-corp-cover-letter-questions | 공기업(한국전력·코레일 등) | 커피챗 기록 6건. 문항 틀이 달라 시리즈와 맞는지 먼저 확인 | 대기 |
