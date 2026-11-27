@@ -172,3 +172,19 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `amkor.svg` | 앰코테크놀로지코리아 | [Amkor 홈페이지](https://amkormarcomexternal.blob.core.windows.net/amkordotcom/theme-assets/Amkor-blue.svg) | 공식 사이트가 참조하는 SVG |
 | `seoulmilk.svg` | 서울우유협동조합 | [서울우유 홈페이지](https://www.seoulmilk.co.kr/enterprise/images/common/logo.png?ver2) | 헤더 로고 PNG를 SVG 래퍼에 |
 | `linde-korea.svg` | 린데코리아 | [린데코리아 채용 사이트](https://dws.intojob.co.kr/image/dware/t1/tm37n/images/linde_logo.svg) | 흰 로고라 파란 배경을 더함 |
+| `aj-networks.svg` | AJ네트웍스 | [AJ네트웍스 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/09/05/cf4960c5-c4d8-431b-b4b4-dd7ef3823523.png) | 채용 사이트 헤더 로고 PNG를 SVG 래퍼에 |
+| `toss-securities.svg` | 토스증권 | [토스 정적 경로](https://static.toss.im/png-icons/securities/logo_securities_mono_black_korean_300.png) | 토스증권 로고(흑백) PNG를 SVG 래퍼에 |
+| `elandretail.svg` | 이랜드리테일 | [이랜드리테일 채용 사이트](https://recruit.elandretail.com/assets/erl-logo-tp.png) | 헤더 로고 PNG를 줄여 SVG 래퍼에 |
+| `bos-semiconductor.svg` | 보스반도체 | [보스반도체 홈페이지](https://www.bos-semi.com) | 공식 홈페이지 로고 PNG 크롭·축소 후 SVG 래퍼 |
+| `yonhap-infomax.svg` | 연합인포맥스 | [연합인포맥스 채용 사이트](https://recruit.einfomax.co.kr/img/common/logo_dn.gif) | 헤더 로고 GIF를 PNG로 바꿔 SVG 래퍼에 |
+| `kyungshin-cable.svg` | 경신전선 | [경신전선 홈페이지](https://www.kscable.co.kr/images/inc/logo_color.png) | 공식 사이트 로고 PNG를 SVG 래퍼에(원본 160x45로 작음) |
+| `woomi.svg` | 우미건설 | [우미 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/10/22/8e7e81cc-82f4-44b4-879c-5971af01de64.png) | 헤더 로고 PNG(142px)를 SVG 래퍼에, 해상도 낮음 |
+| `namsung.svg` | 남성해운 | [남성해운 홈페이지](https://namsung.co.kr/ns/images/logo.png) | 헤더 로고 PNG를 3색 벡터 SVG로 다시 그림 |
+| `teczen.svg` | 테크젠 | [테크젠 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2025/03/18/f73ad443-ef3b-4387-bbb1-32844ce69bd1.png) | 채용 사이트 헤더 로고 PNG를 SVG 래퍼에 |
+| `korea-petroleum.svg` | 한국석유공업 | [한국석유공업 채용 사이트](https://infra1-static.recruiter.co.kr/builder/2026/11/18/2c474d10-e2d1-4e01-816a-eb4017b251f4.png) | 채용 사이트 헤더 로고 PNG를 SVG 래퍼에 |
+| `ok-financial-group.svg` | OK금융그룹 | [OK금융그룹 채용 사이트](https://opening-attachments.greetinghr.com/2026-05-12/a673fb3f-13da-4b29-942b-0a650721e257/5fe201a7-eb0a-402d-b019-f98e991a1931.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `i3system.svg` | 아이쓰리시스템 | [아이쓰리시스템 채용 사이트](https://i3system.career.greetinghr.com/ko/intro) | 공식 채용 사이트 로고를 SVG 래퍼에 |
+| `dreamline.svg` | 드림라인 | [드림라인 채용 공고 이미지](https://www.saraminimage.co.kr/recruit/os_hk_26/09_dream_logo_260519.png) | 회사 공고 속 자체 로고 PNG 여백을 잘라 SVG 래퍼에 |
+| `sk-shieldus.svg` | SK쉴더스 | [SK쉴더스 교육 사이트](https://sslc.kr/images/footer_ci_sk_shieldus.png) | 사이트 푸터 CI PNG를 SVG 래퍼에 |
+| `sunwoo-eng.svg` | 선우ENG | [선우ENG 홈페이지](https://www.sunwooeng.com/images/logo.jpg) | 헤더 로고 JPG 여백을 잘라 SVG 래퍼에 |
+| `nhn-enterprise.svg` | NHN Enterprise | [NHN Careers](https://careers.nhn.com/nstatic/corporation-logo/ENTERPRISE_24.svg) | 공식 채용 사이트의 NHN Enterprise 전용 SVG, 여백만 자름 |
