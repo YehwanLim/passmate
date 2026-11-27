@@ -188,3 +188,7 @@ Social Proof 마키에 사용하는 로고는 각 권리자의 상표입니다. 
 | `sk-shieldus.svg` | SK쉴더스 | [SK쉴더스 교육 사이트](https://sslc.kr/images/footer_ci_sk_shieldus.png) | 사이트 푸터 CI PNG를 SVG 래퍼에 |
 | `sunwoo-eng.svg` | 선우ENG | [선우ENG 홈페이지](https://www.sunwooeng.com/images/logo.jpg) | 헤더 로고 JPG 여백을 잘라 SVG 래퍼에 |
 | `nhn-enterprise.svg` | NHN Enterprise | [NHN Careers](https://careers.nhn.com/nstatic/corporation-logo/ENTERPRISE_24.svg) | 공식 채용 사이트의 NHN Enterprise 전용 SVG, 여백만 자름 |
+| `samyang-kci.svg` | 삼양케이씨아이 | [삼양KCI 홈페이지](https://www.samyangkci.com/resources/kr/local/images/common/blue_logo.svg) | 회사 자체 로고 SVG |
+| `idis.svg` | 아이디스 | [아이디스 채용 사이트](https://careers.idis.co.kr/logo.png) | 헤더 로고 PNG를 SVG 래퍼에 |
+| `dy-group.svg` | DY그룹 | [DY 공식 홈페이지](https://www.dy.co.kr/) | 헤더 인라인 SVG |
+| `jw-group.svg` | JW그룹 | [JW홀딩스 공식 홈페이지](https://www.jw-holdings.co.kr/holdings/ko/asset/images/jw_holdings_new.png) | 헤더 로고 PNG를 SVG 래퍼에(로고 글자는 JW홀딩스) |
