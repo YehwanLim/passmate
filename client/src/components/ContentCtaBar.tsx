@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
+import { INTERVIEW_INTENT_COPY } from "@/copy/interviewIntentCopy";
+import type { AnalyzeIntent } from "@/lib/analyze/analyzeIntent";
 import { sendFunnelEvent } from "@/lib/siteVisits";
 
 /** 이만큼 내려야 띠가 올라온다. 제목·요약이 보이는 첫 화면은 가리지 않는다. */
 export const CONTENT_CTA_BAR_SHOW_AFTER_PX = 360;
 
-export function contentCtaBarText(company: string | null): string {
+/** 띠 문구. 면접 후기 글(intent=interview)은 이미 낸 자소서로 예상 질문을 묻는다. */
+export function contentCtaBarText(company: string | null, intent: AnalyzeIntent | null = null): string {
+  if (intent === "interview") return INTERVIEW_INTENT_COPY.question(company);
   return `${company ?? "내"} 자소서, 이대로 내도 될까요?`;
+}
+
+export function contentCtaBarButton(intent: AnalyzeIntent | null = null): string {
+  return intent === "interview" ? INTERVIEW_INTENT_COPY.barButton : "무료 분석";
 }
 
 /**
@@ -19,12 +27,15 @@ export function ContentCtaBar({
   href,
   where,
   endId,
+  intent = null,
 }: {
   company: string | null;
   href: string;
-  /** 클릭 기록 위치. `job-bar:<slug>`·`guide-bar:<slug>` */
+  /** 클릭 기록 위치. `job-bar:<slug>`·`guide-bar:<slug>`·`guide-bar-interview:<slug>` */
   where: string;
   endId: string;
+  /** 문구만 바꾼다. 링크(href)와 기록 위치(where)는 부르는 쪽이 정한다 */
+  intent?: AnalyzeIntent | null;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -57,9 +68,16 @@ export function ContentCtaBar({
         onClick={() => void sendFunnelEvent("content_cta_click", where)}
         className="flex items-center gap-3 px-5 py-3"
       >
-        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-white">{contentCtaBarText(company)}</span>
+        {/* 면접 문구는 375px 한 줄에 다 안 들어가 질문 끝("뭘 물어볼까요?")이 잘린다 — 그 띠만 두 줄까지 허용한다. */}
+        <span
+          className={`min-w-0 flex-1 text-[15px] font-semibold text-white ${
+            intent ? "line-clamp-2 leading-snug [word-break:keep-all]" : "truncate"
+          }`}
+        >
+          {contentCtaBarText(company, intent)}
+        </span>
         <span className="flex h-10 flex-none items-center rounded-[10px] bg-surface px-4 text-[14px] font-bold text-brand">
-          무료 분석
+          {contentCtaBarButton(intent)}
         </span>
       </Link>
     </div>
